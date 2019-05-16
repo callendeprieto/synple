@@ -11,12 +11,12 @@ import matplotlib.pyplot as plt
 
 
 #configuration
-synspecdir = "/home/callende/synspec"
+synpledir = "/home/callende/synple"
 
 #relative paths
-modelatomdir = synspecdir + "/data"
-linelistdir = synspecdir + "/linelists"
-bindir = synspecdir + "/bin"
+modelatomdir = synpledir + "/data"
+linelistdir = synpledir + "/linelists"
+bindir = synpledir + "/bin"
 synspec = bindir + "/synspec53p"
 rotin = bindir + "/rotin3"
 
