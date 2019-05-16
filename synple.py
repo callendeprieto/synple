@@ -699,7 +699,7 @@ if __name__ == "__main__":
   wend = float(sys.argv[3])
 
   #symbol, mass, sol = elements()
-  x,y,yc=syn(modelfile,[wstart,wend],  h=True, linelist=['gfallx3_bpo.19'], fwhm=0.2, vrot=10.)
+  x,y,yc=syn(modelfile,[wstart,wend],  hhm=True, linelist=['gfallx3_bpo.19'], fwhm=0.2, vrot=10.)
   #x2,y2,yc2=syn('sun.mod',[4300,4400],linelist=['gfallx3_bpo.19'])
   plt.plot(x,y/yc,'b')
   plt.show()
