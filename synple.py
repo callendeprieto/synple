@@ -144,7 +144,7 @@ def identify_atmostype(modelfile):
 def checksynspec(linelist):
 #checking executable and data are where it should be
 
-  dirs = [synspecdir,modelatomdir,linelistdir,bindir]
+  dirs = [synpledir,modelatomdir,linelistdir,bindir]
   for entry in dirs: assert (os.path.isdir(entry)), 'dir '+entry+' missing'
 
   files = [synspec,rotin]
