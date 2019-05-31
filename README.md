@@ -45,4 +45,5 @@ Starting in the main synple directory
    #and to plot the continuum normalized spectrum
 
    %pylab
+
    plot(x,y/z)
