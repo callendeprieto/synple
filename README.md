@@ -13,7 +13,9 @@ Starting in the main synple directory
  makefile accordingly.
 
  cd synspec
+
  make
+
  cd ..
  
 2- Download the line list data
@@ -21,7 +23,9 @@ Starting in the main synple directory
  Make sure you have wget and a working internet connection
 
  cd linelists
+
  make
+
  cd ..
  
 3- Add the synple directory to your $PYTHONPATH enviromental variable (optional)
@@ -40,6 +44,7 @@ Starting in the main synple directory
  or, similarly, from a python interpreter (e.g. ipython)
  
    from synple import syn
+
    x, y, z = syn('sun.mod', (6160.,6164.))
 
    #and to plot the continuum normalized spectrum
@@ -47,3 +52,4 @@ Starting in the main synple directory
    %pylab
 
    plot(x,y/z)
+
