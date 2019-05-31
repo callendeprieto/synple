@@ -43,5 +43,6 @@ Starting in the main synple directory
    x, y, z = syn('sun.mod', (6160.,6164.))
 
    #and to plot the continuum normalized spectrum
+
    %pylab
    plot(x,y/z)
