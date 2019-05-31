@@ -11,7 +11,9 @@ import matplotlib.pyplot as plt
 
 
 #configuration
-synpledir = "/home/callende/synple"
+#synpledir = /home/callende/synple
+synpledir = os.path.dirname(os.path.realpath(__file__))
+
 
 #relative paths
 modelatomdir = synpledir + "/data"
@@ -221,7 +223,7 @@ def write55(wrange,dw=1e-2,strength=1e-4,vmicro=0.0,linelist=['gfallx3_bpo.19','
   f.write(5*zero+"\n")
   f.write(one+4*zero+"\n")
   f.write(two+2*zero+"\n")
-  f.write( ' %f %f %f %i %e %f \n ' % (wrange[0], wrange[1], 200., 0, strength,dw) )
+  f.write( ' %f %f %f %i %e %f \n ' % (wrange[0], wrange[1], 200., 0, strength, dw) )
   ll = len(linelist)
   if ll < 2: f.write(2*zero)
   else: f.write(str(ll-1) + ' ' + ' '.join(map(str,np.arange(ll-1)+20)))
@@ -343,6 +345,8 @@ def cleanup():
   for entry in files: 
     if os.path.islink(entry) and entry.startswith('fort'): os.unlink(entry)
     if os.path.isfile(entry) and entry.startswith('fort'): os.remove(entry)
+
+  assert (not os.path.isdir('data')), 'A subdirectory *data* exists in this folder, and that prevents the creation of a link to the data directory from synple'
 
   if os.path.islink('data'): os.unlink('data')
   if os.path.isfile('tas'): os.remove('tas')
@@ -699,8 +703,7 @@ if __name__ == "__main__":
   wend = float(sys.argv[3])
 
   #symbol, mass, sol = elements()
-  x,y,yc=syn(modelfile,[wstart,wend],  hhm=True, linelist=['gfallx3_bpo.19'], fwhm=0.2, vrot=10.)
-  #x2,y2,yc2=syn('sun.mod',[4300,4400],linelist=['gfallx3_bpo.19'])
+  x,y,yc=syn(modelfile,[wstart,wend])
   plt.plot(x,y/yc,'b')
   plt.show()
 
