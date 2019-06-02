@@ -2,16 +2,22 @@
 # -*- coding: utf-8 -*-
 """Python wrapper for synspec 
 
-Calculation of synthetic spectra of stars and convolution with a rotational/Gaussian kernel. Makes the use of synspec simpler, and retains the main functionalities (when used from python). The command line interface is even simpler but fairly limited. For information on synspec visit http://nova.astro.umd.edu/Synspec43/synspec.html.
+Calculation of synthetic spectra of stars and convolution with a rotational/Gaussian kernel.
+Makes the use of synspec simpler, and retains the main functionalities (when used from
+python). The command line interface is even simpler but fairly limited. For information on
+synspec visit http://nova.astro.umd.edu/Synspec43/synspec.html.
 
 Example
 -------
 
-To compute the solar spectrum between 6160 and 6164 angstroms, using a model atmosphere in the file sun.mod (provided with the distribution), with the output going into the file sun.syn
+To compute the solar spectrum between 6160 and 6164 angstroms, using a model atmosphere in
+the file sun.mod (provided with the distribution), with the output going into the file
+sun.syn
 
    $synple.py sun.mod 6160. 6164. 
 
-To force a micro of 1.1 km/s, and convolve the spectrum with a Gaussian kernel with a fwhm of 0.1 angstroms
+To force a micro of 1.1 km/s, and convolve the spectrum with a Gaussian kernel with a fwhm 
+of 0.1 angstroms
 
    $synple.py sun.mod 6160. 6164. 1.1  0.1
 
