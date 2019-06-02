@@ -1,13 +1,43 @@
 #!/usr/bin/python3
-'''
-Python wrapper for synspec 
-'''
+# -*- coding: utf-8 -*-
+"""Python wrapper for synspec 
+
+Calculation of synthetic spectra of stars and convolution with a rotational/Gaussian kernel. Makes the use of synspec simpler, and retains the main functionalities (when used from python). The command line interface is even simpler but fairly limited. For information on synspec visit http://nova.astro.umd.edu/Synspec43/synspec.html.
+
+Example
+-------
+
+To compute the solar spectrum between 6160 and 6164 angstroms, using a model atmosphere in the file sun.mod (provided with the distribution), with the output going into the file sun.syn
+
+   $synple.py sun.mod 6160. 6164. 
+
+To force a micro of 1.1 km/s, and convolve the spectrum with a Gaussian kernel with a fwhm of 0.1 angstroms
+
+   $synple.py sun.mod 6160. 6164. 1.1  0.1
+
+To perform the calculations above in python and compare the emergent normalized profiles
+
+   >>> from synple import syn
+   >>> x, y, z = syn('sun.mod', (6160.,6164.))
+   >>> x2, y2, z2 = syn('sun.mod', (6160.,6164.), vmicro=1.1, fwhm=0.1)
+
+   in plain python
+   >>> import matplotlib.pyplot as plt
+   >>> plt.ion()
+   >>> plt.plot(x,y/z, x2, y2/z2)
+
+   or ipython
+   In [1]: %pylab
+   In [2]: plot(x,y/z, x2, y2/z2)
+
+
+"""
 import os
 import sys
 import subprocess
 import numpy as np
 import time
-import matplotlib.pyplot as plt
+from scipy import interpolate
 
 
 #configuration
@@ -23,34 +53,88 @@ synspec = bindir + "/synspec53p"
 rotin = bindir + "/rotin3"
 
 #other stuff
-bolk = 1.38054e-16 # erg/K
+bolk = 1.38054e-16  # erg/ K
 zero = " 0 "
 one =  " 1 "
 two =  " 2 "
 
-#def mksyn(teff,logg,mh,am,cm,nm,wrange=[15100.,17000],dw=0.05,vmicro=2.0,solarisotopes=False,elemgrid='',welem=None,
-#    els=None,atmod=None,kurucz=True,atmosroot=None,atmosdir=None,nskip=0,fill=True,
-#    linelist='20150714',h2o=None,linelistdir=None,atoms=True,molec=True,
-#    save=False,run=True)
-
-def syn(modelfile, wrange, dw=1e-2, strength=1e-4, vmicro=None, abu=None, \
+def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, vrot=0.0, fwhm=0.0, \
-    steprot=0.0, stepfwhm=0.0, save=False):
-#
-# high level routine to compute a synthetic spectrum
-# input:  modelfile (str) filename for the model atmosphere
-#         wrange (2-element tuple) wavelength range (angstroms)
-#         dw (float) wavelength step for the calculations (angstroms)
-#         strength (float) minimum estimated ratio line/continuum opacity for a line to be considered
-#         vmicro (float) microturbulence velocity (km/s)
-#         abu (99-element float array) abundances (number density relative to hydrogen)
-#         linelist (list of strings) list of line lists to use (1st must be atomic, the rest molecular)
-#         hhm (boolean) when True metal continuum opacities are ignored (H, H-, and molecules considered)
-#
-# output: wave (float array) wavelengths (angstroms)
-#         flux (float array) flux (H_lambda, erg/cm2/s/A)
-#         cont (float array) flux when no line opacities are considered (H_lambda)
-#
+    steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None):
+
+  """Computes a synthetic spectrum
+
+  Interface to the fortran codes synspec/rotin that only requires two mandatory inputs: 
+  a model atmosphere (modelfile) and the limits of the spectral range (wrange). The code 
+  recognizes Kurucz, MARCS and Phoenix LTE model atmospheres. The sampling of the frequency 
+  grid is chosen internally, but can also be set by adding a constant wavelength step (dw).
+  The abundances and microturbulence velocity can be set through the abu and vmicro 
+  parameters, but default values will be taken from the model atmosphere. Rotational and 
+  Gaussian broadening can be introduced (vrot and fwhm parameters). The computed spectrum 
+  can be written to a file (save == True). 
+
+
+  Parameters
+  ----------
+  modelfile : str
+      file with a model atmosphere
+  wrange: tuple or list of two floats
+      initial and ending wavelengths (angstroms)
+  dw: float, optional
+      wavelength step for the output fluxes
+      this will be the maximum interval for the radiative 
+      transfer, and will trigger interpolation at the end
+      (default is None for automatic selection)
+  strength: float, optional
+      threshold in the line-to-continuum opacity ratio for 
+      selecting lines (default is 1e-4)
+  vmicro: float, optional
+      microturbulence (km/s) 
+      (default is taken from the model atmosphere)
+  abu: array of floats (99 elements), optional
+      chemical abundances relative to hydrogen (N(X)/N(H))
+      (default taken from input model atmosphere)
+  linelist: array of str
+      filenames of the line lists, the first one corresponds to 
+      the atomic lines and all the following ones (optional) to
+      molecular lines
+      (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
+  hhm: bool
+      when active the continuum opacity is simplified to H and H-
+      (default False, and more complete opacities are included)
+  vrot: float
+      projected rotational velocity (km/s)
+      (default 0.)
+  steprot: float
+      wavelength step for convolution with rotational kernel (angstroms)
+      set to 0. for automatic adjustment (default 0.)
+  fwhm: float
+      Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
+      (default 0.)
+  stepfwhm: float
+      wavelength step for Gaussian convolution (angstroms)
+      set to 0. for automatic adjustment (default 0.)
+  clean: bool
+      True by the default, set to False to avoid the removal of the synspec
+      temporary files/links (default True)
+  save: bool
+      set to True to save the computed to a file (default False)
+      the root of the model atmosphere file, with an extension ".syn" will be used
+      but see the parameter synfile to change that
+  synfile: str
+      when save is True, this can be used to set the name of the output file
+      (default None)
+
+  Returns
+  -------
+  wave: numpy array of floats
+      wavelengths (angstroms)
+  flux: numpy array of floats
+      flux (H_lambda in ergs/s/cm2/A)
+  cont: numpy array of floats
+      continuum flux (same units as flux)
+
+  """
 
   atmostype = identify_atmostype(modelfile)
   if atmostype == 'kurucz':
@@ -60,8 +144,15 @@ def syn(modelfile, wrange, dw=1e-2, strength=1e-4, vmicro=None, abu=None, \
   if atmostype == 'phoenix':
     teff, logg, vmicro2, abu2, nd, atmos = read_phoenix_model(modelfile)
     
+
   if vmicro == None: vmicro = vmicro2
   if abu == None: abu = abu2
+  if dw == None: 
+    #space = 1e-2  
+    space = np.mean(wrange) * np.sqrt(9.12e-15 * np.min(atmos['t']) + vmicro)/299792.458 / 3.
+  else: 
+    space = dw
+
 
   checksynspec(linelist)  
   checkinput(wrange, modelfile, vmicro, linelist)
@@ -75,34 +166,99 @@ def syn(modelfile, wrange, dw=1e-2, strength=1e-4, vmicro=None, abu=None, \
   writetas('tas',nd,linelist)                           #non-std param. file
   write5(teff,logg,abu,hhm)                               #abundance/opacity file
   write8(teff,logg,nd,atmos,atmostype)                  #model atmosphere
-  write55(wrange,dw,strength,vmicro,linelist,atmostype) #synspec control file
+  write55(wrange,space,strength,vmicro,linelist,atmostype) #synspec control file
   create_links(modelfile,linelist)                      #auxiliary data
 
 
   synin = open('fort.5')
   synout = open('syn.log','w')
+
   start = time.time()
-  p = subprocess.Popen([synspec], stdin=synin, stdout = synout)
+  p = subprocess.Popen([synspec], stdin=synin, stdout = synout, stderr= synout, shell=True)
   p.wait()
+
   synout.flush()
+  synout.close()
+  synin.close()
+
+  assert (os.path.isfile('fort.7')), 'Error: I cannot read the file *fort.7* -- looks like synspec has crashed, please look at syn.log'
+
+  assert (os.path.isfile('fort.17')), 'Error: I cannot read the file *fort.17* -- looks like synspec has crashed, please look at syn.log'
+
+
   wave, flux = np.loadtxt('fort.7', unpack=True)
   wave2, flux2 = np.loadtxt('fort.17', unpack=True)
-  cont = np.interp(wave, wave2, flux2)
+  if dw == None and fwhm <= 0. and vrot <= 0.: cont = np.interp(wave, wave2, flux2)
   end = time.time()
   print('syn ellapsed time ',end - start, 'seconds')
 
   if fwhm > 0. or vrot > 0.:
     start = time.time()
-    flux = convol (wave, flux, cont, vrot, fwhm, dw, steprot, stepfwhm, save=True, reuseinputfiles=True)
+    wave, flux = convol (wave, flux, vrot, fwhm, space, steprot, stepfwhm, clean=False, reuseinputfiles=True)
+    if dw == None: cont = np.interp(wave, wave2, flux2)
     end = time.time()
     print('convol ellapsed time ',end - start, 'seconds')
 
-  if save == False: cleanup()
+  if (dw != None): 
+    nsamples = int((wrange[1] - wrange[0])/dw) + 1
+    wave3 = np.arange(nsamples)*dw + wrange[0]
+    flux = np.interp(wave3, wave, flux)
+    cont = np.interp(wave3, wave2, flux2)
+    wave = wave3
+
+  if clean == True: cleanup()
+
+  if save == True:
+    if synfile == None: synfile = modelfile[:modelfile.rfind('.')]+'.syn'
+    np.savetxt(synfile,(wave,flux,cont))
+
 
   return(wave, flux, cont)
 
-def convol(wave, flux, cont, vrot, fwhm, dw=1e-2, steprot=0.0, stepfwhm=0.0, save=False, reuseinputfiles=False):
+def convol(wave=None, flux=None, vrot=0.0, fwhm=0.0, space=1e-2, steprot=0.0, stepfwhm=0.0, clean=True, reuseinputfiles=False):
 
+
+  """Convolves a synthetic spectrum with a rotation or Gaussian kernel
+
+  Interface to the fortran code rotin.
+
+  Parameters
+  ----------
+  wave: numpy array of floats
+      wavelengths (angstroms)
+  flux: numpy array of floats
+      flux 
+  vrot: float
+      projected rotational velocity (km/s)
+      (default 0.)
+  space: float, optional
+      characteristic wavelength scale for variations in the spectrum (angstroms)
+      (default is 1e-2)
+  steprot: float
+      wavelength step for convolution with rotational kernel (angstroms)
+      set to 0. for automatic adjustment (default 0.)
+  fwhm: float
+      Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
+      (default 0.)
+  stepfwhm: float
+      wavelength step for Gaussian convolution (angstroms)
+      set to 0. for automatic adjustment (default 0.)
+  clean: bool
+      True by the default, set to False to avoid the removal of the rotin
+      temporary files (default True)
+  reuseinputfiles: bool
+      set to take the input data from the output synspec file (fort.7) rather than 
+      from the input arrays (wave, flux)
+
+  Returns
+  -------
+  wave2: numpy array of floats
+      wavelengths (angstroms)
+  flux2: numpy array of floats
+      flux 
+
+
+  """
   if reuseinputfiles == False:
     f = open('fort.7','w')
     for i in len(wave):
@@ -111,7 +267,7 @@ def convol(wave, flux, cont, vrot, fwhm, dw=1e-2, steprot=0.0, stepfwhm=0.0, sav
 
   f = open('fort.5','w')
   f.write( ' %s %s %s \n' % ("'fort.7'", "'fort.17'", "'fort.11'") )
-  f.write( ' %f %f %f \n' % (vrot, dw, steprot) )
+  f.write( ' %f %f %f \n' % (vrot, space, steprot) )
   f.write( ' %f %f \n' % (fwhm, stepfwhm) )
   print('stepfwhm=',stepfwhm)
   f.write( ' %f %f %i \n' % (np.min(wave), np.max(wave), 0) )
@@ -119,19 +275,39 @@ def convol(wave, flux, cont, vrot, fwhm, dw=1e-2, steprot=0.0, stepfwhm=0.0, sav
 
   synin = open('fort.5')
   synout = open('syn.log','a')
-  p = subprocess.Popen([rotin], stdin=synin, stdout = synout)
+  p = subprocess.Popen([rotin], stdin=synin, stdout = synout, stderr = synout)
   p.wait()
   synout.flush()
+  synout.close()
+  synin.close()
+  
+  assert (os.path.isfile('fort.11')), 'Error: I cannot read the file *fort.11* -- looks like rotin has crashed, please look at syn.log'
+
   wave2, flux2 = np.loadtxt('fort.11', unpack=True)
   print(len(wave),len(wave2))
-  flux2 = np.interp(wave, wave2, flux2)
   
-  if save == None: cleanup()
+  if clean == True: cleanup()
 
-  return(flux2)
+  return(wave2, flux2)
 
 
 def identify_atmostype(modelfile):
+
+  """Idenfies the type of model atmosphere in an input file
+
+  Valid options are kurucz, marcs or phoenix
+
+  Parameters
+  ----------
+  modelfile: str
+      file with a model atmosphere
+
+  Returns
+  -------
+  atmostype: str
+      can take the value 'kurucz', 'marcs' or 'phoenix' ('tlusty' soon to be added!)
+
+  """
 
   if ('PHOENIX' in modelfile and 'fits' in modelfile): atmostype = 'phoenix'
   else: 
@@ -144,7 +320,18 @@ def identify_atmostype(modelfile):
   return(atmostype)
 
 def checksynspec(linelist):
-#checking executable and data are where it should be
+
+  """checking that executables and data are where it should be
+
+  Parameters
+  ----------
+  linelist: array of str
+      file names of the line lists to be used. The first string should correspond
+      to the atomic line list and is mandatory. The remainder are optional and
+      correspond to molecular line lists. All files should be in synspec format.
+      (see documentation at http://nova.astro.umd.edu/Synspec43/synspec.html)
+
+  """
 
   dirs = [synpledir,modelatomdir,linelistdir,bindir]
   for entry in dirs: assert (os.path.isdir(entry)), 'dir '+entry+' missing'
@@ -157,7 +344,25 @@ def checksynspec(linelist):
 
 
 def checkinput(wrange, modelfile, vmicro, linelist):
-#checking input parameters from user
+
+  """checking input parameters from user
+
+
+  Parameters
+  ----------
+  wrange: tuple or list of two floats
+      initial and ending wavelengths (angstroms)
+  vmicro: float, optional
+      microturbulence (km/s) 
+      (default is taken from the model atmosphere)
+  linelist: array of str
+      filenames of the line lists, the first one corresponds to 
+      the atomic lines and all the following ones (optional) to
+      molecular lines
+      (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
+
+  """
+
 
   #find range of atomic line list
   minlambda, maxlambda = getlinelistrange(os.path.join(linelistdir,linelist[0]))
@@ -346,10 +551,10 @@ def cleanup():
     if os.path.islink(entry) and entry.startswith('fort'): os.unlink(entry)
     if os.path.isfile(entry) and entry.startswith('fort'): os.remove(entry)
 
-  assert (not os.path.isdir('data')), 'A subdirectory *data* exists in this folder, and that prevents the creation of a link to the data directory from synple'
-
   if os.path.islink('data'): os.unlink('data')
   if os.path.isfile('tas'): os.remove('tas')
+  assert (not os.path.isdir('data')), 'A subdirectory *data* exists in this folder, and that prevents the creation of a link to the data directory for synple'
+
 
   return()
 
@@ -698,12 +903,23 @@ def elements(husser=False):
 
 if __name__ == "__main__":
 
+  npar = len(sys.argv)
+  assert (npar >= 4), 'Synple requires at least 3 input parameters (modelfile wstart wend)'
+  assert (npar <= 7), 'Synple requires at maximum 6 input parameters (modelfile wstart wend vmicro vrot fwhm)'
+  vmicro = None
+  vrot = 0.0
+  fwhm = 0.0
   modelfile = sys.argv[1]
   wstart = float(sys.argv[2])
   wend = float(sys.argv[3])
+  if (npar > 4): 
+    vmicro = float(sys.argv[4])
+    if (npar > 5):
+      fwhm = float(sys.argv[5])
+      if (npar > 6):
+        vrot = float(sys.argv[6])
 
   #symbol, mass, sol = elements()
-  x,y,yc=syn(modelfile,[wstart,wend])
-  plt.plot(x,y/yc,'b')
-  plt.show()
+  x, y, z = syn(modelfile, (wstart,wend), save=True, vmicro=vmicro, vrot=vrot, fwhm=fwhm)
+
 
