@@ -35,8 +35,8 @@ Starting in the main synple directory
  
 ** test **
 
- Copy one of the model atmopspheres in the 'models' folder (e.g. to your working
- directory and test that the code works. For example if you use the MARCS model
+ Copy one of the model atmospheres in the 'models' folder (e.g. to your working
+ directory) and test that the code works. For example if you use the MARCS model
  sun.mod and want to compute the solar spectrum between 6160. and 6164. AA 
  
    synple.py sun.mod 6160. 6164.
