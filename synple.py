@@ -4,7 +4,9 @@
 
 Calculation of synthetic spectra of stars and convolution with a rotational/Gaussian kernel.
 Makes the use of synspec simpler, and retains the main functionalities (when used from
-python). The command line interface is even simpler but fairly limited. For information on
+python). The command line interface is even simpler but fairly limited. 
+
+For information on
 synspec visit http://nova.astro.umd.edu/Synspec43/synspec.html.
 
 Example
@@ -44,6 +46,7 @@ import subprocess
 import numpy as np
 import time
 from scipy import interpolate
+import matplotlib.pyplot as plt
 
 
 #configuration
@@ -59,6 +62,8 @@ synspec = bindir + "/synspec53p"
 rotin = bindir + "/rotin3"
 
 #other stuff
+clight = 299792.458
+epsilon = 0.6 #clv coeff.
 bolk = 1.38054e-16  # erg/ K
 zero = " 0 "
 one =  " 1 "
@@ -106,7 +111,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       molecular lines
       (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
   hhm: bool
-      when active the continuum opacity is simplified to H and H-
+      when True the continuum opacity is simplified to H and H-
       (default False, and more complete opacities are included)
   vrot: float
       projected rotational velocity (km/s)
@@ -155,7 +160,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   if abu == None: abu = abu2
   if dw == None: 
     #space = 1e-2  
-    space = np.mean(wrange) * np.sqrt(9.12e-15 * np.min(atmos['t']) + vmicro)/299792.458 / 3.
+    space = np.mean(wrange) * np.sqrt(9.12e-15 * np.min(atmos['t']) + vmicro) / clight / 3.
   else: 
     space = dw
 
@@ -200,7 +205,8 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   if fwhm > 0. or vrot > 0.:
     start = time.time()
-    wave, flux = convol (wave, flux, vrot, fwhm, space, steprot, stepfwhm, clean=False, reuseinputfiles=True)
+    print( vrot, fwhm, space, steprot, stepfwhm)
+    wave, flux = call_rotin (wave, flux, vrot, fwhm, space, steprot, stepfwhm, clean=False, reuseinputfiles=True)
     if dw == None: cont = np.interp(wave, wave2, flux2)
     end = time.time()
     print('convol ellapsed time ',end - start, 'seconds')
@@ -221,10 +227,12 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   return(wave, flux, cont)
 
-def convol(wave=None, flux=None, vrot=0.0, fwhm=0.0, space=1e-2, steprot=0.0, stepfwhm=0.0, clean=True, reuseinputfiles=False):
 
 
-  """Convolves a synthetic spectrum with a rotation or Gaussian kernel
+def call_rotin(wave=None, flux=None, vrot=0.0, fwhm=0.0, space=1e-2, steprot=0.0, stepfwhm=0.0, clean=True, reuseinputfiles=False):
+
+
+  """Convolves a synthetic spectrum with a rotation and/or Gaussian kernel
 
   Interface to the fortran code rotin.
 
@@ -251,7 +259,7 @@ def convol(wave=None, flux=None, vrot=0.0, fwhm=0.0, space=1e-2, steprot=0.0, st
       set to 0. for automatic adjustment (default 0.)
   clean: bool
       True by the default, set to False to avoid the removal of the rotin
-      temporary files (default True)
+      temporary files (default Tr<ue)
   reuseinputfiles: bool
       set to take the input data from the output synspec file (fort.7) rather than 
       from the input arrays (wave, flux)
@@ -267,9 +275,13 @@ def convol(wave=None, flux=None, vrot=0.0, fwhm=0.0, space=1e-2, steprot=0.0, st
   """
   if reuseinputfiles == False:
     f = open('fort.7','w')
-    for i in len(wave):
-      f.write( '( %f %f \n)' % (wave[i], flux[i]) )
+    f2 = open('fort.17','w')
+    maxflux = np.max(flux)
+    for i in range(len(wave)):
+      f.write( ' %f %f \n' % (wave[i], flux[i]) )
+      f2.write( ' %f %f \n' % (wave[i], maxflux) )
     f.close()
+    f2.close()
 
   f = open('fort.5','w')
   f.write( ' %s %s %s \n' % ("'fort.7'", "'fort.17'", "'fort.11'") )
@@ -906,6 +918,199 @@ def elements(husser=False):
   for i in range(len(sol)-1): sol[i+1] = 10.**(sol[i+1]-12.0)
 
   return (symbol,mass,sol)
+
+
+def lgconv(xinput, yinput, fwhm, ppr=None):
+
+  """convolution with a Gaussian in linear lambda scale
+  for a constant resolution
+
+  Parameters
+  ----------
+  xinput: numpy float array
+      wavelengths 
+  yinput: numpy array of floats
+      fluxes
+  fwhm: float
+      FWHM of the Gaussian (same units as for xinput)
+  ppr: float, optional
+      Points per resolution element to downsample the convolved spectrum
+      (default None, to keep the original sampling)
+
+  Returns
+  -------
+  x: numpy float array
+      wavelengths after convolution, will be a subset of xinput when that is linear, 
+      otherwise a subset of the linearly resampled version
+  y: numpy array of floats
+      fluxes after convolution
+
+  """
+
+  #resampling to a linear lambda wavelength scale if need be
+  xx = np.diff(xinput)
+  if max(xx) - min(xx) > 0.0: #input not linearly sampled
+    nel = len(xinput)
+    minx = np.min(xinput)
+    maxx = np.max(xinput)
+    x = np.linspace(minx,maxx,nel)
+    step = x[1] - x[0]
+    y = np.interp( x, xinput, yinput)
+  else:                       #input linearly sampled
+    x = xinput
+    y = yinput
+
+  sigma=fwhm/2.0/np.sqrt(-2.0*np.log(0.5))
+  npoints = 2*int(3*fwhm/2./step)+1
+  half = npoints * step /2.
+  xx = np.linspace(-half,half,npoints)
+  kernel = np.exp(-(xx-np.mean(xx))**2/2./sigma**2)
+  kernel = kernel/np.sum(kernel)
+
+  y = np.convolve(y,kernel,'valid')
+  #y = ss.fftconvolve(y,kernel,'valid')
+  print(npoints)
+  edge = int(npoints/2)
+  x = x[edge:-edge]
+
+  print(xinput.size,x.size,y.size)
+
+  if ppr != None:
+    fac = int(fwhm / step / ppr)
+    subset = np.arange(x.size / fac, dtype=int) * fac 
+    x = x[subset]
+    y = y[subset]
+
+  return(x,y)
+
+def vgconv(xinput,yinput,fwhm, ppr=None):
+
+
+  """convolution with a Gaussian in log lambda scale
+  for a constant resolving power
+
+  Parameters
+  ----------
+  xinput: numpy float array
+      wavelengths 
+  yinput: numpy array of floats
+      fluxes
+  fwhm: float
+      FWHM of the Gaussian (km/s)
+  ppr: float, optional
+      Points per resolution element to downsample the convolved spectrum
+      (default None, to keep the original sampling)
+
+  Returns
+  -------
+  x: numpy float array
+      wavelengths after convolution, will be a subset of xinput when that is equidistant
+      in log lambda, otherwise a subset of the resampled version
+  y: numpy array of floats
+      fluxes after convolution
+
+  """
+  #resampling to ln(lambda) if need be
+  xx = np.diff(np.log(xinput))
+  if max(xx) - min(xx) > 0.0:  #input not equidist in loglambda
+    nel = len(xinput)
+    minx = np.min(np.log(xinput))
+    maxx = np.max(np.log(xinput))
+    x = np.linspace(minx,maxx,nel)
+    step = x[1] - x[0]
+    x = np.exp(x)
+    y = np.interp( x, xinput, yinput)
+  else:
+    x = xinput
+    y = yinput
+
+  fwhm = fwhm/clight # inverse of the resolving power
+  sigma=fwhm/2.0/np.sqrt(-2.0*np.log(0.5))
+  npoints = 2*int(3*fwhm/2./step)+1
+  half = npoints * step /2.
+  xx = np.linspace(-half,half,npoints)
+  kernel = np.exp(-(xx-np.mean(xx))**2/2./sigma**2)
+  kernel = kernel/np.sum(kernel)
+
+  y = np.convolve(y,kernel,'valid')
+  edge = int(npoints/2)
+  x = x[edge:-edge]
+
+  print(xinput.size,x.size,y.size)
+
+  if ppr != None:
+    fac = int(fwhm / step / ppr)
+    subset = np.arange(x.size / fac, dtype=int) * fac 
+    x = x[subset]
+    y = y[subset]
+
+
+  return(x,y)
+
+def rotconv(xinput,yinput,vsini, ppr=None):
+
+
+  """convolution with a Rotation profile 
+
+  Parameters
+  ----------
+  xinput: numpy float array
+      wavelengths 
+  yinput: numpy array of floats
+      fluxes
+  vsini: float
+      projected rotational velocity (km/s)
+  ppr: float, optional
+      Points per resolution element to downsample the convolved spectrum
+      (default None, to keep the original sampling)
+
+  Returns
+  -------
+  x: numpy float array
+      wavelengths after convolution, will be a subset of xinput when that is equidistant
+      in log lambda, otherwise a subset of the resampled version
+  y: numpy array of floats
+      fluxes after convolution
+
+  """
+
+  #resampling to ln(lambda) if need be
+  xx = np.diff(np.log(xinput))
+  if max(xx) - min(xx) > 0.0:  #input not equidist in loglambda
+    nel = len(xinput)
+    minx = np.min(np.log(xinput))
+    maxx = np.max(np.log(xinput))
+    x = np.linspace(minx,maxx,nel)
+    step = x[1] - x[0]
+    x = np.exp(x)
+    y = np.interp( x, xinput, yinput)
+  else:
+    x = xinput
+    y = yinput
+
+  deltamax=vsini/clight
+  npoints = 2*int(deltamax/step)+1
+  xx = np.linspace(-deltamax,deltamax,npoints)
+  c1=2.0*(1.0-epsilon)/np.pi/(1.0-epsilon/3.0)/deltamax
+  c2=0.5*epsilon/(1.0-epsilon/3.0)/deltamax
+  r2=(xx/deltamax)**2
+  kernel = c1*np.sqrt(1.0-r2)+c2*(1.0-r2)
+  kernel = kernel/np.sum(kernel)
+
+
+  y = np.convolve(y,kernel,'valid')
+  print(xinput.size,x.size,y.size)
+  edge = int(npoints/2)
+  x = x[edge:-edge]
+
+  if ppr != None:
+    fac = int(deltamax / step / ppr)
+    subset = np.arange(x.size / fac, dtype=int) * fac 
+    x = x[subset]
+    y = y[subset]
+
+  return(x,y)
+
 
 if __name__ == "__main__":
 

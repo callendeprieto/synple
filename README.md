@@ -2,6 +2,7 @@
 
 An Easy-to-Use Python Wrapper for the Spectral Synthesis Code Synspec
 
+
 ** install **
 
 Starting in the main synple directory
