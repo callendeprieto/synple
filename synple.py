@@ -55,6 +55,7 @@ synpledir = os.path.dirname(os.path.realpath(__file__))
 
 
 #relative paths
+modeldir = synpledir + "/models"
 modelatomdir = synpledir + "/data"
 linelistdir = synpledir + "/linelists"
 bindir = synpledir + "/bin"
@@ -146,15 +147,12 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       continuum flux (same units as flux)
 
   """
-
-  atmostype = identify_atmostype(modelfile)
-  if atmostype == 'kurucz':
-    teff, logg, vmicro2, abu2, nd, atmos = read_kurucz_model(modelfile) 
-  if atmostype == 'marcs':
-    teff, logg, vmicro2, abu2, nd, atmos = read_marcs_model(modelfile)
-  if atmostype == 'phoenix':
-    teff, logg, vmicro2, abu2, nd, atmos = read_phoenix_model(modelfile)
     
+  #basic checks on the line list and model atmosphere
+  checksynspec(linelist,modelfile)
+
+  #read model atmosphere
+  atmostype, teff, logg, vmicro2, abu2, nd, atmos = read_model(modelfile)
 
   if vmicro == None: vmicro = vmicro2
   if abu == None: abu = abu2
@@ -164,9 +162,9 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   else: 
     space = dw
 
+  #check input parameters are valid
+  checkinput(wrange, vmicro, linelist)
 
-  checksynspec(linelist)  
-  checkinput(wrange, modelfile, vmicro, linelist)
 
   print ('teff,logg,vmicro=',teff,logg,vmicro)
   #print ('abu=',abu)
@@ -308,6 +306,23 @@ def call_rotin(wave=None, flux=None, vrot=0.0, fwhm=0.0, space=1e-2, steprot=0.0
 
   return(wave2, flux2)
 
+def read_model(modelfile):
+
+  #check
+  if not os.path.isfile(modelfile):
+    if os.path.isfile(os.path.join(modeldir,modelfile)):
+      modelfile = os.path.join(modeldir,modelfile)
+
+  atmostype = identify_atmostype(modelfile)
+
+  if atmostype == 'kurucz':
+    teff, logg, vmicro, abu, nd, atmos = read_kurucz_model(modelfile) 
+  if atmostype == 'marcs':
+    teff, logg, vmicro, abu, nd, atmos = read_marcs_model(modelfile)
+  if atmostype == 'phoenix':
+    teff, logg, vmicro, abu, nd, atmos = read_phoenix_model(modelfile)
+
+  return (atmostype,teff,logg,vmicro,abu,nd,atmos)
 
 def identify_atmostype(modelfile):
 
@@ -337,7 +352,7 @@ def identify_atmostype(modelfile):
    
   return(atmostype)
 
-def checksynspec(linelist):
+def checksynspec(linelist,modelfile):
 
   """checking that executables and data are where it should be
 
@@ -358,10 +373,17 @@ def checksynspec(linelist):
   for entry in linelist: files.append(os.path.join(linelistdir,entry))
   for entry in files: assert (os.path.isfile(entry)), 'file '+entry+' missing'
 
-  return()
+  if not os.path.isfile(modelfile):
+    if os.path.isfile(os.path.join(modeldir,modelfile)):
+      modelfile = os.path.join(modeldir,modelfile)
+
+  assert (os.path.isfile(modelfile)),'model atmosphere file '+modelfile+' missing'
 
 
-def checkinput(wrange, modelfile, vmicro, linelist):
+  return(True)
+
+
+def checkinput(wrange, vmicro, linelist):
 
   """checking input parameters from user
 
@@ -387,10 +409,10 @@ def checkinput(wrange, modelfile, vmicro, linelist):
 
   #check
   assert (wrange[0] > minlambda and wrange[1] < maxlambda),'wrange exceeds the allow range ('+str(minlambda)+' to '+str(maxlambda)+')'
-  assert (os.path.isfile(modelfile)),'model atmosphere file '+modelfile+' missing'
+
   assert (vmicro >= 0.0),'vmicro = '+str(vmicro)+' but cannot < 0.'
   
-  return()
+  return(True)
 
 def getlinelistrange(atomiclinelist):
 #finds out min and max wavelengths for a line list

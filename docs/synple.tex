@@ -1,0 +1,262 @@
+\documentclass[]{article}
+
+\usepackage{graphicx}
+%times,palatino,bookman, palatino, newcent
+
+\usepackage{geometry}
+ \geometry{ a4paper, total={210mm,297mm},
+ left=25mm,
+ right=25mm,
+ top=20mm,
+ bottom=20mm,
+ }
+
+
+\begin{document}
+
+\title{Synple User's Guide}
+
+\date{\today}
+\author{C. Allende Prieto, I. Hubeny, T. Lanz, Y. M. Osorio}
+
+\maketitle
+
+{\tt Synple} is a Python interface to the spectral synthesis code Synspec
+and a set of related utilities. Synple can compute emerging spectra from LTE Kurucz, 
+MARCS, Phoenix or Tlusty model atmospheres, as well as NLTE Tlusty models. Appropriate 
+default choices for the continuum and line opacities are provided, while the chemical 
+abundances and micro-turbulence velocity are taken from the input model atmospheres, but
+can be changed as needed.
+
+\tableofcontents
+
+\newpage
+
+\section{Introduction}
+\label{intro}
+
+The computation of detailed stellar stellar spectra is a basic but important step required for the analysis of star light,  spectra of integrated stellar populations, or transiting planets. The calculations involve solving the equation of radiative transfer
+\begin{equation}
+\cos \theta \frac{d I_{\nu} (\theta)}{dz} = \eta_{\nu} - \kappa_{\nu}  I_{\nu} (\theta) + \int_0^{\pi} I_{\nu} (\theta') \phi (\theta') \sin \theta' d\theta',
+\end{equation}
+\noindent where $I_{\nu}$ is the specific intensity, and describes the radiation field (radiative energy per unit of frequency propagating at an angle $\theta$ from the vertical traversing a unit area per unit time), $\kappa$ is the opacity (fraction of energy absorbed per unit length), $\eta$ the emissivity (energy emited, same units as the intensity) and $\phi$ represents the scattering function (photons scattered from the direction $\theta$' into the direction $\theta$. 
+
+Once $I_{\nu}$ ($\theta$) is known, it can be integrated to derive the stellar flux
+\begin{equation}
+H_{\nu} = \int_0^{\pi} I_{\nu} (\theta) \cos \theta \sin \theta d\theta
+\label{flux}
+\end{equation}
+\noindent which can be finally convolved with various kernels that describe large-scale atmospheric turbulence, rotation, or the instrumental profile.
+
+Prior to solving the equation of radiative transfer, one requires a physical model of the stellar atmosphere in order to compute $\eta$, $\kappa$ and $\phi$. This is the running of the thermodynamical quantities (e.g temperature and density) with height, as well as the chemical composition. This input {\it model atmosphere} is the sole required input to Synple.  Of course, computing a detailed spectrum requires fundamental physical data on the interaction of matter and radiation (photoionization cross-sections, atomic and molecular transition probabilities and damping constants, etc), but a generic collection of such data is included in Synspec, in a standard format that allows easy modifications when  needed.
+
+Multiple codes for radiative transfer exist and are publicly available. However, most require deep knowledge of the related physics and are cumbersome to use. Synple provides an easy-to-use Python interface for the fast computation of model stellar spectra with accuracy and flexibility.
+
+Synple is simply a wrapper to the FORTRAN code synspec (Hubeny \& Lanz), and inherits all the physical approximations adopted by synspec: a plane parallel geometry and hydrostatic equilibrium. The input model atmospheres can be in LTE (Kurucz, MARCS, Tlusty or Phoenix models) or in NLTE (Tlusty). The generic physical data included with Synple will be appropriate for most stars, but not all. Users must be aware that such data are also required to compute the  input model atmospheres, and in general those used for that task will be inconsistent with those adopted in Synple.  By default the chemical composition and micro-turbulence adopted for the construction of the input model atmospheres will also be adopted by synple, but those can be changed by the user, at the risk of incurring in larger (and significant) inconsistencies.
+
+\section{Installing}
+
+Synple is hosted in github at https://github.com/callendeprieto/synple
+and can be obtained using {\tt git} 
+\\ {\tt git clone https://github.com/callendeprieto/synple synple} \\
+\noindent or by downloading a zip file from the website.
+
+Your Python (3.x) installation  will require the packages {\tt subprocess}, {\tt numpy}, and {\tt scipy}, usually obtained with {\tt pip} (e.g. {\tt pip3 install numpy}). You probably want to install ipython and matplotlib as well, since we will be using that in the examples below. 
+
+The installation requires a FORTRAN compiler, and the GNU compiler is used by default
+\\ {\tt cd synple/synspec ; make ; cd ../..}.
+
+The atomic and molecular line lists are sizable and need to be downloaded separately
+\\ {\tt cd synple/linelists ; make ; cd ../..} \\
+\noindent where the automated download requires that {\tt wget} is available in your system, otherwise download the line lists manually from \\ {\tt ftp://carlos:allende@ftp.ll.iac.es/linelists} and copy them to the synple/linelists directory.
+
+You need to make synple visible to Python by including the synple directory in your PYTHONPATH variable. Say you've placed the synple parent directory in your home, then you can add it in the linux shell by typing (or including in your .bashrc or .cshrc files)
+\begin{table}
+\begin{tabular}{ll}
+bash: & export PYTHONPATH="\$PYTHONPATH:$\sim$/synple"  \\
+csh:  & setenv PYTHONPATH = "\$PYTHONPATH:$\sim$/synple" .
+\end{tabular}
+\end{table}
+
+
+
+
+\section{Examples}
+
+Once synple is installed, all you need is a model atmosphere to being using it. In this section we'll include a set of simple practical examples, mainly based on the three model atmospheres included in the synple/models directory: one is a solar Kurucz model ('ksun.mod'), one is a solar MARCS model ('msun.mod'), and the third is a Phoenix model for Vega-like A-type star ('lte09600-4.00-0.0.PHOENIX-ACES-AGSS-COND-2011.ATMOS.fits') from Huser et al. (20xx).
+
+
+\subsection{Computing your first solar spectrum}
+\label{6162}
+
+
+\begin{figure}[t!]
+\centering
+\includegraphics[width=14cm]{Figure_1.ps}
+\caption{Here's your first spectrum with synple. You have modeled the solar spectrum in the vicinity of the Ca I $\lambda$6162 line. The Ca I line is the strong line at the center, visibly damped by collisions with hydrogen atoms.
+\label{first}
+}
+\end{figure}
+
+
+For this exercise we'll use the Kurucz solar model included with synple. We're going to compute a piece of the spectrum around the Ca I $\lambda$6162 line. We start ipython and import the standard synthesis routine {\tt syn} from synple
+\\
+\\
+\noindent {\tt 
+\$ ipython \\
+Python 3.6.8 (default, Jan 14 2019, 11:02:34) \\
+Type 'copyright', 'credits' or 'license' for more information \\
+IPython 7.4.0 -- An enhanced Interactive Python. Type '?' for help. \\
+\\
+In [1]: from synple import syn                                            \\      
+}
+
+\noindent then request the computation of the spectrum from the model atmosphere in the file {\it ksun.mod} between 6160 and 6164 \AA\
+\\
+\\
+\noindent {\tt 
+In [2]: wave, flux, cont = syn('sun.mod', (6160,6164) )                     \\    
+teff,logg,vmicro= 5777.0 4.437 2.0 \\
+syn ellapsed time  48.8003294467926 seconds \\
+}
+
+\noindent We've got it! The routine {\tt syn} returns three numpy arrays with the wavelengths (wave), the fluxes (flux; $H_{\lambda}$), and the continuum flux (cont). If we wish to visualize the continuum-normalized spectrum, we can use matplotlib
+\\
+\\
+\noindent {\tt 
+In [3]: \%pylab                                               \\                   
+Using matplotlib backend: TkAgg \\
+Populating the interactive namespace from numpy and matplotlib \\
+\\
+In [4]: plot(wave,flux/cont)                                     \\   
+}
+
+\noindent and that's it! You should be looking at your first computed spectrum and it should look like the one in Fig. \ref{first}. In addition to the run with height of the thermodyanical quantities, the model atmosphere contains a detailed description of the chemical abundances and the micro-turbulence velocity (see below). These parameters are simply adopted from the model atmosphere, but can be changed if needed, as described in the next section.
+
+\subsection{Altering micro-turbulence and chemical composition}
+\label{abundances}
+
+\begin{figure}[t!]
+\centering
+\includegraphics[width=7cm]{Figure_2a.ps}
+\includegraphics[width=7cm]{Figure_2b.ps}
+\caption{Repeating the calculation in Fig \ref{6162} (blue) but adding a second curve (orange) on the left panel reducing the micro-turbulence from 2 to 1 km s$^{-1}$, and on the right-hand panel increasen the Ca abundance by 0.2 dex.
+\label{micro-abu}
+}
+\end{figure}
+
+
+The model atmospheres we deal with are in hydrostatic equilibrium, and therefore pressure and gravity are in balance, so everything is at rest. This is unrealistic. Real stellar atmospheres have turbulence, shocks, convection, meridional circulation, etc. Thus, the computed line profiles are narrower than observed. One of the patches to address this problem is the so-called micro-turbulence velocity, which accounts for small-scale velocities of the absorbing particles. This includes small scale turbulence, and needs to be included in the computation of the linel absorption profile at the microscopic level, before solving the radiative transfer equation.
+
+Synple includes micro-turbulence in the spectrum calculations automatically, if that's indicated in the model atmosphere file, but that value can be overridden by explicitly indicating it when calling the synthesis routine {\tt syn} using the parameter {\it vmicro}.
+
+Let's repeat the example in \S \ref{6162} changing the micro-turbulence from the value used to construct the solar Kurucz model we used, 2 km s$^{-1}$, to a more reasonable value for a solar-like star of 1 km s$^{-1}$
+\\
+\\
+\noindent {\tt 
+In [5]: wave2, flux2, cont2 = syn('ksun.mod', (6160,6164), vmicro = 1. )   \\    
+teff,logg,vmicro= 5777.0 4.437 1.0 \\
+}
+
+\noindent which can be easily compared with the previous calculation 
+\\
+\\
+\noindent {\tt 
+In [6]: plot(wave2,flux2/cont2)                          \\                       
+}
+
+\noindent as illustrated in the left-hand panel of Fig. \ref{micro-abu}. The weak, unsaturated, lines, and the core of the strong Ca I $\lambda$6162 line, are less broadened (brown curve) after reducing the micro-turbulence, while the damping wings of strong lines are insensitive to this parameter.
+
+Similarly to the micro-turbulence, the chemical abundances can be changed from those used in the construction of the model atmosphere when computing the detailed spectrum. Since the most direct effect of the change of the abundance of an element (other than hydrogen) in the atmosphere is on the strength of its spectral lines, this is usually a good approximation for most elements and for reasonably small changes in abundances. But many elements, especially the most abundant ones, affect the thermodynamics of the atmosphere, and therefore for those elements this is a risky approximation to make. On the other hand, the approximation is very good for trace elements.
+
+To supersede the abundances in the model atmosphere we can call {\tt syn} with the keyword {\it abu}. The abundances are expressed as the number density of nucleii of the elements relative to that of hydrogen
+\begin{equation}
+\epsilon (X) = \frac{N(X)}{N(H)}.
+\end{equation}
+
+Let's read the ones in the model atmosphere and then increase the calcium abundance by 50\% (0.2 dex) 
+\\
+\\
+\noindent {\tt 
+In [7]: from synple import read\_model \\
+In [8]: atmostype, teff, logg, vmicro, abu, nd, atmos = read\_model('ksun.mod') \\
+In [9]: abu[19] = abu[19] * 1.5 \\
+In [10]: wave3, flux3, cont3 = syn('ksun.mod', (6160,6164), vmicro = 1. , abu=abu )   \\    
+teff,logg,vmicro= 5777.0 4.437 1.0. \\ 
+In [11]: clf() \\
+In [12]: plot(wave2,flux2/cont2, wave3, flux3/cont3).
+}
+\\
+\\
+This calculation is shown in the right-hand panel of Fig. \ref{micro-abu}, and it reveals that there are three Ca I lines in the computed spectral segment. 
+
+
+\subsection{Additional line broadening}
+\label{fwhm}
+
+\begin{figure}[t!]
+\centering
+\includegraphics[width=14cm]{Figure_3.ps}
+\caption{Repeating the calculation in Fig \ref{6162} (blue) but adding the result of a convolution with a rotational profile for $v \sin i = 5$ km s$^{-1}$ (orange), a Gaussian kernel with a FWHM of 0.2 \AA\ (green), and both (brown).
+\label{convolution}
+}
+\end{figure}
+
+The spectral lines in a computed spectrum are naturally broadened due to the uncertainty principle, micro-turbulence (see Section \ref{abundances}), the thermal velocities of the absorbing atoms and molecules, and the collisions they suffer with surrounding free electrons and hydrogen atoms.  All these broadening factors are included in the calculations done as described in the previous exercise, but there are additional sources of uncertainty that may be significant for your particular application.
+
+\begin{itemize}
+\item \underline{macro-turbulence}: while the {\it micro} takes care of small-scale velocity fields by introducing broadening at the microscopic level, broadening the line profiles at each atmospheric layer, there are velocities on scales much larger than the photon mean free-path that need to be taken into account by convolution of the computed spectrum. This is usually taken into account by convolving with a Gaussian velocity kernel, or with a radian-tangencial profile (see Gray xxxx). Synple implements convolution with a Gaussian velocity field in the routine {\tt vgconv}.
+\item \underline{rotation}: stellar rotation broadens the spectral profiles. To be exact this has to be taken into account numerically, by Doppler-shifting the intensity contributions from different angles ($\theta$) in Eq. \ref{flux}. Nevertheless the effect or rotation can be well approximated by a covolution of the flux computed for no rotation with a particular kernel (see Gray xxxx). This is implemented in Synple in the routine {\tt rotconv}.
+\item \underline{instrumental profile}: Instruments distort the stellar spectrum by convolving it with the instrumental profile. If the resolving power is constant, this can be usually approximated as a macro-turbulence, with a Gaussian kernel with a constant width in velocity space. Sometimes is the resolution, the FWHM in wavelength of the response of the instrument to a monochromatic source, what is constant, and the instrumental profile can be handle in Synple with the routine {\tt lgconv}.
+\end{itemize}
+
+\begin{figure}[t!]
+\centering
+\includegraphics[width=14cm]{Figure_4.ps}
+\caption{In addition to the original calculation in Fig. \ref{6162} (blue line), we show the result of the convolution with a rotational profile for $v \sin i = 5$ km s$^{-1}$ and a Gaussian kernel with a FWHM of 0.2 \AA\ using {\tt rotconv}{\tt lgconv} (green) and rotin (orange).
+\label{rotin}
+}
+\end{figure}
+
+
+The following example demonstrates how to convolve with a rotational profile ($vsini = 5. $ km s$^{-1}$), a Gaussian profile with a constant resolution FWHM = 0.2 \AA\, and both, the original calculation in \S \ref{6162}
+\\
+\\
+\noindent {\tt 
+In [13]: from synple import rotconv, lgconv \\
+In [14]: wave2, flux2 = rotconv(wave, flux/cont,  5.) \\
+In [15]: wave3, flux3 = lgconv(wave, flux/cont, 0.2) \\
+In [16]: wave4, flux4 = lgconv(wave2, flux2,  0.2) \\
+In [17]: clf() \\
+In [18]: plot(wave, flux/cont, wave2,flux2, wave3, flux3, wave4, flux4).
+}
+\\
+\\
+
+\noindent Note that the spectral range of the output spectrum is truncated in wavelength, since it is computed only for the frequencies with information in the original calculation. 
+
+
+These routines for convolution are directly implemented in Python. Synspec has a companion FORTRAN program that handles the convolution with the instrumental or rotational profiles: rotin. One can use this program by including the {\it fwhm} and {\it vrot} parameters when calling {\tt syn} as in the following example
+
+\noindent {\tt
+In [19]: wave2, flux2, cont2 = syn('sun.mod', (6160,6164) , vrot = 5.0, fwhm = 0.2 ) \\
+In [20]: clf() \\
+In [21]: plot(wave, flux/cont, wave2, flux2/cont2, wave4, flux4)
+}
+\\
+\noindent Note the different behaviour for rotin (orange curve in Fig. \ref{rotin}), which does not trim the edges of the computed spectrum, and {\tt lgconv}/{\tt rotconv} (green). Rotin does not include convolution with a Gaussian kernel with a constant width in velocity, implemented in {\tt vgconv}. 
+
+\subsection{Multiple models}
+
+One often fases the need to compute the spectra for multiple models. Since the sampling of frequencies is internally control within synspec, it become desirable to force the output fluxes to be on the same wavelength grid, and this can be controlled with the parameter {\it dw} in the routine {\tt syn}.
+
+When using synple, by default value for the variable {\tt modeldir} points to the folder {\tt models} inside you {\tt synple} parent directory. If the model atmospheres are in your working directory, or as in the first examples below, the models are in the {\tt models} folder, that's ok, but if you want to use models elsewhere you will need to change {\tt modeldir} to point to the right path.
+
+\section{References}
+
+\begin{itemize}
+\item Allende Prieto, C., Fern{\'a}ndez-Alvar, E., Schlesinger, K.~J., et al.\ 2014, A\&A, 568, A7 
+\end{itemize}
+
+\end{document}
+
