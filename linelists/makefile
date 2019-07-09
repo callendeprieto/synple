@@ -4,7 +4,7 @@
 #
 
 FTP = ftp://carlos:allende@ftp.ll.iac.es/linelists/
-WGET = /bin/wget
+WGET = `which wget`
 
 STANDARD = gfallx3_bpo.19 kmol3_0.01_30.20
 HBAND = apogeeDR16.20180901.19 apogeeDR16_arc.20 apogeeDR16_sun.20
