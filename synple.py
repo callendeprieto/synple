@@ -62,6 +62,7 @@ bindir = synpledir + "/bin"
 synspec = bindir + "/synspec53p"
 rotin = bindir + "/rotin3"
 
+
 #other stuff
 clight = 299792.458
 epsilon = 0.6 #clv coeff.
@@ -226,6 +227,89 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   return(wave, flux, cont)
 
 
+def multisyn(modelfiles, wrange, dw, strength=1e-4, vmicro=None, abu=None, \
+    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, vrot=0.0, fwhm=0.0, \
+    steprot=0.0, stepfwhm=0.0,  clean=True, save=False):
+
+  """Computes synthetic spectra for a list of files. Whether or not dw is specified
+  the results will be placed on a common wavelength scale by interpolation
+
+
+  Parameters
+  ----------
+  modelfiles : list of str
+      files with model atmospheres
+  wrange: tuple or list of two floats
+      initial and ending wavelengths (angstroms)
+  dw: float
+      wavelength step for the output fluxes
+      this will be the maximum interval for the radiative 
+      transfer, and will trigger interpolation at the end
+      (default is None for automatic selection)
+  strength: float, optional
+      threshold in the line-to-continuum opacity ratio for 
+      selecting lines (default is 1e-4)
+  vmicro: float, optional
+      microturbulence (km/s) 
+      (default is taken from the model atmosphere)
+  abu: array of floats (99 elements), optional
+      chemical abundances relative to hydrogen (N(X)/N(H))
+      (default taken from input model atmosphere)
+  linelist: array of str
+      filenames of the line lists, the first one corresponds to 
+      the atomic lines and all the following ones (optional) to
+      molecular lines
+      (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
+  hhm: bool
+      when True the continuum opacity is simplified to H and H-
+      (default False, and more complete opacities are included)
+  vrot: float
+      projected rotational velocity (km/s)
+      (default 0.)
+  steprot: float
+      wavelength step for convolution with rotational kernel (angstroms)
+      set to 0. for automatic adjustment (default 0.)
+  fwhm: float
+      Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
+      (default 0.)
+  stepfwhm: float
+      wavelength step for Gaussian convolution (angstroms)
+      set to 0. for automatic adjustment (default 0.)
+  clean: bool
+      True by the default, set to False to avoid the removal of the synspec
+      temporary files/links (default True)
+  save: bool
+      set to True to save the computed to a file (default False)
+      the root of the model atmosphere file, with an extension ".syn" will be used
+      but see the parameter synfile to change that
+
+  Returns
+  -------
+  wave: numpy array of floats
+      wavelengths (angstroms)
+  flux: numpy array of floats
+      flux (H_lambda in ergs/s/cm2/A)
+  cont: numpy array of floats
+      continuum flux (same units as flux)
+
+  """
+
+  for entry in modelfiles:
+    
+    x, y, z = syn(entry, wrange, dw, strength=1e-4, vmicro=vmicro, abu=abu, \
+    linelist=linelist, hhm=hhm, vrot=vrot, fwhm=fwhm, \
+    steprot=steprot, stepfwhm=stepfwhm,  clean=clean, save=False)
+    
+    if entry == modelfiles[0]: 
+      wave = x
+      flux = y
+      cont = z
+    else:
+      flux = np.vstack ( (flux, np.interp(wave, x, y) ) )
+      cont = np.vstack ( (cont, np.interp(wave, x, z) ) )
+
+  return(wave, flux, cont)
+
 
 def call_rotin(wave=None, flux=None, vrot=0.0, fwhm=0.0, space=1e-2, steprot=0.0, stepfwhm=0.0, clean=True, reuseinputfiles=False):
 
@@ -307,6 +391,33 @@ def call_rotin(wave=None, flux=None, vrot=0.0, fwhm=0.0, space=1e-2, steprot=0.0
   return(wave2, flux2)
 
 def read_model(modelfile):
+  
+  """Reads a model atmosphere into a structure
+  
+  Parameters
+  ----------  
+  modelfile : str
+      file with a model atmosphere
+      
+  Returns
+  -------
+  atmostype :  str
+      type of model atmosphere (kurucz/marcs/phoenix)
+  teff : float
+      effective temperature (K)
+  logg : float
+      log10 of the surface gravity (cm s-2)
+  vmicro : float
+      microturbulence velocity (km/s)
+  abu : list
+      abundances, number densities of nuclei relative to hydrogen N(X)/N(H)
+      for elements Z=1,99 (H to Es)
+  nd: int
+      number of depths (layers) of the model
+  atmos: numpy structured array
+      array with the run with depth of column mass, temperature, gas pressure 
+      and electron density
+  """
 
   #check
   if not os.path.isfile(modelfile):
@@ -377,6 +488,8 @@ def checksynspec(linelist,modelfile):
     if os.path.isfile(os.path.join(modeldir,modelfile)):
       modelfile = os.path.join(modeldir,modelfile)
 
+  print(modeldir)
+  print(modelfile)
   assert (os.path.isfile(modelfile)),'model atmosphere file '+modelfile+' missing'
 
 
@@ -600,6 +713,33 @@ def cleanup():
 
 
 def read_kurucz_model(modelfile):
+  
+  """Reads a Kurucz model atmospheres
+  
+  Parameters
+  ----------
+  modelfile: str
+      file name  
+  
+  Returns
+  -------
+
+  teff : float
+      effective temperature (K)
+  logg : float
+      log10 of the surface gravity (cm s-2)
+  vmicro : float
+      microturbulence velocity (km/s)
+  abu : list
+      abundances, number densities of nuclei relative to hydrogen N(X)/N(H)
+      for elements Z=1,99 (H to Es)
+  nd: int
+      number of depths (layers) of the model
+  atmos: numpy structured array
+      array with the run with depth of column mass, temperature, gas pressure 
+      and electron density  
+  
+  """
 
   f = open(modelfile,'r')
   line = f.readline()
@@ -665,6 +805,33 @@ def read_kurucz_model(modelfile):
 
 
 def read_marcs_model(modelfile):
+  
+  """Reads a MARCS model atmospheres
+  
+  Parameters
+  ----------
+  modelfile: str
+      file name  
+  
+  Returns
+  -------
+
+  teff : float
+      effective temperature (K)
+  logg : float
+      log10 of the surface gravity (cm s-2)
+  vmicro : float
+      microturbulence velocity (km/s)
+  abu : list
+      abundances, number densities of nuclei relative to hydrogen N(X)/N(H)
+      for elements Z=1,99 (H to Es)
+  nd: int
+      number of depths (layers) of the model
+  atmos: numpy structured array
+      array with the run with depth of column mass, temperature, gas pressure 
+      and electron density  
+  
+  """  
 
   f = open(modelfile,'r')
   line = f.readline()
@@ -749,6 +916,33 @@ def read_marcs_model(modelfile):
 
 def read_phoenix_model(modelfile):
 
+  """Reads a FITS Phoenix model atmospheres
+  
+  Parameters
+  ----------
+  modelfile: str
+      file name  
+  
+  Returns
+  -------
+
+  teff : float
+      effective temperature (K)
+  logg : float
+      log10 of the surface gravity (cm s-2)
+  vmicro : float
+      microturbulence velocity (km/s)
+  abu : list
+      abundances, number densities of nuclei relative to hydrogen N(X)/N(H)
+      for elements Z=1,99 (H to Es)
+  nd: int
+      number of depths (layers) of the model
+  atmos: numpy structured array
+      array with the run with depth of column mass, temperature, gas pressure 
+      and electron density  
+  
+  """  
+
   from astropy.io import fits
 
   h = fits.open(modelfile)[0].header
@@ -783,6 +977,35 @@ def read_phoenix_model(modelfile):
 
 
 def read_phoenix_text_model(modelfile):
+  
+  
+  """Reads a plain-text Phoenix model atmospheres
+  
+  Parameters
+  ----------
+  modelfile: str
+      file name  
+  
+  Returns
+  -------
+
+  teff : float
+      effective temperature (K)
+  logg : float
+      log10 of the surface gravity (cm s-2)
+  vmicro : float
+      microturbulence velocity (km/s)
+  abu : list
+      abundances, number densities of nuclei relative to hydrogen N(X)/N(H)
+      for elements Z=1,99 (H to Es)
+  nd: int
+      number of depths (layers) of the model
+  atmos: numpy structured array
+      array with the run with depth of column mass, temperature, gas pressure 
+      and electron density  
+  
+  """  
+
 
   f = open(modelfile,'r')
   line = f.readline()
@@ -879,6 +1102,27 @@ def read_phoenix_text_model(modelfile):
 
 
 def elements(husser=False):
+  
+  """Reads the solar elemental abundances
+  
+  Parameters
+  ----------
+     husser: bool, optional
+        when set the abundances adopted for Phoenix models by Huser et al. (2013)
+        are adopted. Otherwise Asplund et al. (2005) are used -- consistent with
+        the MARCS (Gustafsson et al. 2008) models and and Kurucz (Meszaros et al. 2012)
+        Kurucz model atmospheres.
+        
+  Returns
+  -------
+     symbol: numpy array of str
+        element symbols
+     mass: numpy array of floats
+        atomic masses (elements Z=1-99)
+     sol: numpy array of floats
+        solar abundances N/N(H)
+  
+  """
 
   symbol = [
   'H' ,'He','Li','Be','B' ,'C' ,'N' ,'O' ,'F' ,'Ne', 

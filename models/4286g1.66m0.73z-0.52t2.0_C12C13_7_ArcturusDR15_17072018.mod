@@ -2,7 +2,7 @@
   4286.      Teff [K] f APOGEE Last iteration; yyyymmdd=17: 7:20
   1.9135E+10 Flux [erg/cm2/s]
   4.5709E+01 Surface gravity [cm/s2]
- 52.0        Microturbulence parameter [km/s]
+  2.0        Microturbulence parameter [km/s]
   0.7        Mass [Msun]
  C12C1 7_Arc Metallicity [Fe/H] and [alpha/Fe]
   1.4597E+12 Radius [cm] at Tau(Rosseland)=1.0
