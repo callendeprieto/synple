@@ -250,7 +250,35 @@ In [21]: plot(wave, flux/cont, wave2, flux2/cont2, wave4, flux4)
 
 One often fases the need to compute the spectra for multiple models. Since the sampling of frequencies is internally control within synspec, it become desirable to force the output fluxes to be on the same wavelength grid, and this can be controlled with the parameter {\it dw} in the routine {\tt syn}.
 
-When using synple, by default value for the variable {\tt modeldir} points to the folder {\tt models} inside you {\tt synple} parent directory. If the model atmospheres are in your working directory, or as in the first examples below, the models are in the {\tt models} folder, that's ok, but if you want to use models elsewhere you will need to change {\tt modeldir} to point to the right path.
+When using synple, by default value for the variable {\tt modeldir} points to the folder {\tt models} inside you {\tt synple} parent directory. If the model atmospheres are in your working directory, or as in the first examples below, the models are in the {\tt models} folder, that's ok, but if you want to use models elsewhere you will need to change {\tt modeldir} to point to the right path (changing the source code in synple.py) or simply passing the complete filenames, including an absolute path.
+
+
+\begin{figure}[t!]
+\centering
+\includegraphics[width=14cm]{Figure_5.ps}
+\caption{We now use all the models in the 'modeldir' directory in one command, with multiple values of the micro, using {\tt multisyn}.
+\label{rotin}
+}
+\end{figure}
+
+
+If you have a bunch of models you want to compute spectra for, or multiple values of vrot, fwhm, or vmicro, you can wrap around the routine syn, or you can use the macro {\tt multisyn}, after setting the file names in a list like  in this example
+
+
+\noindent {\tt
+In [22]: from synple import multisyn \\
+In [23]: import glob \\
+In [24]: import os.path \\
+In [25]: modeldir = "/home/callende/synple/models" \\
+In [26]: models = glob.glob(os.path.join(modeldir,"*mod"))  \#get the models in a list \\
+In [27]: wave5, flux5, cont5 = multisyn(models, (6160,6164), vmicro = [1.,2.,4.] ) \\
+In [28]: clf() \\
+In [29]: for i in range(len(models)): plot(wave5, flux5[i,:]/cont5[i,:])\\
+\\
+}
+\\
+
+\noindent and the wavelength array will now be common to all spectra, and the flux and cont arrays returned will be two-dimensional, with the first dimention running along the models in the input list.
 
 \section{References}
 

@@ -5,4 +5,4 @@
 \contentsline {subsection}{\numberline {3.2}Altering micro-turbulence and chemical composition}{4}
 \contentsline {subsection}{\numberline {3.3}Additional line broadening}{5}
 \contentsline {subsection}{\numberline {3.4}Multiple models}{7}
-\contentsline {section}{\numberline {4}References}{7}
+\contentsline {section}{\numberline {4}References}{8}

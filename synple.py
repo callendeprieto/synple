@@ -44,7 +44,10 @@ import os
 import sys
 import subprocess
 import numpy as np
+import glob
 import time
+import copy
+import gzip
 from scipy import interpolate
 import matplotlib.pyplot as plt
 
@@ -131,7 +134,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       True by the default, set to False to avoid the removal of the synspec
       temporary files/links (default True)
   save: bool
-      set to True to save the computed to a file (default False)
+      set to True to save the computed spectrum to a file (default False)
       the root of the model atmosphere file, with an extension ".syn" will be used
       but see the parameter synfile to change that
   synfile: str
@@ -159,7 +162,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   if abu == None: abu = abu2
   if dw == None: 
     #space = 1e-2  
-    space = np.mean(wrange) * np.sqrt(9.12e-15 * np.min(atmos['t']) + vmicro) / clight / 3.
+    space = np.mean(wrange) * np.sqrt(9.12e-15 * np.min(atmos['t']) + vmicro** 2) / clight / 3.
   else: 
     space = dw
 
@@ -220,19 +223,24 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   if clean == True: cleanup()
 
   if save == True:
-    if synfile == None: synfile = modelfile[:modelfile.rfind('.')]+'.syn'
+    if synfile == None: 
+      tmpstr = os.path.split(modelfile)[-1]
+      synfile = tmpstr[:tmpstr.rfind('.')]+'.syn'
     np.savetxt(synfile,(wave,flux,cont))
 
 
   return(wave, flux, cont)
 
 
-def multisyn(modelfiles, wrange, dw, strength=1e-4, vmicro=None, abu=None, \
-    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, vrot=0.0, fwhm=0.0, \
-    steprot=0.0, stepfwhm=0.0,  clean=True, save=False):
+def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
+    vmicro=None, vrot=0.0, fwhm=0.0, nfe=0.0, \
+    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, \
+    steprot=0.0, stepfwhm=0.0,  clean=True, save=None):
 
-  """Computes synthetic spectra for a list of files. Whether or not dw is specified
-  the results will be placed on a common wavelength scale by interpolation
+  """Computes synthetic spectra for a list of files. The values of vmicro, vrot, 
+  fwhm, and nfe can be iterables. Whether or not dw is specified the results will be 
+  placed on a common wavelength scale by interpolation. When not specified, dw will be 
+  chosen as appropriate for the first model in modelfiles.
 
 
   Parameters
@@ -242,19 +250,27 @@ def multisyn(modelfiles, wrange, dw, strength=1e-4, vmicro=None, abu=None, \
   wrange: tuple or list of two floats
       initial and ending wavelengths (angstroms)
   dw: float
-      wavelength step for the output fluxes
-      this will be the maximum interval for the radiative 
-      transfer, and will trigger interpolation at the end
-      (default is None for automatic selection)
+      wavelength step for the output fluxes.
+      Unlike in 'syn', interpolation to a constant step will always be done
+      (default is None for automatic selection based on the first model of the list)
   strength: float, optional
       threshold in the line-to-continuum opacity ratio for 
       selecting lines (default is 1e-4)
-  vmicro: float, optional
-      microturbulence (km/s) 
-      (default is taken from the model atmosphere)
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
       (default taken from input model atmosphere)
+  vmicro: float, optional, can be iterable
+      microturbulence (km/s) 
+      (default is taken from the model atmosphere)
+  vrot: float, can be iterable
+      projected rotational velocity (km/s)
+      (default 0.)
+  fwhm: float, can be iterable
+      Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
+      (default 0.)
+  nfe: float, can be iterable
+      [N/Fe] nitrogen abundance change from the one specified in the array 'abu' (dex)
+      (default 0.)
   linelist: array of str
       filenames of the line lists, the first one corresponds to 
       the atomic lines and all the following ones (optional) to
@@ -263,15 +279,9 @@ def multisyn(modelfiles, wrange, dw, strength=1e-4, vmicro=None, abu=None, \
   hhm: bool
       when True the continuum opacity is simplified to H and H-
       (default False, and more complete opacities are included)
-  vrot: float
-      projected rotational velocity (km/s)
-      (default 0.)
   steprot: float
       wavelength step for convolution with rotational kernel (angstroms)
       set to 0. for automatic adjustment (default 0.)
-  fwhm: float
-      Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
-      (default 0.)
   stepfwhm: float
       wavelength step for Gaussian convolution (angstroms)
       set to 0. for automatic adjustment (default 0.)
@@ -279,36 +289,278 @@ def multisyn(modelfiles, wrange, dw, strength=1e-4, vmicro=None, abu=None, \
       True by the default, set to False to avoid the removal of the synspec
       temporary files/links (default True)
   save: bool
-      set to True to save the computed to a file (default False)
+      set to True to save the computed spectra to files (default False)
       the root of the model atmosphere file, with an extension ".syn" will be used
-      but see the parameter synfile to change that
+      if multiple values of vmicro, vrot, fwhm or nfe are used, their values are
+      prepended to the file names 
+      (default None)
 
   Returns
   -------
-  wave: numpy array of floats
+  wave: numpy array of floats (1D)
       wavelengths (angstroms)
-  flux: numpy array of floats
+  flux: numpy array of floats (2D -- as many rows as models input)
       flux (H_lambda in ergs/s/cm2/A)
-  cont: numpy array of floats
+  cont: numpy array of floats (2D -- as many rows as models input)
       continuum flux (same units as flux)
 
   """
 
-  for entry in modelfiles:
-    
-    x, y, z = syn(entry, wrange, dw, strength=1e-4, vmicro=vmicro, abu=abu, \
-    linelist=linelist, hhm=hhm, vrot=vrot, fwhm=fwhm, \
-    steprot=steprot, stepfwhm=stepfwhm,  clean=clean, save=False)
-    
-    if entry == modelfiles[0]: 
-      wave = x
-      flux = y
-      cont = z
-    else:
-      flux = np.vstack ( (flux, np.interp(wave, x, y) ) )
-      cont = np.vstack ( (cont, np.interp(wave, x, z) ) )
+
+  #when vmicro, vrot, fwhm or nitrogen are not iterables, we create ones, otherwise we copy them
+  try: 
+    nvmicro = len(vmicro)
+    vmicros = vmicro
+  except TypeError:
+    nvmicro = 1
+    vmicros = [ vmicro ] 
+  try: 
+    nvrot = len(vrot)
+    vrots = vrots
+  except TypeError:
+    nvrot = 1
+    vrots = [ vrot ]   
+  try: 
+    nfwhm = len(fwhm)
+    fwhms = fwhm
+  except TypeError:
+    nfwhm = 1
+    fwhms = [ fwhm ]   
+  try: 
+    nnfe = len(nfe)
+    nnfes = nfe
+  except TypeError:
+    nnfe = 1
+    nfes = [ nfe ] 
+
+
+  for vmicro1 in vmicros: 
+    for vrot1 in vrots:
+      for fwhm1 in fwhms:
+        for nfe1 in nfes:
+
+          print('vmicro/vrot/fwhm/nfe=',vmicro1,vrot1,fwhm1,nfe1)
+  
+          for entry in modelfiles:
+
+            abu1 = copy.copy(abu)
+
+            #if need be, adjust nitrogen abundance according to nfe
+            if (abs(nfe1) > 1e-7):
+              if (abu1 == None):
+                checksynspec(linelist,entry)
+                atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
+              abu1[6] = abu1[6] + nfe1
+            
+        
+            if entry == modelfiles[0] and vmicro1 == vmicros[0] and vrot1 == vrots[0] and fwhm1 == fwhms[0] and nfe1 == nfes[0]: 
+
+              x, y, z = syn(entry, wrange, dw, strength=strength, vmicro=vmicro1, abu=abu1, \
+              linelist=linelist, hhm=hhm, vrot=vrot1, fwhm=fwhm1, \
+              steprot=steprot, stepfwhm=stepfwhm,  clean=clean, save=save)
+
+              xx = np.diff(x)
+              if max(xx) - min(xx) > 1e-7: #input not linearly sampled      
+                dw = np.median(xx)
+                nsamples = int((wrange[1] - wrange[0])/dw) + 1
+                wave = np.arange(nsamples)*dw + wrange[0]
+                flux = np.interp(wave, x, y)
+                cont = np.interp(wave, x, z)
+              else:
+                wave = x
+                flux = y
+                cont = z
+
+            else:
+
+              x, y, z = syn(entry, wrange, dw=None, strength=strength, vmicro=vmicro1, abu=abu1, \
+              linelist=linelist, hhm=hhm, vrot=vrot1, fwhm=fwhm1, \
+              steprot=steprot, stepfwhm=stepfwhm,  clean=clean, save=save)
+
+              flux = np.vstack ( (flux, np.interp(wave, x, y) ) )
+              cont = np.vstack ( (cont, np.interp(wave, x, z) ) )
+
 
   return(wave, flux, cont)
+
+def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0)):
+
+  """Collects all the MARCS models in modeldir that are part of a regular grid defined
+  by triads in various parameters. Each triad has three values (n, llimit, step)
+  that define an array x = np.range(n)*step + llimit. Triads in teff (tteff) and logg
+  (tlogg) are mandatory. Triads in [Fe/H] (tfeh), [alpha/Fe] (tafe), [C/Fe] (tcfe), 
+  [N/Fe] (tnfe), [O/Fe] (tofe), [r/Fe] (rfe), and [s/Fe] (sfe) are optional since 
+  arrays with just one 0.0 are included by default.
+
+  Parameters
+  ----------
+  modeldir: str
+    directory where model atmosphere files are
+  tteff: tuple
+    Teff triad (n, llimit, step)
+  tlogg: tuple
+    logg triad (n, llimit, step)
+  tfeh: tuple
+    [Fe/H] triad
+  tafe: tuple
+    [alpha/Fe] triad  
+  tcfe: tuple
+    [C/Fe] triad
+  tnfe: tuple
+    [N/Fe] triad
+  tofe: tuple
+    [O/Fe] triad
+  rfeh: tuple
+    [r/Fe] triad (r-elements abundance ratio)
+  sfeh: tuple
+    [s.Fe] triad (s-elements abundance ratio)
+ 
+  Returns
+  -------
+  files: list of str
+    file names with MARCS models that are in modeldir and match
+    the parameters in the requested grid
+
+  """
+
+  #expanding the triads t* into iterables
+  try: 
+    nteff = len(tteff)
+    assert (nteff == 3), 'Error: Teff triad must have three elements (n, llimit, step)'
+    teffs = np.arange(tteff[0])*tteff[2] + tteff[1]
+  except TypeError:
+    print('Error: Teff triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nlogg = len(tlogg)
+    assert (nlogg == 3), 'Error: logg triad must have three elements (n, llimit, step)'
+    loggs = np.arange(tlogg[0])*tlogg[2] + tlogg[1]
+  except TypeError:
+    print('Error: logg triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nfeh = len(tfeh)
+    assert (nfeh == 3), 'Error: feh triad must have three elements (n, llimit, step)'
+    fehs = np.arange(tfeh[0])*tfeh[2] + tfeh[1]
+  except TypeError:
+    print('Error: feh triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nafe = len(tafe)
+    assert (nafe == 3), 'Error: afe triad must have three elements (n, llimit, step)'
+    afes = np.arange(tafe[0])*tafe[2] + tafe[1]
+  except TypeError:
+    print('Error: afe triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    ncfe = len(tcfe)
+    assert (ncfe == 3), 'Error: cfe triad must have three elements (n, llimit, step)'
+    cfes = np.arange(tcfe[0])*tcfe[2] + tcfe[1]
+  except TypeError:
+    print('Error: cfe triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nnfe = len(tnfe)
+    assert (nnfe == 3), 'Error: nfe triad must have three elements (n, llimit, step)'
+    nfes = np.arange(tnfe[0])*tnfe[2] + tnfe[1]
+  except TypeError:
+    print('Error: nfe triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nofe = len(tofe)
+    assert (nofe == 3), 'Error: ofe triad must have three elements (n, llimit, step)'
+    ofes = np.arange(tofe[0])*tofe[2] + tofe[1]
+  except TypeError:
+    print('Error: ofe triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nrfe = len(trfe)
+    assert (nrfe == 3), 'Error: rfe triad must have three elements (n, llimit, step)'
+    rfes = np.arange(trfe[0])*trfe[2] + trfe[1]
+  except TypeError:
+    print('Error: rfe triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nsfe = len(tsfe)
+    assert (nsfe == 3), 'Error: sfe triad must have three elements (n, llimit, step)'
+    sfes = np.arange(tsfe[0])*tsfe[2] + tsfe[1]
+  except TypeError:
+    print('Error: sfe triad must have three elements (n, llimit, step)')
+    return ()
+
+  files = []
+
+  for teff in teffs:
+    for logg in loggs:
+      for feh in fehs:
+        for afe in afes:
+          for cfe in cfes:
+            for nfe in nfes:
+              for ofe in ofes:
+                for rfe in rfes:
+                  for sfe in sfes: 
+                
+                    print(teff,logg,feh,afe,cfe,nfe,ofe,rfe,sfe)
+                    code = 'm*_t*_x3'
+
+                    if logg >= 3.5: 
+                      a1 = 'p' 
+                    else: 
+                      a1 = 's'
+
+                    filename = ("%s%4i_g%+.1f_%s_z%+.2f_a%+.2f_c%+.2f_n%+.2f_o%+.2f_r%+.2f_s%+.2f.mod*" % (a1,teff,logg,code,feh,afe,cfe,nfe,ofe,rfe,sfe) )
+
+                    file = glob.glob(os.path.join(modeldir,filename))
+                    assert len(file) > 0, 'Cannot find model '+filename+' in modeldir '+modeldir                   
+                    assert len(file) == 1, 'More than one model matches '+filename+' in modeldir '+modeldir
+                    for entry in file: files.append(entry)
+
+  return(files)
+
+
+def getallt(modelfiles):
+
+  """Collects all the values for temperature, gas pressure and electron number density
+  in a list of files with model atmospheres
+
+  Parameters
+  ----------
+  modelfiles : list of str
+      files with model atmospheres
+
+  Returns
+  -------
+  t: list
+    list of all temperatures in all the layers of the input model atmospheres
+  p: list
+    list of all values of gas pressure in all the layers of the input model atmospheres
+    
+  ne: list
+    list of all values of electron number density in all the layers of the input model atmospheres
+
+  """
+
+  
+  t = []
+  p = []
+  ne = []
+
+  for entry in modelfiles:
+    atmostype,teff,logg,vmicro,abu,nd,atmos = read_model(entry)
+    for value in atmos['t']: t.append(value)
+    for value in atmos['p']: p.append(value)
+    for value in atmos['ne']:  ne.append(value)
+
+  return(t,p,ne)
+
 
 
 def call_rotin(wave=None, flux=None, vrot=0.0, fwhm=0.0, space=1e-2, steprot=0.0, stepfwhm=0.0, clean=True, reuseinputfiles=False):
@@ -455,8 +707,13 @@ def identify_atmostype(modelfile):
 
   if ('PHOENIX' in modelfile and 'fits' in modelfile): atmostype = 'phoenix'
   else: 
-    f = open(modelfile,'r')
+    if modelfile[-3:] == '.gz':
+      f = gzip.open(modelfile,'rt')
+    else:
+      f = open(modelfile,'r')
     line = f.readline()
+    print('line=',line)
+    type(line)
     if ('TEFF' in line): atmostype = 'kurucz'
     else: atmostype = 'marcs'
     f.close()
@@ -811,7 +1068,7 @@ def read_marcs_model(modelfile):
   Parameters
   ----------
   modelfile: str
-      file name  
+      file name. It can be a gzipped (.gz) file
   
   Returns
   -------
@@ -833,7 +1090,10 @@ def read_marcs_model(modelfile):
   
   """  
 
-  f = open(modelfile,'r')
+  if modelfile[-3:] == '.gz':
+    f = gzip.open(modelfile,'rt')
+  else:
+    f = open(modelfile,'r')
   line = f.readline()
   line = f.readline()
   entries = line.split()
@@ -1215,7 +1475,7 @@ def lgconv(xinput, yinput, fwhm, ppr=None):
 
   #resampling to a linear lambda wavelength scale if need be
   xx = np.diff(xinput)
-  if max(xx) - min(xx) > 0.0: #input not linearly sampled
+  if max(xx) - min(xx) > 1.e-7: #input not linearly sampled
     nel = len(xinput)
     minx = np.min(xinput)
     maxx = np.max(xinput)
@@ -1278,7 +1538,7 @@ def vgconv(xinput,yinput,fwhm, ppr=None):
   """
   #resampling to ln(lambda) if need be
   xx = np.diff(np.log(xinput))
-  if max(xx) - min(xx) > 0.0:  #input not equidist in loglambda
+  if max(xx) - min(xx) > 1.e-7:  #input not equidist in loglambda
     nel = len(xinput)
     minx = np.min(np.log(xinput))
     maxx = np.max(np.log(xinput))
@@ -1342,7 +1602,7 @@ def rotconv(xinput,yinput,vsini, ppr=None):
 
   #resampling to ln(lambda) if need be
   xx = np.diff(np.log(xinput))
-  if max(xx) - min(xx) > 0.0:  #input not equidist in loglambda
+  if max(xx) - min(xx) > 1.e-7:  #input not equidist in loglambda
     nel = len(xinput)
     minx = np.min(np.log(xinput))
     maxx = np.max(np.log(xinput))
