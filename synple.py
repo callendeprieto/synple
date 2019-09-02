@@ -383,7 +383,9 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
 
   return(wave, flux, cont)
 
-def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0)):
+def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
+  tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), \
+    permissive=False):
 
   """Collects all the MARCS models in modeldir that are part of a regular grid defined
   by triads in various parameters. Each triad has three values (n, llimit, step)
@@ -414,6 +416,9 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), t
     [r/Fe] triad (r-elements abundance ratio)
   sfeh: tuple
     [s.Fe] triad (s-elements abundance ratio)
+  permissive: bool
+    set to True to avoid stopping when a model is missing,
+    in which case it is simply not included in the returning list
  
   Returns
   -------
@@ -519,16 +524,19 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), t
                     filename = ("%s%4i_g%+.1f_%s_z%+.2f_a%+.2f_c%+.2f_n%+.2f_o%+.2f_r%+.2f_s%+.2f.mod*" % (a1,teff,logg,code,feh,afe,cfe,nfe,ofe,rfe,sfe) )
 
                     file = glob.glob(os.path.join(modeldir,filename))
-                    assert len(file) > 0, 'Cannot find model '+filename+' in modeldir '+modeldir                   
-                    assert len(file) == 1, 'More than one model matches '+filename+' in modeldir '+modeldir
-                    for entry in file: files.append(entry)
+                    if permissive == False:
+                      assert len(file) > 0, 'Cannot find model '+filename+' in modeldir '+modeldir                   
+                      assert len(file) == 1, 'More than one model matches '+filename+' in modeldir '+modeldir
+                      
+                    if (len(file) == 1): 
+                     for entry in file: files.append(entry)
 
   return(files)
 
 
 def getallt(modelfiles):
 
-  """Collects all the values for temperature, gas pressure and electron number density
+  """Collects all the values for temperature, density and electron number density
   in a list of files with model atmospheres
 
   Parameters
@@ -539,8 +547,8 @@ def getallt(modelfiles):
   Returns
   -------
   t: list
-    list of all temperatures in all the layers of the input model atmospheres
-  p: list
+    list of all temperatures in all the layers of the input model atmospheres    
+  rho: list
     list of all values of gas pressure in all the layers of the input model atmospheres
     
   ne: list
@@ -548,18 +556,19 @@ def getallt(modelfiles):
 
   """
 
-  
   t = []
-  p = []
+  rho = []
   ne = []
 
   for entry in modelfiles:
-    atmostype,teff,logg,vmicro,abu,nd,atmos = read_model(entry)
+    print('reading ',entry)
+    teff, logg, vmicro, abu, nd, atmos = read_marcs_model2(entry)
+    #atmostype,teff,logg,vmicro,abu,nd,atmos = read_model(entry)
     for value in atmos['t']: t.append(value)
-    for value in atmos['p']: p.append(value)
+    for value in atmos['rho']: rho.append(value)
     for value in atmos['ne']:  ne.append(value)
 
-  return(t,p,ne)
+  return(t,rho,ne)
 
 
 
@@ -712,7 +721,7 @@ def identify_atmostype(modelfile):
     else:
       f = open(modelfile,'r')
     line = f.readline()
-    print('line=',line)
+    print('modelfile / line=',modelfile,line)
     type(line)
     if ('TEFF' in line): atmostype = 'kurucz'
     else: atmostype = 'marcs'
@@ -1169,6 +1178,122 @@ def read_marcs_model(modelfile):
   atmos['dm'] = dm
   atmos['t'] = t
   atmos['p'] = p
+  atmos['ne'] = ne
+
+  return (teff,logg,vmicro,abu,nd,atmos)
+
+def read_marcs_model2(modelfile):
+  
+  """Reads a MARCS model atmospheres. 
+  While read_marcs_model returns T, Pg and Ne in the structure 'atmos'
+  read_marcs_model2 returns T, rho and Ne.
+  
+  Parameters
+  ----------
+  modelfile: str
+      file name. It can be a gzipped (.gz) file
+  
+  Returns
+  -------
+
+  teff : float
+      effective temperature (K)
+  logg : float
+      log10 of the surface gravity (cm s-2)
+  vmicro : float
+      microturbulence velocity (km/s)
+  abu : list
+      abundances, number densities of nuclei relative to hydrogen N(X)/N(H)
+      for elements Z=1,99 (H to Es)
+  nd: int
+      number of depths (layers) of the model
+  atmos: numpy structured array
+      array with the run with depth of column mass, temperature, density 
+      and electron number density  
+  
+  """  
+
+  if modelfile[-3:] == '.gz':
+    f = gzip.open(modelfile,'rt')
+  else:
+    f = open(modelfile,'r')
+  line = f.readline()
+  line = f.readline()
+  entries = line.split()
+  assert (entries[1] == 'Teff'), 'Cannot find Teff in the file header'
+  teff = float(entries[0])
+  line = f.readline()
+  line = f.readline()
+  entries = line.split()
+  assert (entries[1] == 'Surface' and entries[2] == 'gravity'), 'Cannot find logg in the file header'
+  logg = np.log10(float(entries[0]))
+  line = f.readline()
+  entries = line.split()
+  assert (entries[1] == 'Microturbulence'), 'Cannot find vmicro in the file header'
+  vmicro = float(entries[0])
+
+  while entries[0] != 'Logarithmic':  
+    line = f.readline()
+    entries = line.split()
+
+  abu = []
+  line = f.readline()
+  entries = line.split()
+
+  i = 0
+  while entries[1] != 'Number':
+    for word in entries: 
+      abu.append( 10.**(float(word)-12.0) )
+      i = i + 1 
+    line = f.readline()
+    entries = line.split() 
+
+  if i < 99: 
+    for j in range(99-i):
+      abu.append(1e-111)
+      i = i + 1
+
+  nd = int(entries[0])
+  line = f.readline()
+  entries = line.split()
+
+  assert (entries[0] == 'Model'), 'I cannot find the header of the atmospheric table in the input MARCS model'
+
+  line = f.readline()
+  line = f.readline()
+  entries = line.split()
+
+  t = [ float(entries[4]) ]
+  p = [ float(entries[6]) ]
+  ne = [ float(entries[5]) / bolk / float(entries[4]) ] 
+
+  for i in range(nd-1):
+    line = f.readline()
+    entries = line.split()
+
+    t.append(  float(entries[4]))
+    p.append(  float(entries[6]))
+    ne.append( float(entries[5]) / bolk / float(entries[4]))
+
+  line = f.readline()
+  line = f.readline()
+  entries = line.split()
+
+  rho = [ float(entries[3]) ]
+  dm = [ float(entries[7]) ]
+
+  for i in range(nd-1):
+    line = f.readline()
+    entries = line.split()
+
+    rho.append( float(entries[3]))
+    dm.append(  float(entries[7]))
+
+  atmos = np.zeros(nd, dtype={'names':('dm', 't', 'rho','ne'),
+                          'formats':('f', 'f', 'f','f')}) 
+  atmos['dm'] = dm
+  atmos['t'] = t
+  atmos['rho'] = rho
   atmos['ne'] = ne
 
   return (teff,logg,vmicro,abu,nd,atmos)
