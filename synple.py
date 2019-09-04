@@ -76,7 +76,7 @@ two =  " 2 "
 
 def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, vrot=0.0, fwhm=0.0, \
-    steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None):
+    steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, compute=True):
 
   """Computes a synthetic spectrum
 
@@ -140,6 +140,9 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   synfile: str
       when save is True, this can be used to set the name of the output file
       (default None)
+  compute: bool
+      set to False to skip the actual synspec run, triggering clean=False
+      (default True)
 
   Returns
   -------
@@ -182,51 +185,58 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   write55(wrange,space,strength,vmicro,linelist,atmostype) #synspec control file
   create_links(modelfile,linelist)                      #auxiliary data
 
+  if compute == False:
 
-  synin = open('fort.5')
-  synout = open('syn.log','w')
+    wave = None
+    flux = None  
+    cont = None
 
-  start = time.time()
-  p = subprocess.Popen([synspec], stdin=synin, stdout = synout, stderr= synout, shell=True)
-  p.wait()
+  else:
 
-  synout.flush()
-  synout.close()
-  synin.close()
+    synin = open('fort.5')
+    synout = open('syn.log','w')
 
-  assert (os.path.isfile('fort.7')), 'Error: I cannot read the file *fort.7* -- looks like synspec has crashed, please look at syn.log'
-
-  assert (os.path.isfile('fort.17')), 'Error: I cannot read the file *fort.17* -- looks like synspec has crashed, please look at syn.log'
-
-
-  wave, flux = np.loadtxt('fort.7', unpack=True)
-  wave2, flux2 = np.loadtxt('fort.17', unpack=True)
-  if dw == None and fwhm <= 0. and vrot <= 0.: cont = np.interp(wave, wave2, flux2)
-  end = time.time()
-  print('syn ellapsed time ',end - start, 'seconds')
-
-  if fwhm > 0. or vrot > 0.:
     start = time.time()
-    print( vrot, fwhm, space, steprot, stepfwhm)
-    wave, flux = call_rotin (wave, flux, vrot, fwhm, space, steprot, stepfwhm, clean=False, reuseinputfiles=True)
-    if dw == None: cont = np.interp(wave, wave2, flux2)
+    p = subprocess.Popen([synspec], stdin=synin, stdout = synout, stderr= synout, shell=True)
+    p.wait()
+
+    synout.flush()
+    synout.close()
+    synin.close()
+
+    assert (os.path.isfile('fort.7')), 'Error: I cannot read the file *fort.7* -- looks like synspec has crashed, please look at syn.log'
+
+    assert (os.path.isfile('fort.17')), 'Error: I cannot read the file *fort.17* -- looks like synspec has crashed, please look at syn.log'
+
+
+    wave, flux = np.loadtxt('fort.7', unpack=True)
+    wave2, flux2 = np.loadtxt('fort.17', unpack=True)
+    if dw == None and fwhm <= 0. and vrot <= 0.: cont = np.interp(wave, wave2, flux2)
     end = time.time()
-    print('convol ellapsed time ',end - start, 'seconds')
+    print('syn ellapsed time ',end - start, 'seconds')
 
-  if (dw != None): 
-    nsamples = int((wrange[1] - wrange[0])/dw) + 1
-    wave3 = np.arange(nsamples)*dw + wrange[0]
-    flux = np.interp(wave3, wave, flux)
-    cont = np.interp(wave3, wave2, flux2)
-    wave = wave3
+    if fwhm > 0. or vrot > 0.:
+      start = time.time()
+      print( vrot, fwhm, space, steprot, stepfwhm)
+      wave, flux = call_rotin (wave, flux, vrot, fwhm, space, steprot, stepfwhm, clean=False, reuseinputfiles=True)
+      if dw == None: cont = np.interp(wave, wave2, flux2)
+      end = time.time()
+      print('convol ellapsed time ',end - start, 'seconds')
 
-  if clean == True: cleanup()
+    if (dw != None): 
+      nsamples = int((wrange[1] - wrange[0])/dw) + 1
+      wave3 = np.arange(nsamples)*dw + wrange[0]
+      flux = np.interp(wave3, wave, flux)
+      cont = np.interp(wave3, wave2, flux2)
+      wave = wave3
 
-  if save == True:
-    if synfile == None: 
-      tmpstr = os.path.split(modelfile)[-1]
-      synfile = tmpstr[:tmpstr.rfind('.')]+'.syn'
-    np.savetxt(synfile,(wave,flux,cont))
+    if clean == True: cleanup()
+
+    if save == True:
+      if synfile == None: 
+        tmpstr = os.path.split(modelfile)[-1]
+        synfile = tmpstr[:tmpstr.rfind('.')]+'.syn'
+      np.savetxt(synfile,(wave,flux,cont))
 
 
   return(wave, flux, cont)
@@ -251,6 +261,8 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
       initial and ending wavelengths (angstroms)
   dw: float
       wavelength step for the output fluxes.
+      Unlike in 'syn' this will not be used to set the maximum wavelength step for 
+      synthesizing any of the spectra; the appropriate step will be chosen dynamically.
       Unlike in 'syn', interpolation to a constant step will always be done
       (default is None for automatic selection based on the first model of the list)
   strength: float, optional
@@ -259,16 +271,16 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
       (default taken from input model atmosphere)
-  vmicro: float, optional, can be iterable
+  vmicro: float, optional, can be an iterable
       microturbulence (km/s) 
       (default is taken from the model atmosphere)
-  vrot: float, can be iterable
+  vrot: float, can be an iterable
       projected rotational velocity (km/s)
       (default 0.)
-  fwhm: float, can be iterable
+  fwhm: float, can be an iterable
       Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
       (default 0.)
-  nfe: float, can be iterable
+  nfe: float, can be an iterable
       [N/Fe] nitrogen abundance change from the one specified in the array 'abu' (dex)
       (default 0.)
   linelist: array of str
@@ -334,58 +346,233 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
     nfes = [ nfe ] 
 
 
-  for vmicro1 in vmicros: 
-    for vrot1 in vrots:
-      for fwhm1 in fwhms:
-        for nfe1 in nfes:
+  for entry in modelfiles:
+    for vmicro1 in vmicros:
+      for nfe1 in nfes:
 
-          print('vmicro/vrot/fwhm/nfe=',vmicro1,vrot1,fwhm1,nfe1)
-  
-          for entry in modelfiles:
+        abu1 = copy.copy(abu)        
 
-            abu1 = copy.copy(abu)
+        #if need be, adjust nitrogen abundance according to nfe
+        if (abs(nfe1) > 1e-7):
+          if (abu1 == None):
+            checksynspec(linelist,entry)
+            atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
+          abu1[6] = abu1[6] + nfe1
 
-            #if need be, adjust nitrogen abundance according to nfe
-            if (abs(nfe1) > 1e-7):
-              if (abu1 == None):
-                checksynspec(linelist,entry)
-                atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
-              abu1[6] = abu1[6] + nfe1
+        x, y, z = syn(entry, wrange, dw=None, strength=strength, vmicro=vmicro1, \
+        abu=abu1, linelist=linelist, hhm=hhm, clean=clean, save=save)
+
+        space = np.mean(np.diff(x))
             
-        
-            if entry == modelfiles[0] and vmicro1 == vmicros[0] and vrot1 == vrots[0] and fwhm1 == fwhms[0] and nfe1 == nfes[0]: 
+        for vrot1 in vrots:
+          for fwhm1 in fwhms:
 
-              x, y, z = syn(entry, wrange, dw, strength=strength, vmicro=vmicro1, abu=abu1, \
-              linelist=linelist, hhm=hhm, vrot=vrot1, fwhm=fwhm1, \
-              steprot=steprot, stepfwhm=stepfwhm,  clean=clean, save=save)
-
-              xx = np.diff(x)
-              if max(xx) - min(xx) > 1e-7: #input not linearly sampled      
-                dw = np.median(xx)
-                nsamples = int((wrange[1] - wrange[0])/dw) + 1
-                wave = np.arange(nsamples)*dw + wrange[0]
-                flux = np.interp(wave, x, y)
-                cont = np.interp(wave, x, z)
-              else:
-                wave = x
-                flux = y
-                cont = z
-
+            if fwhm1> 0. or vrot1 > 0.:
+              start = time.time()
+              print( entry, vmicro1, nfe1, vrot1, fwhm1, space)
+              x2, y2 = call_rotin (x, y, vrot, fwhm, space, steprot, stepfwhm, \
+              clean=False, reuseinputfiles=True)
+              z2 = np.interp(x2, x, z)
+              end = time.time()
+              print('convol ellapsed time ',end - start, 'seconds')
             else:
+              x2, y2, z2 = x, y, z
 
-              x, y, z = syn(entry, wrange, dw=None, strength=strength, vmicro=vmicro1, abu=abu1, \
-              linelist=linelist, hhm=hhm, vrot=vrot1, fwhm=fwhm1, \
-              steprot=steprot, stepfwhm=stepfwhm,  clean=clean, save=save)
 
+            if entry == modelfiles[0] and vmicro1 == vmicros[0] and vrot1 == vrots[0] and fwhm1 == fwhms[0] and nfe1 == nfes[0]:
+              if dw == None: dw = np.median(np.diff(x2))
+              nsamples = int((wrange[1] - wrange[0])/dw) + 1
+              wave = np.arange(nsamples)*dw + wrange[0]
+              flux = np.interp(wave, x2, y2)
+              cont = np.interp(wave, x2, z2)
+            else:
               flux = np.vstack ( (flux, np.interp(wave, x, y) ) )
               cont = np.vstack ( (cont, np.interp(wave, x, z) ) )
 
 
   return(wave, flux, cont)
 
+
+
+def paramultisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
+    vmicro=None, vrot=0.0, fwhm=0.0, nfe=0.0, \
+    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, \
+    steprot=0.0, stepfwhm=0.0,  clean=True, save=None):
+
+  """Sets up a directory tree for computeng synthetic spectra for a list of files in 
+  parallel. The values of vmicro, vrot, fwhm, and nfe can be iterables. Whether or not 
+  dw is specified the results will be placed on a common wavelength scale by interpolation.
+  When not specified, dw will be chosen as appropriate for the first model in modelfiles.
+
+
+  Parameters
+  ----------
+  modelfiles : list of str
+      files with model atmospheres
+  wrange: tuple or list of two floats
+      initial and ending wavelengths (angstroms)
+  dw: float
+      Unlike in 'syn' this will not be used to set the maximum wavelength step for 
+      synthesizing any of the spectra; the appropriate step will be chosen dynamically.
+      Unlike in 'syn', interpolation to a constant step will always be done
+      (default is None for automatic selection based on the first model of the list)
+  strength: float, optional
+      threshold in the line-to-continuum opacity ratio for 
+      selecting lines (default is 1e-4)
+  abu: array of floats (99 elements), optional
+      chemical abundances relative to hydrogen (N(X)/N(H))
+      (default taken from input model atmosphere)
+  vmicro: float, optional, can be an iterable
+      microturbulence (km/s) 
+      (default is taken from the model atmosphere)
+  vrot: float, can be an iterable
+      projected rotational velocity (km/s)
+      (default 0.)
+  fwhm: float, can be an iterable
+      Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
+      (default 0.)
+  nfe: float, can be an iterable
+      [N/Fe] nitrogen abundance change from the one specified in the array 'abu' (dex)
+      (default 0.)
+  linelist: array of str
+      filenames of the line lists, the first one corresponds to 
+      the atomic lines and all the following ones (optional) to
+      molecular lines
+      (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
+  hhm: bool
+      when True the continuum opacity is simplified to H and H-
+      (default False, and more complete opacities are included)
+  steprot: float
+      wavelength step for convolution with rotational kernel (angstroms)
+      set to 0. for automatic adjustment (default 0.)
+  stepfwhm: float
+      wavelength step for Gaussian convolution (angstroms)
+      set to 0. for automatic adjustment (default 0.)
+  clean: bool
+      True by the default, set to False to avoid the removal of the synspec
+      temporary files/links (default True)
+  save: bool
+      set to True to save the computed spectra to files (default False)
+      the root of the model atmosphere file, with an extension ".syn" will be used
+      if multiple values of vmicro, vrot, fwhm or nfe are used, their values are
+      prepended to the file names 
+      (default None)
+
+  Returns
+  -------
+  wave: numpy array of floats (1D)
+      wavelengths (angstroms)
+  flux: numpy array of floats (2D -- as many rows as models input)
+      flux (H_lambda in ergs/s/cm2/A)
+  cont: numpy array of floats (2D -- as many rows as models input)
+      continuum flux (same units as flux)
+
+  """
+
+
+
+  #when vmicro, vrot, fwhm or nitrogen are not iterables, we create ones, otherwise we copy them
+  try: 
+    nvmicro = len(vmicro)
+    vmicros = vmicro
+  except TypeError:
+    nvmicro = 1
+    vmicros = [ vmicro ] 
+  try: 
+    nvrot = len(vrot)
+    vrots = vrots
+  except TypeError:
+    nvrot = 1
+    vrots = [ vrot ]   
+  try: 
+    nfwhm = len(fwhm)
+    fwhms = fwhm
+  except TypeError:
+    nfwhm = 1
+    fwhms = [ fwhm ]   
+  try: 
+    nnfe = len(nfe)
+    nnfes = nfe
+  except TypeError:
+    nnfe = 1
+    nfes = [ nfe ] 
+
+
+  idir = 0
+  for entry in modelfiles:
+    for vmicro1 in vmicros:
+      for nfe1 in nfes:
+
+        idir = idir + 1
+        dir = ( "hyd%07d" % (idir) )
+        try:
+          os.mkdir(dir)
+        except OSError:
+          print( "cannot create dir hyd%07d" % (idir) )
+        try:
+          os.chdir(dir)
+        except OSError:
+          print( "cannot change dir to hyd%07d" % (idir) )
+
+        #open file to write the script
+        s = open(dir+".job","w")
+
+        abu1 = copy.copy(abu)
+
+        #if need be, adjust nitrogen abundance according to nfe
+        if (abs(nfe1) > 1e-7):
+          if (abu1 == None):
+            checksynspec(linelist,entry)
+            atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
+          abu1[6] = abu1[6] + nfe1
+
+        x, y, z = syn(entry, wrange, dw=None, strength=strength, vmicro=vmicro1, \
+        abu=abu1, linelist=linelist, hhm=hhm, compute=False)
+
+        s.write(synspec+" < "+"fort.5"+"\n")
+
+        si = open("fort.55",'r')
+        for i in range(6): line = si.readline()
+        entries = line.split()
+        space = float(entries[5])
+        si.close()
+            
+        iconv = 0
+        for vrot1 in vrots:
+          for fwhm1 in fwhms:
+
+            print('iconv=',iconv)
+
+            iconv = iconv + 1
+            inconv = ("%07dfort.5" % (iconv) )
+            outconv = ("'%07dfort.7'" % (iconv) )
+            if fwhm1> 0. or vrot1 > 0.:
+              f = open(inconv,'w')
+              f.write( ' %s %s %s \n' % ("'fort.7'", "'fort.17'", outconv) )
+              f.write( ' %f %f %f \n' % (vrot1, space, steprot) )
+              f.write( ' %f %f \n' % (fwhm1, stepfwhm) )
+              print('stepfwhm=',stepfwhm)
+              f.write( ' %f %f %i \n' % (wrange[0], wrange[1], 0) )
+              f.close()
+              s.write(rotin+" < "+inconv+"\n")
+            else:
+              s.write("cp "+" fort.7 "+outconv[1:-1]+"\n")
+
+        s.close()
+
+        try:
+          os.chdir('..')
+        except OSError:
+          print( "cannot exit dir hyd%07d" % (idir) )
+
+
+  return(None,None,None)
+
+
+
 def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
   tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), \
-    permissive=False):
+    ignore_missing_models=False):
 
   """Collects all the MARCS models in modeldir that are part of a regular grid defined
   by triads in various parameters. Each triad has three values (n, llimit, step)
@@ -416,9 +603,9 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), t
     [r/Fe] triad (r-elements abundance ratio)
   sfeh: tuple
     [s.Fe] triad (s-elements abundance ratio)
-  permissive: bool
+  ignore_missing_models: bool
     set to True to avoid stopping when a model is missing,
-    in which case it is simply not included in the returning list
+    in which case a None is entered in the returning list
  
   Returns
   -------
@@ -524,9 +711,11 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), t
                     filename = ("%s%4i_g%+.1f_%s_z%+.2f_a%+.2f_c%+.2f_n%+.2f_o%+.2f_r%+.2f_s%+.2f.mod*" % (a1,teff,logg,code,feh,afe,cfe,nfe,ofe,rfe,sfe) )
 
                     file = glob.glob(os.path.join(modeldir,filename))
-                    if permissive == False:
+                    if ignore_missing_models == False:
                       assert len(file) > 0, 'Cannot find model '+filename+' in modeldir '+modeldir                   
                       assert len(file) == 1, 'More than one model matches '+filename+' in modeldir '+modeldir
+                    else:
+                      if (len(file) == 0): files.append(None)
                       
                     if (len(file) == 1): 
                      for entry in file: files.append(entry)
