@@ -183,7 +183,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   write5(teff,logg,abu,hhm)                               #abundance/opacity file
   write8(teff,logg,nd,atmos,atmostype)                  #model atmosphere
   write55(wrange,space,strength,vmicro,linelist,atmostype) #synspec control file
-  create_links(modelfile,linelist)                      #auxiliary data
+  create_links(linelist)                      #auxiliary data
 
   if compute == False:
 
@@ -357,7 +357,7 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
           if (abu1 == None):
             checksynspec(linelist,entry)
             atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
-          abu1[6] = abu1[6] + nfe1
+          abu1[6] = abu1[6] * 10.**nfe1
 
         x, y, z = syn(entry, wrange, dw=None, strength=strength, vmicro=vmicro1, \
         abu=abu1, linelist=linelist, hhm=hhm, clean=clean, save=save)
@@ -394,7 +394,7 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
 
 
 
-def paramultisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
+def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
     vmicro=None, vrot=0.0, fwhm=0.0, nfe=0.0, \
     linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, \
     steprot=0.0, stepfwhm=0.0,  clean=True, save=None):
@@ -524,7 +524,7 @@ def paramultisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
           if (abu1 == None):
             checksynspec(linelist,entry)
             atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
-          abu1[6] = abu1[6] + nfe1
+          abu1[6] = abu1[6] * 10.**nfe1
 
         x, y, z = syn(entry, wrange, dw=None, strength=strength, vmicro=vmicro1, \
         abu=abu1, linelist=linelist, hhm=hhm, compute=False)
@@ -567,6 +567,218 @@ def paramultisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
 
 
   return(None,None,None)
+
+
+
+def polyopt(wrange,dw=1e-2,strength=1e-3, linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, \
+    tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), \
+    tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), tvmicro=(1,1.0,0.0), \
+    zexclude=None):
+
+  """Collects all the MARCS models in modeldir that are part of a regular grid defined
+  by triads in various parameters. Each triad has three values (n, llimit, step)
+  that define an array x = np.range(n)*step + llimit. Triads in teff (tteff) and logg
+  (tlogg) are mandatory. Triads in [Fe/H] (tfeh), [alpha/Fe] (tafe), [C/Fe] (tcfe), 
+  [N/Fe] (tnfe), [O/Fe] (tofe), [r/Fe] (rfe), and [s/Fe] (sfe) are optional since 
+  arrays with just one 0.0 are included by default.
+
+  Parameters
+  ----------
+  wrange: tuple or list of two floats
+      initial and ending wavelengths (angstroms)
+  dw: float
+      Unlike in 'syn' this will not be used to set the maximum wavelength step for 
+      synthesizing any of the spectra; the appropriate step will be chosen dynamically.
+      Unlike in 'syn', interpolation to a constant step will always be done
+      (default is None for automatic selection based on the first model of the list)
+  strength: float, optional
+      threshold in the line-to-continuum opacity ratio for 
+      selecting lines (default is 1e-4)
+  linelist: array of str
+      filenames of the line lists, the first one corresponds to 
+      the atomic lines and all the following ones (optional) to
+      molecular lines
+      (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
+  hhm: bool
+      when True the continuum opacity is simplified to H and H-
+      (default False, and more complete opacities are included)  
+  tteff: tuple
+    Teff triad (n, llimit, step)
+  tlogg: tuple
+    logg triad (n, llimit, step)
+  tfeh: tuple
+    [Fe/H] triad
+  tafe: tuple
+    [alpha/Fe] triad  
+  tcfe: tuple
+    [C/Fe] triad
+  tnfe: tuple
+    [N/Fe] triad
+  tofe: tuple
+    [O/Fe] triad
+  rfeh: tuple
+    [r/Fe] triad (r-elements abundance ratio)
+  sfeh: tuple
+    [s.Fe] triad (s-elements abundance ratio)
+  zexclude: list
+    atomic numbers of the elements whose opacity is NOT to be
+    included in the table
+    (default None)
+
+  """
+
+  #expanding the triads t* into iterables
+  try: 
+    nfeh = len(tfeh)
+    assert (nfeh == 3), 'Error: feh triad must have three elements (n, llimit, step)'
+    fehs = np.arange(tfeh[0])*tfeh[2] + tfeh[1]
+  except TypeError:
+    print('Error: feh triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nafe = len(tafe)
+    assert (nafe == 3), 'Error: afe triad must have three elements (n, llimit, step)'
+    afes = np.arange(tafe[0])*tafe[2] + tafe[1]
+  except TypeError:
+    print('Error: afe triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    ncfe = len(tcfe)
+    assert (ncfe == 3), 'Error: cfe triad must have three elements (n, llimit, step)'
+    cfes = np.arange(tcfe[0])*tcfe[2] + tcfe[1]
+  except TypeError:
+    print('Error: cfe triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nnfe = len(tnfe)
+    assert (nnfe == 3), 'Error: nfe triad must have three elements (n, llimit, step)'
+    nfes = np.arange(tnfe[0])*tnfe[2] + tnfe[1]
+  except TypeError:
+    print('Error: nfe triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nofe = len(tofe)
+    assert (nofe == 3), 'Error: ofe triad must have three elements (n, llimit, step)'
+    ofes = np.arange(tofe[0])*tofe[2] + tofe[1]
+  except TypeError:
+    print('Error: ofe triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nrfe = len(trfe)
+    assert (nrfe == 3), 'Error: rfe triad must have three elements (n, llimit, step)'
+    rfes = np.arange(trfe[0])*trfe[2] + trfe[1]
+  except TypeError:
+    print('Error: rfe triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nsfe = len(tsfe)
+    assert (nsfe == 3), 'Error: sfe triad must have three elements (n, llimit, step)'
+    sfes = np.arange(tsfe[0])*tsfe[2] + tsfe[1]
+  except TypeError:
+    print('Error: sfe triad must have three elements (n, llimit, step)')
+    return ()
+  
+  try: 
+    nvmicro = len(tvmicro)
+    assert (nvmicro == 3), 'Error: vmicro triad must have three elements (n, llimit, step)'
+    vmicros = np.arange(tvmicro[0])*tvmicro[2] + tvmicro[1]
+  except TypeError:
+    print('Error: vmicro triad must have three elements (n, llimit, step)')
+    return ()
+  
+
+  #ranges for the opacity table
+  lt = np.arange(22)*0.066 + 3.0001  #log10(T)
+  lrho = np.arange(22)*0.55 -14.0 #log10(density)
+  
+  symbol, mass, sol = elements()
+  z_metals = np.arange(97,dtype=int) + 3
+  z_alphas = np.array([8,10,12,14,16,20,22],dtype=int)
+  #As, Br, Rh, Ag, Sb, Te, I, Cs, Sm, Eu, Gd, Tb, Dy, Ho, Er, Tm, Lu, Re, Os, Ir, Pt, Au, Th
+  #>70% r-process (Sneden et al. 1996)
+  z_r = np.array([33,35,45, 47, 51, 52, 53, 55, 62, 63, 64, 65, 66, 67, 68, 69, 71, 75, 76, 77, 78, 79, 90],dtype=int) 
+  #Rb, Sr, Y, Zr, Xe, Ba, La, Ce, Pb
+  #>70% s-process 
+  z_s = np.array([37, 38, 39, 40, 54, 56, 57, 58, 82],dtype=int)
+
+
+  idir = 0
+  for feh in fehs:
+    for afe in afes:
+      for cfe in cfes:
+        for nfe in nfes:
+          for ofe in ofes:
+            for rfe in rfes:
+              for sfe in sfes: 
+                for vmicro in vmicros:
+                
+                  print(feh,afe,cfe,nfe,ofe,rfe,sfe)
+
+                  idir = idir + 1
+                  dir = ( "hyd%07d" % (idir) )
+                  try:
+                    os.mkdir(dir)
+                  except OSError:
+                    print( "cannot create dir hyd%07d" % (idir) )
+                  try:
+                    os.chdir(dir)
+                  except OSError:
+                    print( "cannot change dir to hyd%07d" % (idir) )
+
+                  #check input parameters are valid
+                  checkinput(wrange, vmicro, linelist)
+
+                  #open file to write the script
+                  s = open(dir+".job","w")
+                
+                  abu = copy.copy(sol)
+
+                  if (abs(feh) > 1e-7): 
+                    for i in range(len(z_metals)): 
+                      abu[z_metals[i] - 1] = abu[z_metals[i] - 1] * 10.**feh
+                  if (abs(afe) > 1e-7): 
+                    for i in range(len(z_alphas)):
+                      abu[z_alphas[i] - 1] = abu[z_alphas[i] - 1] * 10.**afe
+                  if (abs(cfe) > 1e-7): abu[5] = abu[5] * 10.**cfe
+                  if (abs(nfe) > 1e-7): abu[6] = abu[6] * 10.**nfe
+                  if (abs(ofe) > 1e-7): abu[7] = abu[7] * 10.**ofe
+                  if (abs(rfe) > 1e-7):
+                      abu[z_r[i] - 1] = abu[z_r[i] - 1] * 10.**rfe
+                  if (abs(sfe) > 1e-7): 
+                      abu[z_s[i] - 1] = abu[z_s[i] - 1] * 10.**sfe
+
+
+                  write55(wrange,dw=dw,imode=-3,strength=strength, vmicro=vmicro, \
+                  linelist=linelist)
+
+                  write5(9999.,9.9,abu,hhm)
+                  
+                  writetas('tas',1,linelist)
+
+                  write2(lt,lrho,wrange,filename='opt.dat', binary=True,\
+                  strength=strength,inttab=1)
+
+                  if zexclude != None: 
+                    write3(zexclude)
+                    
+                  create_links(linelist)
+                  
+                  s.write(synspec+" < "+"fort.5"+"\n")
+                  s.close()
+                  
+                  try:
+                    os.chdir('..')
+                  except OSError:
+                    print( "cannot exit dir hyd%07d" % (idir) )		  
+
+  return()
+
 
 
 
@@ -1009,14 +1221,46 @@ def writetas(filename,nd,linelist):
   f = open(filename,'w')
   f.write("ND= "+str(nd)+" \n")
   if len(linelist) > 1:  f.write("IFMOL= "+one+" \n")
+  f.write("TMOLIM= 8000. \n")
+
+  f.close()
+
+  return()
+
+def write3(zexclude):
+  
+  f = open('fort.3','w')
+  for z in zexclude:
+    f.write( " %d %10.4e \n" % (z, 0.0) )
+  f.close()
+  
+  return()
+
+
+def write2(lt,lrho,wrange, filename='opt.data', dlw=2e-5, binary=True,strength=1e-4,inttab=1):
+#write fort.2 file for creating opacity tables for TLUSTY
+
+  f = open('fort.2','w')
+  f.write( " %d %10.4e %10.4e \n" % (len(lt),10.**lt[0],10.**lt[-1]) )
+  f.write( " %d \n" % (1) )
+  f.write( " %d %10.4e %10.4e \n" % (len(lrho),10.**lrho[0],10.**lrho[-1]) )
+  
+  nsamples = int( (np.log10(wrange[1]) - np.log10(wrange[0]) )/dlw) + 1 
+  f.write( " %d %d %10.4e %10.4e \n" % (nsamples,inttab,wrange[0],wrange[1]) )  
+  if binary == True: 
+    ibingr = 1
+  else:
+    ibingr = 0
+  f.write( " %s %d \n" % (filename,ibingr) )
   f.close()
 
   return()
 
 
-def write55(wrange,dw=1e-2,strength=1e-4,vmicro=0.0,linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], atmostype='kurucz'):
+def write55(wrange,dw=1e-2,imode=0,strength=1e-4,vmicro=0.0,linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], atmostype='kurucz'):
 
-  imode = 0                        # default, atoms and molecules, at least 2 line lists
+  # imode = 0  is default, atoms and molecules, at least 2 line lists
+  # imode = 7 for regular opacity tables (TLUSTY)
   if len(linelist) == 0: imode = 2  # no atomic or molecular line list -> pure continuum and no molecules
 
 
@@ -1036,7 +1280,10 @@ def write55(wrange,dw=1e-2,strength=1e-4,vmicro=0.0,linelist=['gfallx3_bpo.19','
   f.write(5*zero+"\n")
   f.write(one+4*zero+"\n")
   f.write(two+2*zero+"\n")
-  f.write( ' %f %f %f %i %e %f \n ' % (wrange[0], wrange[1], 200., 0, strength, dw) )
+  if imode == -3:
+    f.write( ' %f %f %f %i %e %f \n ' % (wrange[0], -wrange[1], 100., 2000, strength, dw) )
+  else:
+    f.write( ' %f %f %f %i %e %f \n ' % (wrange[0],  wrange[1], 200., 2000, strength, dw) )
   ll = len(linelist)
   if ll < 2: f.write(2*zero)
   else: f.write(str(ll-1) + ' ' + ' '.join(map(str,np.arange(ll-1)+20)))
@@ -1139,7 +1386,7 @@ def write8(teff, logg, nd, atmos, atmostype):
   return()
   
 
-def create_links(modelfile,linelist):
+def create_links(linelist):
 #create soft links for line lists, model atom dir and model atmosphere
 
   for i in range(len(linelist)): 
@@ -1147,7 +1394,6 @@ def create_links(modelfile,linelist):
     else: os.symlink(os.path.join(linelistdir,linelist[i]),'fort.'+str(20-1+i))
 
   os.symlink(modelatomdir,'./data')
-  #os.symlink(modelfile,'fort.8')
 
   return()
 
