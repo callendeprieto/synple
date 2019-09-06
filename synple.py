@@ -699,13 +699,26 @@ def polyopt(wrange,dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19','kmol3_0.01_
   
   symbol, mass, sol = elements()
   z_metals = np.arange(97,dtype=int) + 3
-  z_alphas = np.array([8,10,12,14,16,20,22],dtype=int)
-  #As, Br, Rh, Ag, Sb, Te, I, Cs, Sm, Eu, Gd, Tb, Dy, Ho, Er, Tm, Lu, Re, Os, Ir, Pt, Au, Th
-  #>70% r-process (Sneden et al. 1996)
-  z_r = np.array([33,35,45, 47, 51, 52, 53, 55, 62, 63, 64, 65, 66, 67, 68, 69, 71, 75, 76, 77, 78, 79, 90],dtype=int) 
-  #Rb, Sr, Y, Zr, Xe, Ba, La, Ce, Pb
-  #>70% s-process 
-  z_s = np.array([37, 38, 39, 40, 54, 56, 57, 58, 82],dtype=int)
+  #Ar usually included among alphas in MARCS and not in Kurucz/Meszaros
+  z_alphas = np.array([8,10,12,14,16,18,20,22],dtype=int) 
+  # rs increases: notes and data below from comments in the MARCS code (provided by B.Edvardsson) 
+  # Fractional r-process abundance for Ga-Bi (r+s simply assumed == 100%) | Date 2000-01-18
+  # (Note: Ga-Sr (31-38) was just copied from Kaeppeler et al. 1989, below)
+  # s-process from Stellar models: Arlandini C., Kaeppeler F., Wisshak K.,
+  # Gallino R., Busso M., Straniero O., 1999, Astrophys J. 525, 886-900
+  #   Fractions corrected to the revised meteoritic abundances
+  #   of Grevesse N., Sauval A.J. 1998, Space Science Review 85, 161-174  
+  # -0.99 is assigned to unstable elements
+  z_rs = np.arange(62,dtype=int) + 31
+  rfrac= np.array([.43, .47, .81, .85, .39, .47, 
+                   .41, .11, .08, .17, .15, .50,-.99, .68, .86, 
+                   .54, .80, .48, .65, .35, .75, .83, .80, .80, 
+                   .85, .19, .38, .23, .51, .44,-.99, .71, .93, 
+                   .85, .93, .85, .92, .83, .87, .67, .80, .44, 
+                   .59, .44, .91, .91, .99, .95, .94, .41, .24, 
+                   .54, .95,-.99,-.99,-.99,-.99,-.99,-.99, 1.0, 
+                   -.99, 1.0], dtype=float)                     
+
 
 
   idir = 0
@@ -748,10 +761,12 @@ def polyopt(wrange,dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19','kmol3_0.01_
                   if (abs(cfe) > 1e-7): abu[5] = abu[5] * 10.**cfe
                   if (abs(nfe) > 1e-7): abu[6] = abu[6] * 10.**nfe
                   if (abs(ofe) > 1e-7): abu[7] = abu[7] * 10.**ofe
-                  if (abs(rfe) > 1e-7):
-                      abu[z_r[i] - 1] = abu[z_r[i] - 1] * 10.**rfe
+                  if (abs(rfe) > 1e-7): 
+                      for i in range(len(z_rs)): 
+                        if rfrac[i] > 0.0: abu[z_rs[i] - 1] = abu[z_rs[i] - 1] * rfrac[i] * 10.**rfe
                   if (abs(sfe) > 1e-7): 
-                      abu[z_s[i] - 1] = abu[z_s[i] - 1] * 10.**sfe
+                      for i in range(len(z_rs)): 
+                        if rfrac[i] > 0.0: abu[z_rs[i] - 1] = abu[z_rs[i] - 1] * (1.0 - rfrac[i]) * 10.**sfe
 
 
                   write55(wrange,dw=dw,imode=-3,strength=strength, vmicro=vmicro, \
