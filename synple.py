@@ -169,20 +169,24 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   else: 
     space = dw
 
+
   #check input parameters are valid
-  checkinput(wrange, vmicro, linelist)
+  imode = checkinput(wrange, vmicro, linelist)
 
 
   print ('teff,logg,vmicro=',teff,logg,vmicro)
   #print ('abu=',abu)
   #print (len(abu))
   #print ('nd=',nd)
+  #print ('linelist=',linelist)
+  #print ('wrange=',wrange)
+
   cleanup()
-  
+
   writetas('tas',nd,linelist)                           #non-std param. file
   write5(teff,logg,abu,hhm)                               #abundance/opacity file
   write8(teff,logg,nd,atmos,atmostype)                  #model atmosphere
-  write55(wrange,space,strength,vmicro,linelist,atmostype) #synspec control file
+  write55(wrange,space,imode,strength,vmicro,linelist,atmostype) #synspec control file
   create_links(linelist)                      #auxiliary data
 
   if compute == False:
@@ -745,7 +749,7 @@ def polyopt(wrange,dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19','kmol3_0.01_
                     print( "cannot change dir to hyd%07d" % (idir) )
 
                   #check input parameters are valid
-                  checkinput(wrange, vmicro, linelist)
+                  imode = checkinput(wrange, vmicro, linelist)
 
                   #open file to write the script
                   s = open(dir+".job","w")
@@ -1196,18 +1200,29 @@ def checkinput(wrange, vmicro, linelist):
       molecular lines
       (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
 
+  Returns
+  ------
+  imode: int
+      appropriate value for the variable imode, which specifies whether
+      one will use many atomic lines (imode=0), just a few (imode=1),
+      or none (H lines are an exception; imode=2)
+
   """
 
 
   #find range of atomic line list
-  minlambda, maxlambda = getlinelistrange(os.path.join(linelistdir,linelist[0]))
+  nlines, minlambda, maxlambda = getlinelistrange(os.path.join(linelistdir,linelist[0]))
 
   #check
-  assert (wrange[0] > minlambda and wrange[1] < maxlambda),'wrange exceeds the allow range ('+str(minlambda)+' to '+str(maxlambda)+')'
+  if nlines > 10:
+    assert (wrange[0] > minlambda and wrange[1] < maxlambda),'wrange exceeds the allow range ('+str(minlambda)+' to '+str(maxlambda)+')'
+    imode = 0
+  else:
+    imode = 1
 
   assert (vmicro >= 0.0),'vmicro = '+str(vmicro)+' but cannot < 0.'
   
-  return(True)
+  return(imode)
 
 def getlinelistrange(atomiclinelist):
 #finds out min and max wavelengths for a line list
@@ -1216,13 +1231,15 @@ def getlinelistrange(atomiclinelist):
   line = f.readline()
   entries = line.split()
   minlambda = float(entries[0])*10.
-  f.seek(os.path.getsize(atomiclinelist)-103)
+  fsize = os.path.getsize(atomiclinelist)
+  f.seek(fsize-103)
   line = f.readline()
   f.close()
   entries = line.split()
   maxlambda = float(entries[0])*10.
+  nlines = int(0.01 * fsize)
 
-  return(minlambda,maxlambda)
+  return(nlines, minlambda,maxlambda)
 
 
 
