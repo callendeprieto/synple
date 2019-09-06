@@ -46,7 +46,7 @@ Starting in the main synple directory
  
    from synple import syn
 
-   x, y, z = syn('sun.mod', (6160.,6164.))
+   x, y, z = syn('ksun.mod', (6160.,6164.))
 
    #and to plot the continuum normalized spectrum
 
