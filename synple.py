@@ -403,7 +403,7 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
     linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, \
     steprot=0.0, stepfwhm=0.0,  clean=True, save=None):
 
-  """Sets up a directory tree for computeng synthetic spectra for a list of files in 
+  """Sets up a directory tree for computing synthetic spectra for a list of files in 
   parallel. The values of vmicro, vrot, fwhm, and nfe can be iterables. Whether or not 
   dw is specified the results will be placed on a common wavelength scale by interpolation.
   When not specified, dw will be chosen as appropriate for the first model in modelfiles.
@@ -462,6 +462,7 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
       prepended to the file names 
       (default None)
 
+
   Returns
   -------
   wave: numpy array of floats (1D)
@@ -473,6 +474,8 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
 
   """
 
+  #synspec does not currently run in parallel
+  nthreads = 1
 
 
   #when vmicro, vrot, fwhm or nitrogen are not iterables, we create ones, otherwise we copy them
@@ -518,51 +521,69 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
         except OSError:
           print( "cannot change dir to hyd%07d" % (idir) )
 
-        #open file to write the script
-        s = open(dir+".job","w")
+        if entry == 'missing':
+          pass
+        else:
+          #setup the slurm script
+          sfile = dir+".job"
+          now=time.strftime("%c")
+          s = open(sfile ,"w")
+          s.write("#!/bin/bash \n")
+          s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
+          s.write("#This script was written by synple on "+now+" \n") 
+          s.write("#SBATCH  -J "+dir+" \n")
+          s.write("#SBATCH  -p batch"+" \n")
+          s.write("#SBATCH  -o "+dir+"_%j.out"+" \n")
+          s.write("#SBATCH  -e "+dir+"_%j.err"+" \n")
+          s.write("#SBATCH  -n "+str(nthreads)+" \n")
+          s.write("#SBATCH  -t 04:00:00"+" \n") #hh:mm:ss
+          s.write("#SBATCH  -D "+os.path.abspath(os.curdir)+" \n")
+          s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n\n\n")
 
-        abu1 = copy.copy(abu)
 
-        #if need be, adjust nitrogen abundance according to nfe
-        if (abs(nfe1) > 1e-7):
-          if (abu1 == None):
-            checksynspec(linelist,entry)
-            atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
-          abu1[6] = abu1[6] * 10.**nfe1
+          abu1 = copy.copy(abu)
 
-        x, y, z = syn(entry, wrange, dw=None, strength=strength, vmicro=vmicro1, \
-        abu=abu1, linelist=linelist, hhm=hhm, compute=False)
+          #if need be, adjust nitrogen abundance according to nfe
+          if (abs(nfe1) > 1e-7):
+            if (abu1 == None):
+              checksynspec(linelist,entry)
+              atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
+            abu1[6] = abu1[6] * 10.**nfe1
 
-        s.write(synspec+" < "+"fort.5"+"\n")
+          x, y, z = syn(entry, wrange, dw=None, strength=strength, vmicro=vmicro1, \
+          abu=abu1, linelist=linelist, hhm=hhm, compute=False)
 
-        si = open("fort.55",'r')
-        for i in range(6): line = si.readline()
-        entries = line.split()
-        space = float(entries[5])
-        si.close()
+          s.write(synspec+" < "+"fort.5"+"\n")
+
+          si = open("fort.55",'r')
+          for i in range(6): line = si.readline()
+          entries = line.split()
+          space = float(entries[5])
+          si.close()
             
-        iconv = 0
-        for vrot1 in vrots:
-          for fwhm1 in fwhms:
+          iconv = 0
+          for vrot1 in vrots:
+            for fwhm1 in fwhms:
 
-            print('iconv=',iconv)
+              print('iconv=',iconv)
 
-            iconv = iconv + 1
-            inconv = ("%07dfort.5" % (iconv) )
-            outconv = ("'%07dfort.7'" % (iconv) )
-            if fwhm1> 0. or vrot1 > 0.:
-              f = open(inconv,'w')
-              f.write( ' %s %s %s \n' % ("'fort.7'", "'fort.17'", outconv) )
-              f.write( ' %f %f %f \n' % (vrot1, space, steprot) )
-              f.write( ' %f %f \n' % (fwhm1, stepfwhm) )
-              print('stepfwhm=',stepfwhm)
-              f.write( ' %f %f %i \n' % (wrange[0], wrange[1], 0) )
-              f.close()
-              s.write(rotin+" < "+inconv+"\n")
-            else:
-              s.write("cp "+" fort.7 "+outconv[1:-1]+"\n")
+              iconv = iconv + 1
+              inconv = ("%07dfort.5" % (iconv) )
+              outconv = ("'%07dfort.7'" % (iconv) )
+              if fwhm1> 0. or vrot1 > 0.:
+                f = open(inconv,'w')
+                f.write( ' %s %s %s \n' % ("'fort.7'", "'fort.17'", outconv) )
+                f.write( ' %f %f %f \n' % (vrot1, space, steprot) )
+                f.write( ' %f %f \n' % (fwhm1, stepfwhm) )
+                print('stepfwhm=',stepfwhm)
+                f.write( ' %f %f %i \n' % (wrange[0], wrange[1], 0) )
+                f.close()
+                s.write(rotin+" < "+inconv+"\n")
+              else:
+                s.write("cp "+" fort.7 "+outconv[1:-1]+"\n")
 
-        s.close()
+          s.close()
+          os.chmod(sfile ,0o755)
 
         try:
           os.chdir('..')
@@ -579,8 +600,8 @@ def polyopt(wrange,dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19','kmol3_0.01_
     tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), tvmicro=(1,1.0,0.0), \
     zexclude=None):
 
-  """Collects all the MARCS models in modeldir that are part of a regular grid defined
-  by triads in various parameters. Each triad has three values (n, llimit, step)
+  """Sets up a directory tree for computing opacity tables for TLUSTY. The table collection forms 
+  a regular grid defined by triads in various parameters. Each triad has three values (n, llimit, step)
   that define an array x = np.range(n)*step + llimit. Triads in teff (tteff) and logg
   (tlogg) are mandatory. Triads in [Fe/H] (tfeh), [alpha/Fe] (tafe), [C/Fe] (tcfe), 
   [N/Fe] (tnfe), [O/Fe] (tofe), [r/Fe] (rfe), and [s/Fe] (sfe) are optional since 
@@ -630,6 +651,9 @@ def polyopt(wrange,dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19','kmol3_0.01_
     (default None)
 
   """
+
+  #synspec does not currently run in parallel
+  nthreads = 1
 
   #expanding the triads t* into iterables
   try: 
@@ -751,8 +775,22 @@ def polyopt(wrange,dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19','kmol3_0.01_
                   #check input parameters are valid
                   imode = checkinput(wrange, vmicro, linelist)
 
-                  #open file to write the script
-                  s = open(dir+".job","w")
+                  #setup the slurm script
+                  sfile = dir+".job"
+                  now=time.strftime("%c")
+                  s = open(sfile ,"w")
+                  s.write("#!/bin/bash \n")
+                  s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
+                  s.write("#This script was written by synple on "+now+" \n") 
+                  s.write("#SBATCH  -J "+dir+" \n")
+                  s.write("#SBATCH  -p batch"+" \n")
+                  s.write("#SBATCH  -o "+dir+"_%j.out"+" \n")
+                  s.write("#SBATCH  -e "+dir+"_%j.err"+" \n")
+                  s.write("#SBATCH  -n "+str(nthreads)+" \n")
+                  s.write("#SBATCH  -t 04:00:00"+" \n") #hh:mm:ss
+                  s.write("#SBATCH  -D "+os.path.abspath(os.curdir)+" \n")
+                  s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n\n\n")
+
                 
                   abu = copy.copy(sol)
 
@@ -790,6 +828,7 @@ def polyopt(wrange,dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19','kmol3_0.01_
                   
                   s.write(synspec+" < "+"fort.5"+"\n")
                   s.close()
+                  os.chmod(sfile ,0o755)
                   
                   try:
                     os.chdir('..')
@@ -921,6 +960,8 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), t
 
   files = []
 
+  fi = open('files.txt','w')
+
   for teff in teffs:
     for logg in loggs:
       for feh in fehs:
@@ -942,16 +983,134 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), t
                     filename = ("%s%4i_g%+.1f_%s_z%+.2f_a%+.2f_c%+.2f_n%+.2f_o%+.2f_r%+.2f_s%+.2f.mod*" % (a1,teff,logg,code,feh,afe,cfe,nfe,ofe,rfe,sfe) )
 
                     file = glob.glob(os.path.join(modeldir,filename))
+
                     if ignore_missing_models == False:
                       assert len(file) > 0, 'Cannot find model '+filename+' in modeldir '+modeldir                   
                       assert len(file) == 1, 'More than one model matches '+filename+' in modeldir '+modeldir
                     else:
-                      if (len(file) == 0): files.append(None)
+                      if (len(file) == 0): files.append('missing')
                       
-                    if (len(file) == 1): 
-                     for entry in file: files.append(entry)
+                    if (len(file) == 1): files.append(file[0])
+
+                    fi.write( "%s  %4i %+.1f %s %+.2f %+.2f %+.2f %+.2f %+.2f %+.2f %+.2f\n" % (files[-1],teff,logg,feh,afe,cfe,nfe,ofe,rfe,sfe) )
+
+
+
+  fi.close()
 
   return(files)
+
+def collect_k2odfnew(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
+    ignore_missing_models=False):
+
+  """Collects all the ODFNEW Castelli/Kurucz models in modeldir that are part of a regular grid defined
+  by triads in various parameters. Each triad has three values (n, llimit, step)
+  that define an array x = np.range(n)*step + llimit. Triads in teff (tteff) and logg
+  (tlogg) are mandatory. Triads in [Fe/H] (tfeh), and [alpha/Fe] (tafe) are optional since 
+  arrays with just one 0.0 are included by default. 
+
+  NOTE: There are ODFNEW models with only afe=[alpha/Fe]=0.0 or 0.4. The latter are used whenever
+  afe takes values > 0.0, while the afe=0.0 models are used otherwise.
+
+  Parameters
+  ----------
+  modeldir: str
+    directory where model atmosphere files are
+  tteff: tuple
+    Teff triad (n, llimit, step)
+  tlogg: tuple
+    logg triad (n, llimit, step)
+  tfeh: tuple
+    [Fe/H] triad
+  tafe: tuple
+    [alpha/Fe] triad  
+  ignore_missing_models: bool
+    set to True to avoid stopping when a model is missing,
+    in which case a None is entered in the returning list
+ 
+  Returns
+  -------
+  files: list of str
+    file names with Kurucz ODFNEWS models that are in modeldir and match
+    the parameters in the requested grid
+
+  """
+
+  #expanding the triads t* into iterables
+  try: 
+    nteff = len(tteff)
+    assert (nteff == 3), 'Error: Teff triad must have three elements (n, llimit, step)'
+    teffs = np.arange(tteff[0])*tteff[2] + tteff[1]
+  except TypeError:
+    print('Error: Teff triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nlogg = len(tlogg)
+    assert (nlogg == 3), 'Error: logg triad must have three elements (n, llimit, step)'
+    loggs = np.arange(tlogg[0])*tlogg[2] + tlogg[1]
+  except TypeError:
+    print('Error: logg triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nfeh = len(tfeh)
+    assert (nfeh == 3), 'Error: feh triad must have three elements (n, llimit, step)'
+    fehs = np.arange(tfeh[0])*tfeh[2] + tfeh[1]
+  except TypeError:
+    print('Error: feh triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nafe = len(tafe)
+    assert (nafe == 3), 'Error: afe triad must have three elements (n, llimit, step)'
+    afes = np.arange(tafe[0])*tafe[2] + tafe[1]
+  except TypeError:
+    print('Error: afe triad must have three elements (n, llimit, step)')
+    return ()
+
+
+  files = []
+
+  fi = open('files.txt','w')
+
+  for teff in teffs:
+    for logg in loggs:
+      for feh in fehs:
+        for afe in afes:
+                
+                    print(teff,logg,feh,afe)
+                    code = 'k2odfnew.dat'
+
+                    if afe > 0.0: 
+                      a1 = 'a' 
+                    else: 
+                      a1 = ''
+
+                    if feh < 0.0:
+                      a2 = 'am'
+                    else:
+                      a2 = 'ap'
+
+                    filename = ("t%05ig%.1f%s%02i%s" % (teff,logg,a2,int(abs(feh)*10),a1+code) )
+
+                    file = glob.glob(os.path.join(modeldir,filename))
+
+
+                    if ignore_missing_models == False:
+                      assert len(file) > 0, 'Cannot find model '+filename+' in modeldir '+modeldir                   
+                      assert len(file) == 1, 'More than one model matches '+filename+' in modeldir '+modeldir
+                    else:
+                      if (len(file) == 0): files.append('missing')
+                      
+                    if (len(file) == 1): files.append(file[0])
+
+                    fi.write( "%s  %4i %+.1f %+.2f %+.2f \n" % (files[-1],teff,logg,feh,afe) )
+
+  fi.close()
+
+  return(files)
+
 
 
 def getallt(modelfiles):
