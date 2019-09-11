@@ -595,7 +595,7 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
 
 
 
-def polyopt(wrange,dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, \
+def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, \
     tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), \
     tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), tvmicro=(1,1.0,0.0), \
     zexclude=None):
@@ -722,8 +722,8 @@ def polyopt(wrange,dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19','kmol3_0.01_
   
 
   #ranges for the opacity table
-  lt = np.arange(22)*0.066 + 3.0001  #log10(T)
-  lrho = np.arange(22)*0.55 -14.0 #log10(density)
+  lt = np.arange(20)*0.068 + 3.08   #log10(T)
+  lrho = np.arange(20)*0.59 -14.0  #log10(density)
   
   symbol, mass, sol = elements()
   z_metals = np.arange(97,dtype=int) + 3
