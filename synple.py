@@ -595,10 +595,11 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
 
 
 
-def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, \
+def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], \
+    tlt = (20,3.08,0.068), tlrho = (20,-14.0,0.59), \
     tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), \
     tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), tvmicro=(1,1.0,0.0), \
-    zexclude=None):
+    zexclude=None, hhm=True):
 
   """Sets up a directory tree for computing opacity tables for TLUSTY. The table collection forms 
   a regular grid defined by triads in various parameters. Each triad has three values (n, llimit, step)
@@ -626,7 +627,15 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
       (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
   hhm: bool
       when True the continuum opacity is simplified to H and H-
-      (default False, and more complete opacities are included)  
+      (default False, and more complete opacities are included)
+  tlt: tuple
+    log10(T) triad (n, llimit, step) for opacity grid
+    (default values  chosen for grid lt = np.arange(20)*0.068 + 3.08,
+     to cover the range in the DR16 APOGEE MARCS grids)
+  tlrho: tuple
+    log10(rho) triad (n, llimit, step) for opacity grid
+    (default values  chosen for grid lrho = np.arange(20)*0.59 -14.0,
+     to cover the range in the DR16 APOGEE MARCS grids)
   tteff: tuple
     Teff triad (n, llimit, step)
   tlogg: tuple
@@ -722,8 +731,22 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
   
 
   #ranges for the opacity table
-  lt = np.arange(20)*0.068 + 3.08   #log10(T)
-  lrho = np.arange(20)*0.59 -14.0  #log10(density)
+  try: 
+    nlt = len(tlt)
+    assert (nlt == 3), 'Error: lt triad must have three elements (n, llimit, step)'
+    lt = np.arange(tlt[0])*tlt[2] + tlt[1]  #log10(T)
+  except TypeError:
+    print('Error: tlt triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nlrho = len(tlrho)
+    assert (nlrho == 3), 'Error: lrho triad must have three elements (n, llimit, step)'
+    lrho = np.arange(tlrho[0])*tlrho[2] + tlrho[1] #log10(density)
+  except TypeError:
+    print('Error: tlrho triad must have three elements (n, llimit, step)')
+    return ()
+
   
   symbol, mass, sol = elements()
   z_metals = np.arange(97,dtype=int) + 3
@@ -811,8 +834,7 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
                         if rfrac[i] > 0.0: abu[z_rs[i] - 1] = abu[z_rs[i] - 1] * (1.0 - rfrac[i]) * 10.**sfe
 
 
-                  write55(wrange,dw=dw,imode=-3,strength=strength, vmicro=vmicro, \
-                  linelist=linelist)
+                  write55(wrange,dw=dw,imode=7,strength=strength, vmicro=vmicro, linelist=linelist)
 
                   write5(9999.,9.9,abu,hhm)
                   
@@ -1261,8 +1283,8 @@ def read_model(modelfile):
 
   #check
   if not os.path.isfile(modelfile):
-    if os.path.isfile(os.path.join(modeldir,modelfile)):
-      modelfile = os.path.join(modeldir,modelfile)
+    mf = os.path.join(modeldir,modelfile)
+    if os.path.isfile(mf): modelfile = mf
 
   atmostype = identify_atmostype(modelfile)
 
@@ -1326,12 +1348,15 @@ def checksynspec(linelist,modelfile):
   for entry in dirs: assert (os.path.isdir(entry)), 'dir '+entry+' missing'
 
   files = [synspec,rotin]
-  for entry in linelist: files.append(os.path.join(linelistdir,entry))
+  for entry in linelist: 
+    if not os.path.isfile(entry):
+      ll = os.path.join(linelistdir,entry)
+      if os.path.isfile(ll): files.append(ll)
   for entry in files: assert (os.path.isfile(entry)), 'file '+entry+' missing'
 
   if not os.path.isfile(modelfile):
-    if os.path.isfile(os.path.join(modeldir,modelfile)):
-      modelfile = os.path.join(modeldir,modelfile)
+    mf = os.path.join(modeldir,modelfile)
+    if os.path.isfile(mf): modelfile = mf
 
   print(modeldir)
   print(modelfile)
@@ -1363,23 +1388,37 @@ def checkinput(wrange, vmicro, linelist):
   ------
   imode: int
       appropriate value for the variable imode, which specifies whether
-      one will use many atomic lines (imode=0), just a few (imode=1),
-      or none (H lines are an exception; imode=2)
+      one will use many atomic lines (imode=10), just a few (imode=11),
+      or none (H lines are an exception; imode=12)
 
   """
 
 
-  #find range of atomic line list
-  nlines, minlambda, maxlambda = getlinelistrange(os.path.join(linelistdir,linelist[0]))
+  #determine imode
+  # imode = 10  is default, atoms and molecules, at least 2 line lists
+  # imode = 12 for pure continuum
+  # imode = 11 for few-lines mode
+  # imode =  7 for regular opacity tables (TLUSTY)
 
-  #check
-  if nlines > 10:
-    assert (wrange[0] > minlambda and wrange[1] < maxlambda),'wrange exceeds the allow range ('+str(minlambda)+' to '+str(maxlambda)+')'
-    imode = 0
+  if len(linelist) == 0: 
+    imode = 12  # no atomic or molecular line list -> pure continuum and no molecules
   else:
-    imode = 1
 
-  assert (vmicro >= 0.0),'vmicro = '+str(vmicro)+' but cannot < 0.'
+    #find range of atomic line list
+    if not os.path.isfile(linelist[0]):
+      ll = os.path.join(linelistdir,linelist[0])
+      if os.path.isfile(ll): linelist[0] = ll
+
+    nlines, minlambda, maxlambda = getlinelistrange(linelist[0])
+
+    #check
+    if nlines > 10:
+      assert (wrange[0] > minlambda and wrange[1] < maxlambda),'wrange exceeds the allow range ('+str(minlambda)+' to '+str(maxlambda)+')'
+      imode = 10
+    else:
+      imode = 11
+
+    assert (vmicro >= 0.0),'vmicro = '+str(vmicro)+' but cannot < 0.'
   
   return(imode)
 
@@ -1442,17 +1481,15 @@ def write2(lt,lrho,wrange, filename='opt.data', dlw=2e-5, binary=True,strength=1
     ibingr = 1
   else:
     ibingr = 0
+  filename = "'"+filename+"'"
   f.write( " %s %d \n" % (filename,ibingr) )
   f.close()
 
   return()
 
 
-def write55(wrange,dw=1e-2,imode=0,strength=1e-4,vmicro=0.0,linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], atmostype='kurucz'):
-
-  # imode = 0  is default, atoms and molecules, at least 2 line lists
-  # imode = 7 for regular opacity tables (TLUSTY)
-  if len(linelist) == 0: imode = 2  # no atomic or molecular line list -> pure continuum and no molecules
+def write55(wrange,dw=1e-2,imode=0,strength=1e-4,vmicro=0.0, \
+  linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], atmostype='kurucz'):
 
 
   #imode,idst,iprin
@@ -1471,8 +1508,8 @@ def write55(wrange,dw=1e-2,imode=0,strength=1e-4,vmicro=0.0,linelist=['gfallx3_b
   f.write(5*zero+"\n")
   f.write(one+4*zero+"\n")
   f.write(two+2*zero+"\n")
-  if imode == -3:
-    f.write( ' %f %f %f %i %e %f \n ' % (wrange[0], -wrange[1], 100., 2000, strength, dw) )
+  if imode == 7:
+    f.write( ' %f %f %f %i %e %f \n ' % (wrange[0],  wrange[1], 100., 2000, strength, dw) )
   else:
     f.write( ' %f %f %f %i %e %f \n ' % (wrange[0],  wrange[1], 200., 2000, strength, dw) )
   ll = len(linelist)
@@ -1578,11 +1615,14 @@ def write8(teff, logg, nd, atmos, atmostype):
   
 
 def create_links(linelist):
-#create soft links for line lists, model atom dir and model atmosphere
+#create soft links for line lists, mand odel atom dir 
 
-  for i in range(len(linelist)): 
-    if i == 0: os.symlink(os.path.join(linelistdir,linelist[0]),'fort.19')
-    else: os.symlink(os.path.join(linelistdir,linelist[i]),'fort.'+str(20-1+i))
+  for i in range(len(linelist)):
+    if not os.path.isfile(linelist[i]):
+      ll = os.path.join(linelistdir,linelist[i])
+      if os.path.isfile(ll): linelist[i] = ll
+    if i == 0: os.symlink(linelist[0],'fort.19')
+    else: os.symlink(linelist[i],'fort.'+str(20-1+i))
 
   os.symlink(modelatomdir,'./data')
 
