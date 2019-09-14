@@ -840,7 +840,7 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
                   
                   writetas('tas',1,linelist)
 
-                  write2(lt,lrho,wrange,filename='opt.dat', binary=True,\
+                  write2(lt,lrho,wrange,filename='opt.dat', \
                   strength=strength,inttab=1)
 
                   if zexclude != None: 
@@ -1467,7 +1467,7 @@ def write3(zexclude):
   return()
 
 
-def write2(lt,lrho,wrange, filename='opt.data', dlw=2e-5, binary=True,strength=1e-4,inttab=1):
+def write2(lt,lrho,wrange, filename='opt.data', dlw=2e-5, binary=False,strength=1e-4,inttab=1):
 #write fort.2 file for creating opacity tables for TLUSTY
 
   f = open('fort.2','w')
