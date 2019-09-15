@@ -532,7 +532,6 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
           s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
           s.write("#This script was written by synple on "+now+" \n") 
           s.write("#SBATCH  -J "+dir+" \n")
-          s.write("#SBATCH  -p batch"+" \n")
           s.write("#SBATCH  -o "+dir+"_%j.out"+" \n")
           s.write("#SBATCH  -e "+dir+"_%j.err"+" \n")
           s.write("#SBATCH  -n "+str(nthreads)+" \n")
@@ -806,11 +805,11 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
                   s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
                   s.write("#This script was written by synple on "+now+" \n") 
                   s.write("#SBATCH  -J "+dir+" \n")
-                  s.write("#SBATCH  -p batch"+" \n")
                   s.write("#SBATCH  -o "+dir+"_%j.out"+" \n")
                   s.write("#SBATCH  -e "+dir+"_%j.err"+" \n")
                   s.write("#SBATCH  -n "+str(nthreads)+" \n")
-                  s.write("#SBATCH  -t 04:00:00"+" \n") #hh:mm:ss
+                  s.write("#SBATCH  --ntasks-per-node "+str(4)+" \n")
+                  s.write("#SBATCH  -t 48:00:00"+" \n") #hh:mm:ss
                   s.write("#SBATCH  -D "+os.path.abspath(os.curdir)+" \n")
                   s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n\n\n")
 
