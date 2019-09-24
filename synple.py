@@ -833,7 +833,7 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
                         if rfrac[i] > 0.0: abu[z_rs[i] - 1] = abu[z_rs[i] - 1] * (1.0 - rfrac[i]) * 10.**sfe
 
 
-                  write55(wrange,dw=dw,imode=7,strength=strength, vmicro=vmicro, linelist=linelist)
+                  write55(wrange,dw=dw,imode=-3,strength=strength, vmicro=vmicro, linelist=linelist)
 
                   write5(9999.,9.9,abu,hhm)
                   
@@ -847,7 +847,7 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
                     
                   create_links(linelist)
                   
-                  s.write(synspec+" < "+"fort.5"+"\n")
+                  s.write('time ' + synspec + " < "+"fort.5"+"\n")
                   s.close()
                   os.chmod(sfile ,0o755)
                   
@@ -1387,20 +1387,21 @@ def checkinput(wrange, vmicro, linelist):
   ------
   imode: int
       appropriate value for the variable imode, which specifies whether
-      one will use many atomic lines (imode=10), just a few (imode=11),
-      or none (H lines are an exception; imode=12)
+      one will use many atomic lines (imode=0), just a few (imode=1),
+      or none (H lines are an exception; imode=2)
 
   """
 
 
   #determine imode
-  # imode = 10  is default, atoms and molecules, at least 2 line lists
-  # imode = 12 for pure continuum
-  # imode = 11 for few-lines mode
-  # imode =  7 for regular opacity tables (TLUSTY)
+  # imode = 0  is default, atoms and molecules, at least 2 line lists 
+  # synple always sets IFMOL = 1 in 'tas' 
+  # imode = 2 for pure continuum
+  # imode = 1 for few-lines mode
+  # imode = -3 for regular opacity tables (TLUSTY)
 
   if len(linelist) == 0: 
-    imode = 12  # no atomic or molecular line list -> pure continuum and no molecules
+    imode = 2  # no atomic or molecular line list -> pure continuum and no molecules
   else:
 
     #find range of atomic line list
@@ -1413,9 +1414,9 @@ def checkinput(wrange, vmicro, linelist):
     #check
     if nlines > 10:
       assert (wrange[0] > minlambda and wrange[1] < maxlambda),'wrange exceeds the allow range ('+str(minlambda)+' to '+str(maxlambda)+')'
-      imode = 10
+      imode = 0
     else:
-      imode = 11
+      imode = 1
 
     assert (vmicro >= 0.0),'vmicro = '+str(vmicro)+' but cannot < 0.'
   
@@ -1507,10 +1508,10 @@ def write55(wrange,dw=1e-2,imode=0,strength=1e-4,vmicro=0.0, \
   f.write(5*zero+"\n")
   f.write(one+4*zero+"\n")
   f.write(two+2*zero+"\n")
-  if imode == 7:
-    f.write( ' %f %f %f %i %e %f \n ' % (wrange[0],  wrange[1], 100., 2000, strength, dw) )
+  if imode == -3:
+    f.write( ' %f %f %f %i %e %f \n ' % (wrange[0],  -wrange[1], 100., 2000, strength, dw) )
   else:
-    f.write( ' %f %f %f %i %e %f \n ' % (wrange[0],  wrange[1], 200., 2000, strength, dw) )
+    f.write( ' %f %f %f %i %e %f \n ' % (wrange[0],   wrange[1], 200., 2000, strength, dw) )
   ll = len(linelist)
   if ll < 2: f.write(2*zero)
   else: f.write(str(ll-1) + ' ' + ' '.join(map(str,np.arange(ll-1)+20)))
