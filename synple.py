@@ -62,7 +62,7 @@ modeldir = synpledir + "/models"
 modelatomdir = synpledir + "/data"
 linelistdir = synpledir + "/linelists"
 bindir = synpledir + "/bin"
-synspec = bindir + "/synspec53p"
+synspec = bindir + "/synspec53r"
 rotin = bindir + "/rotin3"
 
 
@@ -660,7 +660,7 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
 
   """
 
-  #synspec does not currently run in parallel
+  #pynspec does not currently run in parallel
   nthreads = 1
 
   #expanding the triads t* into iterables

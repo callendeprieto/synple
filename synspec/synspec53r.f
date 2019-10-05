@@ -83,6 +83,10 @@ c
       IF(IMODE.LE.-3) CALL INIBL1(IGRD)
       IF(IFMOL.GT.0) CALL MOLINI
 c
+c     zero abundances for selected species (if required)
+c
+      if(imode.le.-3) call abnchn(1)
+c
       IBLANK=0
       NXTSET=0
       IF(IFMOL.GT.0.AND.IMODE.LT.2) THEN
@@ -2505,7 +2509,7 @@ C
       IHYL=-1
       imode0=imode
 c
-      if(imode.le.-3) call abnchn(1)
+c     if(imode.le.-3) call abnchn(1)
 C
 C     set up the partial line list for the current interval
 C
@@ -2562,7 +2566,7 @@ C
          ID=1
          write(27,626) temp(id),dens(id),elec(id)
          CALL OPAC(ID,CROSS,ABSO,EMIS,SCAT)
-         DO IJ=3,NFREQ
+         DO IJ=3,NFREQ-1
             ABSO(IJ)=(ABSO(IJ)+SCAT(IJ))/HPOP
             WRITE(27,627) WLAM(IJ),ABSO(IJ),scat(ij)
          END DO
@@ -8247,13 +8251,15 @@ C
 c
 c     correction for molecular lines
 c
+      if(nmlist.gt.0.and.ifmol.gt.0) then
       do ilist=1,nmlist
-         if(alastm(ilist).le.alact) then
+         if(alastm(ilist).gt.0..and.alastm(ilist).le.alact) then
           nblank=iblank
           irlist=1
 c         write(*,*) 'iniset mol',ilist,alastm(ilist),alam
          end if
       end do
+      end if
 c
       if(ifwin.le.0) then
       FREQ(1)=FREQ(3)
@@ -9659,10 +9665,10 @@ C
          if(ill.gt.0) ill=ill-nfirst(iel(ill))+1
          if(ilu.gt.0) ilu=ilu-nfirst(iel(ilu))+1
        
-        WRITE(12,603) IL0,IL,ALAM,TYPAT(IAT),TYPION(ION),GF,EXCL,
-     *                 STR0,EQW,APR,ilown(il),iupn(il),id
-c         WRITE(12,603) ALAM,TYPAT(IAT),TYPION(ION),GF,EXCL,
-c     *                 STR0,EQW,APR,ill,ilu,id
+c        WRITE(12,603) IL0,IL,ALAM,TYPAT(IAT),TYPION(ION),GF,EXCL,
+c    *                 STR0,EQW,APR,ilown(il),iupn(il),id
+         WRITE(12,603) ALAM,TYPAT(IAT),TYPION(ION),GF,EXCL,
+     *                 STR0,EQW,APR,ill,ilu,id
          end if
    20 CONTINUE
 C
@@ -9672,10 +9678,10 @@ c    *        ' ------------')
   602 FORMAT(/1H ,13X,
      * 'LAMBDA    ATOM    LOG GF       ELO    LINE/CONT',2X,
      * 'EQ.WIDTH'/)
-  603 FORMAT(1H ,I3,I7,F10.3,2X,2A4,F7.2,F12.3,1PE11.2,0PF8.1,1X,A4,
-     *       4i3)
-c  603 FORMAT(F11.3,2X,A4,A3,F7.2,F12.3,1PE11.2,0PF8.1,1X,A4,
-c    *       3i4)
+c 603 FORMAT(1H ,I3,I7,F10.3,2X,2A4,F7.2,F12.3,1PE11.2,0PF8.1,1X,A4,
+c    *       4i3)
+  603 FORMAT(F11.3,2X,A4,A3,F7.2,F12.3,1PE11.2,0PF8.1,1X,A4,
+     *       3i4)
 C
   100 CONTINUE
       RETURN
@@ -11035,7 +11041,6 @@ C
 C
       READ(8,501) TEF,GRAV
       READ(8,502) ND
-      write(*,*)'nd=',ND
       ND=ND-1
   501 FORMAT(4X,F8.0,9X,F8.5)
 c  502 FORMAT(/////////////////////10X,I3)
@@ -11135,6 +11140,7 @@ c     IF(INMOD.EQ.2) NUMP0=4
       READ(8,*) NDPTH,NUMPAR
       READ(8,*) (DEPTH(I),I=1,NDPTH)
       ND=NDPTH
+       write(*,*) 'nd',nd
       NUMP=ABS(NUMPAR)
       DO 30 ID=1,NDPTH
          READ(8,*) (X(I),I=1,NUMP)
@@ -11330,8 +11336,6 @@ C
 C
       PARAMETER (S = 2.0706E-16)
       IFESE=0
-      WRITE(*,*) 'ICHANGE: LEVELS IN ATMOS ARE DIFFERENT'
-      write(*,*) '         THAN IN EXPLICIT ATOMS'
       DO 100 II=1,NLEVEL
          READ(ICHANG,*) IOLD,MODE,NXTOLD,ISINEW,ISIOLD,NXTSIO,REL
          IF(MODE.GE.3) IFESE=IFESE+1
@@ -17850,7 +17854,7 @@ C
 c     define a conversion table between Kurucz notation and Tsuji table 
 c     through array MOLIND
 C
-      do i=1,1000
+      do i=1,11000
          molind(i)=0
       end do
       molind(101)=2
@@ -17860,6 +17864,7 @@ C
       molind(112)=32
       molind(114)=17
       molind(116)=16
+      molind(126)=339
       molind(606)=8
       molind(607)=7
       molind(608)=6
@@ -17873,6 +17878,7 @@ C
       molind(814)=25
       molind(816)=26
       molind(822)=29
+      molind(10108)=3
 C
       ALAST=CNM/FRLAST
       ALASTM(ILIST)=ALAST
@@ -21631,7 +21637,14 @@ c        call interp(wltab,absop,wlgrid,abgrd,nfr,nfgrid,2,0,0)
             isum=isum+1
             go to 40
          end if
-         abgrd(ijgrd)=log(sum/float(isum))
+         if(isum.gt.0) then
+            abgrd(ijgrd)=log(sum/float(isum))
+          else
+            abg=abl+(absop(ij+1)-abl)/(wltab(ij+1)-wlt)*(wlgr-wlt)
+            abgrd(ijgrd)=abg
+          write(*,*) 'grd',ij,absop(ij+1),abl,wltab(ij+1),
+     *               wlt,wlgr,abg,abgrd(ijgrd),ijgrd
+         end if
          if(ijgrd.lt.nfgrid) then
             ij=ij-1
             go to 30
@@ -21718,7 +21731,7 @@ c
       d1=un/dens(1)
       if (nfreq.le.3) return 
 c
-      do ij=3,nfreq-1
+      do ij=3,nfreq
          abl=log(abso(ij)*d1)
          if(scat(ij).le.0.) scat(ij)=1.e-30
          scl=log(scat(ij)*d1)          
