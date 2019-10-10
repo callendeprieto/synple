@@ -18856,10 +18856,10 @@ c
       denso(id)=dens(id)
       eleco(id)=elec(id)
       wmmo(id)=wmm(id)
-c     dens(id)=tmass*hmass
-c     elec(id)=pe*tk
-c     wmm(id)=dens(id)/(an-elec(id))
-c     ane=elec(id)
+      dens(id)=tmass*hmass
+      elec(id)=pe*tk
+      wmm(id)=dens(id)/(an-elec(id))
+      ane=elec(id)
 c
       do i=1,nmetal
          NELEMI=NELEMX(I)

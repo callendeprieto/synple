@@ -34,6 +34,6 @@ install:
 	mv rotin3 ../bin
                                                         
 clean: 
-	rm -f synspec53r rotin3
+	rm -f synspec53r rotin3 ../bin/synspec53r ../bin/rotin3 
 
 
