@@ -355,7 +355,6 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
   cont = None
 
   for entry in modelfiles:
-    print('working on ',entry)
     for vmicro1 in vmicros:
       for nfe1 in nfes:
 
