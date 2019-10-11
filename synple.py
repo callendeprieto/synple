@@ -349,8 +349,13 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
     nnfe = 1
     nfes = [ nfe ] 
 
+  assert (len(modelfiles) > 0), 'multisyn needs at least one model to work with'
+  wave = None
+  flux = None
+  cont = None
 
   for entry in modelfiles:
+    print('working on ',entry)
     for vmicro1 in vmicros:
       for nfe1 in nfes:
 
