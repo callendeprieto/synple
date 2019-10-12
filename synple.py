@@ -249,7 +249,8 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     if (dw != None): 
       nsamples = int((wrange[1] - wrange[0])/dw) + 1
       wave3 = np.arange(nsamples)*dw + wrange[0]
-      flux = np.interp(wave3, wave, flux)
+      #flux = np.interp(wave3, wave, flux)
+      flux = interp_spl(wave3, wave, flux)      
       cont = np.interp(wave3, wave2, flux2)
       wave = wave3
 
@@ -542,10 +543,12 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
               if dw == None: dw = np.median(np.diff(x2))
               nsamples = int((wrange[1] - wrange[0])/dw) + 1
               wave = np.arange(nsamples)*dw + wrange[0]
-              flux = np.interp(wave, x2, y2)
+              #flux = np.interp(wave, x2, y2)
+              flux = interp_spl(wave, x2, y2)
               cont = np.interp(wave, x2, z2)
             else:
-              flux = np.vstack ( (flux, np.interp(wave, x, y) ) )
+              #flux = np.vstack ( (flux, np.interp(wave, x, y) ) )
+              flux = np.vstack ( (flux, interp_spl(wave, x, y) ) )
               cont = np.vstack ( (cont, np.interp(wave, x, z) ) )
 
 
@@ -2305,6 +2308,30 @@ def read_phoenix_text_model(modelfile):
 
   return (teff,logg,vmicro,abu,nd,atmos)
 
+def interp_spl(xout, x, y):
+
+  """Interpolates in 1D using cubic splines
+
+  Parameters
+  ----------
+     x: numpy array or list
+        input abscissae
+     y: numpy array or list
+        input ordinates 
+     xout: numpy array or list
+        array of abscissae to interpolate to
+
+   Returns
+   -------
+     yout: numpy array or list
+        array of interpolated values
+
+  """
+
+  tck = interpolate.splrep(x, y, s=0)
+  yout = interpolate.splev(xout, tck, der=0)
+
+  return(yout)
 
 
 def elements(husser=False):
@@ -2427,7 +2454,8 @@ def lgconv(xinput, yinput, fwhm, ppr=None):
     maxx = np.max(xinput)
     x = np.linspace(minx,maxx,nel)
     step = x[1] - x[0]
-    y = np.interp( x, xinput, yinput)
+    #y = np.interp( x, xinput, yinput)
+    y = interp_spl( x, xinput, yinput)
   else:                       #input linearly sampled
     x = xinput
     y = yinput
@@ -2491,7 +2519,8 @@ def vgconv(xinput,yinput,fwhm, ppr=None):
     x = np.linspace(minx,maxx,nel)
     step = x[1] - x[0]
     x = np.exp(x)
-    y = np.interp( x, xinput, yinput)
+    #y = np.interp( x, xinput, yinput)
+    y = interp_spl( x, xinput, yinput)
   else:
     x = xinput
     y = yinput
@@ -2555,7 +2584,8 @@ def rotconv(xinput,yinput,vsini, ppr=None):
     x = np.linspace(minx,maxx,nel)
     step = x[1] - x[0]
     x = np.exp(x)
-    y = np.interp( x, xinput, yinput)
+    #y = np.interp( x, xinput, yinput)
+    y = interp_spl( x, xinput, yinput)
   else:
     x = xinput
     y = yinput
