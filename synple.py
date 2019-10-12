@@ -471,8 +471,6 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
 
   """
 
-  #use all the threads you can grab for parallelizing over wavelength
-  if nthreads == 0: nthreads = cpu_count()
 
   #when vmicro, vrot, fwhm or nitrogen are not iterables, we create ones, otherwise we copy them
   try: 
