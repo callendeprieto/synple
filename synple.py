@@ -205,7 +205,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   writetas('tas',nd,linelist)                           #non-std param. file
   write5(teff,logg,abu,hhm)                               #abundance/opacity file
   write8(teff,logg,nd,atmos,atmostype)                  #model atmosphere
-  write55(wrange,space,imode,hydprf=2,strength,vmicro,linelist,atmostype) #synspec control file
+  write55(wrange,space,imode,2,strength,vmicro,linelist,atmostype) #synspec control file
   create_links(linelist)                      #auxiliary data
 
   if compute == False:
@@ -510,7 +510,7 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
             atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
           abu1[6] = abu1[6] * 10.**nfe1
 
-        x, y, z = syn(entry, wrange, dw=None, strength=strength, vmicro=vmicro1, \
+        x, y, z = parsyn(entry, wrange, dw=None, strength=strength, vmicro=vmicro1, \
         abu=abu1, linelist=linelist, hhm=hhm, clean=clean, save=save)
 
         space = np.mean(np.diff(x))
