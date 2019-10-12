@@ -76,7 +76,8 @@ two =  " 2 "
 
 def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, vrot=0.0, fwhm=0.0, \
-    steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, compute=True):
+    steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, 
+    compute=True, tmpdir=None):
 
   """Computes a synthetic spectrum
 
@@ -143,6 +144,10 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   compute: bool
       set to False to skip the actual synspec run, triggering clean=False
       (default True)
+  tmpdir: string
+      when is not None a temporary directory with this name will be created to store
+      the temporary synspec input/output files, and the synple log file (usually named
+      syn.log) will be named as tmpdir_syn.log.
 
   Returns
   -------
@@ -181,6 +186,20 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   #print ('linelist=',linelist)
   #print ('wrange=',wrange)
 
+  logfile = 'syn.log'
+  if tmpdir is not None:
+    startdir = os.getcwd()
+    logfile = os.path.join(startdir,os.path.split(tmpdir)[-1]) + "_" + logfile
+    try:
+      os.mkdir(tmpdir)
+    except OSError:
+      print( "cannot create tmpdir %s " % (tmpdir) )
+    try:
+      os.chdir(tmpdir)
+    except OSError:
+      print("cannot enter tmpdir %s " % (tmpdir) )
+
+
   cleanup()
 
   writetas('tas',nd,linelist)                           #non-std param. file
@@ -198,7 +217,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   else:
 
     synin = open('fort.5')
-    synout = open('syn.log','w')
+    synout = open(logfile,'w')
 
     start = time.time()
     p = subprocess.Popen([synspec], stdin=synin, stdout = synout, stderr= synout, shell=True)
@@ -236,6 +255,18 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
     if clean == True: cleanup()
 
+    if tmpdir is not None:
+      try:
+        os.chdir(startdir)
+      except OSError:
+        print("cannot change directory from tmpdir %s to startdir %s"  % (tmpdir,startdir) ) 
+      if clean == True:
+        try:
+          os.rmdir(tmpdir)
+        except OSError:
+          print("cannot remove directory tmpdir %s" % (tmpdir) )
+     
+
     if save == True:
       if synfile == None: 
         tmpstr = os.path.split(modelfile)[-1]
@@ -244,6 +275,118 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
 
   return(wave, flux, cont)
+
+
+def parsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
+    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, vrot=0.0, fwhm=0.0, \
+    steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, 
+    compute=True, nthreads = 0):
+
+  """Computes a synthetic spectrum, splitting the spectral range in nthreads parallel calculations 
+
+  Wrapper for syn, using multiprocessing, to speed-up the calculation of a broad spectral range
+
+  Parameters
+  ----------
+  modelfile : str
+      file with a model atmosphere
+  wrange: tuple or list of two floats
+      initial and ending wavelengths (angstroms)
+  dw: float, optional
+      wavelength step for the output fluxes
+      this will be the maximum interval for the radiative 
+      transfer, and will trigger interpolation at the end
+      (default is None for automatic selection)
+  strength: float, optional
+      threshold in the line-to-continuum opacity ratio for 
+      selecting lines (default is 1e-4)
+  vmicro: float, optional
+      microturbulence (km/s) 
+      (default is taken from the model atmosphere)
+  abu: array of floats (99 elements), optional
+      chemical abundances relative to hydrogen (N(X)/N(H))
+      (default taken from input model atmosphere)
+  linelist: array of str
+      filenames of the line lists, the first one corresponds to 
+      the atomic lines and all the following ones (optional) to
+      molecular lines
+      (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
+  hhm: bool
+      when True the continuum opacity is simplified to H and H-
+      (default False, and more complete opacities are included)
+  vrot: float
+      projected rotational velocity (km/s)
+      (default 0.)
+  steprot: float
+      wavelength step for convolution with rotational kernel (angstroms)
+      set to 0. for automatic adjustment (default 0.)
+  fwhm: float
+      Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
+      (default 0.)
+  stepfwhm: float
+      wavelength step for Gaussian convolution (angstroms)
+      set to 0. for automatic adjustment (default 0.)
+  clean: bool
+      True by the default, set to False to avoid the removal of the synspec
+      temporary files/links (default True)
+  save: bool
+      set to True to save the computed spectrum to a file (default False)
+      the root of the model atmosphere file, with an extension ".syn" will be used
+      but see the parameter synfile to change that
+  synfile: str
+      when save is True, this can be used to set the name of the output file
+      (default None)
+  compute: bool
+      set to False to skip the actual synspec run, triggering clean=False
+      (default True)
+  nthreads: int
+      choose the number of cores to use in the calculation
+      (default 0, meaning the code should take all the cores available)
+
+  Returns
+  -------
+  wave: numpy array of floats
+      wavelengths (angstroms)
+  flux: numpy array of floats
+      flux (H_lambda in ergs/s/cm2/A)
+  cont: numpy array of floats
+      continuum flux (same units as flux)
+
+  """
+
+  from multiprocessing import Pool,cpu_count
+
+
+  if nthreads == 0: nthreads = cpu_count()
+
+  delta = (wrange[1]-wrange[0])/nthreads
+  pars = []
+  for i in range(nthreads):
+
+    wrange1 = (wrange[0]+delta*i,wrange[0]+delta*(i+1))
+
+    pararr = [modelfile, wrange1, dw, strength, vmicro, abu, \
+      linelist, hhm, vrot, fwhm, \
+      steprot, stepfwhm,  clean, save, synfile, 
+      compute, 'par'+str(i) ]
+    pars.append(pararr)
+
+  pool = Pool(nthreads)
+  results = pool.starmap(syn,pars)
+  pool.close()
+  pool.join()
+
+  x = results[0][0]
+  y = results[0][1]
+  z = results[0][2]
+
+  if len(results) > 1:
+    for i in range(len(results)-1):
+      x = np.concatenate((x, results[i+1][0][1:]) )
+      y = np.concatenate((y, results[i+1][1][1:]) )
+      z = np.concatenate((z, results[i+1][2][1:]) )
+
+  return(x,y,z)
 
 
 def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
@@ -602,7 +745,7 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
     tlt = (20,3.08,0.068), tlrho = (20,-14.0,0.59), \
     tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), \
     tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), tvmicro=(1,1.0,0.0), \
-    zexclude=None, hhm=True):
+    zexclude=None, hhm=False):
 
   """Sets up a directory tree for computing opacity tables for TLUSTY. The table collection forms 
   a regular grid defined by triads in various parameters. Each triad has three values (n, llimit, step)
@@ -1511,7 +1654,7 @@ def write55(wrange,dw=1e-2,imode=0,strength=1e-4,vmicro=0.0, \
   f.write(" "+str(inmod)+3*zero+"\n")
   f.write(5*zero+"\n")
   f.write(one+4*zero+"\n")
-  f.write(two+2*zero+"\n")
+  f.write(zero+2*zero+"\n")
   if imode == -3:
     f.write( ' %f %f %f %i %e %f \n ' % (wrange[0],  -wrange[1], 100., 2000, strength, dw) )
   else:
