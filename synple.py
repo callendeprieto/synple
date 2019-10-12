@@ -281,7 +281,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 def parsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, vrot=0.0, fwhm=0.0, \
     steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, 
-    compute=True, nthreads=0):
+    compute=True, nthreads=1):
 
   """Computes a synthetic spectrum, splitting the spectral range in nthreads parallel calculations 
 
@@ -342,7 +342,7 @@ def parsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       (default True)
   nthreads: int
       choose the number of cores to use in the calculation
-      (default 0, meaning the code should take all the cores available)
+      (default 1, 0 has the meaning that the code should take all the cores available)
 
   Returns
   -------
@@ -393,7 +393,7 @@ def parsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
     vmicro=None, vrot=0.0, fwhm=0.0, nfe=0.0, \
     linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, \
-    steprot=0.0, stepfwhm=0.0,  clean=True, save=None, nthreads=0):
+    steprot=0.0, stepfwhm=0.0,  clean=True, save=None, nthreads=1):
 
   """Computes synthetic spectra for a list of files. The values of vmicro, vrot, 
   fwhm, and nfe can be iterables. Whether or not dw is specified the results will be 
@@ -456,7 +456,7 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
       (default None)
   nthreads: int
       choose the number of cores to use in the calculation
-      (default 0, meaning the code should take all the cores available)
+      (default 1, 0 has the meaning that the code should take all the cores available)
 
 
 
