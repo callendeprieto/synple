@@ -518,7 +518,7 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
           abu1[6] = abu1[6] * 10.**nfe1
 
         x, y, z = parsyn(entry, wrange, dw=None, strength=strength, \
-        vmicro=vmicro1, abu=abu1, linelist=linelist, hhm=hhm, \ 
+        vmicro=vmicro1, abu=abu1, linelist=linelist, hhm=hhm, \
         clean=clean, save=save, nthreads=nthreads)
 
         space = np.mean(np.diff(x))
