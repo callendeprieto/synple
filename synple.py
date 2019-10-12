@@ -177,7 +177,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   #check input parameters are valid
   imode = checkinput(wrange, vmicro, linelist)
-
+  
 
   print ('teff,logg,vmicro=',teff,logg,vmicro)
   #print ('abu=',abu)
@@ -205,7 +205,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   writetas('tas',nd,linelist)                           #non-std param. file
   write5(teff,logg,abu,hhm)                               #abundance/opacity file
   write8(teff,logg,nd,atmos,atmostype)                  #model atmosphere
-  write55(wrange,space,imode,strength,vmicro,linelist,atmostype) #synspec control file
+  write55(wrange,space,imode,hydprf=2,strength,vmicro,linelist,atmostype) #synspec control file
   create_links(linelist)                      #auxiliary data
 
   if compute == False:
@@ -980,7 +980,7 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
                         if rfrac[i] > 0.0: abu[z_rs[i] - 1] = abu[z_rs[i] - 1] * (1.0 - rfrac[i]) * 10.**sfe
 
 
-                  write55(wrange,dw=dw,imode=-3,strength=strength, vmicro=vmicro, linelist=linelist)
+                  write55(wrange,dw=dw,imode=-3,hydprf=0, strength=strength, vmicro=vmicro, linelist=linelist)
 
                   write5(9999.,9.9,abu,hhm)
                   
@@ -1635,7 +1635,7 @@ def write2(lt,lrho,wrange, filename='opt.data', dlw=2e-5, binary=False,strength=
   return()
 
 
-def write55(wrange,dw=1e-2,imode=0,strength=1e-4,vmicro=0.0, \
+def write55(wrange,dw=1e-2,imode=0,hydprf=2,strength=1e-4,vmicro=0.0, \
   linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], atmostype='kurucz'):
 
 
@@ -1654,7 +1654,7 @@ def write55(wrange,dw=1e-2,imode=0,strength=1e-4,vmicro=0.0, \
   f.write(" "+str(inmod)+3*zero+"\n")
   f.write(5*zero+"\n")
   f.write(one+4*zero+"\n")
-  f.write(zero+2*zero+"\n")
+  f.write(hydprf+2*zero+"\n")
   if imode == -3:
     f.write( ' %f %f %f %i %e %f \n ' % (wrange[0],  -wrange[1], 100., 2000, strength, dw) )
   else:
