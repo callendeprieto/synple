@@ -278,12 +278,12 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   return(wave, flux, cont)
 
 
-def parsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
+def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, vrot=0.0, fwhm=0.0, \
     steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, 
     compute=True, nthreads=1):
 
-  """Computes a synthetic spectrum, splitting the spectral range in nthreads parallel calculations 
+  """Computes a synthetic spectrum, splitting the spectral range in nthreads parallel calculations
 
   Wrapper for syn, using multiprocessing, to speed-up the calculation of a broad spectral range
 
@@ -358,7 +358,8 @@ def parsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   from multiprocessing import Pool,cpu_count
 
 
-  if nthreads == 0: nthreads = cpu_count()
+  if nthreads == 0: 
+    nthreads = cpu_count()
 
   delta = (wrange[1]-wrange[0])/nthreads
   pars = []
@@ -388,6 +389,139 @@ def parsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       z = np.concatenate((z, results[i+1][2][1:]) )
 
   return(x,y,z)
+
+def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
+    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, vrot=0.0, fwhm=0.0, \
+    steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, 
+    compute=True, nthreads=1):
+
+  """Computes a synthetic spectrum, splitting the spectral range in nthreads parallel calculations 
+
+  Wrapper for syn, using ray, to speed-up the calculation of a broad spectral range
+
+  Parameters
+  ----------
+  modelfile : str
+      file with a model atmosphere
+  wrange: tuple or list of two floats
+      initial and ending wavelengths (angstroms)
+  dw: float, optional
+      wavelength step for the output fluxes
+      this will be the maximum interval for the radiative 
+      transfer, and will trigger interpolation at the end
+      (default is None for automatic selection)
+  strength: float, optional
+      threshold in the line-to-continuum opacity ratio for 
+      selecting lines (default is 1e-4)
+  vmicro: float, optional
+      microturbulence (km/s) 
+      (default is taken from the model atmosphere)
+  abu: array of floats (99 elements), optional
+      chemical abundances relative to hydrogen (N(X)/N(H))
+      (default taken from input model atmosphere)
+  linelist: array of str
+      filenames of the line lists, the first one corresponds to 
+      the atomic lines and all the following ones (optional) to
+      molecular lines
+      (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
+  hhm: bool
+      when True the continuum opacity is simplified to H and H-
+      (default False, and more complete opacities are included)
+  vrot: float
+      projected rotational velocity (km/s)
+      (default 0.)
+  steprot: float
+      wavelength step for convolution with rotational kernel (angstroms)
+      set to 0. for automatic adjustment (default 0.)
+  fwhm: float
+      Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
+      (default 0.)
+  stepfwhm: float
+      wavelength step for Gaussian convolution (angstroms)
+      set to 0. for automatic adjustment (default 0.)
+  clean: bool
+      True by the default, set to False to avoid the removal of the synspec
+      temporary files/links (default True)
+  save: bool
+      set to True to save the computed spectrum to a file (default False)
+      the root of the model atmosphere file, with an extension ".syn" will be used
+      but see the parameter synfile to change that
+  synfile: str
+      when save is True, this can be used to set the name of the output file
+      (default None)
+  compute: bool
+      set to False to skip the actual synspec run, triggering clean=False
+      (default True)
+  nthreads: int
+      choose the number of cores to use in the calculation
+      (default 1, 0 has the meaning that the code should take all the cores available)
+
+  Returns
+  -------
+  wave: numpy array of floats
+      wavelengths (angstroms)
+  flux: numpy array of floats
+      flux (H_lambda in ergs/s/cm2/A)
+  cont: numpy array of floats
+      continuum flux (same units as flux)
+
+  """
+
+  import psutil
+  import ray
+
+  @ray.remote
+  def fun(vari,cons):
+
+    wrange,tmpdir = vari
+
+    modelfile,dw,strength,vmicro,abu,linelist, \
+    hhm,vrot,fwhm,steprot,stepfwhm,clean,save,synfile,compute = cons
+
+    x, y, z = syn(modelfile, wrange, dw, strength, vmicro, abu, \
+              linelist, hhm, vrot, fwhm, \
+              steprot, stepfwhm,  clean, save, synfile, 
+              compute, tmpdir)
+
+    return(x,y,z)
+
+
+  if nthreads == 0: 
+    nthreads = psutil.cpu_count(logical=False)
+
+  print('nthreads=',nthreads)
+
+  ray.init(num_cpus=nthreads)
+
+  rest = [ modelfile,dw,strength,vmicro,abu,linelist, \
+    hhm,vrot,fwhm,steprot,stepfwhm,clean,save,synfile,compute ]
+
+  constants = ray.put(rest)
+
+  delta = (wrange[1]-wrange[0])/nthreads
+  pars = []
+  for i in range(nthreads):
+
+    wrange1 = (wrange[0]+delta*i,wrange[0]+delta*(i+1))
+    folder = 'par'+str(i)
+
+    pararr = [wrange1, 'par'+str(i) ]
+    pars.append(pararr)
+
+  results = ray.get([fun.remote(pars[i],constants) for i in range(nthreads)])
+
+  x = results[0][0]
+  y = results[0][1]
+  z = results[0][2]
+
+  if len(results) > 1:
+    for i in range(len(results)-1):
+      x = np.concatenate((x, results[i+1][0][1:]) )
+      y = np.concatenate((y, results[i+1][1][1:]) )
+      z = np.concatenate((z, results[i+1][2][1:]) )
+
+  return(x,y,z)
+
 
 
 def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
@@ -516,7 +650,7 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
             atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
           abu1[6] = abu1[6] * 10.**nfe1
 
-        x, y, z = parsyn(entry, wrange, dw=None, strength=strength, \
+        x, y, z = mpsyn(entry, wrange, dw=None, strength=strength, \
         vmicro=vmicro1, abu=abu1, linelist=linelist, hhm=hhm, \
         clean=clean, save=save, nthreads=nthreads)
 
