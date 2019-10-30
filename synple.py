@@ -227,9 +227,9 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     synout.close()
     synin.close()
 
-    assert (os.path.isfile('fort.7')), 'Error: I cannot read the file *fort.7* -- looks like synspec has crashed, please look at syn.log'
+    assert (os.path.isfile('fort.7')), 'Error: I cannot read the file *fort.7* in '+tmpdir+' -- looks like synspec has crashed, please look at syn.log'
 
-    assert (os.path.isfile('fort.17')), 'Error: I cannot read the file *fort.17* -- looks like synspec has crashed, please look at syn.log'
+    assert (os.path.isfile('fort.17')), 'Error: I cannot read the file *fort.17* in '+tmpdir+' -- looks like synspec has crashed, please look at syn.log'
 
 
     wave, flux = np.loadtxt('fort.7', unpack=True)
@@ -1532,7 +1532,7 @@ def call_rotin(wave=None, flux=None, vrot=0.0, fwhm=0.0, space=1e-2, steprot=0.0
   synout.close()
   synin.close()
   
-  assert (os.path.isfile('fort.11')), 'Error: I cannot read the file *fort.11* -- looks like rotin has crashed, please look at syn.log'
+  assert (os.path.isfile('fort.11')), 'Error: I cannot read the file *fort.11* in '+tmpdir+' -- looks like rotin has crashed, please look at syn.log'
 
   wave2, flux2 = np.loadtxt('fort.11', unpack=True)
   print(len(wave),len(wave2))
