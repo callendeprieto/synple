@@ -2745,6 +2745,60 @@ def rotconv(xinput,yinput,vsini, ppr=None):
 
   return(x,y)
 
+def gsynth(synthfile,outsynthfile=None,fwhm=None,ppr=None,wrange=None,):
+
+  """Smooth the spectra in a FERRE grid by Gaussian convolution
+
+  ***WORK IN PROGRESS***
+
+  Parameters
+  ----------
+  synthfile: str
+      name of the input FERRE synth file 
+  outsynthfile: str
+      name of the output FERRE synth file
+      (default is the same as synth file, but starting with 'n')
+  fwhm: float
+      FWHM of the Gaussian kernel (km/s)
+  ppr: float, optional
+      Points per resolution element to downsample the convolved spectrum
+      (default None, to keep the original sampling)
+  wrange: tuple
+      Starting and ending wavelengths (if a smaller range that 
+      the input's is desired)
+
+  Returns
+  -------
+  writes outsynthfile with the smooth spectra
+
+  """
+
+  if outsynthfile is None: outsynthfile='n'+synthfile[1:]
+  logw=0
+
+  fin = open(synthfile,'r')
+  fout = open(outsynthfile,'w')
+  line = fin.readline()
+  while line[1] != "/":
+    line = fin.readline()
+    if "N_P" in line: n_p=np.array(line.split()[2:],dtype=int)
+    if "NPIX" in line: npix=float(line.split()[2])
+    if "WAVE" in line: wave=np.array(line.split()[2:],dtype=float)
+    if "LOGW" in line: logw=int(line.split()[2]) 
+    if "RESOLUTION" in line: resolution=float(line.split()[2])
+    fout.write(line)
+
+  x = np.arange(npix)*wave[1]+wave[0]
+  if logw == 1: x=10.**x
+  if logw == 2: x=exp(x)
+  for i in range(np.prod(n_p)):
+    y = np.array(fin.readline().split(),dtype=float)
+    xx,yy = vgconv(x,y,fwhm,ppr=ppr)
+    yy.tofile(fout,sep=" ",format="%0.4e")
+    fout.write("\n")
+
+  fin.close()
+  fout.close()
 
 if __name__ == "__main__":
 
