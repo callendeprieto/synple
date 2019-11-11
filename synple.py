@@ -2646,8 +2646,8 @@ def vgconv(xinput,yinput,fwhm, ppr=None):
   xx = np.diff(np.log(xinput))
   if max(xx) - min(xx) > 1.e-7:  #input not equidist in loglambda
     nel = len(xinput)
-    minx = np.min(np.log(xinput))
-    maxx = np.max(np.log(xinput))
+    minx = np.log(xinput[0])
+    maxx = np.log(xinput[-1])
     x = np.linspace(minx,maxx,nel)
     step = x[1] - x[0]
     x = np.exp(x)
@@ -2656,6 +2656,7 @@ def vgconv(xinput,yinput,fwhm, ppr=None):
   else:
     x = xinput
     y = yinput
+    step = np.log(xinput[1])-np.log(xinput[0])
 
   fwhm = fwhm/clight # inverse of the resolving power
   sigma=fwhm/2.0/np.sqrt(-2.0*np.log(0.5))
@@ -2745,21 +2746,19 @@ def rotconv(xinput,yinput,vsini, ppr=None):
 
   return(x,y)
 
-def gsynth(synthfile,outsynthfile=None,fwhm=None,ppr=None,wrange=None,):
+def gsynth(synthfile,fwhm,outsynthfile=None,ppr=None,wrange=None):
 
   """Smooth the spectra in a FERRE grid by Gaussian convolution
-
-  ***WORK IN PROGRESS***
 
   Parameters
   ----------
   synthfile: str
       name of the input FERRE synth file 
+  fwhm: float
+      FWHM of the Gaussian kernel (km/s)      
   outsynthfile: str
       name of the output FERRE synth file
       (default is the same as synth file, but starting with 'n')
-  fwhm: float
-      FWHM of the Gaussian kernel (km/s)
   ppr: float, optional
       Points per resolution element to downsample the convolved spectrum
       (default None, to keep the original sampling)
@@ -2776,24 +2775,57 @@ def gsynth(synthfile,outsynthfile=None,fwhm=None,ppr=None,wrange=None,):
   if outsynthfile is None: outsynthfile='n'+synthfile[1:]
   logw=0
 
+  #read header, update and write out
   fin = open(synthfile,'r')
   fout = open(outsynthfile,'w')
   line = fin.readline()
+  hd = []
   while line[1] != "/":
     line = fin.readline()
-    if "N_P" in line: n_p=np.array(line.split()[2:],dtype=int)
-    if "NPIX" in line: npix=float(line.split()[2])
-    if "WAVE" in line: wave=np.array(line.split()[2:],dtype=float)
-    if "LOGW" in line: logw=int(line.split()[2]) 
-    if "RESOLUTION" in line: resolution=float(line.split()[2])
-    fout.write(line)
+    if "N_P" in line: n_p= np.array(line.split()[2:],dtype=int)
+    if "NPIX" in line: npix = int(line.split()[2])
+    if "WAVE" in line: wave = np.array(line.split()[2:],dtype=float)
+    if "LOGW" in line: logw = int(line.split()[2]) 
+    if "RESOLUTION" in line: resolution = float(line.split()[2])
+    hd.append(line)
 
+  #update header parameters
   x = np.arange(npix)*wave[1]+wave[0]
   if logw == 1: x=10.**x
-  if logw == 2: x=exp(x)
+  if logw == 2: x=np.exp(x)
+  
+  if wrange is not None:
+    assert (len(wrange) == 2), 'Error: wrange must have two elements'
+    section1 = np.where( (x >= wrange[0]*(1.-10.*fwhm/clight)) & (x <= wrange[1]*(1.+10.*fwhm/clight)) )
+    x = x[section1]
+    npix = len(x)
+    
+  y = np.ones(npix)
+  xx,yy = vgconv(x,y,fwhm,ppr=ppr)
+  
+  print(len(x),len(xx))
+  
+  if wrange is not None: 
+    section2 = np.where( (xx >= wrange[0]) & (xx <= wrange[1]) ) 
+    xx = xx [section2]
+    
+  #print(x,xx)
+  print(len(x),len(xx))
+  
+  for line in hd:
+    if "NPIX" in line: line = " NPIX = "+str(len(xx))+"\n"
+    if "WAVE" in line: line = " WAVE = "+str(np.log10(xx[0]))+" "+str(np.log10(xx[1])-np.log10(xx[0]))+"\n"
+    if "LOGW" in line: line = " LOGW = 1 \n"
+    if "RESOLUTION" in line: line = " RESOLUTION = "+str(clight/np.sqrt(clight**2/resolution**2 + fwhm**2))+"\n"
+    fout.write(line)
+
+  #smooth and write data
   for i in range(np.prod(n_p)):
+    print(i,np.prod(n_p))
     y = np.array(fin.readline().split(),dtype=float)
+    if wrange is not None: y = y [section1]
     xx,yy = vgconv(x,y,fwhm,ppr=ppr)
+    if wrange is not None: yy = yy[section2]
     yy.tofile(fout,sep=" ",format="%0.4e")
     fout.write("\n")
 
