@@ -50,6 +50,7 @@ import copy
 import gzip
 from scipy import interpolate
 import matplotlib.pyplot as plt
+from itertools import product
 
 
 #configuration
@@ -2746,7 +2747,7 @@ def rotconv(xinput,yinput,vsini, ppr=None):
 
   return(x,y)
 
-def gsynth(synthfile,fwhm,outsynthfile=None,ppr=None,wrange=None):
+def gsynth(synthfile,fwhm,outsynthfile=None,ppr=None,wrange=None,freeze=None):
 
   """Smooth the spectra in a FERRE grid by Gaussian convolution
 
@@ -2765,7 +2766,12 @@ def gsynth(synthfile,fwhm,outsynthfile=None,ppr=None,wrange=None):
   wrange: tuple
       Starting and ending wavelengths (if a smaller range that 
       the input's is desired)
-
+      (default None, to keep the original range)
+  freeze: dictionary
+      Allows to reduce the dimensionality of the grid. The keys are the indices
+      of the dimensions (starting from 0) to freeze and the values take the values 
+      that should be adopted for those 'frozen' dimensions.
+      (default None, to retain all the original dimensions)
   Returns
   -------
   writes outsynthfile with the smooth spectra
@@ -2782,8 +2788,11 @@ def gsynth(synthfile,fwhm,outsynthfile=None,ppr=None,wrange=None):
   hd = []
   while line[1] != "/":
     line = fin.readline()
-    if "N_P" in line: n_p= np.array(line.split()[2:],dtype=int)
+    if "N_P" in line: n_p = np.array(line.split()[2:],dtype=int)
+    if "STEPS" in line: steps = np.array(line.split()[2:],dtype=float)
+    if "LLIMITS" in line: llimits = np.array(line.split()[2:],dtype=float)
     if "NPIX" in line: npix = int(line.split()[2])
+    if "N_OF_DIM" in line: ndim = int(line.split()[2])
     if "WAVE" in line: wave = np.array(line.split()[2:],dtype=float)
     if "LOGW" in line: logw = int(line.split()[2]) 
     if "RESOLUTION" in line: resolution = float(line.split()[2])
@@ -2793,6 +2802,16 @@ def gsynth(synthfile,fwhm,outsynthfile=None,ppr=None,wrange=None):
   x = np.arange(npix)*wave[1]+wave[0]
   if logw == 1: x=10.**x
   if logw == 2: x=np.exp(x)
+  
+  #define indices for grid loops
+  ll = []
+  ind_n_p = []
+  i = 0
+  for entry in n_p:   
+    if i not in list(freeze.keys()): ind_n_p.append(i)
+    ll.append(np.arange(entry))
+    i = i + 1
+  ind = list(product(*ll))
   
   if wrange is not None:
     assert (len(wrange) == 2), 'Error: wrange must have two elements'
@@ -2812,7 +2831,12 @@ def gsynth(synthfile,fwhm,outsynthfile=None,ppr=None,wrange=None):
   #print(x,xx)
   print(len(x),len(xx))
   
+  
   for line in hd:
+    if "N_OF_DIM" in line: line = " N_OF_DIM = "+str(len(ind_n_p))+"\n"    
+    if "N_P" in line: line = " N_P = "+' '.join(map(str,n_p[ind_n_p]))+"\n"   
+    if "STEPS" in line: line = " STEPS = "+' '.join(map(str,steps[ind_n_p]))+"\n"   
+    if "LLIMITS" in line: line = " LLIMITS = "+' '.join(map(str,llimits[ind_n_p]))+"\n"  
     if "NPIX" in line: line = " NPIX = "+str(len(xx))+"\n"
     if "WAVE" in line: line = " WAVE = "+str(np.log10(xx[0]))+" "+str(np.log10(xx[1])-np.log10(xx[0]))+"\n"
     if "LOGW" in line: line = " LOGW = 1 \n"
@@ -2820,14 +2844,24 @@ def gsynth(synthfile,fwhm,outsynthfile=None,ppr=None,wrange=None):
     fout.write(line)
 
   #smooth and write data
-  for i in range(np.prod(n_p)):
-    print(i,np.prod(n_p))
-    y = np.array(fin.readline().split(),dtype=float)
+  k = 0
+  for i in ind:
+    print(k,np.prod(n_p),i)
+    print(i,steps,llimits)
+    par = i*steps+llimits
+    line = fin.readline()
+    if freeze is not None:
+      skip = True
+      for entry in list(freeze.keys()): 
+        if (abs(freeze[entry] - par[entry]) < 1e-6): skip = False
+      if skip: continue
+    y = np.array(line.split(),dtype=float)
     if wrange is not None: y = y [section1]
     xx,yy = vgconv(x,y,fwhm,ppr=ppr)
     if wrange is not None: yy = yy[section2]
     yy.tofile(fout,sep=" ",format="%0.4e")
     fout.write("\n")
+    k = k + 1
 
   fin.close()
   fout.close()
