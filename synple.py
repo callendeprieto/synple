@@ -2770,7 +2770,9 @@ def gsynth(synthfile,fwhm,outsynthfile=None,ppr=5,wrange=None,freeze=None):
   freeze: dictionary
       Allows to reduce the dimensionality of the grid. The keys are the labels
       of the dimensions to freeze (as given in in the header of the input grid) 
-      with the values that should be adopted for those 'frozen' dimensions.
+      with the values that should be adopted for those 'frozen' dimensions. 
+      Example: set freeze = {'TEFF': 5000.} to fix that value for the Teff dimension
+      in a grid.
       (default None, to retain all the original dimensions)
   Returns
   -------
