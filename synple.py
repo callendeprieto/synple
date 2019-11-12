@@ -2747,7 +2747,7 @@ def rotconv(xinput,yinput,vsini, ppr=None):
 
   return(x,y)
 
-def gsynth(synthfile,fwhm,outsynthfile=None,ppr=None,wrange=None,freeze=None):
+def gsynth(synthfile,fwhm,outsynthfile=None,ppr=5,wrange=None,freeze=None):
 
   """Smooth the spectra in a FERRE grid by Gaussian convolution
 
@@ -2762,7 +2762,7 @@ def gsynth(synthfile,fwhm,outsynthfile=None,ppr=None,wrange=None,freeze=None):
       (default is the same as synth file, but starting with 'n')
   ppr: float, optional
       Points per resolution element to downsample the convolved spectrum
-      (default None, to keep the original sampling)
+      (default is 5, set to None to keep the original sampling)
   wrange: tuple
       Starting and ending wavelengths (if a smaller range that 
       the input's is desired)
