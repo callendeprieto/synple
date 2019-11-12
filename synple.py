@@ -2671,7 +2671,7 @@ def vgconv(xinput,yinput,fwhm, ppr=None):
   edge = int(npoints/2)
   x = x[edge:-edge]
 
-  print(xinput.size,x.size,y.size)
+  #print(xinput.size,x.size,y.size)
 
   if ppr != None:
     fac = int(fwhm / step / ppr)
@@ -2768,9 +2768,9 @@ def gsynth(synthfile,fwhm,outsynthfile=None,ppr=None,wrange=None,freeze=None):
       the input's is desired)
       (default None, to keep the original range)
   freeze: dictionary
-      Allows to reduce the dimensionality of the grid. The keys are the indices
-      of the dimensions (starting from 0) to freeze and the values take the values 
-      that should be adopted for those 'frozen' dimensions.
+      Allows to reduce the dimensionality of the grid. The keys are the labels
+      of the dimensions to freeze (as given in in the header of the input grid) 
+      with the values that should be adopted for those 'frozen' dimensions.
       (default None, to retain all the original dimensions)
   Returns
   -------
@@ -2786,17 +2786,21 @@ def gsynth(synthfile,fwhm,outsynthfile=None,ppr=None,wrange=None,freeze=None):
   fout = open(outsynthfile,'w')
   line = fin.readline()
   hd = []
+  labels = []
   while line[1] != "/":
     line = fin.readline()
     if "N_P" in line: n_p = np.array(line.split()[2:],dtype=int)
     if "STEPS" in line: steps = np.array(line.split()[2:],dtype=float)
     if "LLIMITS" in line: llimits = np.array(line.split()[2:],dtype=float)
+    if "LABEL" in line: labels.append(line.split()[-1][1:-1])
     if "NPIX" in line: npix = int(line.split()[2])
     if "N_OF_DIM" in line: ndim = int(line.split()[2])
     if "WAVE" in line: wave = np.array(line.split()[2:],dtype=float)
     if "LOGW" in line: logw = int(line.split()[2]) 
     if "RESOLUTION" in line: resolution = float(line.split()[2])
     hd.append(line)
+
+  assert (len(n_p) == len(steps) & len(n_p) == len(llimits) & len(n_p) == len(labels) & len(n_p) == ndim), 'The dimension of the parameters from the header are inconsistent'
 
   #update header parameters
   x = np.arange(npix)*wave[1]+wave[0]
@@ -2807,9 +2811,13 @@ def gsynth(synthfile,fwhm,outsynthfile=None,ppr=None,wrange=None,freeze=None):
   ll = []
   ind_n_p = []
   i = 0
-  for entry in n_p:   
-    if i not in list(freeze.keys()): ind_n_p.append(i)
-    ll.append(np.arange(entry))
+  for entry in labels:
+    if freeze is not None:   
+      lfkeys = list(freeze.keys())
+      if entry not in lfkeys: ind_n_p.append(i)
+    else:
+      ind_n_p.append(i)
+    ll.append(np.arange(n_p[i]))
     i = i + 1
   ind = list(product(*ll))
   
@@ -2829,14 +2837,22 @@ def gsynth(synthfile,fwhm,outsynthfile=None,ppr=None,wrange=None,freeze=None):
     xx = xx [section2]
     
   #print(x,xx)
-  print(len(x),len(xx))
+  #print(len(x),len(xx))
   
-  
+  jlabel = 0
   for line in hd:
     if "N_OF_DIM" in line: line = " N_OF_DIM = "+str(len(ind_n_p))+"\n"    
     if "N_P" in line: line = " N_P = "+' '.join(map(str,n_p[ind_n_p]))+"\n"   
     if "STEPS" in line: line = " STEPS = "+' '.join(map(str,steps[ind_n_p]))+"\n"   
-    if "LLIMITS" in line: line = " LLIMITS = "+' '.join(map(str,llimits[ind_n_p]))+"\n"  
+    if "LLIMITS" in line: line = " LLIMITS = "+' '.join(map(str,llimits[ind_n_p]))+"\n"
+    if freeze is not None:
+      if "LABEL" in line:
+        ilabel = line.split()[-1][1:-1] #drop starting/ending quotes
+        if ilabel in lfkeys:
+          continue
+        else:
+          jlabel = jlabel + 1
+          line = " LABEL("+str(jlabel)+") = "+ilabel+"\n"
     if "NPIX" in line: line = " NPIX = "+str(len(xx))+"\n"
     if "WAVE" in line: line = " WAVE = "+str(np.log10(xx[0]))+" "+str(np.log10(xx[1])-np.log10(xx[0]))+"\n"
     if "LOGW" in line: line = " LOGW = 1 \n"
@@ -2845,15 +2861,19 @@ def gsynth(synthfile,fwhm,outsynthfile=None,ppr=None,wrange=None,freeze=None):
 
   #smooth and write data
   k = 0
+  j = 0
+  ntot = np.prod(n_p)
   for i in ind:
-    print(k,np.prod(n_p),i)
-    print(i,steps,llimits)
+    j = j + 1
+    print('line ',j,' of ',ntot)
+    #print(k,ntot,i)
+    #print(i,steps,llimits)
     par = i*steps+llimits
     line = fin.readline()
     if freeze is not None:
       skip = True
-      for entry in list(freeze.keys()): 
-        if (abs(freeze[entry] - par[entry]) < 1e-6): skip = False
+      for entry in lfkeys: 
+        if (abs(freeze[entry] - par[labels.index(entry)]) < 1e-6): skip = False
       if skip: continue
     y = np.array(line.split(),dtype=float)
     if wrange is not None: y = y [section1]
