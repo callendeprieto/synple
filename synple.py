@@ -1810,7 +1810,7 @@ def write55(wrange,dw=1e-2,imode=0,hydprf=2,strength=1e-4,vmicro=0.0, \
   f.write( ' %f  \n' % (vmicro) )
   f.close()
 
-def write5(teff,logg,abu,ofile='fort.5', hhm=False):
+def write5(teff,logg,abu, hhm=False, ofile='fort.5'):
 
   symbol, mass, sol = elements()
 
