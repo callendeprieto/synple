@@ -1810,11 +1810,11 @@ def write55(wrange,dw=1e-2,imode=0,hydprf=2,strength=1e-4,vmicro=0.0, \
   f.write( ' %f  \n' % (vmicro) )
   f.close()
 
-def write5(teff,logg,abu,hhm=False):
+def write5(teff,logg,abu,file='fort.5', hhm=False):
 
   symbol, mass, sol = elements()
 
-  f = open('fort.5','w')
+  f = open(file,'w')
   f.write(' '+str(teff)+" "+str(logg)+"       ! TEFF, GRAV \n")
   f.write(" T  F               ! LTE, GRAY \n")
   f.write(" 'tas'              ! name of non-standard flags \n")
@@ -1881,10 +1881,10 @@ def write5(teff,logg,abu,hhm=False):
   f.write("* end \n")
   f.close()
 
-def write8(teff, logg, nd, atmos, atmostype):
+def write8(teff, logg, nd, atmos, atmostype, file='fort.8'):
 
+  f = open(file,'w')
   if atmostype == 'tlusty':
-    f = open('fort.8','w')
     f.write(" "+str(nd)+" "+str(3)+"\n")
     for i in range(nd):
       f.write(' %e ' % atmos['dm'][i])
@@ -1894,7 +1894,6 @@ def write8(teff, logg, nd, atmos, atmostype):
     f.close()
 
   else:
-    f = open('fort.8','w')
     f.write( 'TEFF %7.0f  GRAVITY %7.5f  LTE \n' % (teff, logg) )
     for i in range(21): f.write('\n')
     f.write( 'READ DECK6%3i RHOX,T,P,XNE \n' % nd )
