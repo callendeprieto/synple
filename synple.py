@@ -2121,7 +2121,7 @@ def read_marcs_model(modelfile):
   line = f.readline()
   entries = line.split()
 
-  dm = [ float(entries[7]) ]
+  dm = [ float(entries[-1]) ]
 
   for i in range(nd-1):
     line = f.readline()
@@ -2236,7 +2236,7 @@ def read_marcs_model2(modelfile):
   entries = line.split()
 
   rho = [ float(entries[3]) ]
-  dm = [ float(entries[7]) ]
+  dm = [ float(entries[-1]) ]
 
   for i in range(nd-1):
     line = f.readline()
