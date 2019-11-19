@@ -76,7 +76,7 @@ one =  " 1 "
 two =  " 2 "
 
 def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
-    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, vrot=0.0, fwhm=0.0, \
+    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], atom='ap18', vrot=0.0, fwhm=0.0, \
     steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, 
     compute=True, tmpdir=None):
 
@@ -117,9 +117,11 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       the atomic lines and all the following ones (optional) to
       molecular lines
       (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
-  hhm: bool
-      when True the continuum opacity is simplified to H and H-
-      (default False, and more complete opacities are included)
+  atom: str
+      'ap18' -- generic opacities used in Allende Prieto+ 2018
+      'yo19' -- restricted set for NLTE calculations for APOGEE 2019 (Osorio+ 2019)
+      'hhm' -- continuum opacity is simplified to H and H-
+      (default 'ap18')
   vrot: float
       projected rotational velocity (km/s)
       (default 0.)
@@ -204,7 +206,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   cleanup()
 
   writetas('tas',nd,linelist)                           #non-std param. file
-  write5(teff,logg,abu,hhm)                               #abundance/opacity file
+  write5(teff,logg,abu,atom)                            #abundance/opacity file
   write8(teff,logg,nd,atmos,atmostype)                  #model atmosphere
   write55(wrange,space,imode,2,strength,vmicro,linelist,atmostype) #synspec control file
   create_links(linelist)                      #auxiliary data
@@ -280,7 +282,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
 
 def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
-    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, vrot=0.0, fwhm=0.0, \
+    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],atom='ap18', vrot=0.0, fwhm=0.0, \
     steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, 
     compute=True, nthreads=1):
 
@@ -313,9 +315,11 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       the atomic lines and all the following ones (optional) to
       molecular lines
       (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
-  hhm: bool
-      when True the continuum opacity is simplified to H and H-
-      (default False, and more complete opacities are included)
+  atom: str
+      'ap18' -- generic opacities used in Allende Prieto+ 2018
+      'yo19' -- restricted set for NLTE calculations for APOGEE 2019 (Osorio+ 2019)
+      'hhm' -- continuum opacity is simplified to H and H-
+      (default 'ap18')
   vrot: float
       projected rotational velocity (km/s)
       (default 0.)
@@ -369,7 +373,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     wrange1 = (wrange[0]+delta*i,wrange[0]+delta*(i+1))
 
     pararr = [modelfile, wrange1, dw, strength, vmicro, abu, \
-      linelist, hhm, vrot, fwhm, \
+      linelist, atom, vrot, fwhm, \
       steprot, stepfwhm,  clean, save, synfile, 
       compute, 'par'+str(i) ]
     pars.append(pararr)
@@ -392,7 +396,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   return(x,y,z)
 
 def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
-    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, vrot=0.0, fwhm=0.0, \
+    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], atom='ap18', vrot=0.0, fwhm=0.0, \
     steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, 
     compute=True, nthreads=1):
 
@@ -425,9 +429,11 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       the atomic lines and all the following ones (optional) to
       molecular lines
       (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
-  hhm: bool
-      when True the continuum opacity is simplified to H and H-
-      (default False, and more complete opacities are included)
+  atom: str
+      'ap18' -- generic opacities used in Allende Prieto+ 2018
+      'yo19' -- restricted set for NLTE calculations for APOGEE 2019 (Osorio+ 2019)
+      'hhm' -- continuum opacity is simplified to H and H-
+      (default 'ap18')
   vrot: float
       projected rotational velocity (km/s)
       (default 0.)
@@ -477,10 +483,10 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     wrange,tmpdir = vari
 
     modelfile,dw,strength,vmicro,abu,linelist, \
-    hhm,vrot,fwhm,steprot,stepfwhm,clean,save,synfile,compute = cons
+    atom,vrot,fwhm,steprot,stepfwhm,clean,save,synfile,compute = cons
 
     x, y, z = syn(modelfile, wrange, dw, strength, vmicro, abu, \
-              linelist, hhm, vrot, fwhm, \
+              linelist, atom, vrot, fwhm, \
               steprot, stepfwhm,  clean, save, synfile, 
               compute, tmpdir)
 
@@ -495,7 +501,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   ray.init(num_cpus=nthreads)
 
   rest = [ modelfile,dw,strength,vmicro,abu,linelist, \
-    hhm,vrot,fwhm,steprot,stepfwhm,clean,save,synfile,compute ]
+    atom,vrot,fwhm,steprot,stepfwhm,clean,save,synfile,compute ]
 
   constants = ray.put(rest)
 
@@ -527,7 +533,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
 def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
     vmicro=None, vrot=0.0, fwhm=0.0, nfe=0.0, \
-    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, \
+    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], atom='ap18', \
     steprot=0.0, stepfwhm=0.0,  clean=True, save=None, nthreads=1):
 
   """Computes synthetic spectra for a list of files. The values of vmicro, vrot, 
@@ -571,9 +577,11 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
       the atomic lines and all the following ones (optional) to
       molecular lines
       (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
-  hhm: bool
-      when True the continuum opacity is simplified to H and H-
-      (default False, and more complete opacities are included)
+  atom: str
+      'ap18' -- generic opacities used in Allende Prieto+ 2018
+      'yo19' -- restricted set for NLTE calculations for APOGEE 2019 (Osorio+ 2019)
+      'hhm' -- continuum opacity is simplified to H and H-
+      (default 'ap18')
   steprot: float
       wavelength step for convolution with rotational kernel (angstroms)
       set to 0. for automatic adjustment (default 0.)
@@ -652,7 +660,7 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
           abu1[6] = abu1[6] * 10.**nfe1
 
         x, y, z = mpsyn(entry, wrange, dw=None, strength=strength, \
-        vmicro=vmicro1, abu=abu1, linelist=linelist, hhm=hhm, \
+        vmicro=vmicro1, abu=abu1, linelist=linelist, atom=atom, \
         clean=clean, save=save, nthreads=nthreads)
 
         space = np.mean(np.diff(x))
@@ -691,7 +699,7 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
 
 def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
     vmicro=None, vrot=0.0, fwhm=0.0, nfe=0.0, \
-    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],hhm=False, \
+    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],atom='ap18', \
     steprot=0.0, stepfwhm=0.0,  clean=True, save=None):
 
   """Sets up a directory tree for computing synthetic spectra for a list of files in 
@@ -734,9 +742,11 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
       the atomic lines and all the following ones (optional) to
       molecular lines
       (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
-  hhm: bool
-      when True the continuum opacity is simplified to H and H-
-      (default False, and more complete opacities are included)
+  atom: str
+      'ap18' -- generic opacities used in Allende Prieto+ 2018
+      'yo19' -- restricted set for NLTE calculations for APOGEE 2019 (Osorio+ 2019)
+      'hhm' -- continuum opacity is simplified to H and H-
+      (default 'ap18')
   steprot: float
       wavelength step for convolution with rotational kernel (angstroms)
       set to 0. for automatic adjustment (default 0.)
@@ -841,7 +851,7 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
             abu1[6] = abu1[6] * 10.**nfe1
 
           x, y, z = syn(entry, wrange, dw=None, strength=strength, vmicro=vmicro1, \
-          abu=abu1, linelist=linelist, hhm=hhm, compute=False)
+          abu=abu1, linelist=linelist, atom=atom, compute=False)
 
           s.write(synspec+" < "+"fort.5"+"\n")
 
@@ -889,7 +899,7 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
     tlt = (20,3.08,0.068), tlrho = (20,-14.0,0.59), \
     tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), \
     tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), tvmicro=(1,1.0,0.0), \
-    zexclude=None, hhm=False):
+    zexclude=None, atom='ap18'):
 
   """Sets up a directory tree for computing opacity tables for TLUSTY. The table collection forms 
   a regular grid defined by triads in various parameters. Each triad has three values (n, llimit, step)
@@ -915,9 +925,11 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
       the atomic lines and all the following ones (optional) to
       molecular lines
       (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
-  hhm: bool
-      when True the continuum opacity is simplified to H and H-
-      (default False, and more complete opacities are included)
+  atom: str
+      'ap18' -- generic opacities used in Allende Prieto+ 2018
+      'yo19' -- restricted set for NLTE calculations for APOGEE 2019 (Osorio+ 2019)
+      'hhm' -- continuum opacity is simplified to H and H-
+      (default 'ap18')
   tlt: tuple
     log10(T) triad (n, llimit, step) for opacity grid
     (default values  chosen for grid lt = np.arange(20)*0.068 + 3.08,
@@ -1126,7 +1138,7 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
 
                   write55(wrange,dw=dw,imode=-3,hydprf=0, strength=strength, vmicro=vmicro, linelist=linelist)
 
-                  write5(9999.,9.9,abu,hhm)
+                  write5(9999.,9.9,abu,atom)
                   
                   writetas('tas',1,linelist)
 
@@ -1810,37 +1822,67 @@ def write55(wrange,dw=1e-2,imode=0,hydprf=2,strength=1e-4,vmicro=0.0, \
   f.write( ' %f  \n' % (vmicro) )
   f.close()
 
-def write5(teff,logg,abu, hhm=False, ofile='fort.5'):
+def write5(teff,logg,abu, atom='ap18', ofile='fort.5', nlte=False, tl=False):
 
   symbol, mass, sol = elements()
 
   f = open(ofile,'w')
-  f.write(' '+str(teff)+" "+str(logg)+"       ! TEFF, GRAV \n")
-  f.write(" T  F               ! LTE, GRAY \n")
+  f.write(' '+str(teff)+" "+str(logg).format('%7.4f')+"       ! TEFF, GRAV \n")
+  if nlte:
+    f.write(" F  F               ! LTE, GRAY \n")
+  else:
+    f.write(" T  F               ! LTE, GRAY \n")
   f.write(" 'tas'              ! name of non-standard flags \n")
   f.write(" 50                 ! frequencies \n")
-  f.write(" "+str(len(abu))+"        ! NATOMS \n")
 
-  ex = np.ones(len(abu))
-  if hhm : 
-    zex = [1]  #atomic numbers of elements to be included explicitly (contributing cont. opacity)
-  else: 
+  if tl:  
+    natom = 30
+  else:
+    natom = len(abu)
+
+  f.write(" "+str(natom)+"        ! NATOMS \n")  
+
+  assert (atom == 'hhm' or atom == 'ap18' or atom == 'yo19'), 'atom must be one of: hhm/ap18/yo19!'
+  ex = np.ones(natom)
+  if atom == 'hhm' : 
+    zex = [1]  #atomic numbers of elements included explicitly (contributing cont. opacity)
+  elif atom == 'yo19':
+    zex = [1,11,12,19,20]
+  elif atom == 'ap18': 
     zex = [1,2,6,7,8,11,12,13,14,20,26]
 
   for i in zex: ex[i-1] = 2
+  if nlte: ex[0] = -3
 
-  for i in range(len(abu)):
-    f.write(' %i %e %i %s\n' %  (ex[i], abu[i], 0, '  ! ' +symbol[i]) )
+  for i in range(natom):
+    f.write(' %2d %e %i %s\n' %  (ex[i], abu[i], 0, '  ! ' +symbol[i]) )
 
   for i in range(3): f.write("* \n")
   
-  if hhm == True:
+  if atom == 'hhm':  # highly simplified continuum opacities -- just H and H-
     f.write("   1   -1     1      0     0     1    ' H 1' 'data/hm.dat' \n" )
     f.write("   0    0     3      0 \n")
     f.write("   1    0     9      0     0     0    ' H 1' 'data/h1s.dat'  \n")
     f.write("   1    1     1      1     0     0    ' H 2' ' '  \n")
     f.write("   0    0     0     -1     0     0    '    ' ' '  \n")
-  else:
+  elif atom == "yo19": # set for NLTE calculations for APOGEE (see Osorio+ 2019 A&A paper)
+    f.write("* ../data_atom for ions  \n")
+    f.write("  1    -1     1      0     0     1    ' H 0' 'data_atom/hm.dat'  \n")
+    f.write("  0     0     3      0   \n")
+    f.write("  1     0     16     0     0     0    ' H 1' 'data_atom/h1_16lev2.dat'  \n")
+    f.write("  1     1     1      1     0     0    ' H 2' ' '  \n")
+    f.write("  11    0     42     0     0     0    'Na 1' 'data_atom/NaIkas.tl'  \n")
+    f.write("  11    1     1      1     0     0    'Na 2' '' \n")
+    f.write("  12    0     96     0     0     0    'Mg 1' 'data_atom/Mg1kas_F_ccc.tl'  \n")
+    f.write("  12    1     29     0     0     0    'Mg 2' 'data_atom/Mg2kas_F_ccc.tl'  \n")
+    f.write("  12    2     1      1     0     0    'Mg 3' ' '  \n")
+    f.write("  19    0     31     0     0     0    'K  1' 'data_atom/KIkas.tl'  \n")
+    f.write("  19    1     1      1     0     0    'K  2' ''  \n")
+    f.write("  20    0     66     0     0     0    'Ca 1' 'data_atom/Ca1kas_F_zat.tl'  \n")
+    f.write("  20    1     24     0     0     0    'Ca 2' 'data_atom/Ca2kas_F_zat.tl'  \n")
+    f.write("  20    2     1      1     0     0    'Ca 3' ' '  \n")
+    f.write("   0    0     0     -1     0     0    '    ' ' '  \n")
+  elif atom == 'ap18': # generic set used in Allende Prieto+ (2018) A&A paper
     f.write("* ../data for ions  \n")
     f.write("   1   -1     1      0     0     1    ' H 1' 'data/hm.dat'  \n")
     f.write("   0    0     3      0 \n")
