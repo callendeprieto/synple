@@ -2716,6 +2716,7 @@ def vgconv(xinput,yinput,fwhm, ppr=None):
 
   if ppr != None:
     fac = int(fwhm / step / ppr)
+    print(fwhm,step,ppr,fac)
     subset = np.arange(x.size / fac, dtype=int) * fac 
     x = x[subset]
     y = y[subset]
@@ -2788,7 +2789,7 @@ def rotconv(xinput,yinput,vsini, ppr=None):
 
   return(x,y)
 
-def gsynth(synthfile,fwhm,outsynthfile=None,ppr=5,wrange=None,freeze=None):
+def gsynth(synthfile,fwhm=0.0,outsynthfile=None,ppr=5,wrange=None,freeze=None):
 
   """Smooth the spectra in a FERRE grid by Gaussian convolution
 
@@ -2798,6 +2799,7 @@ def gsynth(synthfile,fwhm,outsynthfile=None,ppr=5,wrange=None,freeze=None):
       name of the input FERRE synth file 
   fwhm: float
       FWHM of the Gaussian kernel (km/s)      
+      (default is 0.0, which means no convolution is performed)
   outsynthfile: str
       name of the output FERRE synth file
       (default is the same as synth file, but starting with 'n')
@@ -2827,9 +2829,10 @@ def gsynth(synthfile,fwhm,outsynthfile=None,ppr=5,wrange=None,freeze=None):
   #read header, update and write out
   fin = open(synthfile,'r')
   fout = open(outsynthfile,'w')
-  line = fin.readline()
   hd = []
   labels = []
+  line = fin.readline()
+  hd.append(line)
   while line[1] != "/":
     line = fin.readline()
     if "N_P" in line: n_p = np.array(line.split()[2:],dtype=int)
@@ -2870,8 +2873,12 @@ def gsynth(synthfile,fwhm,outsynthfile=None,ppr=5,wrange=None,freeze=None):
     x = x[section1]
     npix = len(x)
     
-  y = np.ones(npix)
-  xx,yy = vgconv(x,y,fwhm,ppr=ppr)
+  if fwhm > 1.e-7:
+    y = np.ones(npix)
+    xx,yy = vgconv(x,y,fwhm,ppr=ppr)
+  else:
+    print('Warning -- fwhm <= 1.e-7, no convolution will be performed, ppr will be ignored')
+    xx = x
   
   print(len(x),len(xx))
   
@@ -2920,7 +2927,10 @@ def gsynth(synthfile,fwhm,outsynthfile=None,ppr=5,wrange=None,freeze=None):
       if skip: continue
     y = np.array(line.split(),dtype=float)
     if wrange is not None: y = y [section1]
-    xx,yy = vgconv(x,y,fwhm,ppr=ppr)
+    if fwhm > 1.e-7:
+      xx,yy = vgconv(x,y,fwhm,ppr=ppr)
+    else:
+      xx,yy = x, y 
     if wrange is not None: yy = yy[section2]
     yy.tofile(fout,sep=" ",format="%0.4e")
     fout.write("\n")
