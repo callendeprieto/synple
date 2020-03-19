@@ -15,14 +15,14 @@ c    *           MFREQ =   120,
      *           MOPAC = MFRQ,
      *           MMU   = 20,
      *           MCROSS= MLEVEL,
-     *           MFIT  = 21650,
+     *           MFIT  = 1650,
      *           MFCRA =  1200,
      *           MTRAD =  3,
      *           MATOM =  99,
      *           MATOMBIG = 99,
      *           MION  = 90,
      *           MION0 =  9,
-     *           MMOLEC=340,
+     *           MMOLEC=500,
      *           MPHOT = 10,
      *           MZZ   =  2,
      *           MMER  =  2,
@@ -32,10 +32,13 @@ c    *           MFREQ =   120,
      *           MHT   = 7,
      *           MHE  = 20,
      *           MHWL  = 54)
-      PARAMETER (MFGRID  =  200000,
-     *           MTTAB   =      25,
-     *           MRTAB   =      25,
+      PARAMETER (MFGRID  =  100000,
+     *           MTTAB   =      20,
+     *           MRTAB   =      20,
      *           MSFTAB  = 6000000)
+      parameter (mfhtab=1000,
+     *           mtabth=10,
+     *           mtabeh=10)
 c
 C     Basic physical constants
 C
@@ -79,7 +82,8 @@ C
      *              IFREQ,
      *              INLTE,
      *              IDSTD,
-     *              IFWIN
+     *              IFWIN,
+     *              IFEOS
       COMMON/INTKEY/INMOD,INTRPL,ICHANG,ICHEMC,IATREF,ICONTL
       COMMON/LBLANK/IBLANK,NBLANK
       COMMON/NXTINI/ALM00,ALST00,NXTSET,INLIST,ALAMBE,DLAMLO

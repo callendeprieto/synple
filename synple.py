@@ -63,7 +63,7 @@ modeldir = synpledir + "/models"
 modelatomdir = synpledir + "/data"
 linelistdir = synpledir + "/linelists"
 bindir = synpledir + "/bin"
-synspec = bindir + "/synspec53r"
+synspec = bindir + "/s53x"
 rotin = bindir + "/rotin3"
 
 
@@ -1593,7 +1593,7 @@ def read_model(modelfile):
   if atmostype == 'kurucz':
     teff, logg, vmicro, abu, nd, atmos = read_kurucz_model(modelfile) 
   if atmostype == 'marcs':
-    teff, logg, vmicro, abu, nd, atmos = read_marcs_model(modelfile)
+    teff, logg, vmicro, abu, nd, atmos = read_marcs_model2(modelfile)
   if atmostype == 'phoenix':
     teff, logg, vmicro, abu, nd, atmos = read_phoenix_model(modelfile)
 
@@ -1802,7 +1802,7 @@ def write55(wrange,dw=1e-2,imode=0,hydprf=2,strength=1e-4,vmicro=0.0, \
   #ihydpr,ihe1pr,ihe2pr
   #wstart,wend,cutoff,zero,strength,wdist 
 
-  if atmostype == 'tlusty': inmod = 1 
+  if (atmostype == 'tlusty' or atmostype == 'marcs'): inmod = 1 
   else: inmod = 0
 
   f = open('fort.55','w')
@@ -1936,12 +1936,23 @@ def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8'):
     f.close()
 
   else:
-    f.write( 'TEFF %7.0f  GRAVITY %7.5f  LTE \n' % (teff, logg) )
-    for i in range(21): f.write('\n')
-    f.write( 'READ DECK6%3i RHOX,T,P,XNE \n' % nd )
-    for i in range(nd): 
-      f.write( '%e %f %e %e \n' % (atmos['dm'][i], atmos['t'][i], atmos['p'][i], atmos['ne'][i]) )
-    f.close()
+
+    if atmostype == 'marcs':
+      f.write(" "+str(nd)+" "+str(-4)+"\n")
+      for i in range(nd):
+        f.write(' %e ' % atmos['dm'][i])
+      f.write("\n")
+      for i in range(nd):
+        f.write( '%f %e %e %e \n' % (atmos['t'][i], atmos['ne'][i], atmos['rho'][i], atmos['rho'][i]/atmos['mmw'][i]/1.67333e-24 + atmos['ne'][i] ) )
+      f.close()
+
+    else:
+      f.write( 'TEFF %7.0f  GRAVITY %7.5f  LTE \n' % (teff, logg) )
+      for i in range(21): f.write('\n')
+      f.write( 'READ DECK6%3i RHOX,T,P,XNE \n' % nd )
+      for i in range(nd): 
+        f.write( '%e %f %e %e \n' % (atmos['dm'][i], atmos['t'][i], atmos['p'][i], atmos['ne'][i]) )
+      f.close()
 
   return()
   
@@ -2184,7 +2195,7 @@ def read_marcs_model2(modelfile):
   
   """Reads a MARCS model atmospheres. 
   While read_marcs_model returns T, Pg and Ne in the structure 'atmos'
-  read_marcs_model2 returns T, rho and Ne.
+  read_marcs_model2 returns T, rho, mmw, and Ne.
   
   Parameters
   ----------
@@ -2206,8 +2217,8 @@ def read_marcs_model2(modelfile):
   nd: int
       number of depths (layers) of the model
   atmos: numpy structured array
-      array with the run with depth of column mass, temperature, density 
-      and electron number density  
+      array with the run with depth of column mass, temperature, density, 
+      mean molecular weight and electron number density  
   
   """  
 
@@ -2278,7 +2289,8 @@ def read_marcs_model2(modelfile):
   entries = line.split()
 
   rho = [ float(entries[3]) ]
-  dm = [ float(entries[-1]) ]
+  dm = [ float(entries[7]) ]
+  mmw = [ float(entries[4]) ]
 
   for i in range(nd-1):
     line = f.readline()
@@ -2286,12 +2298,14 @@ def read_marcs_model2(modelfile):
 
     rho.append( float(entries[3]))
     dm.append(  float(entries[7]))
+    mmw.append(  float(entries[4]))
 
-  atmos = np.zeros(nd, dtype={'names':('dm', 't', 'rho','ne'),
-                          'formats':('f', 'f', 'f','f')}) 
+  atmos = np.zeros(nd, dtype={'names':('dm', 't', 'rho','mmw','ne'),
+                          'formats':('f', 'f', 'f','f','f')}) 
   atmos['dm'] = dm
   atmos['t'] = t
   atmos['rho'] = rho
+  atmos['mmw'] = mmw
   atmos['ne'] = ne
 
   return (teff,logg,vmicro,abu,nd,atmos)
