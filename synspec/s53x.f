@@ -8210,8 +8210,10 @@ C
   230 IJMAX=NFREQS
       NFREQ=NFREQS
   240 IF(FREQ(IJMAX).LE.FRLAST) NBLANK=IBLANK
-      if(freq(ijmax).ge.0.999999*cnm/alm00.and.iblank.gt.1)
+      if (alm00.gt.0.) then 
+        if(freq(ijmax).ge.0.999999*cnm/alm00.and.iblank.gt.1)
      *    nblank=iblank
+      end if
 c
 c     correction for molecular lines
 c
@@ -18796,7 +18798,10 @@ c          if(j.eq.1) anden(jm)=anmol1
               end do
               ammol(j)=amasm
               tmass=tmass+anden(jm)*amasm
-              umoll=exp(umoll/econst)/(sahcon*amasm**1.5)
+c              write(*,*)umoll,econst,sahcon,amasm
+              if (amasam.gt.0.0) then
+                umoll=exp(umoll/econst)/(sahcon*amasm**1.5)
+              end if
 c
 c     replace with Irwin data whenever available
 c
@@ -19002,7 +19007,10 @@ C
            DO M=1,MMAXJ
               NELEMJ=NELEM(M,J)
               NATOMJ=NATO(M,J)
-              PMOLJL=PMOLJL+DFLOAT(NATOMJ)*log10(P(NELEMJ))
+c              write(*,*)J,M,PMOLJL,NATOMJ,NELEMJ,P(NELEMJ)
+              IF (P(NELEMJ).GT.0.0) THEN
+                PMOLJL=PMOLJL+DFLOAT(NATOMJ)*log10(P(NELEMJ))
+              END IF
            END DO
 C
            PMOLJ=EXP(PMOLJL/ECONST)

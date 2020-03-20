@@ -4,10 +4,10 @@
 #
 
 F90 = gfortran 
-OPT= -fno-automatic -mcmodel=medium  
+OPT= -fno-automatic -mcmodel=medium
 
 #F90 = g95
-#OPT= -mcmodel=medium -Wl,--no-relax
+#OPT= -fstatic -mcmodel=medium -Wl,--no-relax
 
 #F90 = sunf95
 #OPT = -Bstatic -xmodel=medium 
