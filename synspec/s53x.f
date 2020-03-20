@@ -13441,7 +13441,7 @@ C
       REAL*4 XL1(99), XL2(123),  XL(222),
      *       CH1(66),  CH2(72),  CH3(55),  CH4(29),  CHION(222)
       REAL*4 ALF(678), GAM(678)
-      INTEGER*2 II1(5,15),II2(5,15),INDEX0(5,30),
+      INTEGER   II1(5,15),II2(5,15),INDEX0(5,30),
      *          IS1(53),IS2(70),IS(123),INDEXS(123),
      *          IM1(99),IM2(123),IM(222),INDEXM(222),
      *          IGP1(99),IGP2(123),IGPR(222),
@@ -14157,12 +14157,12 @@ C
       IF(ICOMP.NE.0) GO TO 5
       IND=1
       DO 1 K=1,NIONS
-         INDEXS(K)=int2(IND)
+         INDEXS(K)=IND
          IND=IND+IS(K)
     1 CONTINUE
       IND=1
       DO 2 K=1,NSS
-         INDEXM(K)=int2(IND)
+         INDEXM(K)=IND
          IND=IND+IM(K)
     2 CONTINUE
       ICOMP=1
