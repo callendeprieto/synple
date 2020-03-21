@@ -18799,7 +18799,11 @@ c          if(j.eq.1) anden(jm)=anmol1
               ammol(j)=amasm
               tmass=tmass+anden(jm)*amasm
 c              write(*,*)umoll,econst,sahcon,amasm
-              if (amasam.gt.0.0) then
+c              if (amasm .eq. 0.0) then
+c                write(*,*)'it happens amasm=',amasm
+c                stop
+c              endif
+              if (amasm.gt.0.0) then
                 umoll=exp(umoll/econst)/(sahcon*amasm**1.5)
               end if
 c
@@ -19008,6 +19012,10 @@ C
               NELEMJ=NELEM(M,J)
               NATOMJ=NATO(M,J)
 c              write(*,*)J,M,PMOLJL,NATOMJ,NELEMJ,P(NELEMJ)
+c              if (P(NELEMJ).eq.0.0) then
+c                write(*,*)'it happens P(NELEMJ)=',P(NELEMJ)
+c                stop
+c              endif
               IF (P(NELEMJ).GT.0.0) THEN
                 PMOLJL=PMOLJL+DFLOAT(NATOMJ)*log10(P(NELEMJ))
               END IF
