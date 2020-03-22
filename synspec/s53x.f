@@ -8210,7 +8210,7 @@ C
   230 IJMAX=NFREQS
       NFREQ=NFREQS
   240 IF(FREQ(IJMAX).LE.FRLAST) NBLANK=IBLANK
-      if(alm00.gt.0.0) then 
+      if (alm00.gt.0.0) then 
         if(freq(ijmax).ge.0.999999*cnm/alm00.and.iblank.gt.1)
      *    nblank=iblank
       end if
@@ -18711,9 +18711,8 @@ c       nmolec=297
 c       nmolec=427
         close(26)
 c        
-        DO I=1,NMETAL
-           NELEMI=NELEMX(I)
-           P(NELEMI)=1.D-70
+        DO I=1,100
+           P(I)=1.D-70
         END DO
         iread=0
       endif
@@ -18798,9 +18797,9 @@ c          if(j.eq.1) anden(jm)=anmol1
               end do
               ammol(j)=amasm
               tmass=tmass+anden(jm)*amasm
-	      if (amasm.gt.0.0) then
+              if (amasm.gt.0.0) then
                 umoll=exp(umoll/econst)/(sahcon*amasm**1.5)
-	      endif
+              end if
 c
 c     replace with Irwin data whenever available
 c
@@ -19006,9 +19005,7 @@ C
            DO M=1,MMAXJ
               NELEMJ=NELEM(M,J)
               NATOMJ=NATO(M,J)
-c	      IF (P(NELEMJ).GT.0.0) THEN
-                PMOLJL=PMOLJL+DFLOAT(NATOMJ)*log10(P(NELEMJ))
-c	      ENDIF
+              PMOLJL=PMOLJL+DFLOAT(NATOMJ)*log10(P(NELEMJ))
            END DO
 C
            PMOLJ=EXP(PMOLJL/ECONST)
