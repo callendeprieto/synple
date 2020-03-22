@@ -9,8 +9,8 @@ c    *           MLIN    =  10000,
      *           MPRF    =  MLIN0)
 C
 c     PARAMETER (MLINM0  = 300000,
-      PARAMETER (MLINM0  =1000000,
-c      PARAMETER (MLINM0  =25000000,
+c      PARAMETER (MLINM0  =1000000,
+      PARAMETER (MLINM0  =25000000,
      *           MLINM   = 500000,
      *           MMLIST  =      4)
 c     PARAMETER (MLINM0  = 20,
