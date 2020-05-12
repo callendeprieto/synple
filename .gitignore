@@ -1,3 +1,4 @@
 linelists/*19*
 linelists/*20*
-bin/*
+bin/s*
+bin/rotin*
