@@ -84,9 +84,7 @@ c
       IF(IMODE.LE.-3.and.ifeos.eq.0) CALL INIBL1(IGRD)
       IF(IFMOL.GT.0) then
          CALL MOLINI
-c         DO 11 ID=1,ND
-            call eospri
-c 11      continue      
+         call eospri
       end if
 c
 c     zero abundances for selected species (if required)
@@ -154,7 +152,7 @@ c
       if(imode.lt.-2) then
          call ingrid(1,inext,igrd)
          igrd=igrd+1
-         call timing(1,igrd)
+c        call timing(1,igrd)
          if(inext.gt.0) go to 1
       end if
       if(imode.eq.-3.and.ifeos.eq.0) call fingrd
@@ -1076,7 +1074,7 @@ C
       common/irwint/iirwin
       common/gompar/hglim,ihgom
 C 
-      PARAMETER(MVAR=54)
+      PARAMETER(MVAR=55)
       PARAMETER(INPFI=4)
       CHARACTER*(*) FINSTD
       CHARACTER*6 PVALUE(MVAR)
@@ -1092,6 +1090,7 @@ C
      *             'ND    ','NFREQS',
      *             'INTRPL','ICHANG','IFEOS',
      *             'IOPHMI','IOPH2P','IOPHEM','IOPCH ','IOPOH ',
+     *             'IOPCIA',
      *             'IRSCT ','IRSCH2','IRSCHE',
      *             'IHM   ','IH2   ','IH2P  ',
      *             'TRAD  ','WDIL  ',
@@ -1110,6 +1109,7 @@ C
      *             '    70','   120',
      *             '     0','     0','     0',
      *             '     1','     1','     1','     1','     1',
+     *             '     1',
      *             '     1','     1','     1',
      *             '     1','     1','     1',
      *             '    0.','    0.',
@@ -1184,6 +1184,7 @@ C
      *             ND    ,NFREQS,
      *             INTRPL,ICHANG,IFEOS ,
      *             IOPHMI,IOPH2P,IOPHEM,IOPCH ,IOPOH ,
+     *             IOPCIA,
      *             IRSCT ,IRSCH2,IRSCHE,
      *             IHM   ,IH2   ,IH2P  ,
      *             TRAD  ,WDIL  ,
@@ -1320,62 +1321,62 @@ C            Element Atomic  Solar    Std.
 C                    weight abundance highest 
 C 
 C                                     ionization stage 
-      DATA D/ 1.008, 1.0D0   , 2.,
-     *        4.003, 1.00D-1 , 3.,
+      DATA D/ 1.008, 1.0D0, 2.,
+     *        4.003, 1.00D-1, 3.,
      *        6.941, 1.26D-11, 3.,
      *        9.012, 2.51D-11, 3.,
-     *       10.810, 5.0D-10 , 4.,
-     *       12.011, 3.31D-4 , 5.,
-     *       14.007, 8.32D-5 , 5.,
-     *       15.999, 6.76D-4 , 5.,
-     *       18.918, 3.16D-8 , 4.,
-     *       20.179, 1.20D-4 , 4.,
-     *       22.990, 2.14D-6 , 4.,
-     *       24.305, 3.80D-5 , 4.,
-     *       26.982, 2.95D-6 , 4.,
-     *       28.086, 3.55D-5 , 5.,
-     *       30.974, 2.82D-7 , 5.,
-     *       32.060, 2.14D-5 , 5.,
-     *       35.453, 3.16D-7 , 5.,
-     *       39.948, 2.52D-6 , 5.,
-     *       39.098, 1.32D-7 , 5.,
-     *       40.080, 2.29D-6 , 5.,
-     *       44.956, 1.48D-9 , 5.,
-     *       47.900, 1.05D-7 , 5.,
-     *       50.941, 1.00D-8 , 5.,
-     *       51.996, 4.68D-7 , 5.,
-     *       54.938, 2.45D-7 , 5.,
-     *       55.847, 3.16D-5 , 5.,
-     *       58.933, 8.32D-8 , 5.,
-     *       58.700, 1.78D-6 , 5.,
-     *       63.546, 1.62D-8 , 5.,
-     *       65.380, 3.98D-8 , 5.,
-     *       69.72 , 1.34896324e-09  ,  3.,  
-     *       72.60 , 4.26579633e-09  ,  3.,  
-     *       74.92 , 2.34422821e-10  ,  3.,  
-     *       78.96 , 2.23872066e-09  ,  3.,  
-     *       79.91 , 4.26579633e-10  ,  3.,  
-     *       83.80 , 1.69824373e-09  ,  3.,  
-     *       85.48 , 2.51188699e-10  ,  3.,  
-     *       87.63 , 8.51138173e-10  ,  3.,  
-     *       88.91 , 1.65958702e-10  ,  3.,  
-     *       91.22 , 4.07380181e-10  ,  3.,  
-     *       92.91 , 2.51188630e-11  ,  3.,   
-     *       95.95 , 9.12010923e-11  ,  3.,   
-     *       99.00 , 1.00000000e-24  ,  3.,   
-     *       101.1 , 6.60693531e-11  ,  3.,   
-     *       102.9 , 1.23026887e-11  ,  3.,   
-     *       106.4 , 5.01187291e-11  ,  3.,   
-     *       107.9 , 1.73780087e-11  ,  3.,   
-     *       112.4 , 5.75439927e-11  ,  3.,   
-     *       114.8 , 6.60693440e-12  ,  3.,   
-     *       118.7 , 1.38038460e-10  ,  3.,   
-     *       121.8 , 1.09647810e-11  ,  3.,   
-     *       127.6 , 1.73780087e-10  ,  3.,   
-     *       126.9 , 3.23593651e-11  ,  3.,   
-     *       131.3 , 1.69824373e-10  ,  3.,   
-     *       132.9 , 1.31825676e-11  ,  3.,   
-     *       137.4 , 1.62181025e-10  ,  3.,   
+     *       10.810, 5.0D-10, 4.,
+     *       12.011, 3.31D-4, 5.,
+     *       14.007, 8.32D-5, 5.,
+     *       16.000, 6.76D-4, 5.,
+     *       18.918, 3.16D-8, 4.,
+     *       20.179, 1.20D-4, 4.,
+     *       22.990, 2.14D-6, 4.,
+     *       24.305, 3.80D-5, 4.,
+     *       26.982, 2.95D-6, 4.,
+     *       28.086, 3.55D-5, 5.,
+     *       30.974, 2.82D-7, 5.,
+     *       32.060, 2.14D-5, 5.,
+     *       35.453, 3.16D-7, 5.,
+     *       39.948, 2.52D-6, 5.,
+     *       39.098, 1.32D-7, 5.,
+     *       40.080, 2.29D-6, 5.,
+     *       44.956, 1.48D-9, 5.,
+     *       47.900, 1.05D-7, 5.,
+     *       50.941, 1.00D-8, 5.,
+     *       51.996, 4.68D-7, 5.,
+     *       54.938, 2.45D-7, 5.,
+     *       55.847, 3.16D-5, 5.,
+     *       58.933, 8.32D-8, 5.,
+     *       58.700, 1.78D-6, 5.,
+     *       63.546, 1.62D-8, 5.,
+     *       65.380, 3.98D-8, 5.,
+     *       69.72 ,   1.34896324e-09  ,  3.,  
+     *       72.60 ,   4.26579633e-09  ,  3.,  
+     *       74.92 ,   2.34422821e-10  ,  3.,  
+     *       78.96 ,   2.23872066e-09  ,  3.,  
+     *       79.91 ,   4.26579633e-10  ,  3.,  
+     *       83.80 ,   1.69824373e-09  ,  3.,  
+     *       85.48 ,   2.51188699e-10  ,  3.,  
+     *       87.63 ,   8.51138173e-10  ,  3.,  
+     *       88.91 ,   1.65958702e-10  ,  3.,  
+     *       91.22 ,   4.07380181e-10  ,  3.,  
+     *       92.91 ,   2.51188630e-11  ,  3.,   
+     *       95.95 ,   9.12010923e-11  ,  3.,   
+     *       99.00 ,   1.00000000e-24  ,  3.,   
+     *       101.1 ,   6.60693531e-11  ,  3.,   
+     *       102.9 ,   1.23026887e-11  ,  3.,   
+     *       106.4 ,   5.01187291e-11  ,  3.,   
+     *       107.9 ,   1.73780087e-11  ,  3.,   
+     *       112.4 ,   5.75439927e-11  ,  3.,   
+     *       114.8 ,   6.60693440e-12  ,  3.,   
+     *       118.7 ,   1.38038460e-10  ,  3.,   
+     *       121.8 ,   1.09647810e-11  ,  3.,   
+     *       127.6 ,   1.73780087e-10  ,  3.,   
+     *       126.9 ,   3.23593651e-11  ,  3.,   
+     *       131.3 ,   1.69824373e-10  ,  3.,   
+     *       132.9 ,   1.31825676e-11  ,  3.,   
+     *       137.4 ,   1.62181025e-10  ,  3.,   
      *       138.9 ,   1.58489337e-11  ,  3.,   
      *       140.1 ,   4.07380293e-11  ,  3.,   
      *       140.9 ,   6.02559549e-12  ,  3.,   
@@ -2085,6 +2086,7 @@ C
          NDSTEP=-IDSTD
          IDSTD=2*ND/3
       END IF
+      if(imode.le.-3) ndstep=1
 c
       alam0s=alam0
       alasts=alast
@@ -2497,6 +2499,11 @@ c           plac(ijc)=bnc*frc**3/(exp(xcc0*frc)-un)
             write(26,642) wlamc(ijc)*10.,log(absoc(ijc)/dens(1))
          end do
   642    format(f11.3,1p5e13.5)
+c
+         do ijc=1,nfreqc
+            abstdw(ijc,id)=absoc(ijc)
+         end do
+c
       end if
 c
 c     calculate the characteristic standard opacity
@@ -2610,6 +2617,8 @@ C
        else
          id=1
          call opac(id,cross,abso,emis,scat)
+         ch(1,id)=abso(1)
+         ch(2,id)=abso(2)
          imode=imode0
          call ougrid(abso,scat)
       END IF
@@ -4441,7 +4450,7 @@ C
       COMMON/BLAPAR/RELOP,SPACE0,CUTOF0,TSTD,DSTD,ALAMC
       common/dissol/fropc(mlevel),indexp(mlevel)
       PARAMETER (UN=1.,TEN15=1.E-15,CSB=2.0706E-16,CFF=3.694E8)
-C     
+C
       IF(IMODE.EQ.-1.AND.ID.NE.IDSTD) RETURN
       T=TEMP(ID)
       ANE=ELEC(ID)
@@ -4495,6 +4504,7 @@ C
                      SG=SG*DW1
                   END IF
                END IF
+               if(sg.le.0.) go to 10
                ABF=ABF+SG*POPUL(II,ID)
                XX=SG*XN*EXP(ENION(II)*TK)*WOP(II,ID)
                IF(XX.lt.conts) go to 10
@@ -4528,13 +4538,7 @@ C
 C
 C        Additional opacities
 C
-         CALL OPADD(0,ID,FR,ABAD,EMAD,SCAD)
-         call cia_sub(T,anh2(id),fr,oph2)
-         xkf=EXP(-4.79928e-11*FR/T)
-         frach2=(anh2(id)/(dens(id)/wmm(id)+ane))
-         write(*,*) T,fr,abad,oph2,frach2,anh2(id),dens(id)/wmm(id)+ane
-         ABAD=ABAD+oph2*frach2
-         EMAD=EMAD+oph2*frach2*bnue(ij)*xkf/(1.0-xkf)
+         CALL OPADD(0,ID,FR,ABAD,EMAD,SCAD)   
          IF(IOPHLI.NE.0) CALL LYMLIN(ID,FR,ABLY,EMLY,SCLY)
 C
 C        Total opacity and emissivity
@@ -4962,7 +4966,6 @@ C
 C        Additional opacities
 C
          CALL OPADD(0,ID,FR,ABAD,EMAD,SCAD)
-
          IF(IOPHLI.NE.0) CALL LYMLIN(ID,FR,ABLY,EMLY,SCLY)
 C
 C        Total opacity and emissivity
@@ -4975,11 +4978,6 @@ C
          SCATC(IJ)=SCAD+SCLY+sce
 c            if(id.eq.1.or.id.eq.50) write(*,*)'opacon-tot',id,ij,
 c    *   abf,ane,absoc(ij)
-         call cia_sub(T,anh2(id),fr,oph2)
-         xkf=EXP(-4.79928e-11*FR/T)
-c         write(*,*) T,fr,anh2(id),absoc(ij),oph2
-         absoc(ij)=absoc(ij)+oph2
-         emisc(ij)=emisc(ij)+oph2*bnue(ij)*xkf/(1.0-xkf)
 
   200 CONTINUE
 C
@@ -8210,9 +8208,9 @@ C
   230 IJMAX=NFREQS
       NFREQ=NFREQS
   240 IF(FREQ(IJMAX).LE.FRLAST) NBLANK=IBLANK
-      if (alm00.gt.0.0) then 
-        if(freq(ijmax).ge.0.999999*cnm/alm00.and.iblank.gt.1)
-     *    nblank=iblank
+      if(alm00.gt.0.) then
+         if(freq(ijmax).ge.0.999999*cnm/alm00.and.iblank.gt.1)
+     *      nblank=iblank
       end if
 c
 c     correction for molecular lines
@@ -8716,7 +8714,12 @@ C     first part of reading line list - read only lambda, and
 C     skip all lines with wavelength below ALAM0-CUTOFF
 C
       ALAM=0.
-    7 READ(19,510) ALAM
+      IJC=2
+    7 if(inlist.eq.0.or.inlist.eq.10) then
+         READ(19,510) ALAM
+       else
+         read(19) alam
+      end if
   510 FORMAT(F10.4)
       IF(ALAM.LT.ALAM0-CUTOFF) GO TO 7
       BACKSPACE(19)
@@ -8734,23 +8737,17 @@ c 688 format(' error in line list, lambda= ',f12.4/)
          READ(19,*,END=100,err=8) ALAM,ANUM,GF,EXCL,QL,EXCU,QU,AGAM,
      *                        GS,GW,INEXT
          IF(INEXT.NE.0) READ(19,*) WGR1,WGR2,WGR3,WGR4,ILWN,IUN,IPRF
-       ELSE IF(INLIST.EQ.-1) THEN
-         READ(19,501,END=100,err=8) ALAM,ANUM,GF,EXCL,QL,EXCU,QU,AGAM,
-     *                        GS,GW,INEXT
-         IF(INEXT.NE.0) READ(19,*) WGR1,WGR2,WGR3,WGR4,ILWN,IUN,IPRF
-  501    FORMAT(F10.4,F6.2,F7.3,F12.3,F4.1,F12.3,F4.1,3F7.2,I2)
        ELSE IF(INLIST.EQ.1) THEN
-         READ(19,511,END=100) ALAM,ANUM,GF,EXCL,QL,EXCU,QU,AGAM,
-     *                        IPRF,ILWN,IUN
-         IF(IPRF.LT.0) READ(19,*) WGR1,WGR2,WGR3,WGR4
-  511    FORMAT(F10.4,2F6.2,F11.3,F4.1,F12.3,F4.1,E10.3,3I3)
-       ELSE IF(INLIST.EQ.2) THEN
-         READ(19,521,END=100) ALAM,GF,ANUM,EXCL,QL,XLBL,EXCU,QU
-  521    FORMAT(F10.4,F7.3,F6.2,F11.3,F5.1,A11,F11.3,F5.1)
+         read(19,end=100) ALAM,ANUM,GF,EXCL,QL,EXCU,QU,AGAM,gs,gw
          AGAM=0.
        ELSE IF(INLIST.EQ.10) THEN
          READ(19,*,END=100,err=8) ALAM,ANUM,GF,EXCL,QL,EXCU,QU,AGAM,
      *                        GS,GW,INEXT,ISQL,ILQL,IPQL,ISQU,ILQU,IPQU
+       ELSE IF(INLIST.EQ.11) THEN
+         READ(19,END=100) ALAM,ANUM,GF,EXCL,QL,EXCU,QU,AGAM,
+     *                        GS,GW,INEXT,ISQL,ILQL,IPQL,ISQU,ILQU,IPQU
+      END IF
+      IF(INLIST.EQ.10.OR.INLIST.EQ.11) THEN
          IF(ISPICK.EQ.0) THEN
                 ISQL=-1
                 ISQU=-1
@@ -8836,8 +8833,9 @@ c        new procedure for rejecting lines
 c
          DOPSTD=1.E7/ALAM*DSTD
          DOPLAM=ALAM*ALAM/CNM*DOPSTD
-         ijc=2
-         do ijcn=2,nfreqc
+c        ijc=2
+c        do ijcn=2,nfreqc
+         do ijcn=ijc,nfreqc
             if(fr0.ge.freqc(ijcn)) go to 12
          end do
    12    continue
@@ -9201,6 +9199,10 @@ C
 C
       if(irelin.eq.0) return
 c
+      relop0=relop
+      relop=1.e-3*relop
+      if(relop.gt.1.e-4) relop=1.e-4
+      if(relop.lt.1.e-5) relop=1.e-5
       plalin=0.
       ijcon=2
       IL=0
@@ -9237,49 +9239,37 @@ c
       afac=afac*rstd*astd
 C
       afac=afac*rstd*astd
+      afilin=alast
 C
 C     first part of reading line list - read only lambda, and
 C     skip all lines with wavelength below ALAM0-CUTOFF
 C
-      if(inlist.ge.0) then
       ALAM=0.
-    7 READ(19,510) ALAM
+    7 continue
+      if(inlist.eq.0) then
+         read(19,510) alam
+       else
+         read(19) alam
+      end if
   510 FORMAT(F10.4)
       IF(ALAM.LT.ALAM0-CUTOFF) GO TO 7
       BACKSPACE(19)
       GO TO 10
-      end if
 c
     8 continue
-c    8 write(6,688) alam
-c 688 format(' error in line list, lambda= ',f12.4/)
    10 ILWN=0
       IUN=0
       IPRF=0
       GS=0.
       GW=0.
-      IF(INLIST.LT.0) then
-         READ(9) IAT,ION,ALAM,GFP,EPP,QL,EXCU,QU,AGAM,GS,GW,IEVEN
-       ELSE IF(INLIST.EQ.0) THEN
+      IF(INLIST.EQ.0) THEN
          READ(19,*,END=100,err=8) ALAM,ANUM,GF,EXCL,QL,EXCU,QU,AGAM,
-     *                        GS,GW,INEXT
-         IF(INEXT.NE.0) READ(19,*) WGR1,WGR2,WGR3,WGR4,ILWN,IUN,IPRF
-       ELSE IF(INLIST.EQ.-1) THEN
-         READ(19,501,END=100,err=8) ALAM,ANUM,GF,EXCL,QL,EXCU,QU,AGAM,
-     *                        GS,GW,INEXT
-         IF(INEXT.NE.0) READ(19,*) WGR1,WGR2,WGR3,WGR4,ILWN,IUN,IPRF
-  501    FORMAT(F10.4,F6.2,F7.3,F12.3,F4.1,F12.3,F4.1,3F7.2,I2)
-       ELSE IF(INLIST.EQ.1) THEN
-         READ(19,511,END=100) ALAM,ANUM,GF,EXCL,QL,EXCU,QU,AGAM,
-     *                        IPRF,ILWN,IUN
-         IF(IPRF.LT.0) READ(19,*) WGR1,WGR2,WGR3,WGR4
-  511    FORMAT(F10.4,2F6.2,F11.3,F4.1,F12.3,F4.1,E10.3,3I3)
-       ELSE IF(INLIST.EQ.2) THEN
-         READ(19,521,END=100) ALAM,GF,ANUM,EXCL,QL,XLBL,EXCU,QU
-  521    FORMAT(F10.4,F7.3,F6.2,F11.3,F5.1,A11,F11.3,F5.1)
-         AGAM=0.
-      END IF
-C
+     *                        GS,GW
+       else
+         read(19,end=100) ALAM,ANUM,GF,EXCL,QL,EXCU,QU,AGAM,
+     *                        GS,GW
+      end if
+c 
 c     change wavelength to vacuum for lambda > 2000
 c
       if(alam.gt.200..and.vaclim.gt.2000.) then
@@ -9325,9 +9315,6 @@ c     absta=absoc(1)
          ijcon=ijcon+1
          absta=0.5*(absoc(ijcon)+scatc(ijcon)+
      *             absoc(ijcon-1)+scatc(ijcon-1))
-c       write(38,638) iat,ion,alam,
-c    *       ijcon,absoc(ijcon),absoc(ijcon-1),absta
-c 638 format(2i4,f15.3,i5,1p3e11.3)
       end if
       abstd(id)=absta
 c
@@ -9340,22 +9327,34 @@ c
 c     line part of the Planck mean opacity
 c
 c      if(alam.ge.alam0.and.alam.le.alast) then
-       if(abid.ge.relop) then
-         xx=exp(-hkc*fr0/temp(id))
-         pln=bnc*(fr0*1.e-15)**3*xx/(un-xx)
-         abct=abct*(un-xx)
-         plalin=plalin+pln*abct
+c      if(abid.ge.relop) then
+c        xx=exp(-hkc*fr0/temp(id))
+c        pln=bnc*(fr0*1.e-15)**3*xx/(un-xx)
+c        abct=abct*(un-xx)
+c        plalin=plalin+pln*abct
 c        write(16,643) iat,ion,alam*10.,abct,dop,absta,abid
 c 643    format(2i4,0pf12.3,1p6e12.4)
-      end if
+c     end if
 c
       ALAX0=12.
 c
 c      alax0=0
 c
       if(imode.eq.-6) go to 10
-      if(abid.lt.relop.and.alam.gt.alax0) go to 10
-      if(abid.lt.1.e-10*relop.and.alam.lt.alax0) go to 10
+      if(alam.lt.afilin) then
+         if(abid.ge.relop) then
+            afilin=alam
+          else
+            if(abid.lt.relop*1.e-6) go to 10
+         end if
+       else if(alam.lt.9500.) then
+         if(abid.lt.relop) go to 10
+       else
+         if(abid.lt.relop*1.e-9) go to 10
+      end if
+c
+c     if(abid.lt.relop.and.alam.gt.alax0) go to 10
+c     if(abid.lt.1.e-10*relop.and.alam.lt.alax0) go to 10
       IF(ANUM.LT.ANUMIN.OR.ANUM.GT.ANUMAX) GO TO 10
       IF(ANUM.GT.ANUMAX) GO TO 10
       IF(ABS(ANUM-AHE2).LT.TENM4.AND.IFHE2.GT.0) GO TO 10
@@ -9480,11 +9479,14 @@ C
          FRLAST=CNM/ALAST
       END IF
       IBLANK=0
+      relop=relop0
 C
-      WRITE(6,611) NLIN0,NNLT,NGRIEM
-  611 FORMAT(/' LINES - TOTAL        :',I10
-     *       /' LINES - NLTE         :',I10
-     *       /' LINES - GRIEM        :',I10/)
+      WRITE(6,611) NLIN0
+  611 FORMAT(/' ATOMIC LINES        :',I10/)
+c     WRITE(6,611) NLIN0,NNLT,NGRIEM
+c 611 FORMAT(/' LINES - TOTAL        :',I10
+c    *       /' LINES - NLTE         :',I10
+c    *       /' LINES - GRIEM        :',I10/)
   601 FORMAT('0 **** MORE LINES THAN MLIN0, LINE LIST TRUNCATED '/
      *'       AT LAMBDA',F15.4,'  NM'/)
 c 602 FORMAT('0 **** MORE LINES WITH SPECIAL PROFILES THAN MPRF'/
@@ -9563,6 +9565,8 @@ C
       CHARACTER*4 APB,AP0,AP1,AP2,AP3,AP4,APR
       COMMON/PRFQUA/DOPA1(MATOM,MDEPTH),VDWC(MDEPTH)
       COMMON/REFDEP/IREFD(MFRQ)
+      COMMON/RTEOPA/CH(MFREQ,MDEPTH),ET(MFREQ,MDEPTH),
+     *              SC(MFREQ,MDEPTH)
 C
       PARAMETER (C1=2.3025851, C2=4.2014672, C3=1.4387886)
       DATA TYPION /' I  ',' II ',' III',' IV ',' V  ',
@@ -9599,9 +9603,11 @@ C
          CALL PROFIL(IL,IAT,ID,AGAM)
          ABCNT=EXP(GF0(IL)-EXCL0(IL)/TEMP(ID))*RRR(ID,ION,IAT)*
      *         STIM(ID)
+         absta=min(ch(1,idstd),ch(2,idstd))
          if(ifwin.le.0) then
             DOP1=DOPA1(IAT,ID)
-            STR0=ABCNT*DOP1/ABSTD(ID)
+c           STR0=ABCNT*DOP1/ABSTD(ID)
+            str0=abcnt*dop1/absta
           else 
             DOP1=DOPA1(IAT,ID)/FREQ0(IL)
             STR0=ABCNT*DOP1/ABSTDW(IJCONT(IL),ID)
@@ -10452,9 +10458,11 @@ C
          EXT=EXT0
          IF(EX0.GT.TEN) EXT=SQRT(EX0)
          EXT=EXT/DOP1
-         IJEXT=int((DFRCON*EXT)+1.5)
-         IJ1=MAX(IJCNTR(I)-IJEXT,3)
-         IJ2=MIN(IJCNTR(I)+IJEXT,NFREQS)
+         XIJEXT=DFRCON*EXT+1.5
+c        IJ1=MAX(IJCNTR(I)-IJEXT,3)
+c        IJ2=MIN(IJCNTR(I)+IJEXT,NFREQS)
+         IJ1=int(MAX(float(IJCNTR(I))-XIJEXT,3.))
+         IJ2=int(MIN(float(IJCNTR(I))+XIJEXT,float(NFREQS)))
          IF(IJ1.GE.NFREQ.OR.IJ2.LE.2) GO TO 100
 C
          IF(INNLT.EQ.0) THEN
@@ -11683,12 +11691,21 @@ C
       if(mode.ge.0.and.ifmol.gt.0.and.t.lt.tmolim) then
          if(iopch.gt.0) ab0=ab0+sbfch(fr,t)*anch(id)
          if(iopoh.gt.0) ab0=ab0+sbfoh(fr,t)*anoh(id)
-      end if 
+C
+C     ---------------------------
+C     CIA H2-H2 opacity
+C     ---------------------------
+C
+         if(iopcia.gt.0) then
+            call cia_sub(t,anh2(id),fr,oph2)
+            ab0=ab0+oph2
+         end if
+      end if
 C
 C     ----------------------------------------------
 C     The user may supply more opacity sources here:
 C     ----------------------------------------------
-C     
+C
 C     Finally, actual absorption and emission coefficients
 
       IF(MODE.LT.0) RETURN
@@ -17788,6 +17805,7 @@ C
       COMMON/LIMPAR/ALAM0,ALAM1,FRMIN,FRLAST,FRLI0,FRLIM
       COMMON/BLAPAR/RELOP,SPACE0,CUTOF0,TSTD,DSTD,ALAMC
       COMMON/NXTINM/ALMM00,ALSM00
+      CHARACTER*2 APP
       PARAMETER (PI4=7.95774715E-2)
       PARAMETER (C1     = 2.3025851,
      *           C2     = 4.2014672,
@@ -17819,9 +17837,12 @@ C
       molind(106)=5
       molind(107)=12
       molind(108)=4
+      molind(111)=122
       molind(112)=32
       molind(114)=17
       molind(116)=16
+      molind(120)=34
+      molind(124)=198
       molind(126)=214
       molind(606)=8
       molind(607)=7
@@ -17833,9 +17854,13 @@ C
       molind(714)=24
       molind(716)=23
       molind(808)=10
+      molind(812)=126
+      molind(813)=134
       molind(814)=25
       molind(816)=26
+      molind(820)=179
       molind(822)=29
+      molind(823)=30
       molind(10108)=3
 C
       ALAST=CNM/FRLAST
@@ -17864,7 +17889,12 @@ C     skip all lines with wavelength below ALAM0-CUTOFF
 C
       REWIND IUNIT
       ALAM=0.
-    7 READ(IUNIT,510) ALAM
+      IJC=2
+    7 if(inlist.eq.0.or.inlist.eq.10) then
+         READ(IUNIT,510) ALAM
+       else
+         read(iunit) alam
+      end if
   510 FORMAT(F10.4)
       IF(ALAM.LT.ALAM0-CUTOFF) GO TO 7
       BACKSPACE(IUNIT)
@@ -17872,8 +17902,11 @@ C
 c
     8 continue 
    10 continue
-      READ(IUNIT,*,END=100,err=8) ALAM,ANUM,GF,EXCL,GR,GS,GW
-c      READ(IUNIT,*,END=100,err=8) ALAM,ANUM,GF,EXCL,QL,GR,GS,GW
+      if(inlist.eq.0.or.inlist.eq.10) then
+         READ(IUNIT,*,END=100,err=8) ALAM,ANUM,GF,EXCL,GR,GS,GW
+       else
+         READ(IUNIT,END=100) ALAM,ANUM,GF,EXCL,GR,GS,GW
+      end if
 C
 c     change wavelength to vacuum for lambda > 2000
 c
@@ -17896,7 +17929,6 @@ C
       imol=molind(icod)
       if(imol.le.0.or.imol.gt.nmolec) go to 10
       EXCL=ABS(EXCL)
-c     GFP=C1*GF-C2
       GFP=C1*GF-C2
       EPP=C3*EXCL
       gx=gfp-epp/tstd
@@ -17913,8 +17945,7 @@ c
 c
 c      new procedure for line rejection
 c
-         ijc=2
-         do ijcn=2,nfreqc
+         do ijcn=ijc,nfreqc
             if(fr0.ge.freqc(ijcn)) go to 12
          end do
    12    continue
@@ -17980,9 +18011,20 @@ C
       GO TO 10
   100 NLINM0(ILIST)=IL
 C
-      WRITE(6,611) NLINM0(ILIST)
+      xil=float(il)
+      if(il.lt.1000000) then
+c        xln=xil*1.e-3
+c        app=' K'
+         xln=xil*1.e-6
+         app=' M'
+       else
+         xln=xil*1.e-6
+         app=' M'
+      end if
+
+      WRITE(6,611) IUNIT,XLN,APP
   611 FORMAT(/' --------------------------------------------'/
-     *' MOLECULAR LINES - TOTAL        :',I10/
+     *' MOLECULAR LINES - FROM UNIT ',i3,':',f8.3,a2/
      *' --------------------------------------------'/)
   601 FORMAT('0 **** MORE LINES THAN MLINM0, LINE LIST TRUNCATED '/
      *'       AT LAMBDA',F15.4,'  NM'/)
@@ -18147,18 +18189,14 @@ C
 C
       XX=FREQ(1)
       IF(NFREQ.GE.2) XX=0.5*(FREQ(1)+FREQ(2))
-C YFMO start
       BNU=BN*(XX*1.E-15)**3
       HKF=HK*XX
-C YFMO end
       DO 20 ID=1,ND
          T=TEMP(ID)
-C YFMO start       
          EXH=EXP(HKF/T)
          EXHK(ID)=UN/EXH
          PLAN(ID)=BNU/(EXH-UN)
          STIM(ID)=UN-EXHK(ID)
-C YFMO end        
          DO 10 IMOL=1,NMOLEC
             IF(AMMOL(IMOL).GT.0.)
      *      DOPMOL(IMOL,ID)=UN/(XX*DP0*SQRT(DP1*T/AMMOL(IMOL)+
@@ -18183,6 +18221,9 @@ C
 
       COMMON/REFDEP/IREFD(MFREQ)
       COMMON/PRFQUA/DOPA1(MATOM,MDEPTH),VDWC(MDEPTH)
+      COMMON/RTEOPA/CH(MFREQ,MDEPTH),ET(MFREQ,MDEPTH),
+     *              SC(MFREQ,MDEPTH)
+
       CHARACTER*4 APB,AP0,AP1,AP2,AP3,AP4,APR
 C
 
@@ -18215,7 +18256,9 @@ c        IF(IJCN.GE.1.AND.IJCN.LE.NFREQS) ID=IREFD(IJCN)
      *         GWM(IL,ILIST)*VDWC(ID))*DOP1
          ABCNT=EXP(GFM(IL,ILIST)-EXCLM(IL,ILIST)/TEMP(ID))*
      *         RRMOL(IMOL,ID)*DOP1*STIM(ID)
-         STR0=ABCNT/ABSTD(ID)
+c         STR0=ABCNT/ABSTD(ID)
+         absta=min(ch(1,id),ch(2,id))
+         str0=abcnt/absta
          if(ifwin.gt.0) STR0=ABCNT/ABSTDW(IJCONT(IL),ID)
          GF=(GFM(IL,ILIST)+C2)/C1
          EXCL=EXCLM(IL,ILIST)/C3
@@ -18306,9 +18349,11 @@ C
          EXT=EXT0
          IF(EX0.GT.TEN) EXT=SQRT(EX0)
          EXT=EXT/DOP1
-         IJEXT=int((DFRCON*EXT)+1.5)
-         IJ1=MAX(IJCMTR(I,ILIST)-IJEXT,3)
-         IJ2=MIN(IJCMTR(I,ILIST)+IJEXT,NFREQS)
+         XIJEXT=DFRCON*EXT+1.5
+         IJ1=int(MAX(float(IJCMTR(I,ILIST))-XIJEXT,3.))
+         IJ2=int(MIN(float(IJCMTR(I,ILIST))+XIJEXT,float(NFREQS)))
+C         IJ1=MAX(IJCMTR(I,ILIST)-IJEXT,3)
+C         IJ2=MIN(IJCMTR(I,ILIST)+IJEXT,NFREQS)
          IF(IJ1.GE.NFREQ.OR.IJ2.LE.2) GO TO 100
 C
          DO 40 IJ=IJ1,IJ2
@@ -18614,31 +18659,20 @@ c
      *              XIP(100),CCOMP(100),UIIDUI(100),P(100),
      *              FP(100),XKP(100),EPS,SWITER,
      *              NELEM(5,600),NATO(5,600),MMAX(600),
-     *              NELEMX(50),NMETAL,NIMAX
+     *              NELEMX(100),NMETAL,NIMAX
       common/moltst/pfmol(500,mdepth),anmol(500,mdepth),
      *              pfato(100,mdepth),anato(100,mdepth),
      *              pfion(100,mdepth),anion(100,mdepth)
       common/moldat/moltab,irwtab
       DIMENSION NATOMM(5),NELEMM(5),
-     *          emass(100),uelem(100),ull(100),anden(600),
-     *          aelem(100),epadd(12),abadd(12),emadd(12),
-     *          iatnx(38)
+     *          emass(100),uelem(100),ull(100),anden(710),
+     *          aelem(100)
 c     dimension anion(100,mdepth)
       dimension denso(mdepth),eleco(mdepth),wmmo(mdepth)
 c
-      data nmetal/38/
-      data iatnx/ 1, 2, 3, 4, 5, 6, 7, 8, 9,
-     *            11,12,13,14,15,16,17,19,20,
-     *            21,22,23,24,25,26,28,29,32,
-     *            35,37,38,39,40,41,53,56,57,58,60/
-      data epadd/7.899,11.840,4.176,5.692,6.380,6.840,
-     *           6.880,10.454,5.210,5.610,5.470,5.490/
-      data abadd/-8.59,-9.50,-9.40,-9.10,-9.76,-9.40,
-     *           -10.6,-10.5,-9.87,-10.8,-10.4,-10.5/
-      data emadd/72.59, 79.90, 85.47, 87.62, 88.91, 91.22,
-     *           92.91,126.90,137.34,138.91,140.12,144.24/
+      data nmetal/92/
 c
-        data iread/1/
+      data iread/1/
 c
       MOLEC ='data/tsuji.molec_bc2'
       if(moltab.eq.1) MOLEC='data/tsuji.molec_orig'
@@ -18661,17 +18695,11 @@ C
       if(iread.eq.1) then 
 c
       do i=1,nmetal
-         ia=iatnx(i)
+         ia=i
          nelemx(i)=ia
-         if(ia.le.30) then
-            ccomp(ia)=abndd(ia,id)
-            xip(ia)=enev(ia,1)
-            emass(ia)=amas(ia)
-          else
-            ccomp(ia)=exp(abadd(i-26)/econst)
-            xip(ia)=epadd(i-26)
-            emass(ia)=emadd(i-26)
-         end if
+         ccomp(ia)=abndd(ia,id)
+         xip(ia)=enev(ia,1)
+         emass(ia)=amas(ia)
       end do
 c
 c---- read molecular data from a table  ----------------------
@@ -18711,8 +18739,9 @@ c       nmolec=297
 c       nmolec=427
         close(26)
 c        
-        DO I=1,100
-           P(I)=1.D-70
+        DO I=1,NMETAL
+           NELEMI=NELEMX(I)
+           P(NELEMI)=1.D-70
         END DO
         iread=0
       endif
@@ -18797,9 +18826,7 @@ c          if(j.eq.1) anden(jm)=anmol1
               end do
               ammol(j)=amasm
               tmass=tmass+anden(jm)*amasm
-              if (amasm.gt.0.0) then
-                umoll=exp(umoll/econst)/(sahcon*amasm**1.5)
-              end if
+              umoll=exp(umoll/econst)/(sahcon*amasm**1.5)
 c
 c     replace with Irwin data whenever available
 c
@@ -18821,13 +18848,11 @@ c
            anmol(j,id)=anden(jm)
            pfmol(j,id)=umoll
         END DO
-
         jm=2*nmetal
         anhm(id)=anden(1+jm)
         anh2(id)=anden(2+jm)
         anch(id)=anden(5+jm)
         anoh(id)=anden(4+jm)
-c       anh2p(id)=
 C
 C
 C     save new density, molecular weight, and abundances of
@@ -18881,7 +18906,7 @@ c
      *              XIP(100),CCOMP(100),UIIDUI(100),P(100),
      *              FP(100),XKP(100),EPS,SWITER,
      *              NELEM(5,600),NATO(5,600),MMAX(600),
-     *              NELEMX(50),NMETAL,NIMAX
+     *              NELEMX(100),NMETAL,NIMAX
         DIMENSION FX(100),DFX(100),Z(100),PREV(100),WA(50)
 C
 c       ECONST=4.342945E-1
@@ -21618,8 +21643,9 @@ c
 c
       INCLUDE 'PARAMS.FOR'
       INCLUDE 'MODELP.FOR'
+      INCLUDE 'LINDAT.FOR'
       parameter (un=1.,ten15=1.e-15,c18=2.997925e18)
-      real*4 absgrd(mttab,mrtab,mfgrid)
+      real*4 absgrd(mttab,mrtab,mfgrid),dtim
       common/alsave/ALAM0s,ALASTs,CUTOF0s,CUTOFSs,RELOPs,SPACEs
       common/gridp0/tempg(mttab),densg(mrtab),elecgr(mttab,mrtab),
      *              densg0(mttab),temp1,ntemp,ndens
@@ -21630,7 +21656,8 @@ c
       common/initab/absop(msftab),wltab(msftab),
      *       nfrtab(mttab,mrtab),inttab 
       common/elecm0/elecm(mdepth)
-      dimension abgrd(mfgrid)
+      common/timeta/dtim
+      dimension abgrd(mfgrid),xli(3)
 c
 c     --------------
 c     initialization
@@ -21737,8 +21764,24 @@ c
       else if(mode.eq.1) then
       if(ifeos.eq.0) then
 c
+      call timing(1,igrd+1)
+c
+      do i=1,3
+         xli(i)=0.
+      end do
+      do i=1,nmlist
+         xli(i)=float(nlinm0(i))*1.e-3
+      end do
+c        
       if(imode.ge.-5) then
-         write(29,629) temp(1),elec(1),dens(1)
+         if(indext.eq.1.and.indexn.eq.1)
+     *   write(29,625)       
+         write(29,626) indext,indexn,temp(1),dens(1),elec(1),
+     *              float(nlin0)*1.e-3,
+     *              (xli(i),i=1,3),dtim
+  625 format('  it   ir     t       rho      elec',6x,
+     *   ' atomic   molec1  molec2  molec3      time'/) 
+  626 format(2i4,f9.2,1p2e10.2,2x,0pf8.1,2x,3f8.1,2x,f8.2)
        else
          alam0=alam0s
          if(alam0s.eq.0.) alam0=5.e7/temp(1)/10.
@@ -21877,17 +21920,22 @@ c
       d1=un/dens(1)
       if (nfreq.le.3) return 
 c
-      do ij=3,nfreq-1
-         abl=log(abso(ij)*d1)
-         if(scat(ij).le.0.) scat(ij)=1.e-30
-         scl=log(scat(ij)*d1)          
-         ipfreq=ipfreq+1
-c        write(27,637) ij,ipfreq,c18/freq(ij),abso(ij),abl,scl
-         write(27,637) ipfreq,c18/freq(ij),abl
-         absop(ipfreq)=abl
-         wltab(ipfreq)=2.997925e18/freq(ij)
-      end do
-c 637 format(2i5,f14.5,1pe12.4,0p2f12.5)    
+      if(iprint.lt.4) then
+         do ij=3,nfreq-1
+            abl=log(abso(ij)*d1)
+            ipfreq=ipfreq+1
+            absop(ipfreq)=abl
+            wltab(ipfreq)=2.997925e18/freq(ij)
+         end do
+       else
+         do ij=3,nfreq-1
+            abl=log(abso(ij)*d1)
+            ipfreq=ipfreq+1
+            write(27,637) ipfreq,c18/freq(ij),abl
+            absop(ipfreq)=abl
+            wltab(ipfreq)=2.997925e18/freq(ij)
+         end do
+      end if
   637 format(i10,f14.5,0pf12.5)    
 c
       return
@@ -22476,6 +22524,7 @@ C     Timing procedure (call machine dependent routine!!)
 C
       CHARACTER ROUT*6
       dimension dummy(2)
+      common/timeta/dtim
       DATA T0/0./
       SAVE T0
 C
@@ -22489,6 +22538,7 @@ C
          ROUT=' FINAL'
       ENDIF
       WRITE(69,600) IP,TIME,DT,ROUT
+      dtim=dt
   600 FORMAT(I6,2F11.2,2X,A6)
       RETURN
       END
@@ -22670,8 +22720,14 @@ c
        init=0
        end if
 c
+c      write(51,624) t,dens(id),wmm(id)/hmass,ane/ann,
+c    * htot,anato(1,id)/htot,2.*anmol(2,id)/htot,
+c    * ahe/abndd(2,id),ac/abndd(6,id),an/abndd(7,id),ao/abndd(8,id),
+c    * anato(6,id)/act,anmol(6,id)/act,anmol(37,id)/act,
+c    * anato(7,id)/ant,2.*anmol(9,id)/ant,anmol(41,id)/ant,
+c    * anato(8,id)/aot,anmol(3,id)/aot,anmol(6,id)/aot
        write(51,624) t,dens(id),wmm(id)/hmass,ane/ann,
-     * htot,anato(1,id),anmol(2,id),
+     * htot,anato(1,id),2.*anmol(2,id),
      * ahe/abndd(2,id),ac/abndd(6,id),an/abndd(7,id),ao/abndd(8,id),
      * anato(6,id),anmol(6,id),anmol(37,id),
      * anato(7,id),anmol(9,id),anmol(41,id),
@@ -22692,32 +22748,25 @@ c
       end
 C
 C
-c******************************************************************************
-c     This subroutine reads in the CIA tables of A. Borysow and returns the
-c     opacity in cgs units.  The input variables are the density (rho), the
-c     temperature (t), both in cgs units, and the frequency (f), in
-c     cm^{-1}. The returned opacity assumes that all of the hydrogen is in the
-c     form of H2, so it will need to be multiplied by an appropriate reduction
-c     factor.
-c
-c     subroutine written by M. Montgomery, 02/24/09
-c******************************************************************************
+C ********************************************************************
+C
+C
 
       subroutine cia_sub(t,ah2,ff,opac)
 c     ================================
 c
 c
-      INCLUDE 'IMPLIC.FOR'
+      IMPLICIT REAL*8(A-H,O-Z)
       parameter (nlines=1000)
       real*8 mh2
       dimension freq(nlines),temp(7),alpha(nlines,7)
       parameter (amagat=2.6867774d+19,amu=1.660539d-24,mh2=2.0159d0)
-      data temp / 1000. , 2000. , 3000. , 4000. , 5000. , 6000. , 
+      data temp / 1000. , 2000. , 3000. , 4000. , 5000. , 6000. ,
      *            7000. /
       data ifirst /0/
-      PARAMETER (CAS=2.997925D10)      
+      PARAMETER (CAS=2.997925D10)
 c     input frequency in Hz but needed wave numbers in cm^-1
-      f=ff/cas 
+      f=ff/cas
 c     read in CIA tables if this is the first call
       if (ifirst.eq.0) then
          write(*,'(a)') 'Reading in CIA opacity tables...'
@@ -22751,7 +22800,7 @@ c     locate position in temperature array
 
       if (j.eq.0) then
          write(*,*)
-         write(*,'(a,f6.0,a)') 
+         write(*,'(a,f6.0,a)')
      *   'Error: requested temperature is below',temp(1),' K'
          write(*,'(a)') 'Stop'
          write(*,*)
@@ -22778,11 +22827,11 @@ c     interpolate linearly within table
          y2=alpha(i+1,j)
          y3=alpha(i+1,j+1)
          y4=alpha(i,j+1)
-         
+
          tt=(f-freq(i))/(freq(i+1)-freq(i))
          uu=(t-temp(j))/(temp(j+1)-temp(j))
-         
-         alp=(1.-tt)*(1.-uu)*y1 + tt*(1.-uu)*y2 + tt*uu*y3 + 
+
+         alp=(1.-tt)*(1.-uu)*y1 + tt*(1.-uu)*y2 + tt*uu*y3 +
      *       (1.-tt)*uu*y4
       endif
 
@@ -22793,11 +22842,11 @@ c     rescale for the given density
       opac=fac*alp
 c
       return
-      end 
+      end
 
 C
 C
-C     
+C
 C ********************************************************************
 C
 C
@@ -22805,7 +22854,7 @@ C
       SUBROUTINE locate(xx,n,x,j,nxdim)
 c     =================================
 c
-      INCLUDE 'IMPLIC.FOR'
+      IMPLICIT REAL*8(A-H,O-Z)
       dimension xx(nxdim)
 c
       jl=0
@@ -22828,4 +22877,11 @@ c
       endif
       return
       END
+
+C
+C
+C
+C ********************************************************************
+C
+C
 

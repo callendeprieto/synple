@@ -1,21 +1,14 @@
-c     PARAMETER (MLIN0   = 200000, 
-      PARAMETER (MLIN0   =1000000, 
-c     PARAMETER (MLIN0   = 500000, 
+      PARAMETER (MLIN0   =1200000, 
      *           MGRIEM  =     10,
      *           MNLT    =   2000,
      *           MSPHE2  =     20,
-c    *           MLIN    =  10000,
      *           MLIN    = 190000,
      *           MPRF    =  MLIN0)
 C
-c     PARAMETER (MLINM0  = 300000,
-c      PARAMETER (MLINM0  =1000000,
-      PARAMETER (MLINM0  =25000000,
-     *           MLINM   = 500000,
+      PARAMETER (MLINM0  =50000000,
+C      PARAMETER (MLINM0  =5000000,
+     *           MLINM   =1500000,
      *           MMLIST  =      4)
-c     PARAMETER (MLINM0  = 20,
-c    *           MLINM   =  2,
-c    *           MMLIST  =      2)
 C
        REAL*4       EXCL0(MLIN0),
      *              EXCU0(MLIN0),

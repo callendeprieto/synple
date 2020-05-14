@@ -23,17 +23,17 @@ OS4 = ${shell perl -e 'my $$osVersion = `hostname`; chomp($$osVersion); print "$
 
 all:  synspec rotin install 
 
-synspec: s53x.f  LINDAT.FOR  MODELP.FOR  PARAMS.FOR  SYNTHP.FOR  WINCOM.FOR
-	${F90}  ${OPT} s53x.f -o s53x
+synspec: s53z.f  LINDAT.FOR  MODELP.FOR  PARAMS.FOR  SYNTHP.FOR  WINCOM.FOR
+	${F90}  ${OPT} s53z.f -o s53z
 
 rotin: rotin3.f
 	${F90}  ${OPT} rotin3.f -o rotin3
 
 install:
-	mv s53x   ../bin/
+	mv s53z   ../bin/
 	mv rotin3 ../bin
                                                         
 clean: 
-	rm -f s53x rotin3 ../bin/s53x ../bin/rotin3 
+	rm -f s53z rotin3 ../bin/s53z ../bin/rotin3 
 
 
