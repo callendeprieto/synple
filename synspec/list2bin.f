@@ -31,7 +31,7 @@ c
    40    continue
 c
        else
-   30    continue
+   50    continue
          read(20,*,err=50,end=60) alam,anum,gf,excl,gr,gs,gw
          write(11) alam,anum,gf,excl,gr,gs,gw
          n=n+1
