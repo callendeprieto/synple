@@ -1698,7 +1698,8 @@ def checkinput(wrange, vmicro, linelist):
 
   #determine imode
   # imode = 0  is default, atoms and molecules, at least 2 line lists 
-  # synple always sets IFMOL = 1 in 'tas' 
+  # synple sets IFMOL = 1 in 'tas' when an input molecular line list is used
+  # but does not set it when only an atomic line list is given
   # imode = 2 for pure continuum
   # imode = 1 for few-lines mode
   # imode = -3 for regular opacity tables (TLUSTY)
