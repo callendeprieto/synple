@@ -22792,7 +22792,8 @@ c     take logarithm of tables prior to doing linear interpolations
 
 c     compute factor needed for density dependence of results
 
-      fac=(ah2/amagat/mh2)**2
+c      fac=(ah2/amagat/mh2)**2
+       fac=(ah2/amagat)**2
 c      fac=1.0
 
 c     locate position in temperature array
