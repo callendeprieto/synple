@@ -2642,13 +2642,13 @@ def lgconv(xinput, yinput, fwhm, ppr=None):
     minx = np.min(xinput)
     maxx = np.max(xinput)
     x = np.linspace(minx,maxx,nel)
-    step = x[1] - x[0]
     #y = np.interp( x, xinput, yinput)
     y = interp_spl( x, xinput, yinput)
   else:                       #input linearly sampled
     x = xinput
     y = yinput
 
+  step = x[1] - x[0]
   sigma=fwhm/2.0/np.sqrt(-2.0*np.log(0.5))
   npoints = 2*int(3*fwhm/2./step)+1
   half = npoints * step /2.
