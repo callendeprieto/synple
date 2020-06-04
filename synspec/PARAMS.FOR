@@ -162,6 +162,7 @@ c
      *              IOPHEM,
      *              IOPCH,
      *              IOPOH,
+     *              IOPCIA,
      *              IOPHLI,
      *              IRSCT,
      *              IRSCHE,
@@ -193,12 +194,14 @@ c
      *              WL(MHWL,MLINH),
      *              XT(MHT,MLINH),
      *              XNE(MHE,MLINH),
-     *              PRF(MHWL,MHT,MHE),
+     *              PRF(MHWL,MHT,MHE,MLINH),
+     *              WLINE(4,22),
      *              NWLH(MLINH),
      *              NTH(MLINH),
      *              NEH(MLINH),
      *              ILIN0(4,22),
-     *              ILEMKE
+     *              ILEMKE,
+     *              NLIHYD
       COMMON/AUXHYD/XK,FXK,BETAD,DBETA,BERGFC,CUTLYM,CUTBAL
       COMMON/HHEPRF/IHYDPR,IHE1PR,IHE2PR
       COMMON/HYLPAR/IHYL,ILOWH,M10,M20

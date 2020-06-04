@@ -6,7 +6,7 @@
      *           MPRF    =  MLIN0)
 C
 C      PARAMETER (MLINM0  =50000000,
-      PARAMETER (MLINM0  =10000000,
+      PARAMETER (MLINM0  = 10000000,
      *           MLINM   =1500000,
      *           MMLIST  =      4)
 C
@@ -54,7 +54,9 @@ C
      *              INMLIP(MLINM,MMLIST),
      *              NLINM0(MMLIST),
      *              NLINML(MMLIST),
+     *              NLINMT(MMLIST),
      *              IUNITM(MMLIST),
+     *              INACTM(MMLIST),
      *              NMLIST
 C
       COMMON/LINPRF/GAMR0,
@@ -74,6 +76,6 @@ C
      *              EXHK(MDEPTH)
 C
       COMMON/LINCTR/DFRCON,IJCNTR(MLIN),IJCMTR(MLINM,MMLIST)
-      COMMON/MLINRE/FRLASM(MMLIST),ALASTM(MMLIST),
+      COMMON/MLINRE/FRLASM(MMLIST),ALASTM(MMLIST),TMLIM(MMLIST),
      *              NXTSEM(MMLIST),IPRSEM(MMLIST),IREADM(MMLIST)
 

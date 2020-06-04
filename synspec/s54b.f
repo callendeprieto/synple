@@ -96,6 +96,8 @@ c
       IF(IFMOL.GT.0.AND.IMODE.LT.2) THEN
          DO ILIST=1,NMLIST
             NXTSEM(ILIST)=0
+            INACTM(ILIST)=0
+            NLINMT(ILIST)=0
          END DO
       END IF
 c
@@ -104,7 +106,9 @@ c
 C
       IF(IFMOL.GT.0.AND.IMODE.LT.2) THEN
          DO ILIST=1,NMLIST
-            CALL INMOLI(ILIST)
+            IF(IMODE.LE.-3.AND.TEMP(1).LT.TMLIM(ILIST))
+     *      CALL INMOLI(ILIST)
+            IF(IMODE.GE.-2) CALL INMOLI(ILIST)
          END DO
       END IF
       end if
@@ -140,7 +144,7 @@ C
       END IF
       IF(IFMOL.GT.0.AND.IMODE.LT.2.AND.IRLIST.GT.0) THEN
          DO ILIST=1,NMLIST
-            IF(NXTSEM(ILIST).EQ.1) THEN
+            IF(NXTSEM(ILIST).EQ.1.and.inactm(ilist).eq.0) THEN
                CALL INMOLI(ILIST)
                iblank=0
                GO TO 5
@@ -2127,6 +2131,14 @@ c     *    FOR',nmlist','REQUIRED ',
 c     *   'MOLECULAR LINE LIST(S)'
          stop
       end if
+c
+      do ilist=1,nmlist
+         tmlim(ilist)=tmolim
+      end do
+      if(nmlist.ge.2) then
+         read(55,*,err=9,end=9) (tmlim(ilist),ilist=2,nmlist)
+      end if
+    9 continue
 C
 c     VTB    - turbulent velocity (in km/s). In non-negative, this
 C              value overwrites the value given by the standard input
@@ -2496,6 +2508,7 @@ c           plac(ijc)=bnc*frc**3/(exp(xcc0*frc)-un)
          wc0=(freqc(1)-freqc(2))*0.5
          wc1=(freqc(nfreqc-1)-freqc(nfreqc))*0.5
          do ijc=2,nfreqc-1
+            absoc(ijc)=min(absoc(ijc),1.e30)
             write(26,642) wlamc(ijc)*10.,log(absoc(ijc)/dens(1))
          end do
   642    format(f11.3,1p5e13.5)
@@ -5371,7 +5384,7 @@ C
       common/quasun/nunalp,nunbet,nungam,nunbal
       common/hhebrd/sthe,nunhhe
       common/gompar/hglim,ihgom
-      DIMENSION PJ(40),PRF0(54),WLINE(4,22),OSCH(4,22),
+      DIMENSION PJ(40),PRF0(54),OSCH(4,22),
      *          ABSO(MFREQ),EMIS(MFREQ),ABSOH(MFREQ),EMISH(MFREQ)
       dimension wlir(15),irlow(15),irupp(15)
       DATA FRH    /3.289017E15/
@@ -5385,6 +5398,11 @@ C
 c
       DATA INIT /0/
 C
+      DO IJ=I0,I1
+         ABSOH(IJ)=0.
+         EMISH(IJ)=0.
+      END DO
+c
       if(iath.le.0.or.rrr(1,1,1).eq.0.) return
       izz=1
 C
@@ -5401,8 +5419,6 @@ C
       DO IJ=I0,I1
          ABSO(IJ)=0.
          EMIS(IJ)=0.
-         ABSOH(IJ)=0.
-         EMISH(IJ)=0.
       END DO
 c
        if(ilowh.le.0) return
@@ -5441,15 +5457,6 @@ C -------------------------------------------------------------------
 C
       ISERL=ILOWH
       ISERU=ILOWH
-c     IF(WLAM(I0).GT.17000..AND.WLAM(I1).LT.21000.) THEN
-c        ISERL=3
-c        ISERU=4
-c      ELSE IF(WLAM(I0).GT.22700.) THEN
-c        ISERL=4
-c        ISERU=5
-c        IF(WLAM(I0).GT.32800.) ISERU=6
-c        IF(WLAM(I0).GT.44660.) ISERU=7
-c     END IF
 c
       if(wlam(i0).gt.14000.) iseru=4
       if(wlam(i0).gt.22700.) iseru=5
@@ -5585,6 +5592,7 @@ c
      *             (AL-WLHYD(ILINE,IW0)))/
      *             (WLHYD(ILINE,IW1)-WLHYD(ILINE,IW0))
                SG=EXP(PRFF*AL10)*FID
+               sg0=EXP(PRFF*AL10)
                IF(ILEMKE.EQ.1) SG=SG*WLINE(I,J)**2*CINV/F00
                ABSO(IJ)=ABSO(IJ)+SG*ABTRA
                EMIS(IJ)=EMIS(IJ)+SG*EMTRA
@@ -5625,7 +5633,6 @@ c         lines without special Stark broadening tables
 c
           ELSE
             CALL STARK0(I,J,izz,XKIJ,WL0,FIJ,FIJ0)
-c           IF(WL0*0.5.LT.WLAM(I1).OR.2.*WL0.GT.WLAM(I0)) THEN
             if((wl0.le.wlam(i1).and.1.25*wl0.gt.wlam(i0)). or.
      *         (wl0.ge.wlam(i0).and.0.75*wl0.lt.wlam(i1))) then
             FXK=F00*XKIJ
@@ -5641,7 +5648,7 @@ c           FID0=CID1*FIJ0/DOP
             DO IJ=I0,I1
                fr=freq(ij)
                BETA=ABS(WLAM(IJ)-WL0)*FXK1
-               IF(I.LT.3) THEN
+               IF(I.LT.5) THEN
                   SG=STARKA(BETA,AD,DIV,fac)*FID
                   if(iophli.eq.2.and.i.eq.1.and.j.eq.2) 
      *               sg=sg*feautr(fr,id)
@@ -5755,7 +5762,7 @@ C
       logical lquasi,lasdel
       common/lasers/lasdel
       common/quasun/nunalp,nunbet,nungam,nunbal
-      DIMENSION PJ(40),PRF0(54),WLINE(4,22),OSCH(4,22),
+      DIMENSION PJ(40),PRF0(54),OSCH(4,22),
      *          ABSO(MFREQ),EMIS(MFREQ),ABSOH(MFREQ),EMISH(MFREQ)
       DATA FRH    /3.289017E15/
       DATA INIT /0/
@@ -6316,9 +6323,9 @@ C
          ABTRA=PJ(I)*WNHE2(J,ID)
          EMTRA=PJ(J)*WNHE2(I,ID)*II*XJJ*EXP(CPJ*(XII-XJJ)*T1)
          IF(I.LE.2) THEN
-            WLINE=227.838/(XII-1./JJ)
+            WLIN=227.838/(XII-1./JJ)
           ELSE 
-            WLINE=227.7776/(XII-1./JJ)
+            WLIN=227.7776/(XII-1./JJ)
          END IF
          IF(I.EQ.2) THEN
             IF(J.EQ.3.AND.IHE2PR.GT.0) ILINE=1
@@ -6336,7 +6343,7 @@ C
             END DO
             FID=CID*OSCHE2(ILINE)
             DO 50 IJ=I0,I1
-               AL=ABS(WLAM(IJ)-WLINE)
+               AL=ABS(WLAM(IJ)-WLIN)
                IF(AL.LT.1.E-4) AL=1.E-4
                AL=LOG10(AL)
                DO IWL=1,NWL-1
@@ -6526,9 +6533,9 @@ C
          ABTRA=PJ(I)*WNHE2(J,ID)
          EMTRA=PJ(J)*WNHE2(I,ID)*II*XJJ*EXP(CPJ*(XII-XJJ)*T1)
          IF(I.LE.2) THEN
-            WLINE=227.838/(XII-1./JJ)
+            WLIN=227.838/(XII-1./JJ)
           ELSE 
-            WLINE=227.7776/(XII-1./JJ)
+            WLIN=227.7776/(XII-1./JJ)
          END IF
          IF(I.EQ.2) THEN
             IF(J.EQ.3.AND.IHE2PR.GT.0) ILINE=1
@@ -6545,7 +6552,7 @@ C
                PRF0(IWL)=PRFHE2(ILINE,ID,IWL)
             END DO
             FID=CID*OSCHE2(ILINE)
-            AL=ABS(WLAM(IJ)-WLINE)
+            AL=ABS(WLAM(IJ)-WLIN)
             IF(AL.LT.1.E-4) AL=1.E-4
             AL=LOG10(AL)
             DO IWL=1,NWL-1
@@ -6761,25 +6768,13 @@ C
       Y2=Y2CON*DEL**2/ANE
       QSTAT=1.5+.5*(Y1**2-1.384)/(Y1**2+1.384)
       QIMPA=0.
-c      if(ii.eq.81.and.jj.eq.121.and.t.gt.11671..and.t.lt.11672.
-c    *   .and.abs(beta).lt.0.436)
-c    *    write(6,601) beta,del,y1,y2,qstat
-c 601     format('     ir   ',1p5e11.3)
       IF(Y1.GT.8..OR.Y1.GE.Y2) GO TO 10
       EXY2=0.
       IF(Y2.LE.8.) EXY2=EXPINT(Y2)
       QIMPA=1.438*SQRT(Y1*(1.-XX))*(.4*EXP(-Y1)+EXPINT(Y1)-.5*EXY2)
-c      if(ii.eq.81.and.jj.eq.121.and.t.gt.11671..and.t.lt.11672.
-c    *   .and.abs(beta).lt.0.436)
-c    *    write(6,602) exy2,qimpa
-c 602     format('    qimpa ',1p2e11.3)       
    10 IF(BETA.GT.20.) GO TO 20
       PROF=8./(80.+BETA**3)
       RATIO=QSTAT+QIMPA
-c      if(ii.eq.81.and.jj.eq.121.and.t.gt.11671..and.t.lt.11672.
-c    *   .and.abs(beta).lt.0.435)
-c    *    write(6,603) prof,ratio,prof+ratio
-c 603     format('    p+r   ',1p3e11.3)
       GO TO 30
    20 PROF=1.5/BETA/BETA/SQRT(BETA)
       DIOI=PI2*1.48E-25*DD*ANE*(SQRT(DD)*
@@ -6838,7 +6833,8 @@ C     from the Lemke, Tremblay-Bergeron, or Schoening-Butler tables
 C
       INCLUDE 'PARAMS.FOR'
       INCLUDE 'MODELP.FOR'
-      DIMENSION WLINE(4,22)
+c     DIMENSION WLINE(4,22)
+      DIMENSION IILW(100),IIUP(100)
       CHARACTER*1 CHAR
       DATA INIT /0/
 C
@@ -6899,14 +6895,14 @@ C
          DO IE=1,NE
             DO IT=1,NT
                READ(IHYDPR,500)
-               READ(IHYDPR,*) (PRF(IWL,IT,IE),IWL=1,NWL)
+               READ(IHYDPR,*) (PRF(IWL,IT,IE,ILINE),IWL=1,NWL)
             END DO
          END DO
 C
 C        coefficient for the asymptotic profile is determined from
 C        the input data
 C
-         XCLOG=PRF(NWL,1,1)+2.5*LOG10(WL(NWL,ILINE))+31.5304-
+         XCLOG=PRF(NWL,1,1,ILINE)+2.5*LOG10(WL(NWL,ILINE))+31.5304-
      *         XNE(1,ILINE)-2.*LOG10(WL0)
          XKLOG=0.6666667*(XCLOG-0.176)
          XK=EXP(XKLOG*2.3025851)
@@ -6952,10 +6948,6 @@ C ---------------------------------
 C     read Lemke or Tremblay tables
 C ---------------------------------
 C
-c     write(6,601) ihydpr
-c 601 format(' ihydpr',i4)
-c     OPEN(UNIT=IHYDPR,STATUS='OLD')
-c
       if(ihydpr.lt.20) ihydpr=ihydpr+20
       if(ihydpr.eq.21) then
          open(unit=ihydpr,file='./data/lemke.dat',status='old')
@@ -6976,79 +6968,106 @@ C
       write(6,611) ntab 
   611 format(' ntab',i4)
       DO ITAB=1,NTAB
-      ILINEB=ILINE
-      READ(IHYDPR,*) NLLY
-      write(6,612) nlly  
-  612 format(' nlly',i4)
-      DO ILI=1,NLLY
-         ILINE=ILINE+1
-         READ(IHYDPR,*) I,J,ALMIN,ANEMIN,TMIN,DLA,DLE,DLT,
-     *                  NWL,NE,NT
-         WL0=WLINE(I,J)
-         ILIN0(I,J)=ILINE
-         NWLH(ILINE)=NWL
-         NWLHYD(ILINE)=NWL
-         NTH(ILINE)=NT
-         NEH(ILINE)=NE
-         DO IWL=1,NWL
-            WL(IWL,ILINE)=ALMIN+(IWL-1)*DLA
-            WLHYD(ILINE,IWL)=WL(IWL,ILINE)
-            WL(IWL,ILINE)=EXP(2.3025851*WL(IWL,ILINE))
+         ILINEB=ILINE
+         READ(IHYDPR,*) NLLY
+         DO ILI=1,NLLY
+            ILINE=ILINE+1
+            READ(IHYDPR,*) I,J,ALMIN,ANEMIN,TMIN,DLA,DLE,DLT,
+     *                     NWL,NE,NT
+            WL0=WLINE(I,J)
+            ILIN0(I,J)=ILINE
+            NWLH(ILINE)=NWL
+            NWLHYD(ILINE)=NWL
+            NTH(ILINE)=NT
+            NEH(ILINE)=NE
+            iilw(iline)=i
+            iiup(iline)=j
+            DO IWL=1,NWL
+               WL(IWL,ILINE)=ALMIN+(IWL-1)*DLA
+               WLHYD(ILINE,IWL)=WL(IWL,ILINE)
+               WL(IWL,ILINE)=EXP(2.3025851*WL(IWL,ILINE))
+            END DO
+            DO INE=1,NE
+               XNE(INE,ILINE)=ANEMIN+(INE-1)*DLE
+            END DO
+            DO IT=1,NT
+               XT(IT,ILINE)=TMIN+(IT-1)*DLT
+            END DO 
          END DO
-         DO INE=1,NE
-            XNE(INE,ILINE)=ANEMIN+(INE-1)*DLE
-         END DO
-         DO IT=1,NT
-            XT(IT,ILINE)=TMIN+(IT-1)*DLT
-         END DO 
-      END DO
 c
-      DO ILI=1,NLLY         
-         ILNE=ILINEB+ILI
-         NWL=NWLH(ILNE)
-         READ(IHYDPR,500)
-         DO INE=1,NEH(ILNE)
-            DO IT=1,NTH(ILNE)
-               READ(IHYDPR,*) QLT,(PRF(IWL,IT,INE),IWL=1,NWL)
+         DO ILI=1,NLLY         
+            ILNE=ILINEB+ILI
+            NWL=NWLH(ILNE)
+            READ(IHYDPR,500)
+            DO INE=1,NEH(ILNE)
+               DO IT=1,NTH(ILNE)
+                  READ(IHYDPR,*) QLT,(PRF(IWL,IT,INE,ILNE),IWL=1,NWL)
+               END DO
+            END DO
+C
+            i=iilw(ilne)
+            j=iiup(ilne)
+            DO ID=1,ND
+               CALL HYDTAB(I,J,ID)
             END DO
          END DO
+      END DO
+      NLIHYD=ILNE
+      CLOSE(IHYDPR)
 C
-C        coefficient for the asymptotic profile is determined from
-C        the input data
+      RETURN
+      END
 C
-         XCLOG=PRF(NWL,1,1)+2.5*WLHYD(ILNE,NWL)-0.477121
+C
+C ********************************************************************
+C
+C
+
+      SUBROUTINE HYDTAB(I,J,ID)
+C
+C     interpolated hydrogen line broadening table for line I->J and
+C     for parameters (TEMP, ELEC) at depth ID
+C
+      INCLUDE 'PARAMS.FOR'
+      INCLUDE 'MODELP.FOR'
+C
+      ILINE=ILIN0(I,J)
+      IF(ILINE.EQ.0) RETURN
+      WL0=WLINE(I,J)
+      NWL=NWLH(ILINE)
+C
+C     coefficient for the asymptotic profile is determined from
+C     the input data
+C
+      if(id.eq.1) then
+         XCLOG=PRF(NWL,1,1,ILINE)+2.5*WLHYD(ILINE,NWL)-0.477121
          XKLOG=0.6666667*XCLOG
          XK=EXP(XKLOG*2.3025851)
+      end if
 C
-         DO ID=1,ND
+C     temperature is modified in order to account for the
+C     effect of turbulent velocity on the Doppler width
 C
-C           temperature is modified in order to account for the
-C           effect of turbulent velocity on the Doppler width
+      T=TEMP(ID)+6.06E-9*VTURB(ID)
+      ANE=ELEC(ID)
+      TL=LOG10(T)
+      ANEL=LOG10(ANE)
+      F00=1.25E-9*ANE**0.666666667
+      FXK=F00*XK
+      DOP=1.E8/WL0*SQRT(1.65E8*T)
+      DBETA=WL0*WL0/2.997925E18/FXK
+      BETAD=DBETA*DOP
 C
-            T=TEMP(ID)+6.06E-9*VTURB(ID)
-            ANE=ELEC(ID)
-            TL=LOG10(T)
-            ANEL=LOG10(ANE)
-            F00=1.25E-9*ANE**0.666666667
-            FXK=F00*XK
-            DOP=1.E8/WL0*SQRT(1.65E8*T)
-            DBETA=WL0*WL0/2.997925E18/FXK
-            BETAD=DBETA*DOP
-C
-C       interpolation to the actual values of temperature and electron
-C       density. The result is stored at array PRFHYD, having indices
+C     interpolation to the actual values of temperature and electron
+C     density. The result is stored at array PRFHYD, having indices
 C       ILINE - line number
 C       ID    - depth index
-C       IWL   - wavelength index 
+C       IWL   - wavelength index
 C
-            DO IWL=1,NWL
-               CALL INTHYD(PROF,TL,ANEL,IWL,ILNE)
-               PRFHYD(ILNE,ID,IWL)=PROF
-            END DO
-        END DO
+      DO IWL=1,NWL
+         CALL INTHYD(PROF,TL,ANEL,IWL,ILINE)
+         PRFHYD(ILINE,ID,IWL)=PROF
       END DO
-      END DO
-      CLOSE(IHYDPR)
 C
       RETURN
       END
@@ -7132,7 +7151,7 @@ C
          DO IX=N0X,N1X
             I0=IX-N0X+1
             XX(I0)=XT(IX,ILINE)
-            WX(I0)=PRF(IWL,IX,IZZ)
+            WX(I0)=PRF(IWL,IX,IZZ,ILINE)
          END DO
          IF(WX(1).LT.-99..OR.WX(2).LT.-99..OR.WX(3).LT.-99.) THEN
             CALL DIVSTR(A,DIV)
@@ -7721,9 +7740,9 @@ C
       II=I*I
       JJ=J*J
       IF(I.LE.2) THEN
-         WLINE=227.838/(1./II-1./JJ)
+         WLIN=227.838/(1./II-1./JJ)
        ELSE 
-         WLINE=227.7776/(1./II-1./JJ)
+         WLIN=227.7776/(1./II-1./JJ)
       END IF   
       T=TEMP(ID)
 C
@@ -7764,7 +7783,7 @@ C     (see procedure HE2INI)
 C
       FID=0.02654*OSCHE2(ILINE)
       DO 50 IJ=3,NFREQ
-         AL=ABS(WLAM(IJ)-WLINE)
+         AL=ABS(WLAM(IJ)-WLIN)
          IF(AL.LT.1.E-4) AL=1.E-4
          AL=LOG10(AL)
          DO 20 IWL=1,NWLHE2(ILINE)-1
@@ -8658,7 +8677,7 @@ c
       DOPLAM=ALAM0*ALAM0/CNM*DOPSTD
       AVAB=ABSTD(IDSTD)*RELOP
       ASTD=1.0
-c      IF(GRAV.GT.6.) ASTD=0.1
+c     IF(GRAV.GT.6.) ASTD=0.1
       CUTOFF=CUTOF0
       ALAST=CNM/FRLAST
       IF(INLTE.GE.1.AND.INLSET.EQ.0) THEN
@@ -8698,7 +8717,7 @@ C     numbers are included. If  INLINST=11, they will be ignored anyway
            WRITE(11,*) 'INILIN: quantum numbers included in linelist'
         ENDIF
       ELSE IF (INLIST.EQ.11) THEN
-        INLIST=0
+        INLIST=1
         WRITE(11,*)'INILIN: if present, quant. num. limits are ignored'
       ELSE
         WRITE(11,*)'INILIN: if present, quant. num. limits are ignored'
@@ -9224,7 +9243,7 @@ c
       id=idstd
       dstdid=sqrt(1.4e7*temp(idstd))
       ASTD=1.0
-c      IF(GRAV.GT.6.) ASTD=0.1
+c     IF(GRAV.GT.6.) ASTD=0.1
       CUTOFF=CUTOF0
       ALAST=CNM/FRLAST
       absta=absoc(1)
@@ -9310,7 +9329,6 @@ C
       IF(ION.GT.IONIZ(IAT)) GO TO 10
       end if
 C
-c     absta=absoc(1)
       if(fr0.lt.freqc(ijcon)) then
          ijcon=ijcon+1
          absta=0.5*(absoc(ijcon)+scatc(ijcon)+
@@ -9320,7 +9338,6 @@ c     absta=absoc(1)
 c
       dop=1.e7/alam*dstdid
       abct=exp(gfp-epp/temp(id))*rrr(id,ion,iat)
-c      abid=abct/dop/abstd(id)
       abid=abct/dop/absta
       ext=sqrt(abid*afac)*dop
 c
@@ -9349,8 +9366,10 @@ c
          end if
        else if(alam.lt.9500.) then
          if(abid.lt.relop) go to 10
-       else
+       else if(alam.lt.9950.) then
          if(abid.lt.relop*1.e-9) go to 10
+       else
+         if(abid.lt.relop*1.e-19) go to 10
       end if
 c
 c     if(abid.lt.relop.and.alam.gt.alax0) go to 10
@@ -9515,8 +9534,8 @@ C
       INCLUDE 'LINDAT.FOR'
       COMMON/PRFQUA/DOPA1(MATOM,MDEPTH),VDWC(MDEPTH)
 C
-      PARAMETER (DP0=3.33564E-11, DP1=1.651E8, 
-     *           VW1=0.42, VW2=0.3, TENM4=1.E-4)
+      PARAMETER (DP0=3.33564E-11, DP1=1.651E8, VW3=0.00, 
+     *           VW1=0.41336, VW2=0.45, TENM4=1.E-4)
       PARAMETER (UN=1.) 
 C
       IF(NLIN.EQ.0) RETURN
@@ -9540,7 +9559,7 @@ C
             ah=rrr(id,1,1)
          end if
          AHE=RRR(ID,1,2)
-         VDWC(ID)=(AH+VW1*AHE)*(T*TENM4)**VW2
+         VDWC(ID)=(AH+VW1*AHE+VW3*anh2(ID))*(T*TENM4)**VW2
          DO 10 IAT=1,MATOM
             IF(AMAS(IAT).GT.0.)
      *      DOPA1(IAT,ID)=UN/(XX*DP0*SQRT(DP1*T/AMAS(IAT)+VTURB(ID)))
@@ -11582,6 +11601,7 @@ C
      *           CLS    =  2.997925e18)
 C
       AB0=0.
+      AB2=0.
       ABAD=0.
       EMAD=0.
       SCAD=0.
@@ -11596,6 +11616,8 @@ C
          HKT=HK/T
          T32=1./T/SQRT(T)
       END IF
+      anh=dens(id)/(wmm(id)*ytot(id))
+      anhe=rrr(id,1,2)
 C
       IT=NLEVEL
 C
@@ -11608,8 +11630,7 @@ C
          SG=(5.799E-13+(1.422E-6+2.784*X)*X)*X*X
 c        ABAD=POPUL(N0HN,ID)*SG 
          SCAD=POPUL(N0HN,ID)*SG
-         ah=dens(id)/(wmm(id)*ytot(id))
-         scad=ah*sg
+         scad=anh*sg
       END IF
       IF(IOPHMI.NE.0) THEN
 C
@@ -11633,7 +11654,7 @@ C
       IF(IRSCHE.NE.0.AND.MODE.GE.0) THEN
          X=(CLS/MIN(FR,FRAYHe))**2
          CS=5.484E-14/X/X*(1.+(2.44E5+5.94E10/(X-2.90E5))/X)**2
-         sg=rrr(id,1,2)*cs
+         sg=anhe*cs
 c        abad=abad+sg
          scad=scad+sg
       END IF
@@ -11651,7 +11672,7 @@ c          abad=abad+sg
            scad=scad+sg
         END IF
 C
-      IF(IOPH2P.GT.0) THEN
+      IF(IOPH2P.GT.0.AND.IFMOL.GT.0) THEN
 C
 C   -----------------------------
 C   H2+  bound-free and free-free
@@ -11680,7 +11701,7 @@ C
          B=-4.116D-42+(1.067D-26+8.135D-11/FR)/FR
          C=5.081D-37+(-8.724D-23-5.659D-8/FR)/FR
          cs=a*t+b+c/t
-         sg=rrr(id,1,2)*ane*cs
+         sg=anhe*ane*cs
          ab0=ab0+sg
       end if
 C
@@ -11697,23 +11718,54 @@ C     CIA H2-H2 opacity
 C     ---------------------------
 C
          if(iopcia.gt.0) then
-            call cia_sub(t,anh2(id),fr,oph2)
-            ab0=ab0+oph2
+            call cia_h2h2(t,anh2(id),fr,oph2)
+            ab2=ab2+oph2
          end if
-      end if
+C
+C     ---------------------------
+C     CIA H2-He opacity
+C     ---------------------------
+C
+         if(iopcia.gt.0) then
+            call cia_h2he(t,anh2(id),anhe,fr,oph2)
+            ab2=ab2+oph2
+         end if
+C
+C     ---------------------------
+C     CIA H2-H opacity
+C     ---------------------------
+C
+         if(iopcia.gt.0) then
+            call cia_h2h(t,anh2(id),anh,fr,oph2)
+            ab2=ab2+oph2
+         end if
+C
+C     ---------------------------
+C     CIA H-He opacity
+C     ---------------------------
+C
+         if(iopcia.gt.0) then
+            call cia_hhe(t,anh,anhe,fr,oph2)
+            ab2=ab2+oph2
+         end if
 C
 C     ----------------------------------------------
 C     The user may supply more opacity sources here:
 C     ----------------------------------------------
 C
+         call h2minus(t,anh2(id),ane,fr,oph2m)
+C         ab2=ab2+oph2m*0.6
+          ab2=ab2+oph2m       
+      end if
+C     
 C     Finally, actual absorption and emission coefficients
 
       IF(MODE.LT.0) RETURN
       X=EXP(-HKT*FR)
       X1=1.-X
       BNX=BN*(FR*1.E-15)**3*X
-      ABAD=ABAD+X1*(AB0+AB1)
-      EMAD=EMAD+BNX*(AB0+AB1)
+      ABAD=ABAD+X1*(AB0+AB1) + AB2
+      EMAD=EMAD+BNX*(AB0+AB1 + AB2/X1)
       RETURN
       END
 C
@@ -17805,7 +17857,7 @@ C
       COMMON/LIMPAR/ALAM0,ALAM1,FRMIN,FRLAST,FRLI0,FRLIM
       COMMON/BLAPAR/RELOP,SPACE0,CUTOF0,TSTD,DSTD,ALAMC
       COMMON/NXTINM/ALMM00,ALSM00
-      CHARACTER*2 APP
+      common/alendm/alend(mmlist)
       PARAMETER (PI4=7.95774715E-2)
       PARAMETER (C1     = 2.3025851,
      *           C2     = 4.2014672,
@@ -17880,8 +17932,8 @@ c     FRLASM(ILIST)=CNM/ALASTM(ILIST)
       DOPLAM=ALAM0*ALAM0/CNM*DOPSTD
       AVAB=ABSTD(IDSTD)*RELOP
       ASTD=1.0
-c      IF(GRAV.GT.6.) ASTD=0.1
-      CUTOFF=CUTOF0*0.1
+c     IF(GRAV.GT.6.) ASTD=0.1
+      CUTOFF=CUTOF0
       ALAST=CNM/FRLAST
 C
 C     first part of reading line list - read only lambda, and
@@ -18010,21 +18062,13 @@ C
 C
       GO TO 10
   100 NLINM0(ILIST)=IL
+      nlinmt(ilist)=nlinmt(ilist)+nlinm0(ilist)
+      alend(ilist)=cnm/fr0
 C
-      xil=float(il)
-      if(il.lt.1000000) then
-c        xln=xil*1.e-3
-c        app=' K'
-         xln=xil*1.e-6
-         app=' M'
-       else
-         xln=xil*1.e-6
-         app=' M'
-      end if
-
-      WRITE(6,611) IUNIT,XLN,APP
+      xln=float(il)*1.e-6
+      WRITE(6,611) IUNIT,XLN
   611 FORMAT(/' --------------------------------------------'/
-     *' MOLECULAR LINES - FROM UNIT ',i3,':',f8.3,a2/
+     *' MOLECULAR LINES - FROM UNIT ',i3,':',f8.3,' M'/
      *' --------------------------------------------'/)
   601 FORMAT('0 **** MORE LINES THAN MLINM0, LINE LIST TRUNCATED '/
      *'       AT LAMBDA',F15.4,'  NM'/)
@@ -18047,11 +18091,12 @@ C
       INCLUDE 'LINDAT.FOR'
       COMMON/LIMPAR/ALAM0,ALAM1,FRMIN,FRLAST,FRLI0,FRLIM
       COMMON/BLAPAR/RELOP,SPACE0,CUTOF0,TSTD,DSTD,ALAMC
+      common/alendm/alend(mmlist)
       SAVE IMLAST
 C
       DATA CNM /2.997925D17/
-c      DATA C1,C2,C3 /2.3025851, 4.2014672, 1.4387886/
 C
+      if(inactm(ilist).ne.0) return
       IL0=0
       IPRSEM(ILIST)=0
       NLINM=0
@@ -18060,13 +18105,22 @@ C
       IF(IBLANK.LE.1) APREV=0.
       ALA0=CNM/FREQ(1)
       ALA1=CNM/FREQ(2)
+c
+c     skip if current wavelength larger than the largest wavelngth in the
+c     line list
+c
+      if(ala0.gt.alend(ilist)) then
+         inactm(ilist)=1
+         return
+      end if
+c
       FRMINM=CNM/ALA0
       FRM=FRMINM
       SPACE=SPACE0
       IF(ALAMC.GT.0.) SPACE=SPACE0*ALA0/ALAMC
       IF(SPACE0.LT.0.) SPACE=-SPACE0
 
-      CUTOFF=CUTOF0*0.1
+      CUTOFF=CUTOF0*0.2
       DOPSTD=1.E7/ALA0*DSTD
       DISTAN=0.15*DOPSTD
       SPAC=3.E16/ALA0/ALA0*SPACE
@@ -18327,6 +18381,7 @@ C
 C
       if(temp(id).gt.tmolim) return
       IF(NLINML(ILIST).EQ.0) RETURN
+      if(inactm(ilist).ne.0) return
 C
 C     overall loop over contributing lines
 C
@@ -18665,7 +18720,7 @@ c
      *              pfion(100,mdepth),anion(100,mdepth)
       common/moldat/moltab,irwtab
       DIMENSION NATOMM(5),NELEMM(5),
-     *          emass(100),uelem(100),ull(100),anden(710),
+     *          emass(100),uelem(100),ull(100),anden(800),
      *          aelem(100)
 c     dimension anion(100,mdepth)
       dimension denso(mdepth),eleco(mdepth),wmmo(mdepth)
@@ -18848,6 +18903,7 @@ c
            anmol(j,id)=anden(jm)
            pfmol(j,id)=umoll
         END DO
+
         jm=2*nmetal
         anhm(id)=anden(1+jm)
         anh2(id)=anden(2+jm)
@@ -21657,6 +21713,7 @@ c
      *       nfrtab(mttab,mrtab),inttab 
       common/elecm0/elecm(mdepth)
       common/timeta/dtim
+      common/relabu/relabn(matom),popul0(mlevel,1)
       dimension abgrd(mfgrid),xli(3)
 c
 c     --------------
@@ -21770,7 +21827,7 @@ c
          xli(i)=0.
       end do
       do i=1,nmlist
-         xli(i)=float(nlinm0(i))*1.e-3
+         xli(i)=float(nlinmt(i))*1.e-3
       end do
 c        
       if(imode.ge.-5) then
@@ -21893,8 +21950,14 @@ c
       elecgr(indext,indexn)=elec(1)
 c
       call abnchn(0)
-c
+      id=1
+         do i=1,4
+            do j=i+1,22
+               call hydtab(i,j,id)
+            end do
+         end do
       end if
+c
       return
       end
 C 
@@ -21920,7 +21983,7 @@ c
       d1=un/dens(1)
       if (nfreq.le.3) return 
 c
-      if(iprint.lt.4) then
+      if(iprin.lt.4) then
          do ij=3,nfreq-1
             abl=log(abso(ij)*d1)
             ipfreq=ipfreq+1
@@ -21973,7 +22036,7 @@ c
             write(53,601) typat(iat),abnd(iat),abnd(iat)*relabn(iat)
          end do
          write(53,602) ifmol,tmolim
-         write(53,603) iophmp,ioph2p,iophem,iopch,iopoh
+         write(53,603) iophmp,ioph2p,iophem,iopch,iopoh,iopcia
          write(53,611) nfgrid,ntemp,ndens
          write(53,612) (log(tempg(i)),i=1,ntemp)
          write(53,613) (log(densg(j)),j=1,ndens)
@@ -21988,8 +22051,8 @@ c
      *          'element   for EOS   for opacities')
   601    format('  ',a4,1p2e12.3)
   602    format(/'molecules - ifmol,tmolim:'/,i4,f10.1)
-  603    format('additional opacities'/'  H-  H2+ He-  CH  OH'/
-     *          5i4)
+  603    format('additional opacities'/'  H-  H2+ He- CH  OH  CIA'/
+     *          6i4)
   611    format(/'number of frequencies, temperatures, densities:'
      *          /10x,3i10)
   612    format('log temperatures'/(6F11.6))
@@ -21997,12 +22060,12 @@ c
   614    format('log electron densities from EOS'/(6f11.6))
   615    format(/' *** frequency # : ',i8,f15.5/1pe20.8)
   616    format((1p6e14.6))
-       else
+       end if
          do iat=1,30
             write(63) typat(iat),abnd(iat),abnd(iat)*relabn(iat)
          end do
          write(63) ifmol,tmolim
-         write(63) iophmp,ioph2p,iophem,iopch,iopoh
+         write(63) iophmp,ioph2p,iophem,iopch,iopoh,iopcia
          write(63) nfgrid,ntemp,ndens
          write(63) (log(tempg(i)),i=1,ntemp)
          write(63) (log(densg(j)),j=1,ndens)
@@ -22013,7 +22076,7 @@ c
                write(63) (absgrd(i,j,k),i=1,ntemp)
             end do
          end do
-      end if
+c     end if
 c
       return
       end
@@ -22748,41 +22811,40 @@ c
       end
 C
 C
-C ********************************************************************
+C *******************************************************************
 C
 C
 
-      subroutine cia_sub(t,ah2,ff,opac)
-c     ================================
-c
+      subroutine cia_h2h2(t,ah2,ff,opac)
+c     ===================--=============
 c
       IMPLICIT REAL*8(A-H,O-Z)
       parameter (nlines=1000)
-      real*8 mh2
       dimension freq(nlines),temp(7),alpha(nlines,7)
-      parameter (amagat=2.6867774d+19,amu=1.660539d-24,mh2=2.0159d0)
+      parameter (amagat=2.6867774d+19,fac=1./amagat**2)
       data temp / 1000. , 2000. , 3000. , 4000. , 5000. , 6000. ,
      *            7000. /
+      data ntemp /7/
       data ifirst /0/
       PARAMETER (CAS=2.997925D10)
 c     input frequency in Hz but needed wave numbers in cm^-1
       f=ff/cas
 c     read in CIA tables if this is the first call
       if (ifirst.eq.0) then
-         write(*,'(a)') 'Reading in CIA opacity tables...'
-         open(10,file="./data/CIA.H2H2.Yi",status='old')
+         write(*,'(a)') 'Reading in H2-H2 CIA opacity tables...'
+         open(10,file="./data/CIA_H2H2.dat",status='old')
          do i=1,3
             read (10,*)
          enddo
          do i=1,nlines
-            read (10,*) freq(i),(alpha(i,j),j=1,7)
+            read (10,*) freq(i),(alpha(i,j),j=1,ntemp)
          enddo
          close(10)
 
 c     take logarithm of tables prior to doing linear interpolations
 
          do i=1,nlines
-            do j=1,7
+            do j=1,ntemp
                alpha(i,j)=log(alpha(i,j))
             enddo
          enddo
@@ -22790,14 +22852,8 @@ c     take logarithm of tables prior to doing linear interpolations
          ifirst=1
       endif
 
-c     compute factor needed for density dependence of results
-
-c      fac=(ah2/amagat/mh2)**2
-       fac=(ah2/amagat)**2
-c      fac=1.0
-
 c     locate position in temperature array
-      call locate(temp,7,t,j,7)
+      call locate(temp,ntemp,t,j,ntemp)
 
       if (j.eq.0) then
          write(*,*)
@@ -22813,7 +22869,7 @@ c     locate position in frequency array
 
 c     linearly interpolate in frequency and temperature
 
-      if (j.eq.7) then
+      if (j.eq.ntemp) then
 c     hold values constant if off high temperature end of table
          y1=alpha(i,j)
          y2=alpha(i+1,j)
@@ -22838,9 +22894,9 @@ c     interpolate linearly within table
 
       alp=exp(alp)
 
-c     rescale for the given density
+c     final opacity
 
-      opac=fac*alp
+      opac=fac*ah2*ah2*alp
 c
       return
       end
@@ -22881,8 +22937,378 @@ c
 
 C
 C
-C
 C ********************************************************************
+C
+C
+
+      subroutine cia_h2he(t,ah2,ahe,ff,opac)
+c     ======================================
+c
+c
+      IMPLICIT REAL*8(A-H,O-Z)
+      parameter (nlines=242)
+      dimension freq(nlines),temp(7),alpha(nlines,7)
+      parameter (amagat=2.6867774d+19,fac=1./amagat**2)
+      data temp / 1000. , 2000. , 3000. , 4000. , 5000. , 6000. ,
+     *            7000. /
+      data ntemp /7/
+      data ifirst /0/
+      PARAMETER (CAS=2.997925D10)
+c     input frequency in Hz but needed wave numbers in cm^-1
+      f=ff/cas
+c     read in CIA tables if this is the first call
+      if (ifirst.eq.0) then
+         write(*,'(a)') 'Reading in H2-He CIA opacity tables...'
+         open(10,file="./data/CIA_H2He.dat",status='old')
+         do i=1,3
+            read (10,*)
+         enddo
+         do i=1,nlines
+            read (10,*) freq(i),(alpha(i,j),j=1,ntemp)
+         enddo
+         close(10)
+
+c     take logarithm of tables prior to doing linear interpolations
+
+         do i=1,nlines
+            do j=1,ntemp
+               alpha(i,j)=log(alpha(i,j))
+            enddo
+         enddo
+
+         ifirst=1
+      endif
+
+c     locate position in temperature array
+      call locate(temp,ntemp,t,j,ntemp)
+
+      if (j.eq.0) then
+         write(*,*)
+         write(*,'(a,f6.0,a)')
+     *   'Error: requested temperature is below',temp(1),' K'
+         write(*,'(a)') 'Stop'
+         write(*,*)
+         stop
+      endif
+
+c     locate position in frequency array
+      call locate(freq,nlines,f,i,nlines)
+
+c     linearly interpolate in frequency and temperature
+
+      if (j.eq.ntemp) then
+c     hold values constant if off high temperature end of table
+         y1=alpha(i,j)
+         y2=alpha(i+1,j)
+         tt=(f-freq(i))/(freq(i+1)-freq(i))
+         alp=(1.-tt)*y1 + tt*y2
+      else if (i.eq.0 .or. i.eq.nlines) then
+c     set values to a very small number if off frequency table
+         alp=-50.
+      else
+c     interpolate linearly within table
+         y1=alpha(i,j)
+         y2=alpha(i+1,j)
+         y3=alpha(i+1,j+1)
+         y4=alpha(i,j+1)
+
+         tt=(f-freq(i))/(freq(i+1)-freq(i))
+         uu=(t-temp(j))/(temp(j+1)-temp(j))
+
+         alp=(1.-tt)*(1.-uu)*y1 + tt*(1.-uu)*y2 + tt*uu*y3 +
+     *       (1.-tt)*uu*y4
+      endif
+
+      alp=exp(alp)
+
+c     final opacity
+
+      opac=fac*ah2*ahe*alp
+c
+      return
+      end
+C
+C
+C *******************************************************************
+C
+C
+
+      subroutine cia_h2h(t,ah2,ah,ff,opac)
+c     ====================================
+c
+c
+      IMPLICIT REAL*8(A-H,O-Z)
+      parameter (nlines=67)
+      dimension freq(nlines),temp(4),alpha(nlines,4)
+      parameter (amagat=2.6867774d+19,fac=1./amagat**2)
+      data temp / 1000. , 1500., 2000. , 2500. /
+      data ntemp /4/
+      data ifirst /0/
+      PARAMETER (CAS=2.997925D10)
+c     input frequency in Hz but needed wave numbers in cm^-1
+      f=ff/cas
+c     read in CIA tables if this is the first call
+      if (ifirst.eq.0) then
+         write(*,'(a)') 'Reading in H2-H CIA opacity tables...'
+         open(10,file="./data/CIA_H2H.dat",status='old')
+         do i=1,3
+            read (10,*)
+         enddo
+         do i=1,nlines
+            read (10,*) freq(i),(alpha(i,j),j=1,ntemp)
+         enddo
+         close(10)
+
+c     take logarithm of tables prior to doing linear interpolations
+
+         do i=1,nlines
+            do j=1,ntemp
+               alpha(i,j)=log(alpha(i,j))
+            enddo
+         enddo
+
+         ifirst=1
+      endif
+
+c     locate position in temperature array
+      call locate(temp,ntemp,t,j,ntemp)
+
+      if (j.eq.0) then
+         write(*,*)
+         write(*,'(a,f6.0,a)')
+     *   'Error: requested temperature is below',temp(1),' K'
+         write(*,'(a)') 'Stop'
+         write(*,*)
+         stop
+      endif
+
+c     locate position in frequency array
+      call locate(freq,nlines,f,i,nlines)
+
+c     linearly interpolate in frequency and temperature
+
+      if (j.eq.ntemp) then
+c     hold values constant if off high temperature end of table
+         y1=alpha(i,j)
+         y2=alpha(i+1,j)
+         tt=(f-freq(i))/(freq(i+1)-freq(i))
+         alp=(1.-tt)*y1 + tt*y2
+      else if (i.eq.0 .or. i.eq.nlines) then
+c     set values to a very small number if off frequency table
+         alp=-50.
+      else
+c     interpolate linearly within table
+         y1=alpha(i,j)
+         y2=alpha(i+1,j)
+         y3=alpha(i+1,j+1)
+         y4=alpha(i,j+1)
+
+         tt=(f-freq(i))/(freq(i+1)-freq(i))
+         uu=(t-temp(j))/(temp(j+1)-temp(j))
+
+         alp=(1.-tt)*(1.-uu)*y1 + tt*(1.-uu)*y2 + tt*uu*y3 +
+     *       (1.-tt)*uu*y4
+      endif
+
+      alp=exp(alp)
+
+c     final opacity
+
+      opac=fac*ah2*ah*alp
+c
+      return
+      end
+C
+C
+C *******************************************************************
+C
+C
+
+      subroutine cia_hhe(t,ah,ahe,ff,opac)
+c     ====================================
+c
+c
+      IMPLICIT REAL*8(A-H,O-Z)
+      parameter (nlines=43)
+      dimension freq(nlines),temp(10),alpha(nlines,10)
+      parameter (amagat=2.6867774d+19,fac=1./amagat**2)
+      data temp / 1500.,  2250., 3000.,  4000.,  5000.,
+     *            6000.,  7000., 8000.,  9000., 10000./
+      data ntemp /10/
+      data ifirst /0/
+      PARAMETER (CAS=2.997925D10)
+c     input frequency in Hz but needed wave numbers in cm^-1
+      f=ff/cas
+c     read in CIA tables if this is the first call
+      if (ifirst.eq.0) then
+         write(*,'(a)') 'Reading in H-He CIA opacity tables...'
+         open(10,file="./data/CIA_HHe.dat",status='old')
+         do i=1,3
+            read (10,*)
+         enddo
+         do i=1,nlines
+            read (10,*) freq(i),(alpha(i,j),j=1,ntemp)
+         enddo
+         close(10)
+
+c     take logarithm of tables prior to doing linear interpolations
+
+         do i=1,nlines
+            do j=1,ntemp
+               alpha(i,j)=log(alpha(i,j))
+            enddo
+         enddo
+
+         ifirst=1
+      endif
+
+c     locate position in temperature array
+      call locate(temp,ntemp,t,j,ntemp)
+
+      if (j.eq.0) then
+         write(*,*)
+         write(*,'(a,f6.0,a)')
+     *   'Error: requested temperature is below',temp(1),' K'
+         write(*,'(a)') 'Stop'
+         write(*,*)
+         stop
+      endif
+
+c     locate position in frequency array
+      call locate(freq,nlines,f,i,nlines)
+
+c     linearly interpolate in frequency and temperature
+
+      if (j.eq.ntemp) then
+c     hold values constant if off high temperature end of table
+         y1=alpha(i,j)
+         y2=alpha(i+1,j)
+         tt=(f-freq(i))/(freq(i+1)-freq(i))
+         alp=(1.-tt)*y1 + tt*y2
+      else if (i.eq.0 .or. i.eq.nlines) then
+c     set values to a very small number if off frequency table
+         alp=-50.
+      else
+c     interpolate linearly within table
+         y1=alpha(i,j)
+         y2=alpha(i+1,j)
+         y3=alpha(i+1,j+1)
+         y4=alpha(i,j+1)
+
+         tt=(f-freq(i))/(freq(i+1)-freq(i))
+         uu=(t-temp(j))/(temp(j+1)-temp(j))
+
+         alp=(1.-tt)*(1.-uu)*y1 + tt*(1.-uu)*y2 + tt*uu*y3 +
+     *       (1.-tt)*uu*y4
+      endif
+
+      alp=exp(alp)
+
+c     final opacity
+
+      opac=fac*ah*ahe*alp
+c
+      return
+      end
+C
+      subroutine h2minus(t,anh2,ane,fr,oph2m)
+C     #K L Bell 1980 J. Phys. B: At. Mol. Phys. 13 1859, Table 1
+C     #The first column is theta=5040/T(K)
+C     #The first row are names for each row corresponding to lambda (angstroms)
+C     #The last row for 10.0 is linearly extrapolated
+C     #The units of everything else is 10^26 cm4/dyn-1
+C      IMPLICIT REAL*8(A-H,O-Z)
+      INCLUDE 'PARAMS.FOR'
+      dimension FFthet(9),FFlamb(18),FFkapp(18,9)
+      data FFthet / 0.5, 0.8, 1.0, 1.2, 1.6, 2.0,
+     *     2.8, 3.6, 10.0 /
+      data nthet /9/
+      data FFlamb /151883., 113913.,  91130.,  60753.,
+     *     45565.,  36452.,  30377.,  22783.,
+     *     18226.,  15188.,  11391.,  9113.,  7594.,
+     *     6509.,  5696.,  5063.,  4142.,  3505./
+      data nlamb /18/
+      data FFkapp /
+     *     7.16e+01,4.03e+01,2.58e+01,1.15e+01,6.47e+00,
+     *     4.15e+00,2.89e+00,1.63e+00,1.05e+00,7.36e-01,
+     *     4.20e-01,2.73e-01,1.92e-01,1.43e-01,1.10e-01,
+     *     8.70e-02,5.84e-02,4.17e-02,9.23e+01,5.20e+01,
+     *     3.33e+01,1.48e+01,8.37e+00,5.38e+00,3.76e+00,
+     *     2.14e+00,1.39e+00,9.75e-01,5.64e-01,3.71e-01,
+     *     2.64e-01,1.98e-01,1.54e-01,1.24e-01,8.43e-02,
+     *     6.10e-02,1.01e+02,5.70e+01,3.65e+01,1.63e+01,
+     *     9.20e+00,5.92e+00,4.14e+00,2.36e+00,1.54e+00,
+     *     1.09e+00,6.35e-01,4.22e-01,3.03e-01,2.30e-01,
+     *     1.80e-01,1.46e-01,1.01e-01,7.34e-02,1.08e+02,
+     *     6.08e+01,3.90e+01,1.74e+01,9.84e+00,6.35e+00,
+     *     4.44e+00,2.55e+00,1.66e+00,1.18e+00,6.97e-01,
+     *     4.67e-01,3.39e-01,2.59e-01,2.06e-01,1.67e-01,
+     *     1.17e-01,8.59e-02,1.18e+02,6.65e+01,4.27e+01,
+     *     1.91e+01,1.08e+01,6.99e+00,4.91e+00,2.84e+00,
+     *     1.87e+00,1.34e+00,8.06e-01,5.52e-01,4.08e-01,
+     *     3.17e-01,2.55e-01,2.10e-01,1.49e-01,1.11e-01,
+     *     1.26e+02,7.08e+01,4.54e+01,2.04e+01,1.16e+01,
+     *     7.50e+00,5.28e+00,3.07e+00,2.04e+00,1.48e+00,
+     *     9.09e-01,6.33e-01,4.76e-01,3.75e-01,3.05e-01,
+     *     2.53e-01,1.82e-01,1.37e-01,1.38e+02,7.76e+01,
+     *     4.98e+01,2.24e+01,1.28e+01,8.32e+00,5.90e+00,
+     *     3.49e+00,2.36e+00,1.74e+00,1.11e+00,7.97e-01,
+     *     6.13e-01,4.92e-01,4.06e-01,3.39e-01,2.49e-01,
+     *     1.87e-01,1.47e+02,8.30e+01,5.33e+01,2.40e+01,
+     *     1.38e+01,9.02e+00,6.44e+00,3.90e+00,2.68e+00,
+     *     2.01e+00,1.32e+00,9.63e-01,7.51e-01,6.09e-01,
+     *     5.07e-01,4.27e-01,3.16e-01,2.40e-01,2.19e+02,
+     *     1.26e+02,8.13e+01,3.68e+01,2.18e+01,1.46e+01,
+     *     1.08e+01,7.18e+00,5.24e+00,4.17e+00,3.00e+00,
+     *     2.29e+00,1.86e+00,1.55e+00,1.32e+00,1.13e+00,
+     *     8.52e-01,6.64e-01/
+      
+c     locate position in temperature array
+      theta=5040./t
+      
+      call locate(FFthet,nthet,theta,j,nthet)
+      if (j.eq.0) then
+ 1       write(*,*)
+         write(*,'(a,f6.0,a)')
+     *   'Error: requested temperature is outside the ranges'
+         write(*,'(a)') 'h2minus:Stop'
+         write(*,*)
+         stop
+      endif
+      flamb=CL*1.D8/fr
+c     locate position in wavelength array
+      call locate(FFlamb,nlamb,flamb,i,nlamb)
+
+c     linearly interpolate in frequency and temperature
+      if (j.eq.nthet) then
+c     hold values constant if off high temperature end of table
+         y1=FFkapp(i,j)
+         y2=FFkapp(i+1,j)
+         tt=(flamb-FFlamb(i))/(FFlamb(i+1)-FFlamb(i))
+         Fkappa=(1.-tt)*y1 + tt*y2
+      else if (i.eq.0 .or. i.eq.nlines) then
+c     set values to 0 if off frequency table
+         Fkappa=0.0
+      else
+c     interpolate linearly within table
+         y1=FFkapp(i,j)
+         y2=FFkapp(i+1,j)
+         y3=FFkapp(i+1,j+1)
+         y4=FFkapp(i,j+1)
+
+         tt=(flamb-FFlamb(i))/(FFlamb(i+1)-FFlamb(i))
+         uu=(theta-FFthet(j))/(FFthet(j+1)-FFthet(j))
+
+         Fkappa=(1.-tt)*(1.-uu)*y1 + tt*(1.-uu)*y2 + tt*uu*y3 +
+     *       (1.-tt)*uu*y4
+      endif
+      pe=ane*BOLK*t
+      oph2m= anh2 * 1.0E-26 *pe * Fkappa
+      return
+      end
+C     
+C     
+C *******************************************************************
 C
 C
 
