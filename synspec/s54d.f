@@ -559,6 +559,7 @@ C Input parameters for additional opacities
 C -----------------------------------------
 C
       IF(IPRIN.GE.0) WRITE(6,605) IOPHMI,IOPH2P,IOPHEM,IOPCH,IOPOH,
+     *               IOPH2M,IOH2H2,IOH2HE,IOH2H,IOHHE,
      *               IRSCT,IRSCH2,IRSCHE,IOPHLI
 C
 C
@@ -605,6 +606,11 @@ c    *3X,'S0',5X,'ALF',4X,'BET',4X,'GAM'/)
      * ' IOPHEM  (HE- B-F AND F-F)          =',I3/
      * ' IOPCH   (CH OPACITY)               =',I3/
      * ' IOPOH   (OH OPACITY)               =',I3/
+     * ' IOPH2M  (H2- OPACITY)              =',I3/
+     * ' IOH2H2  (CIA H2-H2 OPACITY         =',I3/
+     * ' IOH2HE  (CIA H2-He OPACITY         =',I3/
+     * ' IOH2H   (CIA H2-H  OPACITY         =',I3/
+     * ' IOHHE   (CIA H-He OPACITY          =',I3/
      * ' IRSCT   (RAYLEIGH SCAT. ON H I)    =',I3/
      * ' IRSCH2  (RAYLEIGH SCAT. ON H2      =',I3/
      * ' IRSCHE  (RAYLEIGH SCAT. ON HE I)   =',I3/
@@ -1078,7 +1084,7 @@ C
       common/irwint/iirwin
       common/gompar/hglim,ihgom
 C 
-      PARAMETER(MVAR=55)
+      PARAMETER(MVAR=59)
       PARAMETER(INPFI=4)
       CHARACTER*(*) FINSTD
       CHARACTER*6 PVALUE(MVAR)
@@ -1094,7 +1100,7 @@ C
      *             'ND    ','NFREQS',
      *             'INTRPL','ICHANG','IFEOS',
      *             'IOPHMI','IOPH2P','IOPHEM','IOPCH ','IOPOH ',
-     *             'IOPCIA',
+     *             'IOPH2M','IOH2H2','IOH2HE','IOH2H ','IOHHE ',
      *             'IRSCT ','IRSCH2','IRSCHE',
      *             'IHM   ','IH2   ','IH2P  ',
      *             'TRAD  ','WDIL  ',
@@ -1113,7 +1119,7 @@ C
      *             '    70','   120',
      *             '     0','     0','     0',
      *             '     1','     1','     1','     1','     1',
-     *             '     1',
+     *             '     1','     1','     1','     1','     1',
      *             '     1','     1','     1',
      *             '     1','     1','     1',
      *             '    0.','    0.',
@@ -1188,7 +1194,7 @@ C
      *             ND    ,NFREQS,
      *             INTRPL,ICHANG,IFEOS ,
      *             IOPHMI,IOPH2P,IOPHEM,IOPCH ,IOPOH ,
-     *             IOPCIA,
+     *             IOPH2M,IOH2H2,IOH2HE,IOH2H ,IOHHE ,
      *             IRSCT ,IRSCH2,IRSCHE,
      *             IHM   ,IH2   ,IH2P  ,
      *             TRAD  ,WDIL  ,
@@ -1629,8 +1635,7 @@ C
          IONIZ(I)=int(D(3,I))
          isemex(i)=0
 C
-C        increase the standard highest ionization for Teff larger
-C        than 30000 K for N, O, Ne, and Fe
+C        increase the standard highest ionization for Teff>30,000 K
 C
          IF(TEFF.GT.3.D4) THEN
            IF(I.LE.8) IONIZ(I)=I+1
@@ -2135,10 +2140,20 @@ c
       do ilist=1,nmlist
          tmlim(ilist)=tmolim
       end do
-      if(nmlist.ge.2) then
-         read(55,*,err=9,end=9) (tmlim(ilist),ilist=2,nmlist)
+      if(nmlist.gt.0) then
+         read(57,*,err=9,end=9) (tmlim(ilist),ilist=1,nmlist)
       end if
     9 continue
+c
+      if(nmlist.gt.0) then
+         read(57,*,err=11,end=11) (ivdwli(ilist),ilist=1,nmlist)
+      end if
+   11 continue
+c
+      do ilist=1,nmlist
+         write(6,*) 'ilist,tmlim,ivdwli',
+     *               ilist,tmlim(ilist),ivdwli(ilist)
+      end do
 C
 c     VTB    - turbulent velocity (in km/s). In non-negative, this
 C              value overwrites the value given by the standard input
@@ -8893,29 +8908,12 @@ C     =============================================
 C     line is selected, set up necessary parameters
 C     =============================================
 C
-C     evaluation of EXTIN0 - the distance (in delta frequency) where
-C     the line is supposed to contribute to the total opacity
-C
-      IF(IAT.LE.2) THEN
-         EXT=SQRT(10.*AB0)
-       ELSE IF(IAT.LE.14) THEN
-         EX0=AB0*ASTD*10.
-         EXT=EXT0
-         IF(EX0.GT.TEN) EXT=SQRT(EX0)
-       ELSE 
-         EX0=AB0*ASTD
-         EXT=EXT0
-         IF(EX0.GT.TEN) EXT=SQRT(EX0)
-      END IF
-      EXTIN0=EXT*DOPSTD
-C
 C     store parameters for selected lines
 C
       FREQ0(IL)=FR0
       EXCL0(IL)=real(EPP)
       EXCU0(IL)=real(EXCU*C3)
       GF0(IL)=real(GFP)
-      EXTIN(IL)=real(EXTIN0)
       INDAT(IL)=100*IAT+ION
 C
 C     indices for corresponding excitation temperatures of the lower
@@ -8974,6 +8972,24 @@ C
          END IF
          GW0(IL)=real(VW0*R2**OP4)
       END IF
+c
+C     evaluation of EXTIN0 - the distance (in delta frequency) where
+C     the line is supposed to contribute to the total opacity
+C
+      call profil(il,iat,idstd,agam)
+      IF(IAT.LE.2) THEN
+         EXT=SQRT(10.*AB0)
+       ELSE IF(IAT.LE.14) THEN
+         EX0=AB0*ASTD*10.
+         EXT=EXT0
+         IF(EX0.GT.TEN) EXT=SQRT(EX0)
+       ELSE
+         EX0=AB0*ASTD
+         EXT=EXT0
+         IF(EX0.GT.TEN) EXT=SQRT(EX0)
+      END IF
+      EXTIN0=EXT*DOPSTD
+      EXTIN(IL)=real(EXTIN0)
 C
 C     4) parameters for a special profile evaluation:
 C
@@ -9534,8 +9550,9 @@ C
       INCLUDE 'LINDAT.FOR'
       COMMON/PRFQUA/DOPA1(MATOM,MDEPTH),VDWC(MDEPTH)
 C
-      PARAMETER (DP0=3.33564E-11, DP1=1.651E8, VW3=0.00, 
-     *           VW1=0.41336, VW2=0.45, TENM4=1.E-4)
+      PARAMETER (DP0=3.33564E-11, DP1=1.651E8, 
+c    *           VW1=0.42, VW2=0.3, TENM4=1.E-4)
+     *           VW1=0.42, VW2=0.40,TENM4=1.E-4)
       PARAMETER (UN=1.) 
 C
       IF(NLIN.EQ.0) RETURN
@@ -9559,7 +9576,7 @@ C
             ah=rrr(id,1,1)
          end if
          AHE=RRR(ID,1,2)
-         VDWC(ID)=(AH+VW1*AHE+VW3*anh2(ID))*(T*TENM4)**VW2
+         VDWC(ID)=(AH+VW1*AHE+0.85*ANH2(ID))*(T*TENM4)**VW2
          DO 10 IAT=1,MATOM
             IF(AMAS(IAT).GT.0.)
      *      DOPA1(IAT,ID)=UN/(XX*DP0*SQRT(DP1*T/AMAS(IAT)+VTURB(ID)))
@@ -9696,7 +9713,7 @@ C
 C
       PARAMETER (C1=2.3025851, C2=4.2014672, C3=1.4387886)
       PARAMETER (DP0=3.33564E-11, DP1=1.651E8, 
-     *           VW1=0.42, VW2=0.3, TENM4=1.E-4)
+     *           VW1=0.42, VW2=0.45,TENM4=1.E-4)
       PARAMETER (UN=1.) 
 
       DATA TYPION /' I  ',' II ',' III',' IV ',' V  ',
@@ -11601,7 +11618,7 @@ C
      *           CLS    =  2.997925e18)
 C
       AB0=0.
-      AB2=0.
+      AB1=0.
       ABAD=0.
       EMAD=0.
       SCAD=0.
@@ -11688,7 +11705,7 @@ C
          X2=-SG1/T+SG2
          SB=0.
          IF(X2.GT.-150.) SB=POPUL(N0HN,ID)*POPUL(NKH,ID)*EXP(X2)
-         AB1=SB
+         AB0=AB0+SB
       END IF
       end if
 C
@@ -11706,9 +11723,18 @@ C
       end if
 C
 C   -----------------------------
-C     CH and OH continuuum opacity
+C   H2-  free-free
 C   -----------------------------
 C
+      IF(IOPH2M.NE.0.AND.MODE.GE.0.AND.IFMOL.GT.0.AND.T.LT.TMOLIM) THEN
+         call h2minus(t,anh2(id),ane,fr,oph2)
+         ab1=ab1+oph2
+      END IF
+C
+C   -----------------------------
+C     CH and OH continuuum opacity
+C   -----------------------------
+C 
       if(mode.ge.0.and.ifmol.gt.0.and.t.lt.tmolim) then
          if(iopch.gt.0) ab0=ab0+sbfch(fr,t)*anch(id)
          if(iopoh.gt.0) ab0=ab0+sbfoh(fr,t)*anoh(id)
@@ -11717,55 +11743,51 @@ C     ---------------------------
 C     CIA H2-H2 opacity
 C     ---------------------------
 C
-         if(iopcia.gt.0) then
+         if(ioh2h2.gt.0) then
             call cia_h2h2(t,anh2(id),fr,oph2)
-            ab2=ab2+oph2
+            ab1=ab1+oph2
          end if
 C
 C     ---------------------------
 C     CIA H2-He opacity
 C     ---------------------------
 C
-         if(iopcia.gt.0) then
+         if(ioh2he.gt.0) then
             call cia_h2he(t,anh2(id),anhe,fr,oph2)
-            ab2=ab2+oph2
+            ab1=ab1+oph2
          end if
 C
 C     ---------------------------
 C     CIA H2-H opacity
 C     ---------------------------
 C
-         if(iopcia.gt.0) then
+         if(ioh2h.gt.0) then
             call cia_h2h(t,anh2(id),anh,fr,oph2)
-            ab2=ab2+oph2
+            ab1=ab1+oph2
          end if
 C
 C     ---------------------------
 C     CIA H-He opacity
 C     ---------------------------
-C
-         if(iopcia.gt.0) then
+C  
+         if(iohhe.gt.0) then
             call cia_hhe(t,anh,anhe,fr,oph2)
-            ab2=ab2+oph2
+            ab1=ab1+oph2
          end if
+      end if
 C
 C     ----------------------------------------------
 C     The user may supply more opacity sources here:
 C     ----------------------------------------------
 C
-         call h2minus(t,anh2(id),ane,fr,oph2m)
-C         ab2=ab2+oph2m*0.6
-          ab2=ab2+oph2m       
-      end if
-C     
 C     Finally, actual absorption and emission coefficients
 
       IF(MODE.LT.0) RETURN
       X=EXP(-HKT*FR)
       X1=1.-X
       BNX=BN*(FR*1.E-15)**3*X
-      ABAD=ABAD+X1*(AB0+AB1) + AB2
-      EMAD=EMAD+BNX*(AB0+AB1 + AB2/X1)
+      ABAD=ABAD+X1*AB0+AB1
+      EMAD=EMAD+BNX*(AB0+AB1/X1)
       RETURN
       END
 C
@@ -17942,6 +17964,10 @@ C
       REWIND IUNIT
       ALAM=0.
       IJC=2
+
+
+      write(*,*) 'inlist,ilist,ivdwli',inlist,ilist,ivdwli(ilist)
+
     7 if(inlist.eq.0.or.inlist.eq.10) then
          READ(IUNIT,510) ALAM
        else
@@ -17955,9 +17981,19 @@ c
     8 continue 
    10 continue
       if(inlist.eq.0.or.inlist.eq.10) then
-         READ(IUNIT,*,END=100,err=8) ALAM,ANUM,GF,EXCL,GR,GS,GW
+         if(ivdwli(ilist).eq.0) then
+           READ(IUNIT,*,END=100,err=8) ALAM,ANUM,GF,EXCL,GR,GS,GW
+          else
+           read(iunit,*,end=100) alam,anum,gf,excl,gr,gh2,xnh2,ghe,xnhe
+         end if
        else
-         READ(IUNIT,END=100) ALAM,ANUM,GF,EXCL,GR,GS,GW
+         if(ivdwli(ilist).eq.0) then
+           READ(IUNIT,END=100) ALAM,ANUM,GF,EXCL,GR,GS,GW
+          else
+           read(iunit,end=100) alam,anum,gf,excl,gr,gh2,xnh2,ghe,xnhe
+c             GH2=0.
+c             GHE=0.
+         end if
       end if
 C
 c     change wavelength to vacuum for lambda > 2000
@@ -18059,6 +18095,14 @@ C
       GRM(IL,ILIST)=real(GR*PI4)
       GSM(IL,ILIST)=real(GS*PI4*3.125e-5)
       GWM(IL,ILIST)=real(GW*PI4)
+      if(ivdwli(ilist).ne.0) then
+          gvdwh2(il,ilist)=real(gh2)
+          gexph2(il,ilist)=real(xnh2)
+          gvdwhe(il,ilist)=real(ghe)
+          gexphe(il,ilist)=real(xnhe)
+          gsm(il,ilist)=0.
+          gwm(il,ilist)=0.
+      end if
 C
       GO TO 10
   100 NLINM0(ILIST)=IL
@@ -18216,6 +18260,8 @@ C
       NLINML(ILIST)=NLINM
       IMLAST=INMLIN(NLINML(ILIST),ILIST)
 C
+      CALL INIBLM
+C
 c      write(6,611) inmlin(1,ilist),inmlin(nlinm,ilist),
 c    * 2.997925e18/freqm(inmlin(1,ilist),ILIST),
 c    * 2.997925e18/freqm(inmlin(nlinm,ilist),ILIST)
@@ -18274,7 +18320,6 @@ C
       INCLUDE 'LINDAT.FOR'
 
       COMMON/REFDEP/IREFD(MFREQ)
-      COMMON/PRFQUA/DOPA1(MATOM,MDEPTH),VDWC(MDEPTH)
       COMMON/RTEOPA/CH(MFREQ,MDEPTH),ET(MFREQ,MDEPTH),
      *              SC(MFREQ,MDEPTH)
 
@@ -18307,7 +18352,7 @@ c        IF(IJCN.GE.1.AND.IJCN.LE.NFREQS) ID=IREFD(IJCN)
          DOP1=DOPMOL(IMOL,ID)
          ANE=ELEC(ID)
          AGAM=(GRM(IL,ILIST)+GSM(IL,ILIST)*ANE+
-     *         GWM(IL,ILIST)*VDWC(ID))*DOP1
+     *         GVDW(IL,ILIST,ID))*DOP1
          ABCNT=EXP(GFM(IL,ILIST)-EXCLM(IL,ILIST)/TEMP(ID))*
      *         RRMOL(IMOL,ID)*DOP1*STIM(ID)
 c         STR0=ABCNT/ABSTD(ID)
@@ -18337,7 +18382,7 @@ c         STR0=ABCNT/ABSTD(ID)
 c        WRITE(15,603) IL0,IL,ALAM,CMOL(IMOL),GF,EXCL,
 c    *                 STR0,EQW,APR,i0,i0,id
          WRITE(15,603) ALAM,CMOL(IMOL),GF,EXCL,
-     *                 STR0,EQW,APR,i0,i0,id
+     *                 STR0,EQW,APR,id,AGAM
          end if
    20 CONTINUE
 C
@@ -18346,9 +18391,9 @@ C
      *        ' ------------')
   602 FORMAT(/1H ,13X,
      * 'LAMBDA  MOLECULE  LOG GF       ELO    LINE/CONT',2X,
-     * 'EQ.WIDTH'/)
+     * 'EQ.WIDTH',8x,'AGAM'/)
   603 FORMAT(F11.3,2X,A4,4X,F7.2,F12.3,1PE11.2,0PF8.1,1X,A4,
-     *       4i4)
+     *       i4,1PE10.2)
 C
   100 CONTINUE
       RETURN
@@ -18372,7 +18417,6 @@ C
      *           EXT0   = 3.17,
      *           TEN    = 10.)
       DIMENSION ABLIN(MFREQ),EMLIN(MFREQ)
-      COMMON/PRFQUA/DOPA1(MATOM,MDEPTH),VDWC(MDEPTH)
 C
       DO 10 IJ=1,NFREQ
          ABLIN(IJ)=0.
@@ -18392,7 +18436,7 @@ C
          IMOL=INDATM(IL,ILIST)
          DOP1=DOPMOL(IMOL,ID)
          AGAM=(GRM(IL,ILIST)+GSM(IL,ILIST)*ANE+
-     *         GWM(IL,ILIST)*VDWC(ID))*DOP1
+     *         GVDW(IL,ILIST,ID))*DOP1
          FR0=FREQM(IL,ILIST)
          AB0=EXP(GFM(IL,ILIST)-EXCLM(IL,ILIST)*TEM1)*RRMOL(IMOL,ID)*
      *           DOP1*STIM(ID)
@@ -18887,6 +18931,10 @@ c     replace with Irwin data whenever available
 c
              call mpartf(0,0,j,tt,um)
              if(um.gt.0.) umoll=um
+c
+c     Exomol - POKAZATEL partition function for water
+c
+              if(j.eq.3) call h2opf(tt,umoll)
 c
 c     replace the TiO partition function by Kurucz-Schwenke data
 c
@@ -22036,7 +22084,8 @@ c
             write(53,601) typat(iat),abnd(iat),abnd(iat)*relabn(iat)
          end do
          write(53,602) ifmol,tmolim
-         write(53,603) iophmp,ioph2p,iophem,iopch,iopoh,iopcia
+         write(53,603) iophmp,ioph2p,iophem,iopch,iopoh,ioph2m,
+     *                 ioh2h2,ioh2he,ioh2h,iohhe
          write(53,611) nfgrid,ntemp,ndens
          write(53,612) (log(tempg(i)),i=1,ntemp)
          write(53,613) (log(densg(j)),j=1,ndens)
@@ -22051,8 +22100,9 @@ c
      *          'element   for EOS   for opacities')
   601    format('  ',a4,1p2e12.3)
   602    format(/'molecules - ifmol,tmolim:'/,i4,f10.1)
-  603    format('additional opacities'/'  H-  H2+ He- CH  OH  CIA'/
-     *          6i4)
+  603    format('additional opacities'/
+     *   '  H-  H2+ He- CH  OH  H2- CIA: H2H2 H2He H2H  HHe'/
+     *          5i4,4x,4i4)
   611    format(/'number of frequencies, temperatures, densities:'
      *          /10x,3i10)
   612    format('log temperatures'/(6F11.6))
@@ -22065,7 +22115,8 @@ c
             write(63) typat(iat),abnd(iat),abnd(iat)*relabn(iat)
          end do
          write(63) ifmol,tmolim
-         write(63) iophmp,ioph2p,iophem,iopch,iopoh,iopcia
+         write(63) iophmp,ioph2p,iophem,iopch,iopoh,ioph2m,
+     *             ioh2h2,ioh2he,ioh2h,iohhe
          write(63) nfgrid,ntemp,ndens
          write(63) (log(tempg(i)),i=1,ntemp)
          write(63) (log(densg(j)),j=1,ndens)
@@ -23211,13 +23262,18 @@ c
       return
       end
 C
+C
+C *******************************************************************
+C
+C
       subroutine h2minus(t,anh2,ane,fr,oph2m)
+C
 C     #K L Bell 1980 J. Phys. B: At. Mol. Phys. 13 1859, Table 1
 C     #The first column is theta=5040/T(K)
 C     #The first row are names for each row corresponding to lambda (angstroms)
 C     #The last row for 10.0 is linearly extrapolated
 C     #The units of everything else is 10^26 cm4/dyn-1
-C      IMPLICIT REAL*8(A-H,O-Z)
+C 
       INCLUDE 'PARAMS.FOR'
       dimension FFthet(9),FFlamb(18),FFkapp(18,9)
       data FFthet / 0.5, 0.8, 1.0, 1.2, 1.6, 2.0,
@@ -23262,10 +23318,10 @@ C      IMPLICIT REAL*8(A-H,O-Z)
      *     1.08e+01,7.18e+00,5.24e+00,4.17e+00,3.00e+00,
      *     2.29e+00,1.86e+00,1.55e+00,1.32e+00,1.13e+00,
      *     8.52e-01,6.64e-01/
-      
+
 c     locate position in temperature array
       theta=5040./t
-      
+
       call locate(FFthet,nthet,theta,j,nthet)
       if (j.eq.0) then
  1       write(*,*)
@@ -23306,9 +23362,68 @@ c     interpolate linearly within table
       oph2m= anh2 * 1.0E-26 *pe * Fkappa
       return
       end
-C     
-C     
+c
+c
+c   **********************************************************************
+c
+c
+      subroutine h2opf(t,pf)
+c   
+      INCLUDE 'PARAMS.FOR'
+      dimension ttab(10000),pftab(10000)
+c   
+      data init /1/
+c
+      if(init.eq.1) then
+         open(67,file='./data/h2o_exomol.pf',status='old')
+         do i=1,10000
+            read(67,*) ttab(i),pftab(i)
+         end do 
+         close(67)
+         init=0
+      end if
+c   
+      itab=ifix(real(t))
+      pf=pftab(itab)+(t-ttab(itab))*(pftab(itab+1)-pftab(itab))
+      return
+      end
+
+C
+C
 C *******************************************************************
 C
 C
+      function gvdw(il,ilist,id)
+c     ==========================
+c
+c     evaluation of the Van der Waals broadening parameter
+c
+      INCLUDE 'PARAMS.FOR'
+      INCLUDE 'MODELP.FOR'
+      INCLUDE 'LINDAT.FOR'
+      COMMON/PRFQUA/DOPA1(MATOM,MDEPTH),VDWC(MDEPTH)
+c
+c     clasical, original expression
+c
+      if(ivdwli(ilist).eq.0) then
+         gvdw=gwm(il,ilist)*vdwc(id)
+         return
+      end if
+c
+c     EXOMOL form - broadening by H2 and He
+c
+c     con= 1.e-6*c*k
+      con=4.1388e-12
+      t=temp(id)
+      anhe=rrr(id,1,2)
+      gvdw=con*t*((296./t)**gexph2(il,ilist)*gvdwh2(il,ilist)*anh2(id)+
+     *            (296./t)**gexphe(il,ilist)*gvdwhe(il,ilist)*anhe)
+      return
+      end
+C
+C
+C *******************************************************************
+C
+C
+
 

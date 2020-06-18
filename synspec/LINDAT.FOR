@@ -6,8 +6,8 @@
      *           MPRF    =  MLIN0)
 C
 C      PARAMETER (MLINM0  =50000000,
-      PARAMETER (MLINM0  = 10000000,
-     *           MLINM   =1500000,
+      PARAMETER (MLINM0  =  5000000,
+     *           MLINM   =  1500000,
      *           MMLIST  =      4)
 C
        REAL*4       EXCL0(MLIN0),
@@ -24,7 +24,11 @@ C
      *              EXTINM(MLINM0,MMLIST),
      *              GRM(MLINM0,MMLIST),
      *              GSM(MLINM0,MMLIST),
-     *              GWM(MLINM0,MMLIST)
+     *              GWM(MLINM0,MMLIST),
+     *              GVDWH2(MLINM0,MMLIST),
+     *              GEXPH2(MLINM0,MMLIST),
+     *              GVDWHE(MLINM0,MMLIST),
+     *              GEXPHE(MLINM0,MMLIST)
 C     
       COMMON/LINTOT/FREQ0(MLIN0),
      *              EXCL0,
@@ -46,9 +50,8 @@ C
      *              EXCLM,
      *              GFM,
      *              EXTINM,
-     *              GRM,
-     *              GSM,
-     *              GWM,
+     *              GRM,GSM,GWM,
+     *              GVDWH2,GEXPH2,GVDWHE,GEXPHE,
      *              INDATM(MLINM0,MMLIST),
      *              INMLIN(MLINM,MMLIST),
      *              INMLIP(MLINM,MMLIST),
@@ -57,6 +60,7 @@ C
      *              NLINMT(MMLIST),
      *              IUNITM(MMLIST),
      *              INACTM(MMLIST),
+     *              IVDWLI(MMLIST),
      *              NMLIST
 C
       COMMON/LINPRF/GAMR0,
