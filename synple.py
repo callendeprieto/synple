@@ -2079,22 +2079,6 @@ def read_kurucz_model(modelfile):
 
   return (teff,logg,vmicro,abu,nd,atmos)
 
-def parse_marcs_layer(line):
-
-  """Formated read of data in the 2nd block of a MARCS model
-  """
-
-  fmtstring = '3s 6s 12s 12s 6s 11s 8s 14s'
-  fieldstruct = struct.Struct(fmtstring)
-  if sys.version_info[0] < 3:
-      parse = fieldstruct.unpack_from
-  else:
-      unpack = fieldstruct.unpack_from
-      parse = lambda line: tuple(s.decode() for s in unpack(line.encode()))
-  entries = parse(line)
-    
-  return (entries)
-
 
 def read_marcs_model(modelfile):
   
@@ -2189,17 +2173,15 @@ def read_marcs_model(modelfile):
 
   line = f.readline()
   line = f.readline()
-  #entries = line.split()
-  entries = parse_marcs_layer(line)
+  entries = line.split()
 
   dm = [ float(entries[-1]) ]
 
   for i in range(nd-1):
     line = f.readline()
-    #entries = line.split()
-    entries = parse_marcs_layer(line)
+    entries = line.split()
 
-    dm.append(  float(entries[7]))
+    dm.append(  float(entries[-1]))
 
   atmos = np.zeros(nd, dtype={'names':('dm', 't', 'p','ne'),
                           'formats':('f', 'f', 'f','f')}) 
@@ -2305,20 +2287,18 @@ def read_marcs_model2(modelfile):
 
   line = f.readline()
   line = f.readline()
-  #entries = line.split()
-  entries = parse_marcs_layer(line)
+  entries = line.split()
 
   rho = [ float(entries[3]) ]
-  dm = [ float(entries[7]) ]
+  dm = [ float(entries[-1]) ]
   mmw = [ float(entries[4]) ]
 
   for i in range(nd-1):
     line = f.readline()
-    #entries = line.split()
-    entries = parse_marcs_layer(line)
+    entries = line.split()
 
     rho.append( float(entries[3]))
-    dm.append(  float(entries[7]))
+    dm.append(  float(entries[-1]))
     mmw.append(  float(entries[4]))
 
   atmos = np.zeros(nd, dtype={'names':('dm', 't', 'rho','mmw','ne'),
