@@ -9551,8 +9551,7 @@ C
       COMMON/PRFQUA/DOPA1(MATOM,MDEPTH),VDWC(MDEPTH)
 C
       PARAMETER (DP0=3.33564E-11, DP1=1.651E8, 
-c    *           VW1=0.42, VW2=0.3, TENM4=1.E-4)
-     *           VW1=0.42, VW2=0.40,TENM4=1.E-4)
+     *           VW1=0.42, VW2=0.3, TENM4=1.E-4)
       PARAMETER (UN=1.) 
 C
       IF(NLIN.EQ.0) RETURN
@@ -23181,11 +23180,11 @@ c
 c
       IMPLICIT REAL*8(A-H,O-Z)
       parameter (nlines=43)
-      dimension freq(nlines),temp(10),alpha(nlines,10)
+      dimension freq(nlines),temp(11),alpha(nlines,11)
       parameter (amagat=2.6867774d+19,fac=1./amagat**2)
-      data temp / 1500.,  2250., 3000.,  4000.,  5000.,
+      data temp / 1000., 1500.,  2250., 3000.,  4000.,  5000.,
      *            6000.,  7000., 8000.,  9000., 10000./
-      data ntemp /10/
+      data ntemp /11/
       data ifirst /0/
       PARAMETER (CAS=2.997925D10)
 c     input frequency in Hz but needed wave numbers in cm^-1
