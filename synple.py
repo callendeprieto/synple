@@ -2084,16 +2084,16 @@ def parse_marcs_layer(line):
   """Formated read of data in the 2nd block of a MARCS model
   """
 
-    fmtstring='3s 6s 12s 12s 6s 11s 8s 14s'
-    fieldstruct = struct.Struct(fmtstring)
-    if sys.version_info[0] < 3:
-        parse = fieldstruct.unpack_from
-    else:
-        unpack = fieldstruct.unpack_from
-        parse = lambda line: tuple(s.decode() for s in unpack(line.encode()))
-    entries = parse(line)
+  fmtstring = '3s 6s 12s 12s 6s 11s 8s 14s'
+  fieldstruct = struct.Struct(fmtstring)
+  if sys.version_info[0] < 3:
+      parse = fieldstruct.unpack_from
+  else:
+      unpack = fieldstruct.unpack_from
+      parse = lambda line: tuple(s.decode() for s in unpack(line.encode()))
+  entries = parse(line)
     
-    return (entries)
+  return (entries)
 
 
 def read_marcs_model(modelfile):
