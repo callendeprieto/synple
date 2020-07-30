@@ -2081,7 +2081,7 @@ def read_kurucz_model(modelfile):
 
 def parse_marcs_layer(line):
 
-  """Formated read of layers from a MARCS model
+  """Formated read of data in the 2nd block of a MARCS model
   """
 
     fmtstring='3s 6s 12s 12s 6s 11s 8s 14s'
@@ -2173,8 +2173,7 @@ def read_marcs_model(modelfile):
 
   line = f.readline()
   line = f.readline()
-  #entries = line.split()
-  entries = parse_marcs_layer(line)
+  entries = line.split()
 
   t = [ float(entries[4]) ]
   p = [ float(entries[6]) ]
@@ -2182,8 +2181,7 @@ def read_marcs_model(modelfile):
 
   for i in range(nd-1):
     line = f.readline()
-    #entries = line.split()
-    entries = parse_marcs_layer(line)
+    entries = line.split()
 
     t.append(  float(entries[4]))
     p.append(  float(entries[6]))
@@ -2291,8 +2289,7 @@ def read_marcs_model2(modelfile):
 
   line = f.readline()
   line = f.readline()
-  #entries = line.split()
-  entries = parse_marcs_layer(line)
+  entries = line.split()
 
   t = [ float(entries[4]) ]
   p = [ float(entries[6]) ]
@@ -2300,8 +2297,7 @@ def read_marcs_model2(modelfile):
 
   for i in range(nd-1):
     line = f.readline()
-    #entries = line.split()
-    entries = parse_marcs_layer(line)
+    entries = line.split()
 
     t.append(  float(entries[4]))
     p.append(  float(entries[6]))
