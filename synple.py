@@ -51,7 +51,7 @@ import gzip
 from scipy import interpolate
 import matplotlib.pyplot as plt
 from itertools import product
-
+import struct
 
 #configuration
 #synpledir = /home/callende/synple
@@ -2079,6 +2079,22 @@ def read_kurucz_model(modelfile):
 
   return (teff,logg,vmicro,abu,nd,atmos)
 
+def parse_marcs_layer(line):
+
+  """Formated read of layers from a MARCS model
+  """
+
+    fmtstring='3s 6s 12s 12s 6s 11s 8s 14s'
+    fieldstruct = struct.Struct(fmtstring)
+    if sys.version_info[0] < 3:
+        parse = fieldstruct.unpack_from
+    else:
+        unpack = fieldstruct.unpack_from
+        parse = lambda line: tuple(s.decode() for s in unpack(line.encode()))
+    entries = parse(line)
+    
+    return (entries)
+
 
 def read_marcs_model(modelfile):
   
@@ -2157,7 +2173,8 @@ def read_marcs_model(modelfile):
 
   line = f.readline()
   line = f.readline()
-  entries = line.split()
+  #entries = line.split()
+  entries = parse_marcs_layer(line)
 
   t = [ float(entries[4]) ]
   p = [ float(entries[6]) ]
@@ -2165,7 +2182,8 @@ def read_marcs_model(modelfile):
 
   for i in range(nd-1):
     line = f.readline()
-    entries = line.split()
+    #entries = line.split()
+    entries = parse_marcs_layer(line)
 
     t.append(  float(entries[4]))
     p.append(  float(entries[6]))
@@ -2173,13 +2191,15 @@ def read_marcs_model(modelfile):
 
   line = f.readline()
   line = f.readline()
-  entries = line.split()
+  #entries = line.split()
+  entries = parse_marcs_layer(line)
 
   dm = [ float(entries[-1]) ]
 
   for i in range(nd-1):
     line = f.readline()
-    entries = line.split()
+    #entries = line.split()
+    entries = parse_marcs_layer(line)
 
     dm.append(  float(entries[7]))
 
@@ -2271,7 +2291,8 @@ def read_marcs_model2(modelfile):
 
   line = f.readline()
   line = f.readline()
-  entries = line.split()
+  #entries = line.split()
+  entries = parse_marcs_layer(line)
 
   t = [ float(entries[4]) ]
   p = [ float(entries[6]) ]
@@ -2279,7 +2300,8 @@ def read_marcs_model2(modelfile):
 
   for i in range(nd-1):
     line = f.readline()
-    entries = line.split()
+    #entries = line.split()
+    entries = parse_marcs_layer(line)
 
     t.append(  float(entries[4]))
     p.append(  float(entries[6]))
@@ -2287,7 +2309,8 @@ def read_marcs_model2(modelfile):
 
   line = f.readline()
   line = f.readline()
-  entries = line.split()
+  #entries = line.split()
+  entries = parse_marcs_layer(line)
 
   rho = [ float(entries[3]) ]
   dm = [ float(entries[7]) ]
@@ -2295,7 +2318,8 @@ def read_marcs_model2(modelfile):
 
   for i in range(nd-1):
     line = f.readline()
-    entries = line.split()
+    #entries = line.split()
+    entries = parse_marcs_layer(line)
 
     rho.append( float(entries[3]))
     dm.append(  float(entries[7]))
