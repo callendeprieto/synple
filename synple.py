@@ -2254,7 +2254,6 @@ def read_marcs_model2(modelfile):
   line = f.readline()
   line = f.readline()
   entries = line.split()
-  print(entries)
   assert (entries[1] == 'Teff'), 'Cannot find Teff in the file header'
   teff = float(entries[0])
   line = f.readline()
@@ -2373,13 +2372,12 @@ def read_tlusty_model(modelfile):
   f = open(modelfile[:-1]+"5",'r')
   line = f.readline()
   entries = line.split()
-  print(entries)
   teff = float(entries[0])
   logg = float(entries[1])
   line = f.readline()
   line = f.readline()
   entries = line.split()
-  nonstdfile = entries[0]
+  nonstdfile = entries[0][1:-1]
 
   if nonstdfile != '':
     assert (os.path.isfile(nonstdfile)),'Tlusty model atmosphere file '+modelfile+' invokes non-std parameter file, '+nonstdfile+' which is not present'
