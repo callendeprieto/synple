@@ -34,7 +34,7 @@ install: bindir
 	mv rotin3 ../bin
 
 bindir:
-        mkdir ../bin
+	mkdir ../bin
                                                         
 clean: 
 	rm -f s54d rotin3 ../bin/s54d ../bin/rotin3 
