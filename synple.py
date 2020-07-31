@@ -204,9 +204,23 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   cleanup()
 
-  writetas('tas',nd,linelist)                           #non-std param. file
-  write5(teff,logg,abu,atom)                            #abundance/opacity file
-  write8(teff,logg,nd,atmos,atmostype)                  #model atmosphere
+  if atmostype == 'tlusty':
+    os.symlink(modelfile[:-1]+"5",'fort.5')
+    os.symlink(modelfile,'fort.8')
+
+  else:
+    
+    if os.path.islink('data'): os.unlink('data')
+    if os.path.isfile('tas'): os.remove('tas')
+
+    assert (not os.path.isdir('data')), 'A subdirectory *data* exists in this folder, and that prevents the creation of a link to the data directory for synple'
+    os.symlink(modelatomdir,'./data')                     #data directory
+
+    writetas('tas',nd,linelist)                           #non-std param. file
+    write5(teff,logg,abu,atom)                            #abundance/opacity file
+    write8(teff,logg,nd,atmos,atmostype)                  #model atmosphere
+
+
   write55(wrange,space,imode,2,strength,vmicro,linelist,atmostype) #synspec control file
   create_links(linelist)                      #auxiliary data
 
@@ -256,7 +270,12 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       cont = np.interp(wave3, wave2, flux2)
       wave = wave3
 
-    if clean == True: cleanup()
+    if clean == True: 
+      cleanup()
+      if atmostype != 'tlusty':
+            if os.path.islink('data'): os.unlink('data')
+            if os.path.isfile('tas'): os.remove('tas')
+
 
     if tmpdir is not None:
       try:
@@ -1565,7 +1584,7 @@ def read_model(modelfile):
   Returns
   -------
   atmostype :  str
-      type of model atmosphere (kurucz/marcs/phoenix)
+      type of model atmosphere (kurucz/marcs/phoenix/tlusty)
   teff : float
       effective temperature (K)
   logg : float
@@ -1595,6 +1614,8 @@ def read_model(modelfile):
     teff, logg, vmicro, abu, nd, atmos = read_marcs_model2(modelfile)
   if atmostype == 'phoenix':
     teff, logg, vmicro, abu, nd, atmos = read_phoenix_model(modelfile)
+  if atmostype == 'tlusty':
+    teff, logg, vmicro, abu, nd, atmos = read_tlusty_model(modelfile)
 
   return (atmostype,teff,logg,vmicro,abu,nd,atmos)
 
@@ -1602,7 +1623,7 @@ def identify_atmostype(modelfile):
 
   """Idenfies the type of model atmosphere in an input file
 
-  Valid options are kurucz, marcs or phoenix
+  Valid options are kurucz, marcs, tlusty (.8) or phoenix
 
   Parameters
   ----------
@@ -1612,7 +1633,7 @@ def identify_atmostype(modelfile):
   Returns
   -------
   atmostype: str
-      can take the value 'kurucz', 'marcs' or 'phoenix' ('tlusty' soon to be added!)
+      can take the value 'kurucz', 'marcs', 'tlusty' or 'phoenix' 
 
   """
 
@@ -1626,7 +1647,12 @@ def identify_atmostype(modelfile):
     print('modelfile / line=',modelfile,line)
     type(line)
     if ('TEFF' in line): atmostype = 'kurucz'
-    else: atmostype = 'marcs'
+    else: 
+      line = f.readline()
+      if ('Teff' in line):
+        atmostype = 'marcs'
+      else:
+        atmostype = 'tlusty'
     f.close()
    
   return(atmostype)
@@ -1925,17 +1951,22 @@ def write5(teff,logg,abu, atom='ap18', ofile='fort.5', nlte=False, tl=False):
 
 def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8'):
 
-  f = open(ofile,'w')
+  """Writes the model atmosphere for synspec
+
+     MARCS models can be passed in 'Tlusty' (default, after read with 
+           read_marcs_models2) or 'Kurucz' format
+     Phoenix and Kurucz models are passed to synspec formatted as 'Kurucz'
+
+  """
+
   if atmostype == 'tlusty':
-    f.write(" "+str(nd)+" "+str(3)+"\n")
-    for i in range(nd):
-      f.write(' %e ' % atmos['dm'][i])
-    f.write("\n")
-    for i in range(nd):
-      f.write( '%f %e %e \n' % (atmos['t'][i], atmos['ne'][i], atmos['rho'][i] ) )
-    f.close()
+
+    print('write8 should not be called for Tlusty models -- they are ready for synspec!')
+    return ()
 
   else:
+
+    f = open(ofile,'w')
 
     if atmostype == 'marcs':
       f.write(" "+str(nd)+" "+str(-4)+"\n")
@@ -1958,7 +1989,7 @@ def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8'):
   
 
 def create_links(linelist):
-#create soft links for line lists, mand odel atom dir 
+#create soft links for line lists
 
   for i in range(len(linelist)):
     if not os.path.isfile(linelist[i]):
@@ -1967,22 +1998,16 @@ def create_links(linelist):
     if i == 0: os.symlink(linelist[0],'fort.19')
     else: os.symlink(linelist[i],'fort.'+str(20-1+i))
 
-  os.symlink(modelatomdir,'./data')
-
   return()
 
 def cleanup():
-#cleanup all temporary files
+#cleanup all fort* files
+
 
   files = os.listdir('.')
   for entry in files: 
     if os.path.islink(entry) and entry.startswith('fort'): os.unlink(entry)
     if os.path.isfile(entry) and entry.startswith('fort'): os.remove(entry)
-
-  if os.path.islink('data'): os.unlink('data')
-  if os.path.isfile('tas'): os.remove('tas')
-  assert (not os.path.isdir('data')), 'A subdirectory *data* exists in this folder, and that prevents the creation of a link to the data directory for synple'
-
 
   return()
 
@@ -2229,6 +2254,7 @@ def read_marcs_model2(modelfile):
   line = f.readline()
   line = f.readline()
   entries = line.split()
+  print(entries)
   assert (entries[1] == 'Teff'), 'Cannot find Teff in the file header'
   teff = float(entries[0])
   line = f.readline()
@@ -2309,6 +2335,114 @@ def read_marcs_model2(modelfile):
   atmos['ne'] = ne
 
   return (teff,logg,vmicro,abu,nd,atmos)
+
+def read_tlusty_model(modelfile):
+  
+  """Reads a Tlusty model atmospheres. 
+
+  Parameters
+  ----------
+  modelfile: str
+      file name (.8). It will look for the complementary .5 file to read
+      the abundances and other information
+  
+  Returns
+  -------
+
+  teff : float
+      effective temperature (K)
+  logg : float
+      log10 of the surface gravity (cm s-2)
+  vmicro : float
+      microturbulence velocity (km/s) 
+  abu : list
+      abundances, number densities of nuclei relative to hydrogen N(X)/N(H)
+      for elements Z=1,99 (H to Es)
+  nd: int
+      number of depths (layers) of the model
+  atmos: numpy structured array
+      array with the run with depth of column mass, temperature, density
+      (other variables that may be included, e.g. populations for NLTE models, are ignored)
+  
+  """  
+
+  assert (modelfile[-2:] == ".8"), 'Tlusty models should end in .8'
+  assert (os.path.isfile(modelfile[:-1]+"5")),'Tlusty model atmosphere file '+modelfile+' should come with an associated .5 file'
+
+  #we start reading the .5
+  f = open(modelfile[:-1]+"5",'r')
+  line = f.readline()
+  entries = line.split()
+  print(entries)
+  teff = float(entries[0])
+  logg = float(entries[1])
+  line = f.readline()
+  line = f.readline()
+  entries = line.split()
+  nonstdfile = entries[0]
+
+  if nonstdfile != '':
+    assert (os.path.isfile(nonstdfile)),'Tlusty model atmosphere file '+modelfile+' invokes non-std parameter file, '+nonstdfile+' which is not present'
+
+  line = f.readline()
+  line = f.readline()
+  entries = line.split()
+  natoms = int(entries[0])
+  
+  #the micro might be encoded as VTB in the nonstdfile!!
+  #this is a temporary patch, but need to parse that file
+  vmicro = 0.0
+
+  abu = []
+  for i in range(natoms):
+    line = f.readline()
+    entries = line.split()
+    abu.append( float(entries[1]) )
+
+  if i < 99: 
+    for j in range(99-i):
+      abu.append(1e-111)
+      i = i + 1
+  f.close()
+
+  #now the .8
+  f = open(modelfile,'r')
+  line = f.readline()
+  entries = line.split()
+  nd = int(entries[0])
+  numpar = int(entries[1])
+
+  assert (len(entries) == 2), 'There are more than two numbers in the first line of the model atmosphere'
+
+  line = f.readline()
+  entries = line.split()
+  dm = []
+  for val in entries: dm.append( float(val) )
+
+  line = f.readline()
+  entries = line.split()
+  
+  t =   [ float(entries[0]) ]
+  ne =  [ float(entries[1]) ] 
+  rho = [ float(entries[2]) ] 
+
+  for i in range(nd-1):
+    line = f.readline()
+    entries = line.split()
+
+    t.append(   float(entries[0]) )
+    ne.append(  float(entries[1]) )
+    rho.append( float(entries[2]) )
+
+  atmos = np.zeros(nd, dtype={'names':('dm', 't', 'ne','rho'),
+                          'formats':('f', 'f', 'f','f')}) 
+  atmos['dm'] = dm
+  atmos['t'] = t
+  atmos['ne'] = ne
+  atmos['rho'] = rho
+
+  return (teff,logg,vmicro,abu,nd,atmos)
+
 
 
 def read_phoenix_model(modelfile):
