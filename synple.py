@@ -51,7 +51,6 @@ import gzip
 from scipy import interpolate
 import matplotlib.pyplot as plt
 from itertools import product
-import struct
 
 #configuration
 #synpledir = /home/callende/synple
