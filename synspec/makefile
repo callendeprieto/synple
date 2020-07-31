@@ -29,9 +29,12 @@ synspec: s54d.f  LINDAT.FOR  MODELP.FOR  PARAMS.FOR  SYNTHP.FOR  WINCOM.FOR
 rotin: rotin3.f
 	${F90}  ${OPT} rotin3.f -o rotin3
 
-install:
+install: bindir
 	mv s54d   ../bin/
 	mv rotin3 ../bin
+
+bindir:
+        mkdir ../bin
                                                         
 clean: 
 	rm -f s54d rotin3 ../bin/s54d ../bin/rotin3 
