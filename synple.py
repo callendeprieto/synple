@@ -1617,6 +1617,8 @@ def read_model(modelfile):
 
   atmostype = identify_atmostype(modelfile)
 
+  print(modelfile,' is a ',atmostype,' model')
+
   if atmostype == 'kurucz':
     teff, logg, vmicro, abu, nd, atmos = read_kurucz_model(modelfile) 
   if atmostype == 'marcs':
