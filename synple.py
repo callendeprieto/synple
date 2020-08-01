@@ -42,6 +42,8 @@ To perform the calculations above in python and compare the emergent normalized 
 """
 import os
 import sys
+import string
+import random
 import subprocess
 import numpy as np
 import glob
@@ -147,9 +149,11 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       set to False to skip the actual synspec run, triggering clean=False
       (default True)
   tmpdir: string
-      when is not None a temporary directory with this name will be created to store
+      a temporary directory with this name will be created to store
       the temporary synspec input/output files, and the synple log file (usually named
-      syn.log) will be named as tmpdir_syn.log.
+      syn.log) will be named as tmpdir_syn.log. When tmp is None a random string is used
+      for this folder
+      (default None)
 
   Returns
   -------
@@ -189,17 +193,18 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   #print ('wrange=',wrange)
 
   logfile = 'syn.log'
-  if tmpdir is not None:
-    startdir = os.getcwd()
-    logfile = os.path.join(startdir,os.path.split(tmpdir)[-1]) + "_" + logfile
-    try:
-      os.mkdir(tmpdir)
-    except OSError:
-      print( "cannot create tmpdir %s " % (tmpdir) )
-    try:
-      os.chdir(tmpdir)
-    except OSError:
-      print("cannot enter tmpdir %s " % (tmpdir) )
+  if tmpdir is None:
+    tmpdir = ''.join(random.choices(string.ascii_lowercase + string.digits, k = 16))
+  startdir = os.getcwd()
+  logfile = os.path.join(startdir,os.path.split(tmpdir)[-1]) + "_" + logfile
+  try:
+    os.mkdir(tmpdir)
+  except OSError:
+    print( "cannot create tmpdir %s " % (tmpdir) )
+  try:
+    os.chdir(tmpdir)
+  except OSError:
+    print("cannot enter tmpdir %s " % (tmpdir) )
 
 
   cleanup()
@@ -265,9 +270,9 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     if (dw != None): 
       nsamples = int((wrange[1] - wrange[0])/dw) + 1
       wave3 = np.arange(nsamples)*dw + wrange[0]
-      #flux = np.interp(wave3, wave, flux)
-      flux = interp_spl(wave3, wave, flux)      
       cont = np.interp(wave3, wave2, flux2)
+      flux = interp_spl(wave3, wave, flux)      
+      #flux = np.interp(wave3, wave, flux)
       wave = wave3
 
     if clean == True: 
@@ -277,16 +282,15 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
             if os.path.isfile('tas'): os.remove('tas')
 
 
-    if tmpdir is not None:
+    try:
+      os.chdir(startdir)
+    except OSError:
+      print("cannot change directory from tmpdir %s to startdir %s"  % (tmpdir,startdir) ) 
+    if clean == True:
       try:
-        os.chdir(startdir)
+        os.rmdir(tmpdir)
       except OSError:
-        print("cannot change directory from tmpdir %s to startdir %s"  % (tmpdir,startdir) ) 
-      if clean == True:
-        try:
-          os.rmdir(tmpdir)
-        except OSError:
-          print("cannot remove directory tmpdir %s" % (tmpdir) )
+        print("cannot remove directory tmpdir %s" % (tmpdir) )
      
 
     if save == True:
@@ -384,6 +388,8 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   if nthreads == 0: 
     nthreads = cpu_count()
 
+  tmpdir = ''.join(random.choices(string.ascii_lowercase + string.digits, k = 16))
+
   delta = (wrange[1]-wrange[0])/nthreads
   pars = []
   for i in range(nthreads):
@@ -393,7 +399,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     pararr = [modelfile, wrange1, dw, strength, vmicro, abu, \
       linelist, atom, vrot, fwhm, \
       steprot, stepfwhm,  clean, save, synfile, 
-      compute, 'par'+str(i) ]
+      compute, tmpdir+str(i) ]
     pars.append(pararr)
 
   pool = Pool(nthreads)
@@ -516,6 +522,8 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   print('nthreads=',nthreads)
 
+  tmpdir = ''.join(random.choices(string.ascii_lowercase + string.digits, k = 16))
+
   ray.init(num_cpus=nthreads)
 
   rest = [ modelfile,dw,strength,vmicro,abu,linelist, \
@@ -528,9 +536,9 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   for i in range(nthreads):
 
     wrange1 = (wrange[0]+delta*i,wrange[0]+delta*(i+1))
-    folder = 'par'+str(i)
+    folder = tmpdir+str(i)
 
-    pararr = [wrange1, 'par'+str(i) ]
+    pararr = [wrange1, tmpdir+str(i) ]
     pars.append(pararr)
 
   results = ray.get([fun.remote(pars[i],constants) for i in range(nthreads)])
@@ -1563,7 +1571,7 @@ def call_rotin(wave=None, flux=None, vrot=0.0, fwhm=0.0, space=1e-2, steprot=0.0
   synout.close()
   synin.close()
   
-  assert (os.path.isfile('fort.11')), 'Error: I cannot read the file *fort.11* in '+tmpdir+' -- looks like rotin has crashed, please look at syn.log'
+  assert (os.path.isfile('fort.11')), 'Error: I cannot read the file *fort.11* in '+os.getcwd()+' -- looks like rotin has crashed, please look at syn.log'
 
   wave2, flux2 = np.loadtxt('fort.11', unpack=True)
   print(len(wave),len(wave2))

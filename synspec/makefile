@@ -31,7 +31,7 @@ rotin: rotin3.f
 
 install: bindir
 	mv s54d   ../bin/
-	mv rotin3 ../bin
+	mv rotin3 ../bin/
 
 bindir:
 	[ -d ../bin ] ||  mkdir ../bin
