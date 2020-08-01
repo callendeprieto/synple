@@ -4,7 +4,7 @@
 
 Calculation of synthetic spectra of stars and convolution with a rotational/Gaussian kernel.
 Makes the use of synspec simpler, and retains the main functionalities (when used from
-python). The command line interface is even simpler but fairly limited. 
+python). The command line interface for the shell is even simpler but fairly limited. 
 
 For information on
 synspec visit http://nova.astro.umd.edu/Synspec43/synspec.html.
@@ -103,7 +103,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       wavelength step for the output fluxes
       this will be the maximum interval for the radiative 
       transfer, and will trigger interpolation at the end
-      (default is None for automatic selection)
+      (default is None for automatic frequency selection)
   strength: float, optional
       threshold in the line-to-continuum opacity ratio for 
       selecting lines (default is 1e-4)
@@ -207,14 +207,16 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     print("cannot enter tmpdir %s " % (tmpdir) )
 
 
-  cleanup()
+  cleanup_fort()
 
   if atmostype == 'tlusty':
-    os.symlink(modelfile[:-1]+"5",'fort.5')
-    os.symlink(modelfile,'fort.8')
-
+    os.symlink(os.path.join(startdir,modelfile),'fort.8')
+    os.symlink(os.path.join(startdir,modelfile[:-1]+"5"),'fort.5')
+    nonstdfile, datadir = read_tlusty_extras('fort.8')
+    os.symlink(os.path.join(startdir,nonstdfile),nonstdfile)
+    os.symlink(os.path.join(startdir,datadir),datadir)
+    assert (os.path.exists(datadir)), 'The model atom directory indicated in the tlusty model, '+datadir+', is not present' 
   else:
-    
     if os.path.islink('data'): os.unlink('data')
     if os.path.isfile('tas'): os.remove('tas')
 
@@ -227,7 +229,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
 
   write55(wrange,space,imode,2,strength,vmicro,linelist,atmostype) #synspec control file
-  create_links(linelist)                      #auxiliary data
+  create_links(linelist)                                  #auxiliary data
 
   if compute == False:
 
@@ -276,10 +278,9 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       wave = wave3
 
     if clean == True: 
-      cleanup()
-      if atmostype != 'tlusty':
-            if os.path.islink('data'): os.unlink('data')
-            if os.path.isfile('tas'): os.remove('tas')
+      cleanup_fort()
+      if os.path.islink('data'): os.unlink('data')
+      if os.path.isfile('tas'): os.remove('tas')
 
 
     try:
@@ -1576,7 +1577,7 @@ def call_rotin(wave=None, flux=None, vrot=0.0, fwhm=0.0, space=1e-2, steprot=0.0
   wave2, flux2 = np.loadtxt('fort.11', unpack=True)
   print(len(wave),len(wave2))
   
-  if clean == True: cleanup()
+  if clean == True: cleanup_fort()
 
   return(wave2, flux2)
 
@@ -2008,7 +2009,7 @@ def create_links(linelist):
 
   return()
 
-def cleanup():
+def cleanup_fort():
 #cleanup all fort* files
 
 
@@ -2345,13 +2346,13 @@ def read_marcs_model2(modelfile):
 
 def read_tlusty_model(modelfile):
   
-  """Reads a Tlusty model atmospheres. 
+  """Reads a Tlusty model atmosphere. 
 
   Parameters
   ----------
   modelfile: str
       file name (.8). It will look for the complementary .5 file to read
-      the abundances and other information
+      the abundances and the micro (when specified in the non-std. parameter file)
   
   Returns
   -------
@@ -2361,7 +2362,8 @@ def read_tlusty_model(modelfile):
   logg : float
       log10 of the surface gravity (cm s-2)
   vmicro : float
-      microturbulence velocity (km/s) 
+      microturbulence velocity (km/s), by default 0.0 unless set with the parameter
+      VTB in the non-std. parameter file specified in the .5 file
   abu : list
       abundances, number densities of nuclei relative to hydrogen N(X)/N(H)
       for elements Z=1,99 (H to Es)
@@ -2369,8 +2371,9 @@ def read_tlusty_model(modelfile):
       number of depths (layers) of the model
   atmos: numpy structured array
       array with the run with depth of column mass, temperature, density
-      (other variables that may be included, e.g. populations for NLTE models, are ignored)
-  
+      (other variables that may be included, e.g. populations for NLTE models, 
+      are ignored). 
+
   """  
 
   assert (modelfile[-2:] == ".8"), 'Tlusty models should end in .8'
@@ -2390,15 +2393,27 @@ def read_tlusty_model(modelfile):
   if nonstdfile != '':
     assert (os.path.isfile(nonstdfile)),'Tlusty model atmosphere file '+modelfile+' invokes non-std parameter file, '+nonstdfile+' which is not present'
 
+  nonstd={}
+  ns = open(nonstdfile,'r')
+  nonstdarr = ns.readlines()
+  for entry in nonstdarr:
+    entries = entry.replace('\n','').split(',')
+    for piece in entries:
+      sides = piece.split('=')
+      nonstd[sides[0].replace(' ','')]= sides[1].replace(' ','')
+
+  print('Tlusty nonstd params=',nonstd)
+
+  #the micro might be encoded as VTB in the nonstdfile!!
+  #this is a temporary patch, but need to parse that file
+  vmicro = 0.0
+  if 'VTB' in nonstd: vmicro = float(nonstd['VTB'])
+
   line = f.readline()
   line = f.readline()
   entries = line.split()
   natoms = int(entries[0])
   
-  #the micro might be encoded as VTB in the nonstdfile!!
-  #this is a temporary patch, but need to parse that file
-  vmicro = 0.0
-
   abu = []
   for i in range(natoms):
     line = f.readline()
@@ -2409,6 +2424,7 @@ def read_tlusty_model(modelfile):
     for j in range(99-i):
       abu.append(1e-111)
       i = i + 1
+
   f.close()
 
   #now the .8
@@ -2449,6 +2465,61 @@ def read_tlusty_model(modelfile):
 
   return (teff,logg,vmicro,abu,nd,atmos)
 
+
+def read_tlusty_extras(modelfile):
+  
+  """Identifies and reads the non-std parameter file and finds out the name 
+     of the data directory for Tlusty model atmospheres. 
+
+  Parameters
+  ----------
+  modelfile: str
+      file name (.8). It will look for the complementary .5 file to read
+      the abundances and other information
+  
+  Returns
+  -------
+
+  nonstdfile: str
+       non-std parameter file 
+
+  datadir: str
+       name of the model atom directory
+  
+  """  
+
+  assert (modelfile[-2:] == ".8"), 'Tlusty models should end in .8'
+  assert (os.path.isfile(modelfile[:-1]+"5")),'Tlusty model atmosphere file '+modelfile+' should come with an associated .5 file'
+
+  #we start reading the .5
+  f = open(modelfile[:-1]+"5",'r')
+  line = f.readline()
+  line = f.readline()
+  line = f.readline()
+  entries = line.split()
+  nonstdfile = entries[0][1:-1]
+
+  line = f.readline()
+  line = f.readline()
+  entries = line.split()
+  natoms = int(entries[0])
+  
+  for i in range(natoms):
+    line = f.readline()
+
+  #keep reading until you find 'dat' to identify data directory 
+  line = f.readline()
+  while True: 
+    if '.dat' in line: break
+    line = f.readline()
+
+  entries = line.split()
+  cadena = entries[-1][1:-1]
+  cadena = cadena.split('/')
+  datadir = cadena[0]
+  f.close()
+
+  return (nonstdfile,datadir)
 
 
 def read_phoenix_model(modelfile):
