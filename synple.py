@@ -399,7 +399,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     pararr = [modelfile, wrange1, dw, strength, vmicro, abu, \
       linelist, atom, vrot, fwhm, \
       steprot, stepfwhm,  clean, save, synfile, 
-      compute, tmpdir+str(i) ]
+      compute, tmpdir+'-'+str(i) ]
     pars.append(pararr)
 
   pool = Pool(nthreads)
@@ -536,9 +536,9 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   for i in range(nthreads):
 
     wrange1 = (wrange[0]+delta*i,wrange[0]+delta*(i+1))
-    folder = tmpdir+str(i)
+    folder = tmpdir+'-'+str(i)
 
-    pararr = [wrange1, tmpdir+str(i) ]
+    pararr = [wrange1, folder ]
     pars.append(pararr)
 
   results = ray.get([fun.remote(pars[i],constants) for i in range(nthreads)])
