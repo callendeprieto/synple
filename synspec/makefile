@@ -21,7 +21,7 @@ OS3 = ${shell perl -e 'my $$osVersion = `machine`; chomp($$osVersion); print "$$
 OS4 = ${shell perl -e 'my $$osVersion = `hostname`; chomp($$osVersion); print "$$osVersion"'}
 
 
-all:  synspec rotin install 
+all:  synspec rotin list2bin install 
 
 synspec: s54d.f  LINDAT.FOR  MODELP.FOR  PARAMS.FOR  SYNTHP.FOR  WINCOM.FOR
 	${F90}  ${OPT} s54d.f -o s54d
@@ -29,14 +29,18 @@ synspec: s54d.f  LINDAT.FOR  MODELP.FOR  PARAMS.FOR  SYNTHP.FOR  WINCOM.FOR
 rotin: rotin3.f
 	${F90}  ${OPT} rotin3.f -o rotin3
 
+list2bin: list2bin.f
+	${F90} ${OPT} list2bin.f -o list2bin
+
 install: bindir
 	mv s54d   ../bin/
 	mv rotin3 ../bin/
+	mv list2bin ../bin/
 
 bindir:
 	[ -d ../bin ] ||  mkdir ../bin
                                                         
 clean: 
-	rm -f s54d rotin3 ../bin/s54d ../bin/rotin3 
+	rm -f s54d rotin3 ../bin/s54d ../bin/rotin3 ../bin/list2bin
 
 
