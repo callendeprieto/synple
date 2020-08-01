@@ -4,10 +4,10 @@
 #
 
 F90 = gfortran 
-OPT= -fno-automatic -mcmodel=medium
+OPT= -fno-automatic 
 
 #F90 = g95
-#OPT= -fstatic -mcmodel=medium -Wl,--no-relax
+#OPT= -fstatic -Wl,--no-relax
 
 #F90 = sunf95
 #OPT = -Bstatic -xmodel=medium 
@@ -15,10 +15,10 @@ OPT= -fno-automatic -mcmodel=medium
 #F90 =  ifort 
 #OPT = -shared-intel -mcmodel medium 
 
-OS1 = ${shell perl -e 'my $$osVersion = `uname `; chomp($$osVersion); print "$$osVersion"'}
-OS2 = ${shell perl -e 'my $$osVersion = `uname -r`; chomp($$osVersion); print "$$osVersion"'}
-OS3 = ${shell perl -e 'my $$osVersion = `machine`; chomp($$osVersion); print "$$osVersion"'}
-OS4 = ${shell perl -e 'my $$osVersion = `hostname`; chomp($$osVersion); print "$$osVersion"'}
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+    OPT += -mcmodel=medium 
+endif
 
 
 all:  synspec rotin list2bin install 
