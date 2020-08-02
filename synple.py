@@ -152,8 +152,8 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       a temporary directory with this name will be created to store
       the temporary synspec input/output files, and the synple log file (usually named
       syn.log) will be named as tmpdir_syn.log. When tmp is None a random string is used
-      for this folder
       (default None)
+      for this folder
 
   Returns
   -------
@@ -165,7 +165,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       continuum flux (same units as flux)
 
   """
-    
+
   #basic checks on the line list and model atmosphere
   checksynspec(linelist,modelfile)
 
@@ -180,11 +180,10 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   else: 
     space = dw
 
-
   #check input parameters are valid
   imode = checkinput(wrange, vmicro, linelist)
-  
 
+  print(modelfile,'is a',atmostype,' model')
   print ('teff,logg,vmicro=',teff,logg,vmicro)
   #print ('abu=',abu)
   #print (len(abu))
@@ -226,7 +225,6 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     writetas('tas',nd,linelist)                           #non-std param. file
     write5(teff,logg,abu,atom)                            #abundance/opacity file
     write8(teff,logg,nd,atmos,atmostype)                  #model atmosphere
-
 
   write55(wrange,space,imode,2,strength,vmicro,linelist,atmostype) #synspec control file
   create_links(linelist)                                  #auxiliary data
@@ -1617,8 +1615,6 @@ def read_model(modelfile):
 
   atmostype = identify_atmostype(modelfile)
 
-  print(modelfile,' is a ',atmostype,' model')
-
   if atmostype == 'kurucz':
     teff, logg, vmicro, abu, nd, atmos = read_kurucz_model(modelfile) 
   if atmostype == 'marcs':
@@ -1655,7 +1651,7 @@ def identify_atmostype(modelfile):
     else:
       f = open(modelfile,'r')
     line = f.readline()
-    print('modelfile / line=',modelfile,line)
+    #print('modelfile / line=',modelfile,line)
     type(line)
     if ('TEFF' in line): atmostype = 'kurucz'
     else: 
@@ -1670,7 +1666,8 @@ def identify_atmostype(modelfile):
 
 def checksynspec(linelist,modelfile):
 
-  """checking that executables and data are where it should be
+  """checking that executables and data are where it should be. Prepend
+     default directories to linelist and model atmosphere files when necessary
 
   Parameters
   ----------
@@ -1685,19 +1682,23 @@ def checksynspec(linelist,modelfile):
   dirs = [synpledir,modelatomdir,linelistdir,bindir]
   for entry in dirs: assert (os.path.isdir(entry)), 'dir '+entry+' missing'
 
-  files = [synspec,rotin]
+  i = 0 
   for entry in linelist: 
     if not os.path.isfile(entry):
       ll = os.path.join(linelistdir,entry)
-      if os.path.isfile(ll): files.append(ll)
+      if os.path.isfile(ll): linelist[i] = ll
+    i = i + 1
+
+  files = [synspec,rotin]
+  for entry in linelist: files.append(entry)
   for entry in files: assert (os.path.isfile(entry)), 'file '+entry+' missing'
 
   if not os.path.isfile(modelfile):
     mf = os.path.join(modeldir,modelfile)
     if os.path.isfile(mf): modelfile = mf
 
-  print(modeldir)
-  print(modelfile)
+  #print(modeldir)
+  #print(modelfile)
   assert (os.path.isfile(modelfile)),'model atmosphere file '+modelfile+' missing'
 
 
@@ -1743,11 +1744,6 @@ def checkinput(wrange, vmicro, linelist):
   if len(linelist) == 0: 
     imode = 2  # no atomic or molecular line list -> pure continuum and no molecules
   else:
-
-    #find range of atomic line list
-    if not os.path.isfile(linelist[0]):
-      ll = os.path.join(linelistdir,linelist[0])
-      if os.path.isfile(ll): linelist[0] = ll
 
     nlines, minlambda, maxlambda = getlinelistrange(linelist[0])
 
@@ -1835,18 +1831,23 @@ def write55(wrange,dw=1e-2,imode=0,hydprf=2,strength=1e-4,vmicro=0.0, \
   #imode,idst,iprin
   #inmod,zero,ichang,ichemc
   #lyman,zero,zero,zero,zero
-  #one,nlte,icontl,zero,ifhe2
+  #one,nlte,icontl,inlist,ifhe2
   #ihydpr,ihe1pr,ihe2pr
   #wstart,wend,cutoff,zero,strength,wdist 
 
   if (atmostype == 'tlusty' or atmostype == 'marcs'): inmod = 1 
   else: inmod = 0
 
+  inlist = 11
+  for file in linelist:
+    binaryfile = file[:-2]+'11'
+    if not os.path.isfile(binaryfile): inlist = 10
+
   f = open('fort.55','w')
   f.write(" "+str(imode)+" "+2*zero+"\n")
   f.write(" "+str(inmod)+3*zero+"\n")
   f.write(5*zero+"\n")
-  f.write(one+4*zero+"\n")
+  f.write(one+2*zero+str(inlist)+zero+"\n")
   f.write(str(hydprf)+2*zero+"\n")
   if imode == -3:
     f.write( ' %f %f %f %i %e %f \n ' % (wrange[0],  -wrange[1], 100., 2000, strength, dw) )
@@ -2003,11 +2004,11 @@ def create_links(linelist):
 #create soft links for line lists
 
   for i in range(len(linelist)):
-    if not os.path.isfile(linelist[i]):
-      ll = os.path.join(linelistdir,linelist[i])
-      if os.path.isfile(ll): linelist[i] = ll
-    if i == 0: os.symlink(linelist[0],'fort.19')
-    else: os.symlink(linelist[i],'fort.'+str(20-1+i))
+    file = linelist[i]
+    binaryfile = linelist[i][:-2]+'11'
+    if os.path.isfile(binaryfile): file = binaryfile
+    if i == 0: os.symlink(file,'fort.19')
+    else: os.symlink(file,'fort.'+str(20-1+i))
 
   return()
 
