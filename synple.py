@@ -167,10 +167,12 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   """
 
   #basic checks on the line list and model atmosphere
-  checksynspec(linelist,modelfile)
+  linelist, modelfile = checksynspec(linelist,modelfile)
 
   #read model atmosphere
   atmostype, teff, logg, vmicro2, abu2, nd, atmos = read_model(modelfile)
+
+  print('modelfile=',modelfile)
 
   if vmicro == None: vmicro = vmicro2
   if abu == None: abu = abu2
@@ -212,7 +214,12 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     os.symlink(os.path.join(startdir,modelfile),'fort.8')
     os.symlink(os.path.join(startdir,modelfile[:-1]+"5"),'fort.5')
     nonstdfile, datadir = read_tlusty_extras('fort.8')
-    os.symlink(os.path.join(startdir,nonstdfile),nonstdfile)
+    if os.path.isabs(nonstdfile): 
+      hfm, afm = os.path.split(nonstdfile)
+      os.symlink(nonstdfile,afm)      
+    else:
+      os.symlink(os.path.join(startdir,nonstdfile),nonstdfile)
+    assert (os.path.exists(nonstdfile)), 'The non-std parameter file indicated in the tlusty model, '+datadir+', is not present' 
     os.symlink(os.path.join(startdir,datadir),datadir)
     assert (os.path.exists(datadir)), 'The model atom directory indicated in the tlusty model, '+datadir+', is not present' 
   else:
@@ -680,7 +687,7 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
         #if need be, adjust nitrogen abundance according to nfe
         if (abs(nfe1) > 1e-7):
           if (abu1 == None):
-            checksynspec(linelist,entry)
+            linelist, entry = checksynspec(linelist,entry)
             atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
           abu1[6] = abu1[6] * 10.**nfe1
 
@@ -871,7 +878,7 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
           #if need be, adjust nitrogen abundance according to nfe
           if (abs(nfe1) > 1e-7):
             if (abu1 == None):
-              checksynspec(linelist,entry)
+              linelist, entry = checksynspec(linelist,entry)
               atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
             abu1[6] = abu1[6] * 10.**nfe1
 
@@ -1702,7 +1709,7 @@ def checksynspec(linelist,modelfile):
   assert (os.path.isfile(modelfile)),'model atmosphere file '+modelfile+' missing'
 
 
-  return(True)
+  return(linelist,modelfile)
 
 
 def checkinput(wrange, vmicro, linelist):
@@ -2393,6 +2400,10 @@ def read_tlusty_model(modelfile):
   entries = line.split()
   nonstdfile = entries[0][1:-1]
 
+  if not os.path.isfile(nonstdfile):
+    mf = os.path.join(modeldir,nonstdfile)
+    if os.path.isfile(mf): nonstdfile = mf
+
   if nonstdfile != '':
     assert (os.path.isfile(nonstdfile)),'Tlusty model atmosphere file '+modelfile+' invokes non-std parameter file, '+nonstdfile+' which is not present'
 
@@ -2501,6 +2512,9 @@ def read_tlusty_extras(modelfile):
   line = f.readline()
   entries = line.split()
   nonstdfile = entries[0][1:-1]
+  if not os.path.isfile(nonstdfile):
+    mf = os.path.join(modeldir,nonstdfile)
+    if os.path.isfile(mf): nonstdfile = mf
 
   line = f.readline()
   line = f.readline()
