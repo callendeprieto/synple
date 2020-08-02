@@ -21,26 +21,30 @@ ifeq ($(UNAME_S),Linux)
 endif
 
 
-all:  synspec rotin list2bin install 
+all:  compile install 
 
-synspec: s54d.f  LINDAT.FOR  MODELP.FOR  PARAMS.FOR  SYNTHP.FOR  WINCOM.FOR
+compile: s54d rotin3 list2bin
+
+s54d: s54d.f  LINDAT.FOR  MODELP.FOR  PARAMS.FOR  SYNTHP.FOR  WINCOM.FOR
 	${F90}  ${OPT} s54d.f -o s54d
 
-rotin: rotin3.f
+rotin3: rotin3.f
 	${F90}  ${OPT} rotin3.f -o rotin3
 
 list2bin: list2bin.f
 	${F90} ${OPT} list2bin.f -o list2bin
 
-install: bindir
-	mv s54d   ../bin/
-	mv rotin3 ../bin/
-	mv list2bin ../bin/
+install: ../bin ../bin/s54d ../bin/rotin3 ../bin/list2bin
 
-bindir:
-	[ -d ../bin ] ||  mkdir ../bin
+../bin/s54d ../bin/rotin3 ../bin/list2bin: s54d rotin3 list2bin
+	cp s54d   ../bin/
+	cp rotin3 ../bin/
+	cp list2bin ../bin/
+
+../bin:
+	mkdir ../bin
                                                         
 clean: 
-	rm -f s54d rotin3 ../bin/s54d ../bin/rotin3 ../bin/list2bin
+	rm -f s54d rotin3 list2bin ../bin/s54d ../bin/rotin3 ../bin/list2bin
 
 
