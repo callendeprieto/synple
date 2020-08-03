@@ -67,6 +67,10 @@ bindir = synpledir + "/bin"
 synspec = bindir + "/s54d"
 rotin = bindir + "/rotin3"
 
+#internal synspec data files
+isdf = ['CIA_H2H2.dat', 'CIA.H2H2.Yi', 'CIA_H2H.dat', 'CIA_H2He.dat', 'CIA_HHe.dat', \
+        'irwin_bc.dat', 'irwin.dat', 'tremblay.dat', \
+        'tsuji.atoms', 'tsuji.molec', 'tsuji.molec_bc2']
 
 #other stuff
 clight = 299792.458
@@ -75,6 +79,8 @@ bolk = 1.38054e-16  # erg/ K
 zero = " 0 "
 one =  " 1 "
 two =  " 2 "
+
+
 
 def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], atom='ap18', vrot=0.0, fwhm=0.0, \
@@ -152,8 +158,8 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       a temporary directory with this name will be created to store
       the temporary synspec input/output files, and the synple log file (usually named
       syn.log) will be named as tmpdir_syn.log. When tmp is None a random string is used
-      (default None)
       for this folder
+      (default None)
 
   Returns
   -------
@@ -209,24 +215,31 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
 
   cleanup_fort()
+  if os.path.islink('data'): os.unlink('data')
+  if os.path.isfile('tas'): os.remove('tas')
 
   if atmostype == 'tlusty':
     os.symlink(os.path.join(startdir,modelfile),'fort.8')
     os.symlink(os.path.join(startdir,modelfile[:-1]+"5"),'fort.5')
-    nonstdfile, datadir = read_tlusty_extras('fort.8')
-    if os.path.isabs(nonstdfile): 
-      hfm, afm = os.path.split(nonstdfile)
-      os.symlink(nonstdfile,afm)      
+    nonstdfile, datadir = read_tlusty_extras('fort.8',startdir)
+    if nonstdfile == '':
+      nst = ''
     else:
-      os.symlink(os.path.join(startdir,nonstdfile),nonstdfile)
-    assert (os.path.exists(nonstdfile)), 'The non-std parameter file indicated in the tlusty model, '+datadir+', is not present' 
-    os.symlink(os.path.join(startdir,datadir),datadir)
-    assert (os.path.exists(datadir)), 'The model atom directory indicated in the tlusty model, '+datadir+', is not present' 
+      hnst, nst = os.path.split(nonstdfile)
+      os.symlink(nonstdfile,nst)
+    hdd, dd = os.path.split(datadir)
+    os.symlink(datadir,dd)  
+
+    if dd == 'data':
+      for entry in isdf:
+        assert (os.path.isfile(os.path.join(dd,entry))), 'Cannot find the data file:'+dd+'/'+entry
+    else:
+      os.symlink(modelatomdir,'./data')
+      
   else:
-    if os.path.islink('data'): os.unlink('data')
-    if os.path.isfile('tas'): os.remove('tas')
 
     assert (not os.path.isdir('data')), 'A subdirectory *data* exists in this folder, and that prevents the creation of a link to the data directory for synple'
+
     os.symlink(modelatomdir,'./data')                     #data directory
 
     writetas('tas',nd,linelist)                           #non-std param. file
@@ -286,6 +299,9 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       cleanup_fort()
       if os.path.islink('data'): os.unlink('data')
       if os.path.isfile('tas'): os.remove('tas')
+      if atmostype == 'tlusty':
+        if os.path.islink(dd): os.unlink(dd)
+        if os.path.isfile(nst): os.remove(nst)
 
 
     try:
@@ -1637,7 +1653,7 @@ def identify_atmostype(modelfile):
 
   """Idenfies the type of model atmosphere in an input file
 
-  Valid options are kurucz, marcs, tlusty (.8) or phoenix
+  Valid options are kurucz, marcs, tlusty (.7) or phoenix
 
   Parameters
   ----------
@@ -2354,15 +2370,21 @@ def read_marcs_model2(modelfile):
 
   return (teff,logg,vmicro,abu,nd,atmos)
 
-def read_tlusty_model(modelfile):
+def read_tlusty_model(modelfile,startdir=None):
   
   """Reads a Tlusty model atmosphere. 
 
   Parameters
   ----------
   modelfile: str
-      file name (.8). It will look for the complementary .5 file to read
+      file name (.7 or .7). It will look for the complementary .5 file to read
       the abundances and the micro (when specified in the non-std. parameter file)
+
+  startdir: str
+      directory where the calculations are initiated. The code will look at that
+      location to find the tlusty model atom directory and the non-std. parameter
+      file when a relative path is provided
+      (default is None, indicating it is the current working directory)
   
   Returns
   -------
@@ -2386,8 +2408,10 @@ def read_tlusty_model(modelfile):
 
   """  
 
-  assert (modelfile[-2:] == ".8"), 'Tlusty models should end in .8'
+  assert ((modelfile[-2:] == ".8") | (modelfile[-2:] == ".7")), 'Tlusty models should end in .7 or .8'
   assert (os.path.isfile(modelfile[:-1]+"5")),'Tlusty model atmosphere file '+modelfile+' should come with an associated .5 file'
+
+  if startdir is None: startdir = os.getcwd()
 
   #we start reading the .5
   f = open(modelfile[:-1]+"5",'r')
@@ -2400,23 +2424,32 @@ def read_tlusty_model(modelfile):
   entries = line.split()
   nonstdfile = entries[0][1:-1]
 
-  if not os.path.isfile(nonstdfile):
-    mf = os.path.join(modeldir,nonstdfile)
-    if os.path.isfile(mf): nonstdfile = mf
+  nonstdfile0 = nonstdfile
+  if nonstdfile != '':
+    if not os.path.isabs(nonstdfile): 
+      mf = os.path.join(startdir,nonstdfile)
+      if os.path.isfile(mf): 
+        nonstdfile = mf
+      else:
+        mf = os.path.join(modeldir,nonstdfile)
+        nonstdfile = mf
 
+    assert (os.path.exists(nonstdfile)), 'The non-std parameter file indicated in the tlusty model, '+nonstdfile0+', is not present' 
+
+  nonstd={}
   if nonstdfile != '':
     assert (os.path.isfile(nonstdfile)),'Tlusty model atmosphere file '+modelfile+' invokes non-std parameter file, '+nonstdfile+' which is not present'
 
-  nonstd={}
-  ns = open(nonstdfile,'r')
-  nonstdarr = ns.readlines()
-  for entry in nonstdarr:
-    entries = entry.replace('\n','').split(',')
-    for piece in entries:
-      sides = piece.split('=')
-      nonstd[sides[0].replace(' ','')]= sides[1].replace(' ','')
 
-  print('Tlusty nonstd params=',nonstd)
+    ns = open(nonstdfile,'r')
+    nonstdarr = ns.readlines()
+    for entry in nonstdarr:
+      entries = entry.replace('\n','').split(',')
+      for piece in entries:
+        sides = piece.split('=')
+        nonstd[sides[0].replace(' ','')]= sides[1].replace(' ','')
+
+    print('Tlusty nonstd params=',nonstd)
 
   #the micro might be encoded as VTB in the nonstdfile!!
   #this is a temporary patch, but need to parse that file
@@ -2446,29 +2479,17 @@ def read_tlusty_model(modelfile):
   line = f.readline()
   entries = line.split()
   nd = int(entries[0])
-  numpar = int(entries[1])
+  numpar = abs(int(entries[1]))
 
   assert (len(entries) == 2), 'There are more than two numbers in the first line of the model atmosphere'
 
-  line = f.readline()
-  entries = line.split()
-  dm = []
-  for val in entries: dm.append( float(val) )
+  dm = read_multiline_fltarray(f,nd)
+  atm = read_multiline_fltarray(f,nd*numpar)
+  atm = np.reshape(atm, (nd,numpar) )
 
-  line = f.readline()
-  entries = line.split()
-  
-  t =   [ float(entries[0]) ]
-  ne =  [ float(entries[1]) ] 
-  rho = [ float(entries[2]) ] 
-
-  for i in range(nd-1):
-    line = f.readline()
-    entries = line.split()
-
-    t.append(   float(entries[0]) )
-    ne.append(  float(entries[1]) )
-    rho.append( float(entries[2]) )
+  t =   atm [:,0]
+  ne =  atm [:,1]
+  rho = atm [:,2]
 
   atmos = np.zeros(nd, dtype={'names':('dm', 't', 'ne','rho'),
                           'formats':('f', 'f', 'f','f')}) 
@@ -2480,7 +2501,7 @@ def read_tlusty_model(modelfile):
   return (teff,logg,vmicro,abu,nd,atmos)
 
 
-def read_tlusty_extras(modelfile):
+def read_tlusty_extras(modelfile,startdir=None):
   
   """Identifies and reads the non-std parameter file and finds out the name 
      of the data directory for Tlusty model atmospheres. 
@@ -2488,8 +2509,15 @@ def read_tlusty_extras(modelfile):
   Parameters
   ----------
   modelfile: str
-      file name (.8). It will look for the complementary .5 file to read
+      file name (.8 or .7). It will look for the complementary .5 file to read
       the abundances and other information
+
+  startdir: str
+      directory where the calculations are initiated. The code will look at that
+      location to find the tlusty model atom directory and the non-std. parameter
+      file when a relative path is provided
+      (default is None, indicating it is the current working directory)
+  
   
   Returns
   -------
@@ -2502,8 +2530,10 @@ def read_tlusty_extras(modelfile):
   
   """  
 
-  assert (modelfile[-2:] == ".8"), 'Tlusty models should end in .8'
+  assert ( (modelfile[-2:] == ".8") | (modelfile[-2:] == ".7") ), 'Tlusty models should end in .8 or .7'
   assert (os.path.isfile(modelfile[:-1]+"5")),'Tlusty model atmosphere file '+modelfile+' should come with an associated .5 file'
+
+  if startdir is None: startdir = os.getcwd()
 
   #we start reading the .5
   f = open(modelfile[:-1]+"5",'r')
@@ -2512,9 +2542,19 @@ def read_tlusty_extras(modelfile):
   line = f.readline()
   entries = line.split()
   nonstdfile = entries[0][1:-1]
-  if not os.path.isfile(nonstdfile):
-    mf = os.path.join(modeldir,nonstdfile)
-    if os.path.isfile(mf): nonstdfile = mf
+
+  nonstdfile0 = nonstdfile  
+  if nonstdfile != '':
+    if not os.path.isabs(nonstdfile): 
+      mf = os.path.join(startdir,nonstdfile)
+      if os.path.isfile(mf): 
+        nonstdfile = mf
+      else:
+        mf = os.path.join(modeldir,nonstdfile)
+        nonstdfile = mf
+
+
+    assert (os.path.exists(nonstdfile)), 'The non-std parameter file indicated in the tlusty model, '+nonstdfile0+', is not present' 
 
   line = f.readline()
   line = f.readline()
@@ -2532,8 +2572,22 @@ def read_tlusty_extras(modelfile):
 
   entries = line.split()
   cadena = entries[-1][1:-1]
-  cadena = cadena.split('/')
-  datadir = cadena[0]
+  datadir, file = os.path.split(cadena)
+
+
+  datadir0 = datadir
+  if datadir != '':
+    if not os.path.isabs(datadir): 
+      mf = os.path.join(startdir,datadir)
+      if os.path.exists(mf): 
+        datadir = mf
+      else:
+        mf = os.path.join(synpledir,datadir)
+        datadir = mf
+
+    assert (os.path.exists(datadir)), 'The datadir indicated in the tlusty model, '+datadir0+', is not present' 
+
+
   f.close()
 
   return (nonstdfile,datadir)
@@ -2723,6 +2777,25 @@ def read_phoenix_text_model(modelfile):
   atmos['ne'] = ne
 
   return (teff,logg,vmicro,abu,nd,atmos)
+
+
+def read_multiline_fltarray(fhandle,arrlen):
+
+  """Reads a float array that spans one or multiple lines in a file
+  """
+
+  ndata = 0
+  arr = []
+  while ndata < arrlen:
+    line = fhandle.readline()
+    line = line.replace('D','E')
+    line = line.replace('d','e')
+    entries = line.split()
+    for val in entries: arr.append( float(val) )
+    ndata = len(arr)
+
+  return (arr)
+
 
 def interp_spl(xout, x, y):
 
