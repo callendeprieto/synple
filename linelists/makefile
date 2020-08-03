@@ -5,12 +5,13 @@
 
 FTP = ftp://carlos:allende@ftp.ll.iac.es/linelists/
 WGET = `which wget`
+GUNZIP = `which gunzip`
 
 #general line lists
-STANDARD = gfallx3_bpo.19 kmol3_0.01_30.20 
+STANDARD = gfallx3_bpo.19 kmol3_0.01_30.20
 
 #apogee
-HBAND = apogeeDR16.20180901.19 apogee_molec_aboo.20 apogee_molec_sun.20
+HBAND = synspec20200709.lte.19 synspec20200705.nlte.19 apogee.20180901.solar.20 apogee.20180901.giants.20 H2O_apogee_TSl3500-8.5_nobroad.20
 
 #output binary files
 TMP1 = $(STANDARD:.19=.11)
@@ -24,7 +25,8 @@ all:    $(STANDARD) $(BINARIES)
 
 $(STANDARD):  
 	for file in $(STANDARD) ; do \
-		${WGET} ${FTP}$$file ; \
+		${WGET} ${FTP}$$file.gz ; \
+                ${GUNZIP} $$file.gz ; \
 	done
 
 $(BINARIES):
@@ -36,7 +38,8 @@ apogee: $(HBAND) $(HBANDBINARIES)
 
 $(HBAND):
 	for file in ${HBAND} ; do \
-		echo $$file | ../bin/list2bin ; \
+		${WGET} ${FTP}$$file.gz ; \
+                ${GUNZIP} $$file.gz ; \
 	done
 
 $(HBANDBINARIES): $(HBAND)
