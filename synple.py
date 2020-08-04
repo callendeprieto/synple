@@ -190,6 +190,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   #check input parameters are valid
   imode = checkinput(wrange, vmicro, linelist)
+  inlte = 0
 
   print(modelfile,'is a',atmostype,' model')
   print ('teff,logg,vmicro=',teff,logg,vmicro)
@@ -221,7 +222,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   if atmostype == 'tlusty':
     os.symlink(os.path.join(startdir,modelfile),'fort.8')
     os.symlink(os.path.join(startdir,modelfile[:-1]+"5"),'fort.5')
-    nonstdfile, datadir = read_tlusty_extras('fort.8',startdir)
+    nonstdfile, datadir, inlte = read_tlusty_extras('fort.8',startdir)
     if nonstdfile == '':
       nst = ''
     else:
@@ -246,7 +247,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     write5(teff,logg,abu,atom)                            #abundance/opacity file
     write8(teff,logg,nd,atmos,atmostype)                  #model atmosphere
 
-  write55(wrange,space,imode,2,strength,vmicro,linelist,atmostype) #synspec control file
+  write55(wrange,space,imode,inlte,hydprf=2,strength,vmicro,linelist,atmostype) #synspec control file
   create_links(linelist)                                  #auxiliary data
 
   if compute == False:
@@ -1184,7 +1185,8 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
                         if rfrac[i] > 0.0: abu[z_rs[i] - 1] = abu[z_rs[i] - 1] * (1.0 - rfrac[i]) * 10.**sfe
 
 
-                  write55(wrange,dw=dw,imode=-3,hydprf=0, strength=strength, vmicro=vmicro, linelist=linelist)
+                  write55(wrange,dw=dw,imode=-3,inlte=0,hydprf=0, \
+                  strength=strength, vmicro=vmicro, linelist=linelist)
 
                   write5(9999.,9.9,abu,atom)
                   
@@ -1847,7 +1849,7 @@ def write2(lt,lrho,wrange, filename='opt.data', dlw=2e-5, binary=False,strength=
   return()
 
 
-def write55(wrange,dw=1e-2,imode=0,hydprf=2,strength=1e-4,vmicro=0.0, \
+def write55(wrange,dw=1e-2,imode=0,inlte=0,hydprf=2,strength=1e-4,vmicro=0.0, \
   linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], atmostype='kurucz'):
 
 
@@ -1870,7 +1872,7 @@ def write55(wrange,dw=1e-2,imode=0,hydprf=2,strength=1e-4,vmicro=0.0, \
   f.write(" "+str(imode)+" "+2*zero+"\n")
   f.write(" "+str(inmod)+3*zero+"\n")
   f.write(5*zero+"\n")
-  f.write(one+2*zero+str(inlist)+zero+"\n")
+  f.write(one+str(inlte)+zero+str(inlist)+zero+"\n")
   f.write(str(hydprf)+2*zero+"\n")
   if imode == -3:
     f.write( ' %f %f %f %i %e %f \n ' % (wrange[0],  -wrange[1], 100., 2000, strength, dw) )
@@ -1928,19 +1930,19 @@ def write5(teff,logg,abu, atom='ap18', ofile='fort.5', nlte=False, tl=False):
     f.write("   0    0     0     -1     0     0    '    ' ' '  \n")
   elif atom == "yo19": # set for NLTE calculations for APOGEE (see Osorio+ 2019 A&A paper)
     f.write("* ../data_atom for ions  \n")
-    f.write("  1    -1     1      0     0     1    ' H 0' 'data_atom/hm.dat'  \n")
+    f.write("  1    -1     1      0     0     1    ' H 0' 'data/hm.dat'  \n")
     f.write("  0     0     3      0   \n")
-    f.write("  1     0     16     0     0     0    ' H 1' 'data_atom/h1_16lev2.dat'  \n")
+    f.write("  1     0     16     0     0     0    ' H 1' 'data/h1_16lev2.dat'  \n")
     f.write("  1     1     1      1     0     0    ' H 2' ' '  \n")
-    f.write("  11    0     42     0     0     0    'Na 1' 'data_atom/NaIkas.tl'  \n")
+    f.write("  11    0     42     0     0     0    'Na 1' 'data/NaIkas.tl'  \n")
     f.write("  11    1     1      1     0     0    'Na 2' '' \n")
-    f.write("  12    0     96     0     0     0    'Mg 1' 'data_atom/Mg1kas_F_ccc.tl'  \n")
-    f.write("  12    1     29     0     0     0    'Mg 2' 'data_atom/Mg2kas_F_ccc.tl'  \n")
+    f.write("  12    0     96     0     0     0    'Mg 1' 'data/Mg1kas_F_ccc.sy'  \n")
+    f.write("  12    1     29     0     0     0    'Mg 2' 'data/Mg2kas_F_ccc.sy'  \n")
     f.write("  12    2     1      1     0     0    'Mg 3' ' '  \n")
-    f.write("  19    0     31     0     0     0    'K  1' 'data_atom/KIkas.tl'  \n")
+    f.write("  19    0     31     0     0     0    'K  1' 'data/KIkas.tl'  \n")
     f.write("  19    1     1      1     0     0    'K  2' ''  \n")
-    f.write("  20    0     66     0     0     0    'Ca 1' 'data_atom/Ca1kas_F_zat.tl'  \n")
-    f.write("  20    1     24     0     0     0    'Ca 2' 'data_atom/Ca2kas_F_zat.tl'  \n")
+    f.write("  20    0     66     0     0     0    'Ca 1' 'data/Ca1kas_F_zat.sy'  \n")
+    f.write("  20    1     24     0     0     0    'Ca 2' 'data/Ca2kas_F_zat.sy'  \n")
     f.write("  20    2     1      1     0     0    'Ca 3' ' '  \n")
     f.write("   0    0     0     -1     0     0    '    ' ' '  \n")
   elif atom == 'ap18': # generic set used in Allende Prieto+ (2018) A&A paper
@@ -2485,18 +2487,16 @@ def read_tlusty_model(modelfile,startdir=None):
 
   dm = read_multiline_fltarray(f,nd)
   atm = read_multiline_fltarray(f,nd*numpar)
-  atm = np.reshape(atm, (nd,numpar) )
+  f.close()
 
-  t =   atm [:,0]
-  ne =  atm [:,1]
-  rho = atm [:,2]
+  atm = np.reshape(atm, (nd,numpar) )
 
   atmos = np.zeros(nd, dtype={'names':('dm', 't', 'ne','rho'),
                           'formats':('f', 'f', 'f','f')}) 
   atmos['dm'] = dm
-  atmos['t'] = t
-  atmos['ne'] = ne
-  atmos['rho'] = rho
+  atmos['t'] = atm [:,0]
+  atmos['ne'] = atm [:,1]
+  atmos['rho'] = atm [:,2]
 
   return (teff,logg,vmicro,abu,nd,atmos)
 
@@ -2527,6 +2527,10 @@ def read_tlusty_extras(modelfile,startdir=None):
 
   datadir: str
        name of the model atom directory
+
+  inlte: int
+       0 when the populations are to be computed internally by synspec (LTE)
+       1 to read the populations from a tlusty model
   
   """  
 
@@ -2590,7 +2594,20 @@ def read_tlusty_extras(modelfile,startdir=None):
 
   f.close()
 
-  return (nonstdfile,datadir)
+  #now the .8
+  f = open(modelfile,'r')
+  line = f.readline()
+  entries = line.split()
+  nd = int(entries[0])
+  numpar = abs(int(entries[1]))
+  if numpar > 4: 
+    inlte = 1 
+  else: 
+    inlte = 0
+
+  f.close()
+
+  return (nonstdfile,datadir,inlte)
 
 
 def read_phoenix_model(modelfile):
