@@ -247,7 +247,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     write5(teff,logg,abu,atom)                            #abundance/opacity file
     write8(teff,logg,nd,atmos,atmostype)                  #model atmosphere
 
-  write55(wrange,space,imode,inlte,hydprf=2,strength,vmicro,linelist,atmostype) #synspec control file
+  write55(wrange,space,imode,inlte,2,strength,vmicro,linelist,atmostype) #synspec control file
   create_links(linelist)                                  #auxiliary data
 
   if compute == False:
