@@ -1,0 +1,6 @@
+README.md
+setup.py
+synple.egg-info/PKG-INFO
+synple.egg-info/SOURCES.txt
+synple.egg-info/dependency_links.txt
+synple.egg-info/top_level.txt
