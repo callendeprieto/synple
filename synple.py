@@ -64,7 +64,7 @@ modeldir = synpledir + "/models"
 modelatomdir = synpledir + "/data"
 linelistdir = synpledir + "/linelists"
 bindir = synpledir + "/bin"
-synspec = bindir + "/s54d"
+synspec = bindir + "/s54g"
 rotin = bindir + "/rotin3"
 
 #internal synspec data files

@@ -6,8 +6,8 @@
      *           MPRF    =  MLIN0)
 C
 C      PARAMETER (MLINM0  =50000000,
-      PARAMETER (MLINM0  =  5000000,
-     *           MLINM   =  1500000,
+      PARAMETER (MLINM0  = 5000000,
+     *           MLINM   = 1500000,
      *           MMLIST  =      4)
 C
        REAL*4       EXCL0(MLIN0),
@@ -62,6 +62,9 @@ C
      *              INACTM(MMLIST),
      *              IVDWLI(MMLIST),
      *              NMLIST
+      CHARACTER*40  AMLIST(0:MMLIST)
+      COMMON/LISPAR/AMLIST,
+     *              IBIN(0:MMLIST)
 C
       COMMON/LINPRF/GAMR0,
      *              GS0,
