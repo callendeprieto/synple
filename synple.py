@@ -178,6 +178,11 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   #read model atmosphere
   atmostype, teff, logg, vmicro2, abu2, nd, atmos = read_model(modelfile)
 
+  #find out additional info for Tlusty models
+  if atmostype == 'tlusty':
+    madaffile, nonstdfile, nonstd, datadir, inlte = read_tlusty_extras(modelfile)
+
+
   print('modelfile=',modelfile)
 
   if vmicro == None: vmicro = vmicro2
@@ -220,14 +225,8 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   if os.path.isfile('tas'): os.remove('tas')
 
   if atmostype == 'tlusty':
-    os.symlink(os.path.join(startdir,modelfile),'fort.8')
-    os.symlink(os.path.join(startdir,modelfile[:-1]+"5"),'fort.5')
-    nonstdfile, datadir, inlte = read_tlusty_extras('fort.8',startdir)
-    if nonstdfile == '':
-      nst = ''
-    else:
-      hnst, nst = os.path.split(nonstdfile)
-      os.symlink(nonstdfile,nst)
+
+    # data dir
     hdd, dd = os.path.split(datadir)
     os.symlink(datadir,dd)  
 
@@ -236,18 +235,21 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
         assert (os.path.isfile(os.path.join(dd,entry))), 'Cannot find the data file:'+dd+'/'+entry
     else:
       os.symlink(modelatomdir,'./data')
+
+    if (inlte == -1): nonstd['IBFAC'] = 1.0
+    os.symlink(madaffile,'./fort.5')
       
   else:
 
+    nonstd = None
+    write5(teff,logg,abu,atom)              #abundance/opacity file  
     assert (not os.path.isdir('data')), 'A subdirectory *data* exists in this folder, and that prevents the creation of a link to the data directory for synple'
-
     os.symlink(modelatomdir,'./data')                     #data directory
+  
 
-    writetas('tas',nd,linelist)                           #non-std param. file
-    write5(teff,logg,abu,atom)                            #abundance/opacity file
-    write8(teff,logg,nd,atmos,atmostype)                  #model atmosphere
-
+  write8(teff,logg,nd,atmos,atmostype)                    #model atmosphere
   write55(wrange,space,imode,inlte,2,strength,vmicro,linelist,atmostype) #synspec control file
+  writetas('tas',nd,linelist,nonstd=nonstd)               #non-std param. file
   create_links(linelist)                                  #auxiliary data
 
   if compute == False:
@@ -1638,6 +1640,7 @@ def read_model(modelfile):
     mf = os.path.join(modeldir,modelfile)
     if os.path.isfile(mf): modelfile = mf
 
+
   atmostype = identify_atmostype(modelfile)
 
   if atmostype == 'kurucz':
@@ -1802,17 +1805,23 @@ def getlinelistrange(atomiclinelist):
 
 
 
-def writetas(filename,nd,linelist):
+def writetas(filename,nd,linelist,nonstd=None):
 #write non-std input parameters
 # input: filename -- str -- name of the non-std. param. file to print
 #        nd -- int -- number of layers in the model
-#        nd -- list -- names of the linelist files (atomic first, then one 
+#        linelist -- list -- names of the linelist files (atomic first, then one 
 #				or more molecular ones
+#        nonstd -- dict -- additional entries to add to the tas file 
+#
   
   f = open(filename,'w')
   f.write("ND= "+str(nd)+" \n")
   if len(linelist) > 1:  f.write("IFMOL= "+one+" \n")
   f.write("TMOLIM= 8000. \n")
+
+  if nonstd is not None:
+    for entry in nonstd.keys():
+      f.write(entry + "=" + nonstd[entry]+"\n")
 
   f.close()
 
@@ -1996,14 +2005,27 @@ def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8'):
 
   """
 
+  f = open(ofile,'w')
+
   if atmostype == 'tlusty':
 
-    print('write8 should not be called for Tlusty models -- they are ready for synspec!')
-    return ()
+    if ('n' in atmos.dtype.names):  # 4th column is number density n
+      if ('pop' in atmos.dtype.names):   # explicit (usually NLTE) populations
+        pass
+      elif ('dep' in atmos.dtype.names): # NLTE departure coefficients
+        pass
+      else:                              # LTE
+        f.write(" "+str(nd)+" "+str(-4)+"\n")
+        for i in range(nd):
+          f.write(' %e ' % atmos['dm'][i])
+        f.write("\n")
+        for i in range(nd):
+          f.write( '%f %e %e %e \n' % (atmos['t'][i], atmos['ne'][i], atmos['rho'][i], atmos['n'][i] ) )  
+    else:
+      pass
 
   else:
 
-    f = open(ofile,'w')
 
     if atmostype == 'marcs':
       f.write(" "+str(nd)+" "+str(-4)+"\n")
@@ -2012,7 +2034,6 @@ def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8'):
       f.write("\n")
       for i in range(nd):
         f.write( '%f %e %e %e \n' % (atmos['t'][i], atmos['ne'][i], atmos['rho'][i], atmos['rho'][i]/atmos['mmw'][i]/1.67333e-24 + atmos['ne'][i] ) )
-      f.close()
 
     else:
       f.write( 'TEFF %7.0f  GRAVITY %7.5f  LTE \n' % (teff, logg) )
@@ -2020,7 +2041,8 @@ def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8'):
       f.write( 'READ DECK6%3i RHOX,T,P,XNE \n' % nd )
       for i in range(nd): 
         f.write( '%e %f %e %e \n' % (atmos['dm'][i], atmos['t'][i], atmos['p'][i], atmos['ne'][i]) )
-      f.close()
+      
+  f.close()
 
   return()
   
@@ -2379,7 +2401,7 @@ def read_tlusty_model(modelfile,startdir=None):
   Parameters
   ----------
   modelfile: str
-      file name (.7 or .7). It will look for the complementary .5 file to read
+      file name (.7, .8, or .22). It will look for the complementary .5 file to read
       the abundances and the micro (when specified in the non-std. parameter file)
 
   startdir: str
@@ -2410,13 +2432,17 @@ def read_tlusty_model(modelfile,startdir=None):
 
   """  
 
-  assert ((modelfile[-2:] == ".8") | (modelfile[-2:] == ".7")), 'Tlusty models should end in .7 or .8'
-  assert (os.path.isfile(modelfile[:-1]+"5")),'Tlusty model atmosphere file '+modelfile+' should come with an associated .5 file'
+  assert ((modelfile[-2:] == ".8") | (modelfile[-2:] == ".7") | (modelfile[-3:] == ".22")), 'Tlusty models should end in .7, .8, or .22'
+  if modelfile[-2] == ".":
+    madaffile = modelfile[:-1]+"5"
+  else:
+    madaffile = modelfile[:-2]+"5"    
+  assert (os.path.isfile(madaffile)),'Tlusty model atmosphere file '+modelfile+' should come with an associated .5 file'
 
   if startdir is None: startdir = os.getcwd()
 
   #we start reading the .5
-  f = open(modelfile[:-1]+"5",'r')
+  f = open(madaffile,'r')
   line = f.readline()
   entries = line.split()
   teff = float(entries[0])
@@ -2445,6 +2471,7 @@ def read_tlusty_model(modelfile,startdir=None):
 
     ns = open(nonstdfile,'r')
     nonstdarr = ns.readlines()
+    ns.close()
     for entry in nonstdarr:
       entries = entry.replace('\n','').split(',')
       for piece in entries:
@@ -2481,35 +2508,64 @@ def read_tlusty_model(modelfile,startdir=None):
   line = f.readline()
   entries = line.split()
   nd = int(entries[0])
-  numpar = abs(int(entries[1]))
+  numpar = int(entries[1])
+  if (numpar < 0): 
+    numpop = abs(numpar) - 4 
+  else:
+    numpop = numpar - 3
 
   assert (len(entries) == 2), 'There are more than two numbers in the first line of the model atmosphere'
 
   dm = read_multiline_fltarray(f,nd)
-  atm = read_multiline_fltarray(f,nd*numpar)
+  atm = read_multiline_fltarray(f,nd*abs(numpar))
   f.close()
 
-  atm = np.reshape(atm, (nd,numpar) )
+  atm = np.reshape(atm, (nd,abs(numpar)) )
 
-  atmos = np.zeros(nd, dtype={'names':('dm', 't', 'ne','rho'),
-                          'formats':('f', 'f', 'f','f')}) 
+  if (numpar < 0):  # 4th column is number density n
+    if (numpop > 0): # explicit (usually NLTE) populations
+      if modelfile[-2] == ".":  # NLTE populations or departure coefficients
+        tp = np.dtype([('dm', 'f'), ('t','f'), ('ne','f'), ('rho','f'), ('n','f'), ('pop', 'f', (numpop))])
+      else: 
+        tp = np.dtype([('dm', 'f'), ('t','f'), ('ne','f'), ('rho','f'), ('n','f'), ('dep', 'f', (numpop))])
+    else:
+      tp = np.dtype([('dm', 'f'), ('t','f'), ('ne','f'), ('rho','f'), ('n','f')])  
+  else:
+    if (numpop > 0):
+      if modelfile[-2] == ".": # NLTE populations or departure coefficients
+        tp = np.dtype([('dm', 'f'), ('t','f'), ('ne','f'), ('rho','f'), ('pop', 'f', (numpop))])
+      else:
+        tp = np.dtype([('dm', 'f'), ('t','f'), ('ne','f'), ('rho','f'), ('dep', 'f', (numpop))])
+    else:
+      tp = np.dtype([('dm', 'f'), ('t','f'), ('ne','f'), ('rho','f') ])
+
+  atmos = np.zeros(nd, dtype=tp)
+
   atmos['dm'] = dm
   atmos['t'] = atm [:,0]
   atmos['ne'] = atm [:,1]
   atmos['rho'] = atm [:,2]
+  if (numpar < 0): atmos['n'] = atm [:,3]
+  if (numpop > 0): 
+    if modelfile[-2] == ".":
+      atmos['pop'] = atm [:,4:]
+    else:
+      atmos['dep'] = atm [:,4:]
 
   return (teff,logg,vmicro,abu,nd,atmos)
 
 
 def read_tlusty_extras(modelfile,startdir=None):
   
-  """Identifies and reads the non-std parameter file and finds out the name 
-     of the data directory for Tlusty model atmospheres. 
+  """Identifies and reads the non-std parameter file and its content, finds out the 
+     number of parameters in the model, whether the file contains populations or departure
+     coefficients, and the name of the data directory for Tlusty 
+     model atmospheres. 
 
   Parameters
   ----------
   modelfile: str
-      file name (.8 or .7). It will look for the complementary .5 file to read
+      file name (.8, .7 or .22). It will look for the complementary .5 file to read
       the abundances and other information
 
   startdir: str
@@ -2522,25 +2578,40 @@ def read_tlusty_extras(modelfile,startdir=None):
   Returns
   -------
 
+  madaffile: str
+       model atom data and abundance file (.5 Tlusty file)
+
   nonstdfile: str
        non-std parameter file 
+
+  nonstd: dict
+       content of the non-std parameter file
+
+  numpar: int
+       number of parameters (can be negative when the model includes number density)
 
   datadir: str
        name of the model atom directory
 
   inlte: int
-       0 when the populations are to be computed internally by synspec (LTE)
-       1 to read the populations from a tlusty model
+       0 when the populations are not included and need to be computed internally 
+         by synspec (LTE)
+       1 the Tlusty model contains populations
+      -1 the Tlusty model contains departure coefficients
   
   """  
 
-  assert ( (modelfile[-2:] == ".8") | (modelfile[-2:] == ".7") ), 'Tlusty models should end in .8 or .7'
-  assert (os.path.isfile(modelfile[:-1]+"5")),'Tlusty model atmosphere file '+modelfile+' should come with an associated .5 file'
+  assert ((modelfile[-2:] == ".8") | (modelfile[-2:] == ".7") | (modelfile[-3:] == ".22")), 'Tlusty models should end in .7, .8, or .22'
+  if modelfile[-2] == ".":
+    madaffile = modelfile[:-1]+"5"
+  else:
+    madaffile = modelfile[:-2]+"5"    
+  assert (os.path.isfile(madaffile)),'Tlusty model atmosphere file '+modelfile+' should come with an associated .5 file'
 
   if startdir is None: startdir = os.getcwd()
 
   #we start reading the .5
-  f = open(modelfile[:-1]+"5",'r')
+  f = open(madaffile,'r')
   line = f.readline()
   line = f.readline()
   line = f.readline()
@@ -2557,8 +2628,25 @@ def read_tlusty_extras(modelfile,startdir=None):
         mf = os.path.join(modeldir,nonstdfile)
         nonstdfile = mf
 
-
     assert (os.path.exists(nonstdfile)), 'The non-std parameter file indicated in the tlusty model, '+nonstdfile0+', is not present' 
+
+
+  nonstd={}
+  if nonstdfile != '':
+    assert (os.path.isfile(nonstdfile)),'Tlusty model atmosphere file '+modelfile+' invokes non-std parameter file, '+nonstdfile+' which is not present'
+
+
+    ns = open(nonstdfile,'r')
+    nonstdarr = ns.readlines()
+    ns.close()
+    for entry in nonstdarr:
+      entries = entry.replace('\n','').split(',')
+      for piece in entries:
+        sides = piece.split('=')
+        nonstd[sides[0].replace(' ','')]= sides[1].replace(' ','')
+
+    print('Tlusty nonstd params=',nonstd)
+
 
   line = f.readline()
   line = f.readline()
@@ -2599,15 +2687,17 @@ def read_tlusty_extras(modelfile,startdir=None):
   line = f.readline()
   entries = line.split()
   nd = int(entries[0])
-  numpar = abs(int(entries[1]))
-  if numpar > 4: 
+  numpar = int(entries[1])
+  if abs(numpar) > 4: 
     inlte = 1 
   else: 
     inlte = 0
 
+  if (modelfile[-3:] == ".22"): inlte = -1
+
   f.close()
 
-  return (nonstdfile,datadir,inlte)
+  return (madaffile, nonstdfile,nonstd,datadir,inlte)
 
 
 def read_phoenix_model(modelfile):
