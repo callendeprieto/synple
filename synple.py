@@ -304,7 +304,6 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       if os.path.isfile('tas'): os.remove('tas')
       if atmostype == 'tlusty':
         if os.path.islink(dd): os.unlink(dd)
-        if os.path.isfile(nst): os.remove(nst)
 
 
     try:

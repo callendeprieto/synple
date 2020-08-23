@@ -1,11 +1,13 @@
 import setuptools
 
+import synple
+
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name="synple", # Replace with your own username
-    version="0.1",
+    version="0.2",
     author="Carlos Allende Prieto",
     author_email="callende@iac.es",
     description="A simple package to compute synthetic stellar spectra",
