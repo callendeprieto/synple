@@ -1,7 +1,7 @@
 C
 C     Parameters that specify dimensions of arrays
 C
-      IMPLICIT REAL*8 (A-H, O-Z)
+      IMPLICIT REAL*8 (A-H, O-Z),LOGICAL*1 (L)
       character*4 typat
       PARAMETER (MATEX = 30,   
      *           MIOEX = 90,
@@ -71,6 +71,7 @@ C
      *              ND,NDSTEP,
      *              NFREQ,NFROBS,NFREQC,NFREQS,
      *              NMU 
+      COMMON/LTESET/LTE,LTEGR
       COMMON/INPPAR/TEFF, 
      *              GRAV,
      *              YTOT(MDEPTH),
@@ -79,11 +80,13 @@ C
      *              vaclim,
      *              ATTOT(MATOM,MDEPTH) 
       COMMON/BASICM/IMODE,
+     *              IMODE0,
      *              IFREQ,
      *              INLTE,
      *              IDSTD,
      *              IFWIN,
-     *              IFEOS
+     *              IFEOS,
+     *              IBFAC
       COMMON/INTKEY/INMOD,INTRPL,ICHANG,ICHEMC,IATREF,ICONTL
       COMMON/LBLANK/IBLANK,NBLANK
       COMMON/NXTINI/ALM00,ALST00,NXTSET,INLIST,ALAMBE,DLAMLO
@@ -119,7 +122,8 @@ C
      *              IATM(MLEVEL), 
      *              IEL(MLEVEL), 
      *              ILK(MLEVEL),
-     *              ifwop(mlevel) 
+     *              ifwop(mlevel),
+     *              isemex(matom) 
 C
 C     Limits for explicit levels
 C
@@ -173,7 +177,8 @@ C     Auxiliary parameters
 C
       COMMON/AUXIND/IATH,IELH,IELHM,N0H,N1H,NKH,N0HN,N0M,
      *              IATHE,IELHE1,IELHE2
-      COMMON/MOLFLG/TMOLIM,MOLIND(11000),NMOLEC,IFMOL
+      COMMON/MOLFLG/TMOLIM,MOLIND(11000),NMOLEC,IFMOL,
+     *              MOLTAB,IRWTAB,IIRWIN
       COMMON/QFLAGS/ERANGE,ISPICK,ILPICK,IPPICK
  
 C

@@ -23,10 +23,10 @@ endif
 
 all:  compile install 
 
-compile: s54g rotin3 list2bin
+compile: s54h rotin3 list2bin
 
-s54g: s54g.f  LINDAT.FOR  MODELP.FOR  PARAMS.FOR  SYNTHP.FOR  WINCOM.FOR
-	${F90}  ${OPT} s54g.f -o s54g
+s54h: s54h.f  LINDAT.FOR  MODELP.FOR  PARAMS.FOR  SYNTHP.FOR  WINCOM.FOR
+	${F90}  ${OPT} s54h.f -o s54h
 
 rotin3: rotin3.f
 	${F90}  ${OPT} rotin3.f -o rotin3
@@ -34,10 +34,10 @@ rotin3: rotin3.f
 list2bin: list2bin.f
 	${F90} ${OPT} list2bin.f -o list2bin
 
-install: ../bin ../bin/s54g ../bin/rotin3 ../bin/list2bin
+install: ../bin ../bin/s54h ../bin/rotin3 ../bin/list2bin
 
-../bin/s54g ../bin/rotin3 ../bin/list2bin: s54g rotin3 list2bin
-	cp s54g   ../bin/
+../bin/s54h ../bin/rotin3 ../bin/list2bin: s54h rotin3 list2bin
+	cp s54h   ../bin/
 	cp rotin3 ../bin/
 	cp list2bin ../bin/
 
@@ -45,6 +45,6 @@ install: ../bin ../bin/s54g ../bin/rotin3 ../bin/list2bin
 	mkdir ../bin
                                                         
 clean: 
-	rm -f s54g rotin3 list2bin ../bin/s54g ../bin/rotin3 ../bin/list2bin
+	rm -f s54h rotin3 list2bin ../bin/s54h ../bin/rotin3 ../bin/list2bin
 
 
