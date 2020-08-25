@@ -2090,7 +2090,7 @@ def create_links(linelist):
   for i in range(len(linelist)):
     file = linelist[i]
     binaryfile = linelist[i][:-2]+'11'
-    if os.path.isfile(binaryfile): file = binaryfile
+    #if os.path.isfile(binaryfile): file = binaryfile
     if i == 0: os.symlink(file,'fort.19')
     else: os.symlink(file,'fort.'+str(20-1+i))
 
