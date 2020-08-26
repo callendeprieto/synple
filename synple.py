@@ -1921,12 +1921,14 @@ def write5(teff,logg,abu, atom='ap18', ofile='fort.5', inlte=0, atommode=None, a
   natom = len(abu)
   f.write(" "+str(natom)+"        ! NATOMS \n")  
 
-  assert (atom == 'hhm' or atom == 'ap18' or atom == 'yo19'), 'atom must be one of: hhm/ap18/yo19!'
+  assert (atom == 'hhm' or atom == 'ap18' or atom == 'yo19' or atom == 'test'), 'atom must be one of: hhm/ap18/yo19/test!'
   ex = np.ones(natom)
   if atom == 'hhm' : 
     zex = [1]  #atomic numbers of elements included explicitly (contributing cont. opacity)
   elif atom == 'yo19':
     zex = [1,11,12,19,20]
+  elif atom == 'test': 
+    zex = [1,26]
   elif atom == 'ap18': 
     zex = [1,2,6,7,8,11,12,13,14,20,26]
 
@@ -1942,6 +1944,7 @@ def write5(teff,logg,abu, atom='ap18', ofile='fort.5', inlte=0, atommode=None, a
   for i in range(3): f.write("* \n")
   
   if atom == 'hhm':  # highly simplified continuum opacities -- just H and H-
+    f.write("* ../data_atom for ions  \n")
     f.write("   1   -1     1      0     0     1    ' H 1' 'data/hm.dat' \n" )
     f.write("   0    0     3      0 \n")
     f.write("   1    0     9      0     0     0    ' H 1' 'data/h1s.dat'  \n")
@@ -1966,6 +1969,18 @@ def write5(teff,logg,abu, atom='ap18', ofile='fort.5', inlte=0, atommode=None, a
     f.write("  20    1     24     0     0     0    'Ca 2' 'data/Ca2kas_F_zat.sy'  \n")
     f.write("  20    2     1      1     0     0    'Ca 3' ' '  \n")
     f.write("   0    0     0     -1     0     0    '    ' ' '  \n")
+    f.write("* \n")
+    f.write("* end \n")
+  elif atom == 'test': # generic set used in Allende Prieto+ (2018) A&A paper
+    f.write("* ../data for ions  \n")
+    f.write("   1   -1     1      0     0     1    ' H 1' 'data/hm.dat'  \n")
+    f.write("   0    0     3      0 \n")
+    f.write("   1    0     9      0     0     0    ' H 1' 'data/h1s.dat'  \n")
+    f.write("   1    1     1      1     0     0    ' H 2' ' '  \n")
+    f.write("  26    0     49     0     0     0    'Fe 1' 'data/tlusty_fe1_topmod.dat'  \n")
+    f.write("  26    1     41     0     0     0    'Fe 2' 'data/tlusty_fe2_topmod.dat'  \n")
+    f.write("  26    2     1      1     0     0    'Fe 3' ' '  \n")
+    f.write("  0     0     0     -1     0     0    '    ' ' '  \n")
     f.write("* \n")
     f.write("* end \n")
   elif atom == 'ap18': # generic set used in Allende Prieto+ (2018) A&A paper
