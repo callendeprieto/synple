@@ -2044,8 +2044,12 @@ def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8'):
     if ('n' in atmos.dtype.names):  # 4th column is number density n
       if ('pop' in atmos.dtype.names):   # explicit (usually NLTE) populations
         numpop = len(atmos['pop'][0]) 
-        sformat = '%f %e %e %e'
-        for entry in atmos['pop'][0]: sformat = sformat + ' %e'
+        sformat = '  %f %e %e %e'
+        i = 0
+        for entry in atmos['pop'][0]: 
+           sformat = sformat + ' %e'
+           if i % 6 == 0: sformat = sformat + '  \n'
+           i = i + 1
         sformat = sformat + ' \n' 
         f.write(" "+str(nd)+" "+str(-(4+numpop))+"\n")
         for i in range(nd):
@@ -2058,8 +2062,12 @@ def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8'):
           f.write( sformat % tuple(sdata) )                 
       elif ('dep' in atmos.dtype.names): # NLTE departure coefficients
         numpop = len(atmos['dep'][0]) 
-        sformat = '%f %e %e %e'
-        for entry in atmos['dep'][0]: sformat = sformat + ' %e'
+        sformat = '  %f %e %e %e'
+        i = 0
+        for entry in atmos['pop'][0]: 
+           sformat = sformat + ' %e'
+           if i % 6 == 0: sformat = sformat + '  \n'
+           i = i + 1
         sformat = sformat + ' \n' 
         f.write(" "+str(nd)+" "+str(-(4+numpop))+"\n")
         for i in range(nd):
