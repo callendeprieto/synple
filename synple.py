@@ -2092,7 +2092,7 @@ def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8'):
           f.write( sformat % tuple(sdata) )                 
       elif ('dep' in atmos.dtype.names): # NLTE departure coefficients
         numpop = len(atmos['dep'][0]) 
-        sformat = '  %f %e %e %e %e'
+        sformat = '  %f %e %e %e'
         i = 5
         for entry in atmos['dep'][0]: 
            sformat = sformat + ' %e'
