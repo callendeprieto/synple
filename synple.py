@@ -2055,7 +2055,7 @@ def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8'):
         for i in range(nd):
           f.write(' %e ' % atmos['dm'][i])
           if i % 6 == 0: f.write('\n')
-        if i % 6 != 0: f.write('\n'): f.write("\n")
+        if i % 6 != 0: f.write('\n')
         for i in range(nd):
           sdata = [atmos['t'][i], atmos['ne'][i], atmos['rho'][i], atmos['n'][i]]
           for j in range(numpop):
@@ -2074,7 +2074,7 @@ def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8'):
         for i in range(nd):
           f.write(' %e ' % atmos['dm'][i])
           if i % 6 == 0: f.write('\n')
-        if i % 6 != 0: f.write('\n'): f.write("\n")
+        if i % 6 != 0: f.write('\n')
         for i in range(nd):
           sdata = [atmos['t'][i], atmos['ne'][i], atmos['rho'][i], atmos['n'][i]]
           for j in range(numpop):
@@ -2085,7 +2085,7 @@ def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8'):
         for i in range(nd):
           f.write(' %e ' % atmos['dm'][i])
           if i % 6 == 0: f.write('\n')
-        if i % 6 != 0: f.write('\n'): f.write("\n")
+        if i % 6 != 0: f.write('\n')
         for i in range(nd):
           f.write( '%f %e %e %e \n' % (atmos['t'][i], atmos['ne'][i], atmos['rho'][i], atmos['n'][i] ) )  
     else:
