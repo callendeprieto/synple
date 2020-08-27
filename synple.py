@@ -336,7 +336,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
 def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],atom='ap18', vrot=0.0, fwhm=0.0, \
-    steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, 
+    steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, lte=None,
     compute=True, nthreads=1):
 
   """Computes a synthetic spectrum, splitting the spectral range in nthreads parallel calculations
@@ -395,6 +395,12 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   synfile: str
       when save is True, this can be used to set the name of the output file
       (default None)
+  lte: bool
+      this flag can be set to True to enforce LTE in NLTE models. MARCS, Kurucz, the 
+      class of Phoenix models used here are always LTE models. Tlusty models
+      can be LTE or NLTE, and this keyword will ignore the populations and compute
+      assuming LTE for a input NLTE Tlusty model.
+      (default None)
   compute: bool
       set to False to skip the actual synspec run, triggering clean=False
       (default True)
@@ -429,7 +435,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
     pararr = [modelfile, wrange1, dw, strength, vmicro, abu, \
       linelist, atom, vrot, fwhm, \
-      steprot, stepfwhm,  clean, save, synfile, 
+      steprot, stepfwhm,  clean, save, synfile, lte, \
       compute, tmpdir+'-'+str(i) ]
     pars.append(pararr)
 
@@ -452,7 +458,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
 def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], atom='ap18', vrot=0.0, fwhm=0.0, \
-    steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, 
+    steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, lte=None, 
     compute=True, nthreads=1):
 
   """Computes a synthetic spectrum, splitting the spectral range in nthreads parallel calculations 
@@ -511,6 +517,12 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   synfile: str
       when save is True, this can be used to set the name of the output file
       (default None)
+  lte: bool
+      this flag can be set to True to enforce LTE in NLTE models. MARCS, Kurucz, the 
+      class of Phoenix models used here are always LTE models. Tlusty models
+      can be LTE or NLTE, and this keyword will ignore the populations and compute
+      assuming LTE for a input NLTE Tlusty model.
+      (default None)
   compute: bool
       set to False to skip the actual synspec run, triggering clean=False
       (default True)
@@ -542,7 +554,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
     x, y, z = syn(modelfile, wrange, dw, strength, vmicro, abu, \
               linelist, atom, vrot, fwhm, \
-              steprot, stepfwhm,  clean, save, synfile, 
+              steprot, stepfwhm,  clean, save, synfile, lte, \
               compute, tmpdir)
 
     return(x,y,z)
@@ -591,7 +603,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
     vmicro=None, vrot=0.0, fwhm=0.0, nfe=0.0, \
     linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], atom='ap18', \
-    steprot=0.0, stepfwhm=0.0,  clean=True, save=None, nthreads=1):
+    steprot=0.0, stepfwhm=0.0,  clean=True, save=None, lte=None, nthreads=1):
 
   """Computes synthetic spectra for a list of files. The values of vmicro, vrot, 
   fwhm, and nfe can be iterables. Whether or not dw is specified the results will be 
@@ -653,6 +665,12 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
       the root of the model atmosphere file, with an extension ".syn" will be used
       if multiple values of vmicro, vrot, fwhm or nfe are used, their values are
       prepended to the file names 
+      (default None)
+  lte: bool
+      this flag can be set to True to enforce LTE in NLTE models. MARCS, Kurucz, the 
+      class of Phoenix models used here are always LTE models. Tlusty models
+      can be LTE or NLTE, and this keyword will ignore the populations and compute
+      assuming LTE for a input NLTE Tlusty model.
       (default None)
   nthreads: int
       choose the number of cores to use in the calculation
@@ -718,7 +736,7 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
 
         x, y, z = mpsyn(entry, wrange, dw=None, strength=strength, \
         vmicro=vmicro1, abu=abu1, linelist=linelist, atom=atom, \
-        clean=clean, save=save, nthreads=nthreads)
+        clean=clean, save=save, lte=lte nthreads=nthreads)
 
         space = np.mean(np.diff(x))
             
@@ -757,7 +775,7 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
 def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
     vmicro=None, vrot=0.0, fwhm=0.0, nfe=0.0, \
     linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],atom='ap18', \
-    steprot=0.0, stepfwhm=0.0,  clean=True, save=None):
+    steprot=0.0, stepfwhm=0.0,  clean=True, save=None, lte=None):
 
   """Sets up a directory tree for computing synthetic spectra for a list of files in 
   parallel. The values of vmicro, vrot, fwhm, and nfe can be iterables. Whether or not 
@@ -819,7 +837,12 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
       if multiple values of vmicro, vrot, fwhm or nfe are used, their values are
       prepended to the file names 
       (default None)
-
+  lte: bool
+      this flag can be set to True to enforce LTE in NLTE models. MARCS, Kurucz, the 
+      class of Phoenix models used here are always LTE models. Tlusty models
+      can be LTE or NLTE, and this keyword will ignore the populations and compute
+      assuming LTE for a input NLTE Tlusty model.
+      (default None)
 
   Returns
   -------
@@ -908,7 +931,7 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
             abu1[6] = abu1[6] * 10.**nfe1
 
           x, y, z = syn(entry, wrange, dw=None, strength=strength, vmicro=vmicro1, \
-          abu=abu1, linelist=linelist, atom=atom, compute=False)
+          abu=abu1, linelist=linelist, atom=atom, lte=lte, compute=False)
 
           s.write(synspec+" < "+"fort.5"+"\n")
 
@@ -1224,7 +1247,7 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
 
 def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
   tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), \
-    ignore_missing_models=False):
+    ignore_missing_models=False, ext='mod'):
 
   """Collects all the MARCS models in modeldir that are part of a regular grid defined
   by triads in various parameters. Each triad has three values (n, llimit, step)
@@ -1362,9 +1385,11 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), t
                     else: 
                       a1 = 's'
 
-                    filename = ("%s%4i_g%+.1f_%s_z%+.2f_a%+.2f_c%+.2f_n%+.2f_o%+.2f_r%+.2f_s%+.2f.mod*" % (a1,teff,logg,code,feh,afe,cfe,nfe,ofe,rfe,sfe) )
+                    sformat = "%s%4i_g%+.1f_%s_z%+.2f_a%+.2f_c%+.2f_n%+.2f_o%+.2f_r%+.2f_s%+.2f."+ext+"*"
+                    filename = (sformat % (a1,teff,logg,code,feh,afe,cfe,nfe,ofe,rfe,sfe) )
 
-                    file = glob.glob(os.path.join(modeldir,filename))
+                    file = glob.glob(os.path.join(modeldir,'**',filename),recursive=True)
+                    
 
                     if ignore_missing_models == False:
                       assert len(file) > 0, 'Cannot find model '+filename+' in modeldir '+modeldir                   
@@ -1374,7 +1399,7 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), t
                       
                     if (len(file) == 1): files.append(file[0])
 
-                    fi.write( "%s  %4i %+.1f %s %+.2f %+.2f %+.2f %+.2f %+.2f %+.2f %+.2f\n" % (files[-1],teff,logg,feh,afe,cfe,nfe,ofe,rfe,sfe) )
+                    fi.write( "%s  %4i %+.1f %+.2f %+.2f %+.2f %+.2f %+.2f %+.2f %+.2f\n" % (files[-1],teff,logg,feh,afe,cfe,nfe,ofe,rfe,sfe) )
 
 
 
@@ -1409,6 +1434,10 @@ def collect_k2odfnew(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0)
   ignore_missing_models: bool
     set to True to avoid stopping when a model is missing,
     in which case a None is entered in the returning list
+  ext: str
+    extension of the model files, usually 'mod' for MARCS but
+    could be '.7' or '.22' for Tlusty NLTE models based on MARCS
+    (default 'mod')
  
   Returns
   -------
@@ -1476,7 +1505,7 @@ def collect_k2odfnew(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0)
 
                     filename = ("t%05ig%.1f%s%02i%s" % (teff,logg,a2,int(abs(feh)*10),a1+code) )
 
-                    file = glob.glob(os.path.join(modeldir,filename))
+                    file = glob.glob(os.path.join(modeldir,'**',filename), recursive = True)
 
 
                     if ignore_missing_models == False:
