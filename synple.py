@@ -2044,7 +2044,7 @@ def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8'):
     if ('n' in atmos.dtype.names):  # 4th column is number density n
       if ('pop' in atmos.dtype.names):   # explicit (usually NLTE) populations
         numpop = len(atmos['pop'][0]) 
-        sformat = '  %f %e %e %e'
+        sformat = '  %f %e %e %e %e'
         i = 0
         for entry in atmos['pop'][0]: 
            sformat = sformat + ' %e'
@@ -2054,7 +2054,8 @@ def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8'):
         f.write(" "+str(nd)+" "+str(-(4+numpop))+"\n")
         for i in range(nd):
           f.write(' %e ' % atmos['dm'][i])
-        f.write("\n")
+          if i % 6 == 0: f.write('\n')
+        if i % 6 != 0: f.write('\n'): f.write("\n")
         for i in range(nd):
           sdata = [atmos['t'][i], atmos['ne'][i], atmos['rho'][i], atmos['n'][i]]
           for j in range(numpop):
@@ -2062,7 +2063,7 @@ def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8'):
           f.write( sformat % tuple(sdata) )                 
       elif ('dep' in atmos.dtype.names): # NLTE departure coefficients
         numpop = len(atmos['dep'][0]) 
-        sformat = '  %f %e %e %e'
+        sformat = '  %f %e %e %e %e'
         i = 0
         for entry in atmos['pop'][0]: 
            sformat = sformat + ' %e'
@@ -2072,7 +2073,8 @@ def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8'):
         f.write(" "+str(nd)+" "+str(-(4+numpop))+"\n")
         for i in range(nd):
           f.write(' %e ' % atmos['dm'][i])
-        f.write("\n")
+          if i % 6 == 0: f.write('\n')
+        if i % 6 != 0: f.write('\n'): f.write("\n")
         for i in range(nd):
           sdata = [atmos['t'][i], atmos['ne'][i], atmos['rho'][i], atmos['n'][i]]
           for j in range(numpop):
@@ -2082,7 +2084,8 @@ def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8'):
         f.write(" "+str(nd)+" "+str(-4)+"\n")
         for i in range(nd):
           f.write(' %e ' % atmos['dm'][i])
-        f.write("\n")
+          if i % 6 == 0: f.write('\n')
+        if i % 6 != 0: f.write('\n'): f.write("\n")
         for i in range(nd):
           f.write( '%f %e %e %e \n' % (atmos['t'][i], atmos['ne'][i], atmos['rho'][i], atmos['n'][i] ) )  
     else:
