@@ -736,7 +736,7 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
 
         x, y, z = mpsyn(entry, wrange, dw=None, strength=strength, \
         vmicro=vmicro1, abu=abu1, linelist=linelist, atom=atom, \
-        clean=clean, save=save, lte=lte nthreads=nthreads)
+        clean=clean, save=save, lte=lte, nthreads=nthreads)
 
         space = np.mean(np.diff(x))
             
