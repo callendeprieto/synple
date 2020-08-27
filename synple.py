@@ -2094,7 +2094,7 @@ def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8'):
         numpop = len(atmos['dep'][0]) 
         sformat = '  %f %e %e %e %e'
         i = 5
-        for entry in atmos['pop'][0]: 
+        for entry in atmos['dep'][0]: 
            sformat = sformat + ' %e'
            if i % 6 == 0: sformat = sformat + '  \n'
            i = i + 1
