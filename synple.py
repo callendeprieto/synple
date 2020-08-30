@@ -241,8 +241,8 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   if atmostype == 'tlusty':
     # data dir
     hdd, dd = os.path.split(datadir)
+    os.symlink(datadir,dd)
     if dd == 'data':
-      os.symlink(datadir,dd)
       for entry in isdf:
         assert (os.path.isfile(os.path.join(dd,entry))), 'Cannot find the data file:'+dd+'/'+entry     
         
