@@ -799,6 +799,13 @@ C     Upgraded format including limits for energies, and quantum numbers
             iexp0=iexp0+1
             iexpl(i)=iexp0
             iltot(iexp0)=i
+            if(il.eq.nlevs(ion)) then
+               if(nki.eq.nka(iatm(i))) then
+                  iexp0=iexp0+1
+                  iexpl(nki)=iexp0
+                  iltot(iexp0)=nki
+               end if
+            end if
          end if
          IQ=I-N0I+1
          X=IQ*IQ
@@ -9617,7 +9624,7 @@ C
 C
       PARAMETER (DP0=3.33564E-11, DP1=1.651E8, 
      *           VW1=0.42, VW2=0.3, TENM4=1.E-4)
-c     *           VW1=0.42, VW2=0.45,TENM4=1.E-4)
+c    *           VW1=0.42, VW2=0.45,TENM4=1.E-4)
       PARAMETER (UN=1.) 
 C
       IF(NLIN.EQ.0) RETURN
