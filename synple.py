@@ -275,9 +275,9 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     synout.close()
     synin.close()
 
-    assert (os.path.isfile('fort.7')), 'Error: I cannot read the file *fort.7* in '+tmpdir+' -- looks like synspec has crashed, please look at syn.log'
+    assert (os.path.isfile('fort.7')), 'Error: I cannot read the file *fort.7* in '+tmpdir+' -- looks like synspec has crashed, please look at '+logfile
 
-    assert (os.path.isfile('fort.17')), 'Error: I cannot read the file *fort.17* in '+tmpdir+' -- looks like synspec has crashed, please look at syn.log'
+    assert (os.path.isfile('fort.17')), 'Error: I cannot read the file *fort.17* in '+tmpdir+' -- looks like synspec has crashed, please look at '+logfile
 
 
     wave, flux = np.loadtxt('fort.7', unpack=True)
@@ -292,7 +292,8 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     if fwhm > 0. or vrot > 0.:
       start = time.time()
       print( vrot, fwhm, space, steprot, stepfwhm)
-      wave, flux = call_rotin (wave, flux, vrot, fwhm, space, steprot, stepfwhm, clean=False, reuseinputfiles=True)
+      wave, flux = call_rotin (wave, flux, vrot, fwhm, space, steprot, stepfwhm, clean=False, \
+        reuseinputfiles=True, logfile=logfile)
       if dw == None: cont = np.interp(wave, wave2, flux2)
       end = time.time()
       print('convol ellapsed time ',end - start, 'seconds')
@@ -1562,7 +1563,8 @@ def getallt(modelfiles):
 
 
 
-def call_rotin(wave=None, flux=None, vrot=0.0, fwhm=0.0, space=1e-2, steprot=0.0, stepfwhm=0.0, clean=True, reuseinputfiles=False):
+def call_rotin(wave=None, flux=None, vrot=0.0, fwhm=0.0, space=1e-2, steprot=0.0, 
+stepfwhm=0.0, clean=True, reuseinputfiles=False, logfile='syn.log'):
 
 
   """Convolves a synthetic spectrum with a rotation and/or Gaussian kernel
@@ -1596,6 +1598,9 @@ def call_rotin(wave=None, flux=None, vrot=0.0, fwhm=0.0, space=1e-2, steprot=0.0
   reuseinputfiles: bool
       set to take the input data from the output synspec file (fort.7) rather than 
       from the input arrays (wave, flux)
+  logfile: str
+      name of the log file
+      (default syn.log)
 
   Returns
   -------
@@ -1625,7 +1630,7 @@ def call_rotin(wave=None, flux=None, vrot=0.0, fwhm=0.0, space=1e-2, steprot=0.0
   f.close()
 
   synin = open('fort.5')
-  synout = open('syn.log','a')
+  synout = open(logfile,'a')
   p = subprocess.Popen([rotin], stdin=synin, stdout = synout, stderr = synout)
   p.wait()
   synout.flush()
