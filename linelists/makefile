@@ -30,8 +30,7 @@ HBANDBINARIES = $(TMP2:.20=.11)
 
 
 
-#all:    $(STANDARD) $(BINARIES)
-all:    $(STANDARD) 
+all:    $(STANDARD) $(BINARIES)
 
 $(STANDARD):  
 	for file in $(STANDARD) ; do \
@@ -44,8 +43,7 @@ $(BINARIES):
 		echo $$file | ../bin/list2bin ; \
 	done
 
-#apogee: $(HBAND) $(HBANDBINARIES)
-apogee: $(HBAND) 
+apogee: $(HBAND) $(HBANDBINARIES)
 
 $(HBAND):
 	for file in ${HBAND} ; do \

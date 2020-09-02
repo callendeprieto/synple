@@ -8781,11 +8781,12 @@ C
       DO I=1,NION
         IF (ILIMITS(I).EQ.1) MAXILIMITS=1
       ENDDO
-      IF (MAXILIMITS.EQ.0.and.inlist.gt.0) INLIST=11
+      IF (MAXILIMITS.EQ.0.and.inlist.gt.0) INLIST=1
 C
 C     If INLIST=0 or 10, the program checks for the number of words
 C     present in the first line of the file to determine if quantum
-C     numbers are included. If  INLINST=11, they will be ignored anyway
+C     numbers are included. If  INLINST=11, it means quantum numbers 
+C     are present
 
       IF (INLIST.EQ.0.or.INLIST.EQ.10) THEN
         CADENA=' '
@@ -8800,8 +8801,8 @@ C     numbers are included. If  INLINST=11, they will be ignored anyway
            WRITE(11,*) 'INILIN: quantum numbers included in linelist'
         ENDIF
       ELSE IF (INLIST.EQ.11) THEN
-        INLIST=1
-        WRITE(11,*)'INILIN: if present, quant. num. limits are ignored'
+C        INLIST=1
+        WRITE(11,*)'INILIN: quant. num. limits are present and used'
       ELSE
         WRITE(11,*)'INILIN: if present, quant. num. limits are ignored'
       ENDIF

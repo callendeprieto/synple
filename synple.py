@@ -1914,12 +1914,11 @@ def write55(wrange,dw=1e-2,imode=0,inlte=0,hydprf=2,strength=1e-4,vmicro=0.0, \
   if (atmostype == 'tlusty' or atmostype == 'marcs'): inmod = 1 
   else: inmod = 0
 
-  inlist = 10
-  #inlist = 11
-  #for file in linelist:
-  #  binaryfile = file[:-2]+'11'
-  #  if not os.path.isfile(binaryfile): inlist = 10
-  #  if os.path.isfile(binaryfile): assert (inlist == 11), 'The line list files must be all either in ascii or binary!'    
+  inlist = 11
+  for file in linelist:
+    binaryfile = file[:-2]+'11'
+    if not os.path.isfile(binaryfile): inlist = 10
+    if os.path.isfile(binaryfile): assert (inlist == 11), 'The line list files must be all either in ascii or binary!'    
 
   f = open('fort.55','w')
   f.write(" "+str(imode)+" "+2*zero+"\n")
@@ -2153,7 +2152,7 @@ def create_links(linelist):
   for i in range(len(linelist)):
     file = linelist[i]
     binaryfile = linelist[i][:-2]+'11'
-    #if os.path.isfile(binaryfile): file = binaryfile
+    if os.path.isfile(binaryfile): file = binaryfile
     if i == 0: os.symlink(file,'fort.19')
     else: os.symlink(file,'fort.'+str(20-1+i))
 
