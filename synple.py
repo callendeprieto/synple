@@ -1754,7 +1754,7 @@ def checksynspec(linelist,modelfile):
   for entry in linelist: 
     if os.path.isfile(entry):
       if not os.path.isabs(entry): 
-        ll = os.path.join (os.getcdw(), entry)
+        ll = os.path.join (os.getcwd(), entry)
         if os.path.isfile(ll): linelist[i] = ll
     else:
       ll = os.path.join(linelistdir,entry)
