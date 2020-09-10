@@ -1752,7 +1752,11 @@ def checksynspec(linelist,modelfile):
 
   i = 0 
   for entry in linelist: 
-    if not os.path.isfile(entry):
+    if os.path.isfile(entry):
+      if not os.path.isabs(entry): 
+        ll = os.path.join (os.getcdw(), entry)
+        if os.path.isfile(ll): linelist[i] = ll
+    else:
       ll = os.path.join(linelistdir,entry)
       if os.path.isfile(ll): linelist[i] = ll
     i = i + 1
