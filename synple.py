@@ -107,8 +107,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       initial and ending wavelengths (angstroms)
   dw: float, optional
       wavelength step for the output fluxes
-      this will be the maximum interval for the radiative 
-      transfer, and will trigger interpolation at the end
+      this will trigger interpolation at the end
       (default is None for automatic frequency selection)
   strength: float, optional
       threshold in the line-to-continuum opacity ratio for 
@@ -186,11 +185,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   if vmicro == None: vmicro = vmicro2
   if abu == None: abu = abu2
-  if dw == None: 
-    #space = 1e-2  
-    space = np.mean(wrange) * np.sqrt(9.12e-15 * np.min(atmos['t']) + vmicro** 2) / clight / 3.
-  else: 
-    space = dw
+  space = np.mean(wrange) * np.sqrt(9.12e-15 * np.min(atmos['t']) + vmicro** 2) / clight / 3.
 
   #check input parameters are valid
   imode = checkinput(wrange, vmicro, linelist)
@@ -352,8 +347,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       initial and ending wavelengths (angstroms)
   dw: float, optional
       wavelength step for the output fluxes
-      this will be the maximum interval for the radiative 
-      transfer, and will trigger interpolation at the end
+      this will trigger interpolation at the end
       (default is None for automatic selection)
   strength: float, optional
       threshold in the line-to-continuum opacity ratio for 
@@ -474,8 +468,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       initial and ending wavelengths (angstroms)
   dw: float, optional
       wavelength step for the output fluxes
-      this will be the maximum interval for the radiative 
-      transfer, and will trigger interpolation at the end
+      this will trigger interpolation at the end
       (default is None for automatic selection)
   strength: float, optional
       threshold in the line-to-continuum opacity ratio for 
@@ -620,8 +613,6 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
       initial and ending wavelengths (angstroms)
   dw: float
       wavelength step for the output fluxes.
-      Unlike in 'syn' this will not be used to set the maximum wavelength step for 
-      synthesizing any of the spectra; the appropriate step will be chosen dynamically.
       Unlike in 'syn', interpolation to a constant step will always be done
       (default is None for automatic selection based on the first model of the list)
   strength: float, optional
@@ -791,8 +782,6 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
   wrange: tuple or list of two floats
       initial and ending wavelengths (angstroms)
   dw: float
-      Unlike in 'syn' this will not be used to set the maximum wavelength step for 
-      synthesizing any of the spectra; the appropriate step will be chosen dynamically.
       Unlike in 'syn', interpolation to a constant step will always be done
       (default is None for automatic selection based on the first model of the list)
   strength: float, optional
@@ -994,8 +983,6 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
   wrange: tuple or list of two floats
       initial and ending wavelengths (angstroms)
   dw: float
-      Unlike in 'syn' this will not be used to set the maximum wavelength step for 
-      synthesizing any of the spectra; the appropriate step will be chosen dynamically.
       Unlike in 'syn', interpolation to a constant step will always be done
       (default is None for automatic selection based on the first model of the list)
   strength: float, optional
