@@ -3084,7 +3084,7 @@ def interp_spl(x0, x, y):
 
     i = size - 1
     Li_1[i-1] = xdiff[-1] / Li[i-1]
-    Li[i] = sqrt(2*xdiff[-1] - Li_1[i-1] * Li_1[i-1])
+    Li[i] = np.sqrt(2*xdiff[-1] - Li_1[i-1] * Li_1[i-1])
     Bi = 0.0 # natural boundary
     z[i] = (Bi - Li_1[i-1]*z[i-1])/Li[i]
 
