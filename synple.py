@@ -3027,31 +3027,6 @@ def read_multiline_fltarray(fhandle,arrlen):
   return (arr)
 
 
-def interp_spl2(xout, x, y):
-
-  """Interpolates in 1D using cubic splines
-
-  Parameters
-  ----------
-     x: numpy array or list
-        input abscissae
-     y: numpy array or list
-        input ordinates 
-     xout: numpy array or list
-        array of abscissae to interpolate to
-
-   Returns
-   -------
-     yout: numpy array or list
-        array of interpolated values
-
-  """
-
-  tck = interpolate.splrep(x, y, s=0)
-  yout = interpolate.splev(xout, tck, der=0)
-
-  return(yout)
-
 def interp_spl(x0, x, y):
     """
     Interpolate a 1-D function using cubic splines.
@@ -3096,14 +3071,14 @@ def interp_spl(x0, x, y):
     z = np.empty(size)
 
     # fill diagonals Li and Li-1 and solve [L][y] = [B]
-    Li[0] = sqrt(2*xdiff[0])
+    Li[0] = np.sqrt(2*xdiff[0])
     Li_1[0] = 0.0
     B0 = 0.0 # natural boundary
     z[0] = B0 / Li[0]
 
     for i in range(1, size-1, 1):
         Li_1[i] = xdiff[i-1] / Li[i-1]
-        Li[i] = sqrt(2*(xdiff[i-1]+xdiff[i]) - Li_1[i-1] * Li_1[i-1])
+        Li[i] = np.sqrt(2*(xdiff[i-1]+xdiff[i]) - Li_1[i-1] * Li_1[i-1])
         Bi = 6*(ydiff[i]/xdiff[i] - ydiff[i-1]/xdiff[i-1])
         z[i] = (Bi - Li_1[i-1]*z[i-1])/Li[i]
 
@@ -3135,6 +3110,33 @@ def interp_spl(x0, x, y):
          (yi0/hi1 - zi0*hi1/6)*(xi1-x0)
     return f0
 
+
+
+
+def interp_spl2(xout, x, y):
+
+  """Interpolates in 1D using cubic splines
+
+  Parameters
+  ----------
+     x: numpy array or list
+        input abscissae
+     y: numpy array or list
+        input ordinates 
+     xout: numpy array or list
+        array of abscissae to interpolate to
+
+   Returns
+   -------
+     yout: numpy array or list
+        array of interpolated values
+
+  """
+
+  tck = interpolate.splrep(x, y, s=0)
+  yout = interpolate.splev(xout, tck, der=0)
+
+  return(yout)
 
 
 def elements(husser=False):
