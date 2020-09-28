@@ -3028,7 +3028,7 @@ def read_multiline_fltarray(fhandle,arrlen):
 
 
 
-def interp_spl(xout, x, y):fro
+def interp_spl(xout, x, y):
 
   """Interpolates in 1D using cubic splines
 
