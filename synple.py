@@ -58,7 +58,6 @@ from itertools import product
 #synpledir = /home/callende/synple
 synpledir = os.path.dirname(os.path.realpath(__file__))
 
-
 #relative paths
 modeldir = synpledir + "/models"
 modelatomdir = synpledir + "/data"
