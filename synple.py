@@ -3027,7 +3027,35 @@ def read_multiline_fltarray(fhandle,arrlen):
   return (arr)
 
 
-def interp_spl(x0, x, y):
+
+def interp_spl(xout, x, y):fro
+
+  """Interpolates in 1D using cubic splines
+
+  Parameters
+  ----------
+     x: numpy array or list
+        input abscissae
+     y: numpy array or list
+        input ordinates 
+     xout: numpy array or list
+        array of abscissae to interpolate to
+
+   Returns
+   -------
+     yout: numpy array or list
+        array of interpolated values
+
+  """
+
+  tck = interpolate.splrep(x, y, s=0)
+  yout = interpolate.splev(xout, tck, der=0)
+
+  return(yout)
+
+
+
+def interp_spl2(x0, x, y):
     """
     Interpolate a 1-D function using cubic splines.
       x0 : a float or an 1d-array
@@ -3110,33 +3138,6 @@ def interp_spl(x0, x, y):
          (yi0/hi1 - zi0*hi1/6)*(xi1-x0)
     return f0
 
-
-
-
-def interp_spl2(xout, x, y):
-
-  """Interpolates in 1D using cubic splines
-
-  Parameters
-  ----------
-     x: numpy array or list
-        input abscissae
-     y: numpy array or list
-        input ordinates 
-     xout: numpy array or list
-        array of abscissae to interpolate to
-
-   Returns
-   -------
-     yout: numpy array or list
-        array of interpolated values
-
-  """
-
-  tck = interpolate.splrep(x, y, s=0)
-  yout = interpolate.splev(xout, tck, der=0)
-
-  return(yout)
 
 
 def elements(husser=False):
