@@ -11,7 +11,7 @@ GUNZIP = `which gunzip`
 STANDARD = gfallx3_bpo.19 kmol3_0.01_30.20
 
 #apogee
-HBAND = synspec20200709.lte.19 synspec20200705.nlte.19 apogee.20180901.solar.20 apogee.20180901.giants.20 H2O_apogee_TSl3500-8.5_nobroad.20
+HBAND = synspec.20200921nlte.19 synspec.20200921nltesun.20 synspec.20200921nltegiant.20 synspec.h2o-BC8.5V.20
 
 #
 #Yeisson-synple                     SDSS-SAS
