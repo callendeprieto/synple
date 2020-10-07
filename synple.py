@@ -184,7 +184,8 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   if vmicro == None: vmicro = vmicro2
   if abu == None: abu = abu2
-  space = np.mean(wrange) * np.sqrt(9.12e-15 * np.min(atmos['t']) + vmicro** 2) / clight / 3.
+  #we take a step of 1/3 of the Gaussian (thermal + micro) FWHM at the lowest T and for an atomic mass of 100
+  space = np.mean(wrange) / clight * 2.355 / 3. * np.sqrt(0.1289**2 * np.min(atmos['t']) / 100. + vmicro** 2 / 2.) 
 
   #check input parameters are valid
   imode = checkinput(wrange, vmicro, linelist)
