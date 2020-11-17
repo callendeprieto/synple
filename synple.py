@@ -1374,7 +1374,7 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), t
                       a1 = 's'
 
                     #make [O/Fe] = [alpha/Fe]
-                    if ((tofe[0] == 1) and (abs(tofe[0]) < 1e-7) and (abs(tofe[0]) < 1e-7) ):
+                    if ((tofe[0] == 1) and (abs(tofe[1]) < 1e-7) and (abs(tofe[2]) < 1e-7) ):
                       ofe = afe 
 
                     sformat = "%s%4i_g%+.1f_%s_z%+.2f_a%+.2f_c%+.2f_n%+.2f_o%+.2f_r%+.2f_s%+.2f."+ext+"*"
