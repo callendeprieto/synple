@@ -1399,6 +1399,7 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), t
 
   return(files)
 
+
 def collect_k2odfnew(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
     ignore_missing_models=False):
 
@@ -1513,6 +1514,170 @@ def collect_k2odfnew(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0)
   fi.close()
 
   return(files)
+
+
+def mkgrid(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
+  tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), \
+    ignore_missing_models=False):
+
+  """Collects the synthetic spectra part of a regular grid defined
+  by triads in various parameters. Each triad has three values (n, llimit, step)
+  that define an array x = np.range(n)*step + llimit. Triads in teff (tteff) and logg
+  (tlogg) are mandatory. Triads in [Fe/H] (tfeh), [alpha/Fe] (tafe), [C/Fe] (tcfe), 
+  [N/Fe] (tnfe), [O/Fe] (tofe), [r/Fe] (rfe), and [s/Fe] (sfe) are optional since 
+  arrays with just one 0.0 are included by default.
+
+  Parameters
+  ----------
+
+  tteff: tuple
+    Teff triad (n, llimit, step)
+  tlogg: tuple
+    logg triad (n, llimit, step)
+  tfeh: tuple
+    [Fe/H] triad
+  tafe: tuple
+    [alpha/Fe] triad  
+  tcfe: tuple
+    [C/Fe] triad
+  tnfe: tuple
+    [N/Fe] triad
+  tofe: tuple
+    [O/Fe] triad
+  rfeh: tuple
+    [r/Fe] triad (r-elements abundance ratio)
+  sfeh: tuple
+    [s.Fe] triad (s-elements abundance ratio)
+  ignore_missing_models: bool
+    set to True to avoid stopping when a model is missing,
+    in which case a None is entered in the returning list
+ 
+  Returns
+  -------
+  files: list of str
+    file names with MARCS models that are in modeldir and match
+    the parameters in the requested grid
+
+  """
+
+  #expanding the triads t* into iterables
+  try: 
+    nteff = len(tteff)
+    assert (nteff == 3), 'Error: Teff triad must have three elements (n, llimit, step)'
+    teffs = np.arange(tteff[0])*tteff[2] + tteff[1]
+  except TypeError:
+    print('Error: Teff triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nlogg = len(tlogg)
+    assert (nlogg == 3), 'Error: logg triad must have three elements (n, llimit, step)'
+    loggs = np.arange(tlogg[0])*tlogg[2] + tlogg[1]
+  except TypeError:
+    print('Error: logg triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nfeh = len(tfeh)
+    assert (nfeh == 3), 'Error: feh triad must have three elements (n, llimit, step)'
+    fehs = np.arange(tfeh[0])*tfeh[2] + tfeh[1]
+  except TypeError:
+    print('Error: feh triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nafe = len(tafe)
+    assert (nafe == 3), 'Error: afe triad must have three elements (n, llimit, step)'
+    afes = np.arange(tafe[0])*tafe[2] + tafe[1]
+  except TypeError:
+    print('Error: afe triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    ncfe = len(tcfe)
+    assert (ncfe == 3), 'Error: cfe triad must have three elements (n, llimit, step)'
+    cfes = np.arange(tcfe[0])*tcfe[2] + tcfe[1]
+  except TypeError:
+    print('Error: cfe triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nnfe = len(tnfe)
+    assert (nnfe == 3), 'Error: nfe triad must have three elements (n, llimit, step)'
+    nfes = np.arange(tnfe[0])*tnfe[2] + tnfe[1]
+  except TypeError:
+    print('Error: nfe triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nofe = len(tofe)
+    assert (nofe == 3), 'Error: ofe triad must have three elements (n, llimit, step)'
+    ofes = np.arange(tofe[0])*tofe[2] + tofe[1]
+  except TypeError:
+    print('Error: ofe triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nrfe = len(trfe)
+    assert (nrfe == 3), 'Error: rfe triad must have three elements (n, llimit, step)'
+    rfes = np.arange(trfe[0])*trfe[2] + trfe[1]
+  except TypeError:
+    print('Error: rfe triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nsfe = len(tsfe)
+    assert (nsfe == 3), 'Error: sfe triad must have three elements (n, llimit, step)'
+    sfes = np.arange(tsfe[0])*tsfe[2] + tsfe[1]
+  except TypeError:
+    print('Error: sfe triad must have three elements (n, llimit, step)')
+    return ()
+
+  f.open('grid.dat','a')
+
+  idir = 0
+
+  for teff in teffs:
+    for logg in loggs:
+      for feh in fehs:
+        for afe in afes:
+          for cfe in cfes:
+            for nfe in nfes:
+              for ofe in ofes:
+                for rfe in rfes:
+                  for sfe in sfes: 
+                
+                    print(teff,logg,feh,afe,cfe,nfe,ofe,rfe,sfe)
+
+                    idir = idir + 1
+                    dir = ( "hyd%07d" % (idir) )
+
+                    file = os.path.join(dir,'0000001fort.7')
+ 
+                    if idir == 1:
+                      assert os.path.isfile(file), 'Cannot find model '+file 
+                      wave, flux = np.loadtxt(file, unpack=True)
+                      minwave = np.min(wave)
+                      maxwave = np.max(wave)
+                      dw = np.median(np.diff(wave))
+                      nfreq = np.floor((maxwave - minwave)/dw) + 1
+                      x = minwave + nfreq*dw
+
+                    else:
+                      if ignore_missing_models == False:
+                        assert os.path.isfile(file), 'Cannot find model '+file                  
+                      else:
+                        if os.path.isfile(file):
+                          wave, flux = np.loadtxt(file, unpack=True)
+                        else:
+                          wave, flux = ([np.min(x),np.max(x)], [0.0, 0.0])
+                    
+                    y = interp_spl(x, wave, flux)
+                    np.savetxt(f,y)
+
+  f.close()
+
+  return(None)
 
 
 
