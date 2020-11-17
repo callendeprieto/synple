@@ -921,7 +921,7 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
             abu1[6] = abu1[6] * 10.**nfe1
 
           x, y, z = syn(entry, wrange, dw=None, strength=strength, vmicro=vmicro1, \
-          abu=abu1, linelist=linelist, atom=atom, lte=lte, compute=False)
+          abu=abu1, linelist=linelist, atom=atom, lte=lte, compute=False, tmpdir=".")
 
           s.write(synspec+" < "+"fort.5"+"\n")
 
