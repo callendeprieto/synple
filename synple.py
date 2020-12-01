@@ -763,6 +763,178 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
   return(wave, flux, cont)
 
 
+def delta(modelfile, wrange, elements, enhance=0.2, dw=None, strength=1e-4, vmicro=None, abu=None, \
+    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], atom='ap18', vrot=0.0, fwhm=0.0, \
+    steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, lte=None, 
+    compute=False, tmpdir=None):
+
+  """Computes a synthetic spectrum and then loops over the chemical elements in the 'element'
+  array, increasing their abundances for one at a time, computing a spectrum for each.
+  The computed spectrum can be written to a file (save == True). 
+
+
+  Parameters
+  ----------
+  modelfile : str
+      file with a model atmosphere
+  wrange: tuple or list of two floats
+      initial and ending wavelengths (angstroms)
+  elements: array of str
+      symbols for the elements for which the abundance will be enhanced
+  enhance: float, optional
+      abundance enhancement (dex)
+  dw: float, optional
+      wavelength step for the output fluxes
+      this will trigger interpolation at the end
+      (default is None for automatic frequency selection)
+  strength: float, optional
+      threshold in the line-to-continuum opacity ratio for 
+      selecting lines (default is 1e-4)
+  vmicro: float, optional
+      microturbulence (km/s) 
+      (default is taken from the model atmosphere)
+  abu: array of floats (99 elements), optional
+      chemical abundances relative to hydrogen (N(X)/N(H))
+      (default taken from input model atmosphere)
+  linelist: array of str
+      filenames of the line lists, the first one corresponds to 
+      the atomic lines and all the following ones (optional) to
+      molecular lines
+      (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
+  atom: str
+      'ap18' -- generic opacities used in Allende Prieto+ 2018
+      'yo19' -- restricted set for NLTE calculations for APOGEE 2019 (Osorio+ 2019)
+      'hhm' -- continuum opacity is simplified to H and H-
+      (default 'ap18')
+  vrot: float
+      projected rotational velocity (km/s)
+      (default 0.)
+  steprot: float
+      wavelength step for convolution with rotational kernel (angstroms)
+      set to 0. for automatic adjustment (default 0.)
+  fwhm: float
+      Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
+      (default 0.)
+  stepfwhm: float
+      wavelength step for Gaussian convolution (angstroms)
+      set to 0. for automatic adjustment (default 0.)
+  clean: bool
+      True by the default, set to False to avoid the removal of the synspec
+      temporary files/links (default True)
+  save: bool
+      set to True to save the computed spectrum to a file (default False)
+      the root of the model atmosphere file, with an extension ".syn" will be used
+      but see the parameter synfile to change that
+  synfile: str
+      when save is True, this can be used to set the name of the output file
+      (default None)
+  lte: bool
+      this flag can be set to True to enforce LTE in NLTE models. MARCS, Kurucz, the 
+      class of Phoenix models used here are always LTE models. Tlusty models
+      can be LTE or NLTE, and this keyword will ignore the populations and compute
+      assuming LTE for a input NLTE Tlusty model.
+      (default None)
+  compute: bool
+      set to False to skip the actual synspec run, triggering clean=False
+      (default True)
+  tmpdir: string
+      a temporary directory with this name will be created to store
+      the temporary synspec input/output files, and the synple log file (usually named
+      syn.log) will be named as tmpdir_syn.log. When tmp is None a random string is used
+      for this folder
+      (default None)
+
+  Returns
+  -------
+  wave: numpy array of floats
+      wavelengths (angstroms)
+  flux: numpy array of floats
+      flux (H_lambda in ergs/s/cm2/A)
+  cont: numpy array of floats
+      continuum flux (same units as flux)
+
+  """
+
+  #synspec does not currently run in parallel
+  nthreads = 1
+
+  atmostype, teff, logg, vmicro2, abu2, nd, atmos = read_model(modelfile)
+
+  if vmicro == None: vmicro = vmicro2
+  if abu == None: abu = abu2
+
+  idir = 0
+  for element in elements:
+
+      idir = idir + 1
+      dir = ( "hyd%07d" % (idir) )
+      try:
+        os.mkdir(dir)
+      except OSError:
+        print( "cannot create dir hyd%07d" % (idir) )
+      try:
+        os.chdir(dir)
+      except OSError:
+        print( "cannot change dir to hyd%07d" % (idir) )
+
+      if modelfile == 'missing':
+        pass
+      else:
+        #setup the slurm script
+        sfile = dir+".job"
+        now=time.strftime("%c")
+        s = open(sfile ,"w")
+        s.write("#!/bin/bash \n")
+        s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
+        s.write("#This script was written by synple on "+now+" \n")          
+        s.write("#SBATCH  -J "+dir+" \n")
+        s.write("#SBATCH  -o "+dir+"_%j.out"+" \n")          
+        s.write("#SBATCH  -e "+dir+"_%j.err"+" \n")
+        s.write("#SBATCH  -n "+str(nthreads)+" \n")
+        s.write("#SBATCH  -t 04:00:00"+" \n") #hh:mm:ss
+        s.write("#SBATCH  -D "+os.path.abspath(os.curdir)+" \n")
+        s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n\n\n")
+
+
+      x, y, z = syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=vmicro, abu=abu, \
+          linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], atom=atom, vrot=vrot, fwhm=fwhm, \
+          steprot=steprot, stepfwhm=stepfwhm,  clean=False, lte=lte, \
+          compute=False, tmpdir='.')
+
+      s.write(synspec+" < "+"fort.5"+"\n")
+
+      si = open("fort.55",'r')
+      for i in range(6): line = si.readline()
+      entries = line.split()
+      space = float(entries[5])
+      si.close()
+            
+      iconv = 1
+      inconv = ("%07dfort.5" % (iconv) )
+      outconv = ("'%07dfort.7'" % (iconv) )
+      if fwhm> 0. or vrot > 0.:
+        f = open(inconv,'w')
+        f.write( ' %s %s %s \n' % ("'fort.7'", "'fort.17'", outconv) )
+        f.write( ' %f %f %f \n' % (vrot, space, steprot) )
+        f.write( ' %f %f \n' % (fwhm, stepfwhm) )
+        print('stepfwhm=',stepfwhm)
+        f.write( ' %f %f %i \n' % (wrange[0], wrange[1], 0) )
+        f.close()
+        s.write(rotin+" < "+inconv+"\n")
+      else:
+        s.write("cp "+" fort.7 "+outconv[1:-1]+"\n")
+
+      s.close()
+      os.chmod(sfile ,0o755)
+
+  try:
+    os.chdir('..')
+  except OSError:
+      print( "cannot exit dir hyd%07d" % (idir) )
+
+
+  return(None,None,None)
+
 
 def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
     vmicro=None, vrot=0.0, fwhm=0.0, nfe=0.0, \
@@ -921,7 +1093,7 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
             abu1[6] = abu1[6] * 10.**nfe1
 
           x, y, z = syn(entry, wrange, dw=None, strength=strength, vmicro=vmicro1, \
-          abu=abu1, linelist=linelist, atom=atom, lte=lte, compute=False, tmpdir=".")
+          abu=abu1, linelist=linelist, atom=atom, lte=lte, clean=False, compute=False, tmpdir=".")
 
           s.write(synspec+" < "+"fort.5"+"\n")
 
