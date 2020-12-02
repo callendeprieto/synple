@@ -276,10 +276,13 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
 
     wave, flux = np.loadtxt('fort.7', unpack=True)
-    if np.isclose(wave[-1],wave[-2]):
-      wave = wave[0:-2]
-      flux = flux[0:-2]
+    if diff(wave) <= 0.0:
+      wave, win = np.unique(wave,return_index=True)
+      flux = flux[win] 
     wave2, flux2 = np.loadtxt('fort.17', unpack=True)
+    if diff(wave2) <= 0.0:
+      wave2,win = np.unique(wave2,return_index=True)
+      flux2 = flux2[win]
     if dw == None and fwhm <= 0. and vrot <= 0.: cont = np.interp(wave, wave2, flux2)
     end = time.time()
     print('syn ellapsed time ',end - start, 'seconds')
