@@ -2037,7 +2037,9 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
     if np.max(dvmicro) - np.min(dvmicro) > 1.e-7:
       vmicro = np.log10(vmicro)
       dvmicro=np.diff(vmicro)
-      assert np.max(dvmicro) - np.min(dvmicro) > 1.e-7, 'Vmicro values are neither linearly spaced or linearly spaced in log!'
+      print(vmicro)
+      print(dvmicro)
+      assert np.max(dvmicro) - np.min(dvmicro) < 1.e-7, 'Vmicro values are neither linearly spaced or linearly spaced in log!'
       labels[-1]='log10vmicro'
       llimits[-1]=vmicro[0]
       steps[-1]=vmicro[1]-vmicro[0]
@@ -2048,7 +2050,7 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
     llimits.append(nfe[0])
     steps.append(nfe[1]-nfe[0])
     dnfe=np.diff(nfe)
-    assert np.max(dnfe) - np.min(dnfe) > 1.e-7, '[N/Fe] values are not linearly spaced!'
+    assert np.max(dnfe) - np.min(dnfe) < 1.e-7, '[N/Fe] values are not linearly spaced!'
   if vrot is not None and len(vrot) > 1:
     ndim = ndim + 1
     n_p.append(len(vrot))
@@ -2059,7 +2061,7 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
     if np.max(dvrot) - np.min(dvrot) > 1.e-7:
       vrot = np.log10(vrot)
       dvrot=np.diff(vrot)
-      assert np.max(dvrot) - np.min(dvrot) > 1.e-7, 'Vrot values are neither linearly spaced or linearly spaced in log!'
+      assert np.max(dvrot) - np.min(dvrot) < 1.e-7, 'Vrot values are neither linearly spaced or linearly spaced in log!'
       labels[-1]='log10vrot'
       llimits[-1]=vrot[0]
       steps[-1]=vrot[1]-vrot[0]
@@ -2073,7 +2075,7 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
     if np.max(dfwhm) - np.min(dfwhm) > 1.e-7:
       fwhm = np.log10(fwhm)
       dfwhm=np.diff(fwhm)
-      assert np.max(dfwhm) - np.min(dfwhm) > 1.e-7, 'FWHM values are neither linearly spaced or linearly spaced in log!'
+      assert np.max(dfwhm) - np.min(dfwhm) < 1.e-7, 'FWHM values are neither linearly spaced or linearly spaced in log!'
       labels[-1]='log10FWHM'
       llimits[-1]=fwhm[0]
       steps[-1]=fwhm[1]-fwhm[0]
