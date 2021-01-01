@@ -1033,7 +1033,7 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
     vmicros = [ vmicro ] 
   try: 
     nvrot = len(vrot)
-    vrots = vrots
+    vrots = vrot
   except TypeError:
     nvrot = 1
     vrots = [ vrot ]   
@@ -1059,7 +1059,7 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
 
         idir = idir + 1
         dir = ( "hyd%07d" % (idir) )
-        dirfile.write(str(i)+' folder='+dir+' model='+entry+' vmicro='+str(vmicro1)+' [N/Fe]='+str(nfe1)+' /')
+        dirfile.write(str(idir)+' folder='+dir+' model='+entry+' vmicro='+str(vmicro1)+' [N/Fe]='+str(nfe1)+' \n')
         try:
           os.mkdir(dir)
         except OSError:
@@ -1114,7 +1114,7 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
 
               print('iconv=',iconv)
 
-              dirfile.write(str(iconv+1)+' vrot='+str(vrot1)+' fwhm='+fwhm1+'/')
+              dirfile.write(' -- '+str(iconv+1)+' vrot='+str(vrot1)+' fwhm='+str(fwhm1)+'\n')
               iconv = iconv + 1
               inconv = ("%07dfort.5" % (iconv) )
               outconv = ("'%07dfort.7'" % (iconv) )
@@ -1698,7 +1698,7 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
            tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0),  
            tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0), 
            trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), 
-           vmicro=None, vrot=None, fwhm=None, nfe=None, wrange=None, dw=None,
+           vmicro=None, nfe=None, vrot=None, fwhm=None, wrange=None, dw=None,
            logw=0, ignore_missing_models=False):
 
 
@@ -1733,15 +1733,15 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
   vmicro: float, optional, can be an iterable
       microturbulence (km/s) 
       (default is taken from the model atmosphere)
+  nfe: float, can be an iterable
+      [N/Fe] nitrogen abundance change from the one specified in the array     
+      'abu' (dex)
+      (default 0.)
   vrot: float, can be an iterable
       projected rotational velocity (km/s)
       (default 0.)
   fwhm: float, can be an iterable
       Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
-      (default 0.)
-  nfe: float, can be an iterable
-      [N/Fe] nitrogen abundance change from the one specified in the array     
-      'abu' (dex)
       (default 0.)
   wrange: tuple or list of two floats, optional
       initial and ending wavelengths (angstroms)
@@ -1836,10 +1836,35 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
     print('Error: sfe triad must have three elements (n, llimit, step)')
     return ()
 
+  try: 
+    nvmicro = len(vmicro)
+    vmicros = vmicro
+  except TypeError:
+    nvmicro = 1
+    vmicros = [ vmicro ] 
+  try: 
+    nnfe = len(nfe)
+    nnfes = nfe
+  except TypeError:
+    nnfe = 1
+    nfes = [ nfe ] 
+  try: 
+    nvrot = len(vrot)
+    vrots = vrot
+  except TypeError:
+    nvrot = 1
+    vrots = [ vrot ]   
+  try: 
+    nfwhm = len(fwhm)
+    fwhms = fwhm
+  except TypeError:
+    nfwhm = 1
+    fwhms = [ fwhm ]   
+
 
   hdr = mkhdr(tteff=tteff, tlogg=tlogg, tfeh=tfeh, tafe=tafe, 
               tcfe=tcfe, tnfe=tnfe, tofe=tofe, trfe=trfe, tsfe=tsfe,
-              vmicro=vmicro, vrot=vrot, fwhm=fwhm, nfe=nfe)
+              vmicro=vmicro, nfe=nfe, vrot=vrot, fwhm=fwhm)
 
   if os.path.isfile(synthfile): 
     print('Warning -- the output file ',synthfile,' exists and will be overwritten')
@@ -1859,68 +1884,80 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
               for ofe in ofes:
                 for rfe in rfes:
                   for sfe in sfes: 
+                    for vmicro1 in vmicros:
+                      for nfe1 in nfes:
                 
-                    print(teff,logg,feh,afe,cfe,nfe,ofe,rfe,sfe)
+                        print(teff,logg,feh,afe,cfe,nfe,ofe,rfe,sfe,vmicro1,nfe1)
 
-                    idir = idir + 1
-                    dir = ( "hyd%07d" % (idir) )
+                        idir = idir + 1
+                        dir = ( "hyd%07d" % (idir) )
 
-                    file = os.path.join(dir,'0000001fort.7')
+                        iconv = 0
+                        for vrot1 in vrots:
+                          for fwhm1 in fwhms:
+
+                            iconv = iconv + 1
+                            outconv = ("%07dfort.7" % (iconv) )
+                            file = os.path.join(dir,outconv)
  
-                    if idir == 1:
-                      assert os.path.isfile(file), 'Cannot find model '+file 
-                      wave, flux = np.loadtxt(file, unpack=True)
-                      if wrange is None: 
-                        minwave = np.min(wave)
-                        maxwave = np.max(wave)
-                      else:
-                        minwave = wrange[0]
-                        maxwave = wrange[1]
+                            if idir == 1 and iconv == 1:
+                              assert os.path.isfile(file), 'Cannot find model '+file 
+                              wave, flux = np.loadtxt(file, unpack=True)
+                              if wrange is None: 
+                                minwave = np.min(wave)
+                                maxwave = np.max(wave)
+                              else:
+                                minwave = wrange[0]
+                                maxwave = wrange[1]
 
-                      if dw is None:
-                        dw = np.median(np.diff(wave))
+                              if dw is None:
+                                dw = np.median(np.diff(wave))
                         
-                      nfreq = np.floor((maxwave - minwave)/dw + 1)
+                              nfreq = np.floor((maxwave - minwave)/dw + 1)
  
-                      if logw == 0:
-                        x = minwave + np.arange(nfreq)*dw
-                      elif logw == 1:
-                        x = np.log10(minwave) + np.arange(nfreq)*dw/(np.max(wave)+np.min(wave))*2./np.log(10.)
-                        x = 10.**x
-                      elif logw == 2:
-                        x = np.log(minwave) +np.arange(nfreq)*dw/(np.max(wave)+np.min(wave))*2.
-                        x = np.exp(x)
-                      else:
-                        print('Error: logw can only be 0, 1 or 2')
-                        sys.exit()
+                              if logw == 0:
+                                x = minwave + np.arange(nfreq)*dw
+                              elif logw == 1:
+                                minwave = np.log10(minwave)
+                                dw = dw/(np.max(wave)+np.min(wave))*2./np.log(10.)
+                                x = minwave + np.arange(nfreq)*dw
+                                x = 10.**x
+                              elif logw == 2:
+                                minwave = np.log(minwave)
+                                dw = dw/(np.max(wave)+np.min(wave))*2.
+                                x = minwave + np.arange(nfreq)*dw
+                                x = np.exp(x)
+                              else:
+                                print('Error: logw can only be 0, 1 or 2')
+                                sys.exit()
 
-                      hdr['SYNTHFILE_INTERNAL'] = "'"+synthfile+"'"
-                      hdr['ID'] = "'"+synthfile[2:]+"'"
-                      hdr['NPIX'] = str(int(nfreq))
-                      hdr['WAVE'] = str(minwave) + ' ' + str(dw)
-                      hdr['LOGW'] = '0'
-                      if fwhm is not None:
-                        hrd['RESOLUTION'] = str(np.min(fwhm)/np.max(x))
-                      f.write(' &SYNTH\n')
-                      for entry in hdr: f.write(' '+entry + '=' + hdr[entry] + '\n')
-                      f.write(' /\n')
+                              hdr['SYNTHFILE_INTERNAL'] = "'"+synthfile+"'"
+                              hdr['ID'] = "'"+synthfile[2:]+"'"
+                              hdr['NPIX'] = str(int(nfreq))
+                              hdr['WAVE'] = str(minwave) + ' ' + str(dw)
+                              hdr['LOGW'] = str(int(logw))
+                              if fwhm is not None:
+                                hrd['RESOLUTION'] = str(np.min(fwhm)/np.max(x))
+                              f.write(' &SYNTH\n')
+                              for entry in hdr: f.write(' '+entry + ' = ' + hdr[entry] + '\n')
+                              f.write(' /\n')
 
-                    else:
-                      if ignore_missing_models == False:
-                        assert os.path.isfile(file), 'Cannot find model '+file                  
-                      else:
-                        if os.path.isfile(file):
-                          wave, flux = np.loadtxt(file, unpack=True)
-                        else:
-                          wave, flux = ([np.min(x),np.max(x)], [0.0, 0.0])
+                            else:
+                              if ignore_missing_models == False:
+                                assert os.path.isfile(file), 'Cannot find model '+file                  
+                              else:
+                                if os.path.isfile(file):
+                                  wave, flux = np.loadtxt(file, unpack=True)
+                                else:
+                                  wave, flux = ([np.min(x),np.max(x)], [0.0, 0.0])
                     
-                    print('idir,dw=',idir,dw)
-                    print(wave.shape,flux.shape)
-                    y = interp_spl(x, wave, flux)
-                    print(x.shape,y.shape)
-                    #plt.plot(wave,flux,'b',x,y,'.')
-                    #plt.show()
-                    np.savetxt(f,[y], fmt='%12.5e')
+                            print('idir,iconv, dw=',idir,iconv,dw)
+                            print(wave.shape,flux.shape)
+                            y = interp_spl(x, wave, flux)
+                            print(x.shape,y.shape)
+                            #plt.plot(wave,flux,'b',x,y,'.')
+                            #plt.show()
+                            np.savetxt(f,[y], fmt='%12.5e')
 
   f.close()
 
@@ -1929,7 +1966,7 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
 def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
               tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0),   \
               trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), \
-              vmicro=None, vrot=None, fwhm=None, nfe=None):
+              vmicro=None, nfe=None, vrot=None, fwhm=None):
 
   ndim = 0
   n_p = []
@@ -2004,6 +2041,14 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
       labels[-1]='log10vmicro'
       llimits[-1]=vmicro[0]
       steps[-1]=vmicro[1]-vmicro[0]
+  if nfe is not None and len(nfe) > 1:
+    ndim = ndim + 1
+    n_p.append(len(nfe))
+    labels.append('[N/Fe]')
+    llimits.append(nfe[0])
+    steps.append(nfe[1]-nfe[0])
+    dnfe=np.diff(nfe)
+    assert np.max(dnfe) - np.min(dnfe) > 1.e-7, '[N/Fe] values are not linearly spaced!'
   if vrot is not None and len(vrot) > 1:
     ndim = ndim + 1
     n_p.append(len(vrot))
@@ -2032,15 +2077,7 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
       labels[-1]='log10FWHM'
       llimits[-1]=fwhm[0]
       steps[-1]=fwhm[1]-fwhm[0]
-  if nfe is not None and len(nfe) > 1:
-    ndim = ndim + 1
-    n_p.append(len(nfe))
-    labels.append('[N/Fe]')
-    llimits.append(nfe[0])
-    steps.append(nfe[1]-nfe[0])
-    dnfe=np.diff(nfe)
-    assert np.max(dnfe) - np.min(dnfe) > 1.e-7, '[N/Fe] values are not linearly spaced!'
-  
+
   pwd=os.path.abspath(os.curdir)
   nowtime=time.ctime(time.time())
   osinfo=os.uname()
@@ -2049,10 +2086,10 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
   hdr = {}
   hdr['DATE'] = "'"+nowtime+"'"
   hdr['N_OF_DIM'] = str(ndim)
-  hdr['N_P'] = ' '.join(map(str,n_p))
+  hdr['N_P'] = '  '.join(map(str,n_p))
   for i in range(ndim): hdr['LABEL('+str(i+1)+")"] = "'"+labels[i]+"'"
-  hdr['LLIMITS'] = ' '.join(map(str,llimits))
-  hdr['STEPS'] = ' '.join(map(str,steps))
+  hdr['LLIMITS'] = '  '.join(map(str,llimits))
+  hdr['STEPS'] = '  '.join(map(str,steps))
   hdr['COMMENTS1'] = "'mixed and computed with synple-synspec'"
   hdr['COMMENTS2'] = "'"+osinfo[0]+' '+osinfo[2]+'.'+osinfo[4]+' running on '+osinfo[1]+"'"
   hdr['COMMENTS3'] = "'pwd is "+pwd+"'"
