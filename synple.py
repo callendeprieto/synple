@@ -1052,12 +1052,14 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
 
 
   idir = 0
+  dirfile = open('dirtree.txt','w')
   for entry in modelfiles:
     for vmicro1 in vmicros:
       for nfe1 in nfes:
 
         idir = idir + 1
         dir = ( "hyd%07d" % (idir) )
+        dirfile.write(str(i)+' folder='+dir+' model='+entry+' vmicro='+str(vmicro1)+' [N/Fe]='+str(nfe1)+' /')
         try:
           os.mkdir(dir)
         except OSError:
@@ -1112,6 +1114,7 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
 
               print('iconv=',iconv)
 
+              dirfile.write(str(iconv+1)+' vrot='+str(vrot1)+' fwhm='+fwhm1+'/')
               iconv = iconv + 1
               inconv = ("%07dfort.5" % (iconv) )
               outconv = ("'%07dfort.7'" % (iconv) )
@@ -1691,20 +1694,23 @@ def collect_k2odfnew(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0)
   return(files)
 
 
-def mkgrid(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
-  tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), \
-    ignore_missing_models=False):
+def mkgrid(synthfile=None, tteff=None, tlogg=None, 
+           tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0),  
+           tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0), 
+           trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), 
+           vmicro=None, vrot=None, fwhm=None, nfe=None, wrange=None, dw=None,
+           logw=0, ignore_missing_models=False):
+
+
 
   """Collects the synthetic spectra part of a regular grid defined
   by triads in various parameters. Each triad has three values (n, llimit, step)
-  that define an array x = np.range(n)*step + llimit. Triads in teff (tteff) and logg
-  (tlogg) are mandatory. Triads in [Fe/H] (tfeh), [alpha/Fe] (tafe), [C/Fe] (tcfe), 
-  [N/Fe] (tnfe), [O/Fe] (tofe), [r/Fe] (rfe), and [s/Fe] (sfe) are optional since 
-  arrays with just one 0.0 are included by default.
+  that define an array x = np.range(n)*step + llimit. Triads in teff (tteff) and logg (tlogg) are mandatory. Triads in [Fe/H] (tfeh), [alpha/Fe] (tafe), [C/Fe] (tcfe), [N/Fe] (tnfe), [O/Fe] (tofe), [r/Fe] (rfe), and [s/Fe] (sfe) are optional since  arrays with just one 0.0 are included by default. The wavelength sampling can be chosen (the spectral range must be limited to the range of the computations), but the default is to take it from the first model.
 
   Parameters
   ----------
-
+  synthfile: str
+    Name of the output FERRE synth file
   tteff: tuple
     Teff triad (n, llimit, step)
   tlogg: tuple
@@ -1723,15 +1729,37 @@ def mkgrid(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
     [r/Fe] triad (r-elements abundance ratio)
   sfeh: tuple
     [s.Fe] triad (s-elements abundance ratio)
+           vmicro=None, vrot=None, fwhm=None, nfe=None,
+  vmicro: float, optional, can be an iterable
+      microturbulence (km/s) 
+      (default is taken from the model atmosphere)
+  vrot: float, can be an iterable
+      projected rotational velocity (km/s)
+      (default 0.)
+  fwhm: float, can be an iterable
+      Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
+      (default 0.)
+  nfe: float, can be an iterable
+      [N/Fe] nitrogen abundance change from the one specified in the array     
+      'abu' (dex)
+      (default 0.)
+  wrange: tuple or list of two floats, optional
+      initial and ending wavelengths (angstroms)
+      (default None -- chosen by the code from the first input spectrum)
+  dw: float, optional
+      wavelength step for the output fluxes
+      (default is None for automatic frequency selection)
+  logw: int
+      parameter that indicates whether the wavelength scale should be 
+      linear (0), log10 (1), or log (2)
+      (default 0)
   ignore_missing_models: bool
     set to True to avoid stopping when a model is missing,
     in which case a None is entered in the returning list
  
   Returns
   -------
-  files: list of str
-    file names with MARCS models that are in modeldir and match
-    the parameters in the requested grid
+  None
 
   """
 
@@ -1808,7 +1836,17 @@ def mkgrid(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
     print('Error: sfe triad must have three elements (n, llimit, step)')
     return ()
 
-  f.open('grid.dat','a')
+
+  hdr = mkhdr(tteff=tteff, tlogg=tlogg, tfeh=tfeh, tafe=tafe, 
+              tcfe=tcfe, tnfe=tnfe, tofe=tofe, trfe=trfe, tsfe=tsfe,
+              vmicro=vmicro, vrot=vrot, fwhm=fwhm, nfe=nfe)
+
+  if os.path.isfile(synthfile): 
+    print('Warning -- the output file ',synthfile,' exists and will be overwritten')
+    f = open(synthfile,'w')
+    f.close()
+
+  f = open(synthfile,'a')
 
   idir = 0
 
@@ -1832,11 +1870,40 @@ def mkgrid(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
                     if idir == 1:
                       assert os.path.isfile(file), 'Cannot find model '+file 
                       wave, flux = np.loadtxt(file, unpack=True)
-                      minwave = np.min(wave)
-                      maxwave = np.max(wave)
-                      dw = np.median(np.diff(wave))
-                      nfreq = np.floor((maxwave - minwave)/dw) + 1
-                      x = minwave + nfreq*dw
+                      if wrange is None: 
+                        minwave = np.min(wave)
+                        maxwave = np.max(wave)
+                      else:
+                        minwave = wrange[0]
+                        maxwave = wrange[1]
+
+                      if dw is None:
+                        dw = np.median(np.diff(wave))
+                        
+                      nfreq = np.floor((maxwave - minwave)/dw + 1)
+ 
+                      if logw == 0:
+                        x = minwave + np.arange(nfreq)*dw
+                      elif logw == 1:
+                        x = np.log10(minwave) + np.arange(nfreq)*dw/(np.max(wave)+np.min(wave))*2./np.log(10.)
+                        x = 10.**x
+                      elif logw == 2:
+                        x = np.log(minwave) +np.arange(nfreq)*dw/(np.max(wave)+np.min(wave))*2.
+                        x = np.exp(x)
+                      else:
+                        print('Error: logw can only be 0, 1 or 2')
+                        sys.exit()
+
+                      hdr['SYNTHFILE_INTERNAL'] = "'"+synthfile+"'"
+                      hdr['ID'] = "'"+synthfile[2:]+"'"
+                      hdr['NPIX'] = str(int(nfreq))
+                      hdr['WAVE'] = str(minwave) + ' ' + str(dw)
+                      hdr['LOGW'] = '0'
+                      if fwhm is not None:
+                        hrd['RESOLUTION'] = str(np.min(fwhm)/np.max(x))
+                      f.write(' &SYNTH\n')
+                      for entry in hdr: f.write(' '+entry + '=' + hdr[entry] + '\n')
+                      f.write(' /\n')
 
                     else:
                       if ignore_missing_models == False:
@@ -1847,14 +1914,150 @@ def mkgrid(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
                         else:
                           wave, flux = ([np.min(x),np.max(x)], [0.0, 0.0])
                     
+                    print('idir,dw=',idir,dw)
+                    print(wave.shape,flux.shape)
                     y = interp_spl(x, wave, flux)
-                    np.savetxt(f,y)
+                    print(x.shape,y.shape)
+                    #plt.plot(wave,flux,'b',x,y,'.')
+                    #plt.show()
+                    np.savetxt(f,[y], fmt='%12.5e')
 
   f.close()
 
   return(None)
 
+def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
+              tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0),   \
+              trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), \
+              vmicro=None, vrot=None, fwhm=None, nfe=None):
 
+  ndim = 0
+  n_p = []
+  labels = []
+  llimits = []
+  steps = []
+  if tteff[0] > 1:
+    ndim = ndim + 1
+    n_p.append(int(tteff[0]))
+    labels.append('Teff')
+    llimits.append(tteff[1])
+    steps.append(tteff[2])
+  if tlogg[0] > 1:
+    ndim = ndim + 1
+    n_p.append(int(tlogg[0]))
+    labels.append('logg')
+    llimits.append(tlogg[1])
+    steps.append(tteff[2])
+  if tfeh[0] > 1:
+    ndim = ndim + 1
+    n_p.append(int(tfeh[0]))
+    labels.append('[Fe/H]')
+    llimits.append(tfeh[1])
+    steps.append(tfeh[2])
+  if tafe[0] > 1:
+    ndim = ndim + 1
+    n_p.append(int(tafe[0]))
+    labels.append('[a/Fe]')
+    llimits.append(tafe[1])
+    steps.append(tafe[2])
+  if tcfe[0] > 1:
+    ndim = ndim + 1
+    n_p.append(int(tcfe[0]))
+    labels.append('[C/Fe]')
+    llimits.append(tcfe[1])
+    steps.append(tcfe[2])
+  if tnfe[0] > 1:
+    ndim = ndim + 1
+    n_p.append(int(tnfe[0]))
+    labels.append('[N/Fe]')
+    llimits.append(tnfe[1])
+    steps.append(tnfe[2])
+  if tofe[0] > 1:
+    ndim = ndim + 1
+    n_p.append(int(tofe[0]))
+    labels.append('[O/Fe]')
+    llimits.append(tofe[1])
+    steps.append(tofe[2])
+  if trfe[0] > 1:
+    ndim = ndim + 1
+    n_p.append(int(trfe[0]))
+    labels.append('[r/Fe]')
+    llimits.append(trfe[1])
+    steps.append(trfe[2])
+  if tsfe[0] > 1:
+    ndim = ndim + 1
+    n_p.append(int(tsfe[0]))
+    labels.append('[s/Fe]')
+    llimits.append(tsfe[1])
+    steps.append(tsfe[2])
+  if vmicro is not None and len(vmicro) > 1:
+    ndim = ndim + 1    
+    n_p.append(len(vmicro))
+    labels.append('vmicro')
+    llimits.append(vmicro[0])
+    steps.append(vmicro[1]-vmicro[0])
+    dvmicro=np.diff(vmicro)
+    if np.max(dvmicro) - np.min(dvmicro) > 1.e-7:
+      vmicro = np.log10(vmicro)
+      dvmicro=np.diff(vmicro)
+      assert np.max(dvmicro) - np.min(dvmicro) > 1.e-7, 'Vmicro values are neither linearly spaced or linearly spaced in log!'
+      labels[-1]='log10vmicro'
+      llimits[-1]=vmicro[0]
+      steps[-1]=vmicro[1]-vmicro[0]
+  if vrot is not None and len(vrot) > 1:
+    ndim = ndim + 1
+    n_p.append(len(vrot))
+    labels.append('vrot')
+    llimits.append(vrot[0])
+    steps.append(vrot[1]-vrot[0])
+    dvrot=np.diff(vrot)
+    if np.max(dvrot) - np.min(dvrot) > 1.e-7:
+      vrot = np.log10(vrot)
+      dvrot=np.diff(vrot)
+      assert np.max(dvrot) - np.min(dvrot) > 1.e-7, 'Vrot values are neither linearly spaced or linearly spaced in log!'
+      labels[-1]='log10vrot'
+      llimits[-1]=vrot[0]
+      steps[-1]=vrot[1]-vrot[0]
+  if fwhm is not None and len(fwhm) > 1:
+    ndim = ndim + 1
+    n_p.append(len(fwhm))
+    labels.append('FWHM')
+    llimits.append(fwhm[0])
+    steps.append(fwhm[1]-fwhm[0])
+    dfwhm=np.diff(fwhm)
+    if np.max(dfwhm) - np.min(dfwhm) > 1.e-7:
+      fwhm = np.log10(fwhm)
+      dfwhm=np.diff(fwhm)
+      assert np.max(dfwhm) - np.min(dfwhm) > 1.e-7, 'FWHM values are neither linearly spaced or linearly spaced in log!'
+      labels[-1]='log10FWHM'
+      llimits[-1]=fwhm[0]
+      steps[-1]=fwhm[1]-fwhm[0]
+  if nfe is not None and len(nfe) > 1:
+    ndim = ndim + 1
+    n_p.append(len(nfe))
+    labels.append('[N/Fe]')
+    llimits.append(nfe[0])
+    steps.append(nfe[1]-nfe[0])
+    dnfe=np.diff(nfe)
+    assert np.max(dnfe) - np.min(dnfe) > 1.e-7, '[N/Fe] values are not linearly spaced!'
+  
+  pwd=os.path.abspath(os.curdir)
+  nowtime=time.ctime(time.time())
+  osinfo=os.uname()
+
+                    
+  hdr = {}
+  hdr['DATE'] = "'"+nowtime+"'"
+  hdr['N_OF_DIM'] = str(ndim)
+  hdr['N_P'] = ' '.join(map(str,n_p))
+  for i in range(ndim): hdr['LABEL('+str(i+1)+")"] = "'"+labels[i]+"'"
+  hdr['LLIMITS'] = ' '.join(map(str,llimits))
+  hdr['STEPS'] = ' '.join(map(str,steps))
+  hdr['COMMENTS1'] = "'mixed and computed with synple-synspec'"
+  hdr['COMMENTS2'] = "'"+osinfo[0]+' '+osinfo[2]+'.'+osinfo[4]+' running on '+osinfo[1]+"'"
+  hdr['COMMENTS3'] = "'pwd is "+pwd+"'"
+
+  return(hdr)
 
 def getallt(modelfiles):
 
@@ -3585,7 +3788,7 @@ def lgconv(xinput, yinput, fwhm, ppr=None):
 
   #resampling to a linear lambda wavelength scale if need be
   xx = np.diff(xinput)
-  if max(xx) - min(xx) > 1.e-7: #input not linearly sampled
+  if np.max(xx) - np.min(xx) > 1.e-7: #input not linearly sampled
     nel = len(xinput)
     minx = np.min(xinput)
     maxx = np.max(xinput)
@@ -3649,7 +3852,7 @@ def vgconv(xinput,yinput,fwhm, ppr=None):
   """
   #resampling to ln(lambda) if need be
   xx = np.diff(np.log(xinput))
-  if max(xx) - min(xx) > 1.e-7:  #input not equidist in loglambda
+  if np.max(xx) - np.min(xx) > 1.e-7:  #input not equidist in loglambda
     nel = len(xinput)
     minx = np.log(xinput[0])
     maxx = np.log(xinput[-1])
@@ -3716,7 +3919,7 @@ def rotconv(xinput,yinput,vsini, ppr=None):
 
   #resampling to ln(lambda) if need be
   xx = np.diff(np.log(xinput))
-  if max(xx) - min(xx) > 1.e-7:  #input not equidist in loglambda
+  if np.max(xx) - np.min(xx) > 1.e-7:  #input not equidist in loglambda
     nel = len(xinput)
     minx = np.min(np.log(xinput))
     maxx = np.max(np.log(xinput))
