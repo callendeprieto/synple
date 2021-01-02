@@ -1668,15 +1668,15 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
                     mcode = 'm'
                     acode = 'm'
                     ccode = 'm'
-                    if feh >= 0.: mcode='p'
                     if afe >= 0.: acode='p'
                     if cfe >= 0.: ccode='p'
+                    if feh >= 0.: mcode='p'
 
-                    sformat = "t%05ig%3.1fm%s%02ic%s%02io%s%02i."+ext+"*"
                     filename = (sformat % (teff,logg,mcode,feh*10.,ccode,cfe*10.,acode,afe*10.) )
 
                     file = glob.glob(os.path.join(modeldir,'**',filename),recursive=True)
                     
+                    sformat = "t%05ig%3.1fm%s%02ic%s%02io%s```%02i."+ext+"*"
 
                     if ignore_missing_models == False:
                       assert len(file) > 0, 'Cannot find model '+filename+' in modeldir '+modeldir                   
@@ -2056,7 +2056,7 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
                               hdr['WAVE'] = str(minwave) + ' ' + str(dw)
                               hdr['LOGW'] = str(int(logw))
                               if fwhm is not None:
-                                hrd['RESOLUTION'] = str(np.min(fwhm)/np.max(x))
+                                hdr['RESOLUTION'] = str(np.min(x)/np.max(fwhm))
                               f.write(' &SYNTH\n')
                               for entry in hdr: f.write(' '+entry + ' = ' + hdr[entry] + '\n')
                               f.write(' /\n')
