@@ -1672,11 +1672,11 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
                     if cfe >= 0.: ccode='p'
                     if feh >= 0.: mcode='p'
 
+                    sformat = "t%05ig%3.1fm%s%02ic%s%02io%s%02i."+ext+"*"
                     filename = (sformat % (teff,logg,mcode,feh*10.,ccode,cfe*10.,acode,afe*10.) )
 
                     file = glob.glob(os.path.join(modeldir,'**',filename),recursive=True)
                     
-                    sformat = "t%05ig%3.1fm%s%02ic%s%02io%s```%02i."+ext+"*"
 
                     if ignore_missing_models == False:
                       assert len(file) > 0, 'Cannot find model '+filename+' in modeldir '+modeldir                   
@@ -2068,11 +2068,14 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
                                 if ignore_missing_models == False:
                                   assert os.path.isfile(file), 'Cannot find model '+file                  
                                 else:
-                                  wave, flux = ([np.min(x),np.max(x)], [0.0, 0.0])
+                                  wave, flux = (np.array([np.min(x),np.max(x)]), np.array([0.0, 0.0]))
                     
                             print('idir,iconv, dw=',idir,iconv,dw)
                             print(wave.shape,flux.shape)
-                            y = interp_spl(x, wave, flux)
+                            if np.max(flux) - np.max(flux) < 1e-7:
+                              y = np.interp(x, wave, flux)
+                            else:
+                              y = interp_spl(x, wave, flux)
                             print(x.shape,y.shape)
                             #plt.plot(wave,flux,'b',x,y,'.')
                             #plt.show()
