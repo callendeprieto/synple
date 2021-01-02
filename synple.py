@@ -1577,6 +1577,125 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), t
 
   return(files)
 
+def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
+  tcfe=(1,0.0,0.0),  \
+    ignore_missing_models=False, ext='mod'):
+
+  """Collects all the (APOGEE ATLAS9) Kurucz models in modeldir that are part of a regular grid defined
+  by triads in various parameters. Each triad has three values (n, llimit, step)
+  that define an array x = np.range(n)*step + llimit. Triads in teff (tteff) and logg
+  (tlogg) are mandatory. Triads in [Fe/H] (tfeh), [alpha/Fe] (tafe), [C/Fe] (tcfe) are optional since 
+  arrays with just one 0.0 are included by default.
+
+  Parameters
+  ----------
+  modeldir: str
+    directory where model atmosphere files are
+  tteff: tuple
+    Teff triad (n, llimit, step)
+  tlogg: tuple
+    logg triad (n, llimit, step)
+  tfeh: tuple
+    [Fe/H] triad
+  tafe: tuple
+    [alpha/Fe] triad  
+  tcfe: tuple
+    [C/Fe] triad
+  ignore_missing_models: bool
+    set to True to avoid stopping when a model is missing,
+    in which case a None is entered in the returning list
+ 
+  Returns
+  -------
+  files: list of str
+    file names with Kurucz models that are in modeldir and match
+    the parameters in the requested grid
+
+  """
+
+  #expanding the triads t* into iterables
+  try: 
+    nteff = len(tteff)
+    assert (nteff == 3), 'Error: Teff triad must have three elements (n, llimit, step)'
+    teffs = np.arange(tteff[0])*tteff[2] + tteff[1]
+  except TypeError:
+    print('Error: Teff triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nlogg = len(tlogg)
+    assert (nlogg == 3), 'Error: logg triad must have three elements (n, llimit, step)'
+    loggs = np.arange(tlogg[0])*tlogg[2] + tlogg[1]
+  except TypeError:
+    print('Error: logg triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nfeh = len(tfeh)
+    assert (nfeh == 3), 'Error: feh triad must have three elements (n, llimit, step)'
+    fehs = np.arange(tfeh[0])*tfeh[2] + tfeh[1]
+  except TypeError:
+    print('Error: feh triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nafe = len(tafe)
+    assert (nafe == 3), 'Error: afe triad must have three elements (n, llimit, step)'
+    afes = np.arange(tafe[0])*tafe[2] + tafe[1]
+  except TypeError:
+    print('Error: afe triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    ncfe = len(tcfe)
+    assert (ncfe == 3), 'Error: cfe triad must have three elements (n, llimit, step)'
+    cfes = np.arange(tcfe[0])*tcfe[2] + tcfe[1]
+  except TypeError:
+    print('Error: cfe triad must have three elements (n, llimit, step)')
+    return ()
+
+  files = []
+
+  fi = open('files.txt','w')
+
+  for teff in teffs:
+    for logg in loggs:
+      for feh in fehs:
+        for afe in afes:
+          for cfe in cfes:
+                
+                    print(teff,logg,feh,afe,cfe)
+                    mcode = 'm'
+                    acode = 'm'
+                    ccode = 'm'
+                    if feh >= 0.: mcode='p'
+                    if afe >= 0.: acode='p'
+                    if cfe >= 0.: ccode='p'
+
+                    sformat = "t%05ig%3.1fm%s%02ic%s%02io%s%02i."+ext+"*"
+                    filename = (sformat % (teff,logg,mcode,feh*10.,ccode,cfe*10.,acode,afe*10.) )
+
+                    file = glob.glob(os.path.join(modeldir,'**',filename),recursive=True)
+                    
+
+                    if ignore_missing_models == False:
+                      assert len(file) > 0, 'Cannot find model '+filename+' in modeldir '+modeldir                   
+                      assert len(file) == 1, 'More than one model matches '+filename+' in modeldir '+modeldir
+                    else:
+                      if (len(file) == 0): files.append('missing')
+                      
+                    if (len(file) == 1): files.append(file[0])
+
+                    fi.write( "%s  %4i %+.1f %+.2f %+.2f %+.2f \n" % (files[-1],teff,logg,feh,afe,cfe) )
+
+
+
+  fi.close()
+
+  return(files)
+
+
+
 
 def collect_k2odfnew(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
     ignore_missing_models=False):
@@ -1943,11 +2062,11 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
                               f.write(' /\n')
 
                             else:
-                              if ignore_missing_models == False:
-                                assert os.path.isfile(file), 'Cannot find model '+file                  
-                              else:
-                                if os.path.isfile(file):
+                              if os.path.isfile(file):
                                   wave, flux = np.loadtxt(file, unpack=True)
+                              else:
+                                if ignore_missing_models == False:
+                                  assert os.path.isfile(file), 'Cannot find model '+file                  
                                 else:
                                   wave, flux = ([np.min(x),np.max(x)], [0.0, 0.0])
                     
