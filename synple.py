@@ -1673,8 +1673,7 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
                     if feh >= 0.: mcode='p'
 
                     sformat = "t%05ig%3.1fm%s%02ic%s%02io%s%02i."+ext+"*"
-		    filename = (sformat % 
-(teff,logg,mcode,abs(feh)*10.,ccode,cfe*10.,acode,afe*10.) )
+                    filename = (sformat % (teff,logg,mcode,abs(feh)*10.,ccode,cfe*10.,acode,afe*10.) )
 
                     file = glob.glob(os.path.join(modeldir,'**',filename),recursive=True)
                     
