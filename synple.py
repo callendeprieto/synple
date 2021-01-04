@@ -1968,11 +1968,11 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
     nvmicro = 1
     vmicros = [ vmicro ] 
   try: 
-    nnfe = len(nfe)
-    nnfes = nfe
+    nnfe1 = len(nfe)
+    nfes1 = nfe
   except TypeError:
-    nnfe = 1
-    nfes = [ nfe ] 
+    nnfe1 = 1
+    nfes1 = [ nfe ] 
   try: 
     nvrot = len(vrot)
     vrots = vrot
@@ -2010,7 +2010,7 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
                 for rfe in rfes:
                   for sfe in sfes: 
                     for vmicro1 in vmicros:
-                      for nfe1 in nfes:
+                      for nfe1 in nfes1:
                 
                         print(teff,logg,feh,afe,cfe,nfe,ofe,rfe,sfe,vmicro1,nfe1)
 
