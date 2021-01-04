@@ -2078,7 +2078,7 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
                     
                             print('idir,iconv, dw=',idir,iconv,dw)
                             print(wave.shape,flux.shape)
-                            if np.max(flux) - np.max(flux) < 1e-7:
+                            if np.max(flux) - np.min(flux) < 1e-7:
                               y = np.interp(x, wave, flux)
                             else:
                               y = interp_spl(x, wave, flux)
