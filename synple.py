@@ -51,6 +51,7 @@ import time
 import copy
 import gzip
 from scipy import interpolate
+from scipy.signal import savgol_filter
 import matplotlib.pyplot as plt
 from itertools import product
 
@@ -4121,6 +4122,24 @@ def rotconv(xinput,yinput,vsini, ppr=None):
     y = y[subset]
 
   return(x,y)
+
+def smooth(x,n):    
+
+  """Smooth using a Svitzky-Golay cubic filter
+
+
+  Parameters
+  ----------
+  x: arr
+    input array to smooth
+  n: int
+    window size
+  """
+
+  x2 = savgol_filter(x, n, 3)
+
+  return(x2)
+
 
 def gsynth(synthfile,fwhm=0.0,outsynthfile=None,ppr=5,wrange=None,freeze=None):
 
