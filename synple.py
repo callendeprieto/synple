@@ -1156,8 +1156,8 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
 
   """Sets up a directory tree for computing opacity tables for TLUSTY. The table collection forms 
   a regular grid defined by triads in various parameters. Each triad has three values (n, llimit, step)
-  that define an array x = np.range(n)*step + llimit. Triads in teff (tteff) and logg
-  (tlogg) are mandatory. Triads in [Fe/H] (tfeh), [alpha/Fe] (tafe), [C/Fe] (tcfe), 
+  that define an array x = np.range(n)*step + llimit. Triads in (log10 of) temperature (tlt) and (log10 of) density
+  (tlrho) are mandatory. Triads in [Fe/H] (tfeh), [alpha/Fe] (tafe), [C/Fe] (tcfe), 
   [N/Fe] (tnfe), [O/Fe] (tofe), [r/Fe] (rfe), and [s/Fe] (sfe) are optional since 
   arrays with just one 0.0 are included by default.
 
@@ -1189,10 +1189,6 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
     log10(rho) triad (n, llimit, step) for opacity grid
     (default values  chosen for grid lrho = np.arange(20)*0.59 -14.0,
      to cover the range in the DR16 APOGEE MARCS grids)
-  tteff: tuple
-    Teff triad (n, llimit, step)
-  tlogg: tuple
-    logg triad (n, llimit, step)
   tfeh: tuple
     [Fe/H] triad
   tafe: tuple
