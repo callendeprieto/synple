@@ -1296,6 +1296,8 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
     print('Error: tlrho triad must have three elements (n, llimit, step)')
     return ()
 
+  linelist = checklinelist(linelist)
+
   
   symbol, mass, sol = elements()
   z_metals = np.arange(97,dtype=int) + 3
@@ -1399,6 +1401,12 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
                     write3(zexclude)
                     
                   create_links(linelist)
+ 
+                  assert (not os.path.isdir('data')), 'A subdirectory *data* exists in this folder, and that prevents the creation of a link to the data directory for synple'
+
+                  #link the data folder (synspec data + default tlusty model atoms)
+                  os.symlink(modelatomdir,'./data')          #data directory  
+
                   
                   s.write('time ' + synspec + " < "+"fort.5"+"\n")
                   s.close()
@@ -2448,16 +2456,7 @@ def checksynspec(linelist,modelfile):
   dirs = [synpledir,modelatomdir,linelistdir,bindir]
   for entry in dirs: assert (os.path.isdir(entry)), 'dir '+entry+' missing'
 
-  i = 0 
-  for entry in linelist: 
-    if os.path.isfile(entry):
-      if not os.path.isabs(entry): 
-        ll = os.path.join (os.getcwd(), entry)
-        if os.path.isfile(ll): linelist[i] = ll
-    else:
-      ll = os.path.join(linelistdir,entry)
-      if os.path.isfile(ll): linelist[i] = ll
-    i = i + 1
+  linelist = checklinelist(linelist)
 
   files = [synspec,rotin]
   for entry in linelist: files.append(entry)
@@ -2473,6 +2472,25 @@ def checksynspec(linelist,modelfile):
 
 
   return(linelist,modelfile)
+
+def checklinelist(linelist):
+
+  """checking whether the line lists in the array linelists are in the current folder
+     or in linelistdir and returning the same array with an absolute path
+  """
+
+  i = 0 
+  for entry in linelist: 
+    if os.path.isfile(entry):
+      if not os.path.isabs(entry): 
+        ll = os.path.join (os.getcwd(), entry)
+        if os.path.isfile(ll): linelist[i] = ll
+    else:
+      ll = os.path.join(linelistdir,entry)
+      if os.path.isfile(ll): linelist[i] = ll
+    i = i + 1
+
+  return(linelist)
 
 
 def checkinput(wrange, vmicro, linelist):

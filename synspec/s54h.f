@@ -21915,6 +21915,7 @@ c
       read(2,*) idens
       read(2,*) ndens,dens1,dens2
       if(ifeos.eq.0) read(2,*) nfgrid,inttab,wlam1,wlam2
+      write(*,*)'nfgrid as read is ',nfgrid
       read(2,*) tabname,ibingr
 c
       irsct=0
