@@ -2599,7 +2599,7 @@ def write3(zexclude):
   return()
 
 
-def write2(lt,lrho,wrange, filename='opt.data', dlw=2e-5, binary=False,strength=1e-4,inttab=1):
+def write2(lt,lrho,wrange, filename='opt.data', dlw=2.1e-5, binary=False,strength=1e-4,inttab=1):
 #write fort.2 file for creating opacity tables for TLUSTY
 
   f = open('fort.2','w')
