@@ -15,6 +15,9 @@ OPT= -fno-automatic
 #F90 =  ifort 
 #OPT = -shared-intel -mcmodel medium 
 
+#F90 = nvfortran
+#OPT = -Bstatic -mcmodel=medium
+
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
     OPT += -mcmodel=medium 
