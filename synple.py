@@ -1,5 +1,6 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-#!/usr/bin/python3
+
 """Python wrapper for synspec 
 
 Calculation of synthetic spectra of stars and convolution with a rotational/Gaussian kernel.
@@ -13,21 +14,21 @@ Example
 -------
 
 To compute the solar spectrum between 6160 and 6164 angstroms, using a model atmosphere in
-the file sun.mod (provided with the distribution), with the output going into the file
+the file ksun.mod (provided with the distribution), with the output going into the file
 sun.syn
 
-   $synple.py sun.mod 6160. 6164. 
+   $synple.py ksun.mod 6160. 6164. 
 
 To force a micro of 1.1 km/s, and convolve the spectrum with a Gaussian kernel with a fwhm 
 of 0.1 angstroms
 
-   $synple.py sun.mod 6160. 6164. 1.1  0.1
+   $synple.py ksun.mod 6160. 6164. 1.1  0.1
 
 To perform the calculations above in python and compare the emergent normalized profiles
 
    >>> from synple import syn
-   >>> x, y, z = syn('sun.mod', (6160.,6164.))
-   >>> x2, y2, z2 = syn('sun.mod', (6160.,6164.), vmicro=1.1, fwhm=0.1)
+   >>> x, y, z = syn('ksun.mod', (6160.,6164.))
+   >>> x2, y2, z2 = syn('ksun.mod', (6160.,6164.), vmicro=1.1, fwhm=0.1)
 
    in plain python
    >>> import matplotlib.pyplot as plt

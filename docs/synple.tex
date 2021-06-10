@@ -115,7 +115,7 @@ In [1]: from synple import syn                                            \\
 \\
 \\
 \noindent {\tt 
-In [2]: wave, flux, cont = syn('sun.mod', (6160,6164) )                     \\    
+In [2]: wave, flux, cont = syn('ksun.mod', (6160,6164) )                     \\    
 teff,logg,vmicro= 5777.0 4.437 2.0 \\
 syn ellapsed time  48.8003294467926 seconds \\
 }
@@ -239,7 +239,7 @@ In [18]: plot(wave, flux/cont, wave2,flux2, wave3, flux3, wave4, flux4).
 These routines for convolution are directly implemented in Python. Synspec has a companion FORTRAN program that handles the convolution with the instrumental or rotational profiles: rotin. One can use this program by including the {\it fwhm} and {\it vrot} parameters when calling {\tt syn} as in the following example
 
 \noindent {\tt
-In [19]: wave2, flux2, cont2 = syn('sun.mod', (6160,6164) , vrot = 5.0, fwhm = 0.2 ) \\
+In [19]: wave2, flux2, cont2 = syn('ksun.mod', (6160,6164) , vrot = 5.0, fwhm = 0.2 ) \\
 In [20]: clf() \\
 In [21]: plot(wave, flux/cont, wave2, flux2/cont2, wave4, flux4)
 }
