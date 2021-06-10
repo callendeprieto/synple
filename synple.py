@@ -1175,7 +1175,7 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
   linelist: array of str
       filenames of the line lists, the first one corresponds to 
       the atomic lines and all the following ones (optional) to
-      molecular lines
+      molecular lines. Give an empty array for a continuum-only (+ H and HeII lines) table
       (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
   atom: str
       'ap18' -- generic opacities used in Allende Prieto+ 2018
@@ -1297,7 +1297,7 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
     print('Error: tlrho triad must have three elements (n, llimit, step)')
     return ()
 
-  linelist = checklinelist(linelist)
+  linelist = checklinelistpath(linelist)
 
   
   symbol, mass, sol = elements()
@@ -1387,8 +1387,11 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
                       for i in range(len(z_rs)): 
                         if rfrac[i] > 0.0: abu[z_rs[i] - 1] = abu[z_rs[i] - 1] * (1.0 - rfrac[i]) * 10.**sfe
 
+                  if (len(linelist) == 0): 
+                      imode = -4 
+                  else: imode = -3
 
-                  write55(wrange,dw=dw,imode=-3,inlte=0,hydprf=0, \
+                  write55(wrange,dw=dw,imode=imode,inlte=0,hydprf=0, \
                   strength=strength, vmicro=vmicro, linelist=linelist)
 
                   write5(9999.,9.9,abu,atom)
@@ -2457,7 +2460,7 @@ def checksynspec(linelist,modelfile):
   dirs = [synpledir,modelatomdir,linelistdir,bindir]
   for entry in dirs: assert (os.path.isdir(entry)), 'dir '+entry+' missing'
 
-  linelist = checklinelist(linelist)
+  linelist = checklinelistpath(linelist)
 
   files = [synspec,rotin]
   for entry in linelist: files.append(entry)
@@ -2474,7 +2477,7 @@ def checksynspec(linelist,modelfile):
 
   return(linelist,modelfile)
 
-def checklinelist(linelist):
+def checklinelistpath(linelist):
 
   """checking whether the line lists in the array linelists are in the current folder
      or in linelistdir and returning the same array with an absolute path
@@ -2517,7 +2520,7 @@ def checkinput(wrange, vmicro, linelist):
   imode: int
       appropriate value for the variable imode, which specifies whether
       one will use many atomic lines (imode=0), just a few (imode=1),
-      or none (H lines are an exception; imode=2)
+      or none (H and HeII lines are an exception; imode=2)
 
   """
 
@@ -2528,7 +2531,9 @@ def checkinput(wrange, vmicro, linelist):
   # but does not set it when only an atomic line list is given
   # imode = 2 for pure continuum
   # imode = 1 for few-lines mode
+  # there are two more values which are possible but not considered in this routine
   # imode = -3 for regular opacity tables (TLUSTY)
+  # imode = -4 for continuum-only (+ H and HeII lines) opacity tables
 
   if len(linelist) == 0: 
     imode = 2  # no atomic or molecular line list -> pure continuum and no molecules
