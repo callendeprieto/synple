@@ -31,9 +31,9 @@ c    *           MFREQ =   120,
      *           MLINH = 78,
      *           MHT   = 7,
      *           MHE  = 20,
-     *           MHWL  = 54)
+     *           MHWL  = 55)
       PARAMETER (MFGRID  =  100000,
-     *           MTTAB   =      20,
+     *           MTTAB   =      21,
      *           MRTAB   =      20,
      *           MSFTAB  = 6000000)
       parameter (mfhtab=1000,
@@ -178,7 +178,7 @@ C
       COMMON/AUXIND/IATH,IELH,IELHM,N0H,N1H,NKH,N0HN,N0M,
      *              IATHE,IELHE1,IELHE2
       COMMON/MOLFLG/TMOLIM,MOLIND(11000),NMOLEC,IFMOL,
-     *              MOLTAB,IRWTAB,IIRWIN
+     *              MOLTAB,IRWTAB,IIRWIN,IPFEXO
       COMMON/QFLAGS/ERANGE,ISPICK,ILPICK,IPPICK
  
 C

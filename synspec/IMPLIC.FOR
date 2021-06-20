@@ -1,1 +1,0 @@
-      IMPLICIT REAL*8 (A-H,O-Z), LOGICAL*1 (L)

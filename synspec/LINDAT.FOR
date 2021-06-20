@@ -5,10 +5,9 @@
      *           MLIN    = 190000,
      *           MPRF    =  MLIN0)
 C
-C      PARAMETER (MLINM0  =50000000,
-      PARAMETER (MLINM0  = 5000000,
-     *           MLINM   = 1500000,
-     *           MMLIST  =      4)
+      PARAMETER (MLINM0  =9000000,
+     *           MLINM   =1000000,
+     *           MMLIST  =      3)
 C
        REAL*4       EXCL0(MLIN0),
      *              EXCU0(MLIN0),

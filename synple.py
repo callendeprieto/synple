@@ -65,8 +65,8 @@ modeldir = synpledir + "/models"
 modelatomdir = synpledir + "/data"
 linelistdir = synpledir + "/linelists"
 bindir = synpledir + "/bin"
-synspec = bindir + "/s54h"
-rotin = bindir + "/rotin3"
+synspec = bindir + "/synspec54"
+rotin = bindir + "/rotin"
 
 #internal synspec data files
 isdf = ['CIA_H2H2.dat', 'CIA.H2H2.Yi', 'CIA_H2H.dat', 'CIA_H2He.dat', 'CIA_HHe.dat', \
@@ -249,7 +249,12 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   write5(teff,logg,abu,atom,inlte=inlte,atommode=atommode,atominfo=atominfo)   #abundance/opacity file  
   write8(teff,logg,nd,atmos,atmostype)                    #model atmosphere
-  write55(wrange,space,imode,inlte,2,strength,vmicro,linelist,atmostype) #synspec control file
+  cutoff0=250.
+  if logg > 3.0:
+    if teff < 4000.: cutoff0=500.
+    if teff < 3500.: cutoff0=1000.
+    if teff < 3000.: cutoff0=1500. 
+  write55(wrange,space,imode,inlte,2,cutoff0,strength,vmicro,linelist,atmostype) #synspec control file
   writetas('tas',nd,linelist,nonstd=nonstd)               #non-std param. file
   create_links(linelist)                                  #auxiliary data
 
@@ -1211,7 +1216,7 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
 
   """
 
-  #pynspec does not currently run in parallel
+  #synspec does not currently run in parallel
   nthreads = 1
 
   #expanding the triads t* into iterables
@@ -1298,6 +1303,11 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
     return ()
 
   linelist = checklinelistpath(linelist)
+
+  cutoff0=250.
+  if 10.**min(lt) < 4000.: cutoff0=500.
+  if 10.**min(lt) < 3500.: cutoff0=1000.
+  if 10.**min(lt) < 3000.: cutoff0=1500.    
 
   
   symbol, mass, sol = elements()
@@ -1392,7 +1402,8 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
                   else: imode = -3
 
                   write55(wrange,dw=dw,imode=imode,inlte=0,hydprf=0, \
-                  strength=strength, vmicro=vmicro, linelist=linelist)
+                  cutoff0=cutoff0, strength=strength, vmicro=vmicro, \
+                  linelist=linelist)
 
                   write5(9999.,9.9,abu,atom)
                   
@@ -2626,7 +2637,8 @@ def write2(lt,lrho,wrange, filename='opt.data', dlw=2.1e-5, binary=False,strengt
   return()
 
 
-def write55(wrange,dw=1e-2,imode=0,inlte=0,hydprf=2,strength=1e-4,vmicro=0.0, \
+def write55(wrange,dw=1e-2,imode=0,inlte=0,hydprf=2,cutoff0=200., \
+  strength=1e-4,vmicro=0.0, \
   linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], atmostype='kurucz'):
 
 
@@ -2652,10 +2664,10 @@ def write55(wrange,dw=1e-2,imode=0,inlte=0,hydprf=2,strength=1e-4,vmicro=0.0, \
   f.write(5*zero+"\n")
   f.write(one+str(abs(inlte))+zero+str(inlist)+zero+"\n")
   f.write(str(hydprf)+2*zero+"\n")
-  if imode == -3:
-    f.write( ' %f %f %f %i %e %f \n ' % (wrange[0],  -wrange[1], 100., 2000, strength, dw) )
+  if imode <= -3:
+    f.write( ' %f %f %f %i %e %f \n ' % (wrange[0],  -wrange[1], cutoff0, 0, strength, dw) )
   else:
-    f.write( ' %f %f %f %i %e %f \n ' % (wrange[0],   wrange[1], 200., 2000, strength, dw) )
+    f.write( ' %f %f %f %i %e %f \n ' % (wrange[0],   wrange[1], cutoff0, 0, strength, dw) )
   ll = len(linelist)
   if ll < 2: f.write(2*zero)
   else: f.write(str(ll-1) + ' ' + ' '.join(map(str,np.arange(ll-1)+20)))

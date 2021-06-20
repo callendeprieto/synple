@@ -26,28 +26,28 @@ endif
 
 all:  compile install 
 
-compile: s54h rotin3 list2bin
+compile: synspec54 rotin list2bin
 
-s54h: s54h.f  LINDAT.FOR  MODELP.FOR  PARAMS.FOR  SYNTHP.FOR  WINCOM.FOR
-	${F90}  ${OPT} s54h.f -o s54h
+synspec54: synspec54.f  LINDAT.FOR  MODELP.FOR  PARAMS.FOR  SYNTHP.FOR  WINCOM.FOR
+	${F90}  ${OPT} synspec54.f -o synspec54
 
-rotin3: rotin3.f
-	${F90}  ${OPT} rotin3.f -o rotin3
+rotin: rotin.f
+	${F90}  ${OPT} rotin.f -o rotin
 
 list2bin: list2bin.f
 	${F90} ${OPT} list2bin.f -o list2bin
 
-install: ../bin ../bin/s54h ../bin/rotin3 ../bin/list2bin
+install: ../bin ../bin/synspec54 ../bin/rotin ../bin/list2bin
 
-../bin/s54h ../bin/rotin3 ../bin/list2bin: s54h rotin3 list2bin
-	cp s54h   ../bin/
-	cp rotin3 ../bin/
+../bin/synspec54 ../bin/rotin ../bin/list2bin: synspec54 rotin list2bin
+	cp synspec54   ../bin/
+	cp rotin ../bin/
 	cp list2bin ../bin/
 
 ../bin:
 	mkdir ../bin
                                                         
 clean: 
-	rm -f s54h rotin3 list2bin ../bin/s54h ../bin/rotin3 ../bin/list2bin
+	rm -f synspec54 rotin list2bin ../bin/synspec54 ../bin/rotin ../bin/list2bin
 
 
