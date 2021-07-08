@@ -3883,9 +3883,10 @@ def elements(reference=None):
      reference: string, optional
         set to 'husser; for the abundances adopted for Phoenix models by Huser et al. (2013),
         set to 'basti' for abundances adopted for the BaSTI stellar models (Hidalgo et al. 2018),
-        otherwise Asplund et al. (2005) are used -- consistent with
+        set to 'ags2005' for Asplund et al. (2005) are used -- consistent with
         the MARCS (Gustafsson et al. 2008) models and and Kurucz (Meszaros et al. 2012)
         Kurucz model atmospheres.
+        (default, reference=None, will trigger 'ags2005')
         
   Returns
   -------
@@ -3954,7 +3955,7 @@ def elements(reference=None):
     0.79,  2.06,  0.67, -9.99, -9.99, -9.99, -9.99, -9.99, -9.99, 0.08, 
    -9.99, -0.52, -9.99, -9.99, -9.99, -9.99, -9.99, -9.99, -9.99]
 
-  else:
+  elif (reference is None or reference == 'ags2005'):
     #Asplund, Grevesse and Sauval (2005), basically the same as 
     #Grevesse N., Asplund M., Sauval A.J. 2007, Space Science Review 130, 205
     sol = [  0.911, 10.93,  1.05,  1.38,  2.70,  8.39,  7.78,  8.66,  4.56,  7.84, 
@@ -3967,6 +3968,10 @@ def elements(reference=None):
     0.06,  0.88, -0.17,  1.11,  0.23,  1.45,  1.38,  1.64,  1.01,  1.13,
     0.90,  2.00,  0.65, -9.99, -9.99, -9.99, -9.99, -9.99, -9.99,  0.06,   
    -9.99, -0.52, -9.99, -9.99, -9.99, -9.99, -9.99, -9.99, -9.99 ]
+
+  else:
+    print('NOT a valid reference for the solar composition (ags2005, husser, basti)'
+    return(symbol, mass, [NaN])
 	      
   sol[0] = 1.0
   for i in range(len(sol)-1): sol[i+1] = 10.**(sol[i+1]-12.0)
