@@ -3875,6 +3875,7 @@ def interp_spl2(x0, x, y):
 
 
 def elements(reference=None):
+
   
   """Reads the solar elemental abundances
   
@@ -3970,8 +3971,10 @@ def elements(reference=None):
    -9.99, -0.52, -9.99, -9.99, -9.99, -9.99, -9.99, -9.99, -9.99 ]
 
   else:
-    print('NOT a valid reference for the solar composition (ags2005, husser, basti)'
-    return(symbol, mass, [NaN])
+    print('NOT a valid reference for the solar composition (ags2005, husser, basti)')
+    nans = np.empty((99,))
+    nans[:] = np.nan
+    return (symbol, mass, nans )
 	      
   sol[0] = 1.0
   for i in range(len(sol)-1): sol[i+1] = 10.**(sol[i+1]-12.0)
