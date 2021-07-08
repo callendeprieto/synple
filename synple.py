@@ -3600,7 +3600,7 @@ def read_phoenix_model(modelfile):
   m_h = float(h['PHXM_H'])
   alpha = float(h['PHXALPHA'])
   
-  symbol, mass,sol = elements(husser=True) 
+  symbol, mass,sol = elements(reference='husser') 
   abu = sol 
   z_metals = np.arange(97,dtype=int) + 3
   z_alphas = np.array([8,10,12,14,16,20,22],dtype=int)
@@ -3874,15 +3874,16 @@ def interp_spl2(x0, x, y):
 
 
 
-def elements(husser=False):
+def elements(reference=None):
   
   """Reads the solar elemental abundances
   
   Parameters
   ----------
-     husser: bool, optional
-        when set the abundances adopted for Phoenix models by Huser et al. (2013)
-        are adopted. Otherwise Asplund et al. (2005) are used -- consistent with
+     reference: string, optional
+        set to 'husser; for the abundances adopted for Phoenix models by Huser et al. (2013),
+        set to 'basti' for abundances adopted for the BaSTI stellar models (Hidalgo et al. 2018),
+        otherwise Asplund et al. (2005) are used -- consistent with
         the MARCS (Gustafsson et al. 2008) models and and Kurucz (Meszaros et al. 2012)
         Kurucz model atmospheres.
         
@@ -3923,23 +3924,7 @@ def elements(husser=False):
   222., 223., 226., 227., 232.0381, 231.03588, 238.0289, 237., 244., 
   243., 247., 247., 251., 252. ]
 
-  if not husser:
-    #Asplund, Grevesse and Sauval (2005), basically the same as 
-    #Grevesse N., Asplund M., Sauval A.J. 2007, Space Science Review 130, 205
-    sol = [  0.911, 10.93,  1.05,  1.38,  2.70,  8.39,  7.78,  8.66,  4.56,  7.84, 
-    6.17,  7.53,  6.37,  7.51,  5.36,  7.14,  5.50,  6.18,  5.08,  6.31, 
-    3.05,  4.90,  4.00,  5.64,  5.39,  7.45,  4.92,  6.23,  4.21,  4.60, 
-    2.88,  3.58,  2.29,  3.33,  2.56,  3.28,  2.60,  2.92,  2.21,  2.59, 
-    1.42,  1.92, -9.99,  1.84,  1.12,  1.69,  0.94,  1.77,  1.60,  2.00, 
-    1.00,  2.19,  1.51,  2.27,  1.07,  2.17,  1.13,  1.58,  0.71,  1.45, 
-   -9.99,  1.01,  0.52,  1.12,  0.28,  1.14,  0.51,  0.93,  0.00,  1.08, 
-    0.06,  0.88, -0.17,  1.11,  0.23,  1.45,  1.38,  1.64,  1.01,  1.13,
-    0.90,  2.00,  0.65, -9.99, -9.99, -9.99, -9.99, -9.99, -9.99,  0.06,   
-   -9.99, -0.52, -9.99, -9.99, -9.99, -9.99, -9.99, -9.99, -9.99 ]
-	      
-    sol[0] = 1.
-
-  else:
+  if  reference == 'husser':
     #a combination of meteoritic/photospheric abundances from Asplund et al. 2009
     #chosen for the Husser et al. (2013) Phoenix model atmospheres
     sol = [  12.00, 10.93,  3.26,  1.38,  2.79,  8.43,  7.83,  8.69,  4.56,  7.93, 
@@ -3953,7 +3938,37 @@ def elements(husser=False):
     0.77,  2.04,  0.65, -9.99, -9.99, -9.99, -9.99, -9.99, -9.99,  0.06,   
    -9.99, -0.54, -9.99, -9.99, -9.99, -9.99, -9.99, -9.99, -9.99 ]
 
-  sol[0] = 1.
+
+  elif reference == 'basti':
+  #recommended solar abundances from Lodders (2011) https://ui.adsabs.harvard.edu/abs/2010ASSP...16..379L/abstract
+  #except for C, N, O, P, S, K, and Fe for which values are from Caffau et al. (2011)
+  #https://ui.adsabs.harvard.edu/abs/2011SoPh..268..255C/abstract
+    sol = [ 12.00, 10.925, 3.28, 1.32, 2.81,  8.50,  7.86,  8.76, 4.44, 8.05, 
+    6.29,  7.54,  6.46,  7.53,  5.46,  7.16,  5.25,  6.50,  5.11, 6.31, 
+    3.07,  4.93,  3.99,  5.65,  5.50,  7.52,  4.90,  6.22,  4.27, 4.65, 
+    3.10,  3.59,  2.32,  3.36,  2.56,  3.28,  2.38,  2.90,  2.20, 2.57, 
+    1.42,  1.94, -9.99,  1.78,  1.10,  1.67,  1.22,  1.73,  0.78, 2.09, 
+    1.03,  2.20,  1.57,  2.27,  1.10,  2.18,  1.19,  1.60,  0.77, 1.47, 
+   -9.99,  0.96,  0.53,  1.09,  0.34,  1.14,  0.49,  0.95,  0.14, 0.94, 
+    0.11,  0.73, -0.14,  0.67,  0.28,  1.37,  1.36,  1.64,  0.82, 1.19, 
+    0.79,  2.06,  0.67, -9.99, -9.99, -9.99, -9.99, -9.99, -9.99, 0.08, 
+   -9.99, -0.52, -9.99, -9.99, -9.99, -9.99, -9.99, -9.99, -9.99]
+
+  else:
+    #Asplund, Grevesse and Sauval (2005), basically the same as 
+    #Grevesse N., Asplund M., Sauval A.J. 2007, Space Science Review 130, 205
+    sol = [  0.911, 10.93,  1.05,  1.38,  2.70,  8.39,  7.78,  8.66,  4.56,  7.84, 
+    6.17,  7.53,  6.37,  7.51,  5.36,  7.14,  5.50,  6.18,  5.08,  6.31, 
+    3.05,  4.90,  4.00,  5.64,  5.39,  7.45,  4.92,  6.23,  4.21,  4.60, 
+    2.88,  3.58,  2.29,  3.33,  2.56,  3.28,  2.60,  2.92,  2.21,  2.59, 
+    1.42,  1.92, -9.99,  1.84,  1.12,  1.69,  0.94,  1.77,  1.60,  2.00, 
+    1.00,  2.19,  1.51,  2.27,  1.07,  2.17,  1.13,  1.58,  0.71,  1.45, 
+   -9.99,  1.01,  0.52,  1.12,  0.28,  1.14,  0.51,  0.93,  0.00,  1.08, 
+    0.06,  0.88, -0.17,  1.11,  0.23,  1.45,  1.38,  1.64,  1.01,  1.13,
+    0.90,  2.00,  0.65, -9.99, -9.99, -9.99, -9.99, -9.99, -9.99,  0.06,   
+   -9.99, -0.52, -9.99, -9.99, -9.99, -9.99, -9.99, -9.99, -9.99 ]
+	      
+  sol[0] = 1.0
   for i in range(len(sol)-1): sol[i+1] = 10.**(sol[i+1]-12.0)
 
   return (symbol,mass,sol)
