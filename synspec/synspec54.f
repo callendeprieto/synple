@@ -1193,9 +1193,9 @@ c
       IF(TEXT(K1:K2).EQ.'=') GO TO 20
       INDV=-INDV
       IF(INDV.EQ.1) THEN
-         DO 40 I=1,MVAR
+         DO I=1,MVAR
             IF(TEXT(K1:K2).EQ.VARNAM(I)(1:K2-K1+1)) GO TO 50
-   40    CONTINUE
+         END DO
          CALL GETWRD(TEXT,K0,K1,K2)
          IF(K1.EQ.0) THEN
             K0=1
@@ -1265,10 +1265,10 @@ C
         a=cadena(1:1)
         if (a.ne.' ') n=1
         do i=2,len(cadena)
-         b=cadena(i:i)
-         if(b.ne.' '.and.a.eq.' ') n=n+1
-         a=b
-        enddo
+           b=cadena(i:i)
+           if(b.ne.' '.and.a.eq.' ') n=n+1
+           a=b
+        end do
         end
 C
 C
@@ -1291,22 +1291,22 @@ C     INCLUDE 'IMPLIC.FOR'
       DATA SEPAR/' ','(',')','=','*','/',','/
 C
       K1=0
-      DO 400 I=K0,LEN(TEXT)
-        IF(K1.EQ.0) THEN
-          DO 100 J=1,MSEPAR
-            IF(TEXT(I:I).EQ.SEPAR(J)) GOTO 200
-  100     CONTINUE
-          K1=I
+      DO I=K0,LEN(TEXT)
+         IF(K1.EQ.0) THEN
+            DO J=1,MSEPAR
+               IF(TEXT(I:I).EQ.SEPAR(J)) GO TO 200
+            END DO
+            K1=I
 C
-C  NOT START OF WORD
+C           NOT START OF WORD
 C
-  200     CONTINUE
-        ELSE
-          DO 300 J=1,MSEPAR
-            IF(TEXT(I:I).EQ.SEPAR(J)) GOTO 500
-  300     CONTINUE
-        ENDIF
-  400 CONTINUE
+  200      CONTINUE
+         ELSE
+            DO J=1,MSEPAR
+               IF(TEXT(I:I).EQ.SEPAR(J)) GO TO 500
+             END DO
+        END IF
+      END DO
 C
 C  NO NEW WORD. RETURN K1=K2=0
 C
@@ -2607,8 +2607,6 @@ c
          do ijc=1,nfreqc
             wlamc(ijc)=exp(all0+(ijc-1)*dlc)
             freqc(ijc)=clc/wlamc(ijc)
-c           frc=freqc(ijc)*1.e-15
-c           plac(ijc)=bnc*frc**3/(exp(xcc0*frc)-un)
          end do
          id=1
          CALL CROSEW(CROSS)
@@ -3767,16 +3765,16 @@ C     Hydrogenic bound-free Gaunt factor for the principal quantum
 C     number I and frequency FR (from Klaus Werner)
 C
       INCLUDE 'PARAMS.FOR'
-      GNTK=1.
-      IF(I.GT.3) GO TO 16
       Y=1./FR      
-      GO TO (1,2,3),I
-    1 GNTK=0.9916+Y*(2.71852D13-Y*2.26846D30)
-      GO TO 16
-    2 GNTK=1.1050-Y*(2.37490D14-Y*4.07677D28)
-      GO TO 16
-    3 GNTK=1.1010-Y*(0.98632D14-Y*1.03540D28)
-   16 RETURN
+      IF(I.EQ.1) THEN
+         GNTK=0.9916+Y*(2.71852D13-Y*2.26846D30)
+       ELSE IF(I.EQ.2) THEN
+         GNTK=1.1050-Y*(2.37490D14-Y*4.07677D28)
+       ELSE IF (I.EQ.3) THEN
+         GNTK=1.1010-Y*(0.98632D14-Y*1.03540D28)
+       ELSE 
+         GNTK=1.
+      END IF
       END
 C
 C
@@ -3859,19 +3857,19 @@ C
       IF(IB.NE.-602) GO TO 25
       J=2
       IF(F.LE.FR2(1)) GO TO 20
-      DO 10 I=2,NC2
+      DO I=2,NC2
          J=I
          IF(F.GT.FR2(I-1).AND.F.LE.FR2(I)) GO TO 20
-   10 CONTINUE
+      END DO
    20 SG=(F-FR2(J-1))/(FR2(J)-FR2(J-1))*(SG2(J)-SG2(J-1))+SG2(J-1)
       SG=SG*1.E-18
    25 IF(IB.NE.-603) GO TO 50
       J=2
       IF(F.LE.FR3(1)) GO TO 40
-      DO 30 I=2,NC3
+      DO I=2,NC3
          J=I
          IF(F.GT.FR3(I-1).AND.F.LE.FR3(I)) GO TO 40
-   30 CONTINUE
+      END DO
    40 SG=(F-FR3(J-1))/(FR3(J)-FR3(J-1))*(SG3(J)-SG3(J-1))+SG3(J-1)
       SG=SG*1.E-18
    50 CONTINUE
@@ -3944,22 +3942,22 @@ C
       INDEX=-IB-100
       NUM=20
       IF(INDEX.GE.13.AND.INDEX.LE.27) NUM=15
-      DO 10 I=1,NUM
+      DO I=1,NUM
          IF(INDEX.LT.13) WLI(I)=WL1(I)
          IF(INDEX.GE.13) WLI(I)=WL2(I)
          SIGS(I)=SIG0(I,INDEX)
-   10 CONTINUE
+      END DO
 C
       WLAM=2.997925E18/FR
       IL=1
       IR=NUM
-      DO 50 I=1,NUM-1
-        IF(WLAM.GE.WLI(I).AND.WLAM.LE.WLI(I+1)) THEN
-          IL=I
-          IR=I+1
-          GO TO 60
-        ENDIF
- 50   CONTINUE
+      DO I=1,NUM-1
+         IF(WLAM.GE.WLI(I).AND.WLAM.LE.WLI(I+1)) THEN
+            IL=I
+            IR=I+1
+            GO TO 60
+         END IF
+      END DO
 C
 C     LINEAR INTERPOLATION:
 C
@@ -4018,20 +4016,20 @@ C
 C
       INDEX=-IB-300
       NUM=30  
-      DO 10 I=1,NUM
+      DO I=1,NUM
          F0(I)=HEV(I)*2.418573E14
          SIGS(I)=SIG0(I,INDEX)
-   10 CONTINUE
+      END DO
 C 
       IL=1
       IR=NUM
-      DO 50 I=1,NUM-1
-        IF(FR.GE.F0(I).AND.FR.LE.F0(I+1)) THEN
-          IL=I
-          IR=I+1
-          GO TO 60
-        ENDIF
- 50   CONTINUE
+      DO I=1,NUM-1
+         IF(FR.GE.F0(I).AND.FR.LE.F0(I+1)) THEN
+            IL=I
+            IR=I+1
+            GO TO 60
+         END IF
+      END DO
 C
 C     LINEAR INTERPOLATION:
 C
@@ -4332,44 +4330,40 @@ C
      . 2.023D+00,-2.070D+00,-6.470D-02,-6.800D-02, 2.095D+00,-2.088D+00,
      .-2.357D-02,-7.250D-02, 2.160D+00,-2.107D+00, 1.065D-02,-7.542D-02/
 C
-      IF(L.GT.2) GO TO 20
+C     Hydrogenic expression for L > 2
+C      [multiplied by relative population of state (s,l,n), ie.
+C       by  stat.weight(s,l)/stat.weight(n)]
 C
-C          SELECT BEGINNING AND END OF COEFFICIENTS
+      IF(L.GT.2) THEN
+         GN=2.D0*N*N
+         HEPHOT=2.815D29/FREQ/FREQ/FREQ/N**5*(2*L+1)*S/GN
+         RETURN
+      END IF
+C
+C     SELECT BEGINNING AND END OF COEFFICIENTS
 C
       SS=(S+1)/2
       LL=L+1
       NSL0=N0(LL,SS)
       I=IST(LL,SS)+N-NSL0
 C
-C          EVALUATE CROSS SECTION
+C     EVALUATE CROSS SECTION
 C
       FL=LOG10(FREQ/3.28805E15)
       X=FL-FL0(I)
       IF(X.GE.-0.001D0) THEN
          IF(X.LT.XFITM(I)) THEN
             P=COEF(4,I)
-            DO 10 K=1,3
+            DO K=1,3
                P=X*P+COEF(4-K,I)
-   10       CONTINUE
+            END DO
             HEPHOT=1.D-18*1.D1**P
           ELSE
-C           OTHERWISE REMOVE INSTRUCTION AND 3 FOLLOWING "C"
-C         ELSE IF(X.LT.XMAX(I)) THEN
             HEPHOT=1.D-18*1.D1**(A(I)+B(I)*X)
-C         ELSE
-C           HEPHOT=1.D-18*1.D1**(COEF(1,I)-2.0D0)
           END IF
        ELSE
           HEPHOT=0.
       END IF
-      RETURN
-C
-C     Hydrogenic expression for L > 2
-C      [multiplied by relative population of state (s,l,n), ie.
-C       by  stat.weight(s,l)/stat.weight(n)]
-C
-   20 GN=2.D0*N*N
-      HEPHOT=2.815D29/FREQ/FREQ/FREQ/N**5*(2*L+1)*S/GN
       RETURN
       END
 C
@@ -5225,7 +5219,7 @@ c
       P=POPUL(N0HN,ID)
       T=TEMP(ID)
       ANE=ELEC(ID)
-      DO 40 I=1,4
+      DO I=1,4
          DFR=ABS(FRLY(I)-FREQ)
          IF(DFR.LE.5.E11) DFR=1.E12
          DFR2=DFR*DFR
@@ -5245,7 +5239,7 @@ c
          EMLY=EMLY+POPUL(N0HN+I,ID)*SGLY*BNLY(I)*(1.-GAMA)
          if(ifsti.ne.0) ably=ably-popul(n0hn+i,id)*sgly/(i+1)/(i+1)
          SCLY=SCLY+P*SGLY*GAMA
-   40 CONTINUE
+      END DO
       RETURN
       END
 C
@@ -5274,11 +5268,12 @@ C
       DATA DL / -150., -120., -90., -60., -40., -20., -10., -8., -4.,
      *          -2., 2., 4., 8., 10., 20., 40., 60., 90., 120., 150./
       DLAM=2.997925E18/FREQ-1215.685
-      DO 10 I=2,20
+      DO I=2,20
          IF(DLAM.LE.DL(I)) GO TO 20
-   10 CONTINUE
+      END DO
       I=20
-   20 J=I-1
+   20 CONTINUE
+      J=I-1
       C=DL(J)-DL(I)
       A=(DLAM-DL(I))/C
       B=(DL(J)-DLAM)/C
@@ -5413,9 +5408,6 @@ C
          FRION=6.7120228E13
       END IF
       IF(FRION.GT.FR) M10W(IJ)=int(SQRT(3.289017E15/ABS(FRION-FR)))
-c     WRITE(6,601) ILOWH,M20+1
-c 601 FORMAT(1H0/ ' *** HYDROGEN LINES CONTRIBUTE'/
-c    * '     THE NEAREST LINE ON THE SHORT-WAVELENGTH SIDE IS',
 c    * I3,'  TO ',I3/)
       RETURN
       END
@@ -5632,10 +5624,10 @@ c
                IF(AL.LT.1.E-4) AL=1.E-4
                IF(ILEMKE.EQ.1) AL=AL/F00
                AL=LOG10(AL)
-               DO 30 IWL=1,NWL-1
+               DO IWL=1,NWL-1
                   IW0=IWL
                   IF(AL.LE.WLHYD(ILINE,IWL+1)) GO TO 40
-   30          CONTINUE
+               END DO
    40          IW1=IW0+1
                PRFF=(PRF0(IW0)*(WLHYD(ILINE,IW1)-AL)+PRF0(IW1)*
      *             (AL-WLHYD(ILINE,IW0)))/
@@ -5657,10 +5649,10 @@ c
                 al=(freq(ij)-fr0l)/f00
                 if(abs(al).lt.1.e-4) al=1.e-4
                 all=log10(abs(al))
-                do 51 iwl=1,nwl-1
+                do iwl=1,nwl-1
                    iw0=iwl
                    if(all.le.alxen(ixn,iwl+1)) go to 52
-   51           continue
+                end do
    52           iw1=iw0+1
                 if(al.gt.0.) then
                    prff=(prfb(ixn,id,iw0)*(alxen(ixn,iw1)-all)+
@@ -5847,11 +5839,11 @@ C
       PP=CPP*ANE*ANP*T1/SQT
       NLH=N1H-N0HN+1
       if(ifwop(n1h).lt.0) nlh=nlh-1
-      DO 5 IL=1,40
+      DO IL=1,40
          X=IL*IL
          IF(IL.LE.NLH) PJ(IL)=POPUL(N0HN+IL-1,ID)
          IF(IL.GT.NLH) PJ(IL)=PP*EXP(CPJ/X*T1)*X*wnhint(il,id)
-    5 CONTINUE
+      end do
       p2=pp*exp(cpj4*t1)*4.*wnhint(2,id)
 C
 C     Frequency- and line-independent parameters for evaluating the
@@ -5937,14 +5929,7 @@ C
          if(m1.gt.i+6) m1=m1-1 
       end if
       IF(M1.LT.I+1) M1=I+1
-c      if(m2.gt.30) then
-c        m2=m20W(IJ)+8
-c         m1=m1-4
-c      end if
       IF(M2.GT.40) M2=40
-c     if(id.eq.1) write(6,666) i,m1,m2
-c 666 format(/' hydrogen lines contribute - ilow=',i2,', iup from ',i3,
-c    *       ' to',i3/)
 C
       A=0.
       E=0.
@@ -6001,10 +5986,10 @@ c
             IF(AL.LT.1.E-4) AL=1.E-4
             IF(ILEMKE.EQ.1) AL=AL/F00
             AL=LOG10(AL)
-            DO 30 IWL=1,NWL-1
+            DO IWL=1,NWL-1
                IW0=IWL
                IF(AL.LE.WLHYD(ILINE,IWL+1)) GO TO 40
-   30       CONTINUE
+            END DO
    40       IW1=IW0+1
             PRFF=(PRF0(IW0)*(WLHYD(ILINE,IW1)-AL)+PRF0(IW1)*
      *          (AL-WLHYD(ILINE,IW0)))/
@@ -6360,8 +6345,6 @@ C
       end if
       IF(M1.LT.I+1) M1=I+1
       IF(M2.GT.60) M2=60
-c     A=0.
-c     E=0.
 C
 C     loop over lines which contribute at given wavelength region
 C
@@ -6391,7 +6374,7 @@ C
                PRF0(IWL)=PRFHE2(ILINE,ID,IWL)
             END DO
             FID=CID*OSCHE2(ILINE)
-            DO 50 IJ=I0,I1
+            DO IJ=I0,I1
                AL=ABS(WLAM(IJ)-WLIN)
                IF(AL.LT.1.E-4) AL=1.E-4
                AL=LOG10(AL)
@@ -6406,7 +6389,7 @@ C
                SG=EXP(PRFF*AL10)*FID
                ABSO(IJ)=ABSO(IJ)+SG*ABTRA
                EMIS(IJ)=EMIS(IJ)+SG*EMTRA
-   50       CONTINUE
+            END DO
           ELSE
             CALL STARK0(I,J,izz,XKIJ,WL0,FIJ,FIJ0)
             FXK=F00*XKIJ
@@ -7662,10 +7645,10 @@ C     Otherwise, one interpolates (or extrapolates for higher than the
 C     highes grid value of electron density) in the Schoening and
 C     Butler tables
 C
-      DO 10 IZZ=1,NE2-1
+      DO IZZ=1,NE2-1
          IPZ=IZZ
          IF(Z0.LE.XNE2(IZZ+1,ILINE)) GO TO 20
-   10 CONTINUE
+      END DO
    20 N0Z=IPZ-NZ/2+1
       IF(N0Z.LT.1) N0Z=1
       IF(N0Z.GT.NE2-NZ+1) N0Z=NE2-NZ+1
@@ -7691,19 +7674,19 @@ C
 C     Both interpolations (in T as well as in electron density) are
 C     by default the quadratic interpolations in logarithms
 C
-         DO 30 IX=1,NT2-1
+         DO IX=1,NT2-1
             IPX=IX
             IF(X0.LE.XT2(IX+1)) GO TO 40
-   30    CONTINUE
+         END DO
    40    N0X=IPX-NX/2+1
          IF(N0X.LT.1) N0X=1
          IF(N0X.GT.NT2-NX+1) N0X=NT2-NX+1
          N1X=N0X+NX-1
-         DO 200 IX=N0X,N1X
+         DO IX=N0X,N1X
             I0=IX-N0X+1
             XX(I0)=XT2(IX)
             WX(I0)=PRF2(IWL,IX,IZZ)
-  200       CONTINUE
+         END DO
          WZ(I0Z)=YINT(XX,WX,X0)
   300 CONTINUE
       W0=YINT(ZZ,WZ,Z0)
@@ -7736,11 +7719,11 @@ C
       ELSE
          X=SQRT(CX+A)
       ENDIF
-      DO 10 I=1,5
+      DO I=1,5
          XN=X*(UN-(X*X-TWH*LOG(X)-A)/(TWO*X*X-TWH))
          IF(ABS(XN-X).LE.DX) GO TO 20
          X=XN
-   10 CONTINUE
+      END DO
    20 DIV=X
       RETURN
       END
@@ -7777,10 +7760,10 @@ C     ILINE - line index
 C
       ILINE=ISPEC-5
 C
-      DO 10 IWL=1,NWLHE2(ILINE)
+      DO IWL=1,NWLHE2(ILINE)
          PRF0(IWL)=PRFHE2(ILINE,ID,IWL)
          WLL(IWL)=WLHE2(ILINE,IWL)
-   10 CONTINUE
+      END DO
 C
       I=ILHE2(ILINE)
       J=IUHE2(ILINE)
@@ -7833,10 +7816,10 @@ C
          AL=ABS(WLAM(IJ)-WLIN)
          IF(AL.LT.1.E-4) AL=1.E-4
          AL=LOG10(AL)
-         DO 20 IWL=1,NWLHE2(ILINE)-1
+         DO IWL=1,NWLHE2(ILINE)-1
             IW0=IWL
             IF(AL.LE.WLL(IWL+1)) GO TO 30
-   20    CONTINUE
+         END DO
    30    IW1=IW0+1
          PRH=(PRF0(IW0)*(WLL(IW1)-AL)+PRF0(IW1)*(AL-WLL(IW0)))/
      *       (WLL(IW1)-WLL(IW0))
@@ -7985,8 +7968,9 @@ C
       ILW=0
       IUN=0
       NQL=0
+
       IF(IPRF.GT.0) NQL=NU(IPRF)
-      DO 10 I=N0I,N1I
+      DO I=N0I,N1I
          NQ=NQUANT(I)
          EX=EION-ENION(I)/HC
          IF(ABS(EXCL-EX).LT.100.) THEN
@@ -8047,8 +8031,7 @@ C
             IF(NQ.EQ.9.AND.IG.EQ.324) IUN=I
             IF(NQ.EQ.10.AND.IG.EQ.400) IUN=I
          END IF 
-   10 CONTINUE
-c     print *, 'il,iprof,ilw,iupn',il,iprf,ilw,iun
+      END DO
       ILWN=ILW
       IUPN=IUN
 C
@@ -8093,10 +8076,10 @@ C
       DATA CNM,CAS /2.997925D17,2.997925D18/
 c      DATA C1,C2,C3 /2.3025851, 4.2014672, 1.4387886/
 C
-      DO 10 I=1,MFRQ
+      DO I=1,MFRQ
          W(I)=0.
          IJCTR(I)=0
-   10 CONTINUE
+      END DO
 C
       IL0=0
       IPRSET=0
@@ -8308,10 +8291,10 @@ C
          W(1)=0.5*(FREQ(1)-FREQ(2))
          W(2)=W(1)
          end if
-         DO 245 IJ=IJ0,NFREQ
+         DO IJ=IJ0,NFREQ
             IF(FREQ(IJ).LT.FRLAST) GO TO 247
             IJMAX=IJ
-  245    CONTINUE
+         END DO
   247    NFREQ=IJMAX+1
          FREQ(NFREQ)=FRLAST
          W(NFREQ)=0.5*(FREQ(NFREQ-1)-FREQ(NFREQ))
@@ -8456,9 +8439,11 @@ C
          NPHT=0
          IPHT1=0
          NUMFIL=0
-         DO 10 IJ=1,MFRQ
-            DO 10 I=1,MPHOT
-   10          PHOT(IJ,I)=0.
+         DO IJ=1,MFRQ
+            DO I=1,MPHOT
+               PHOT(IJ,I)=0.
+            END DO
+         END DO
          READ(IPHT0,*,END=50,err=50) NPHT
          IF(NPHT.LE.0) RETURN
          npht1=npht
@@ -8478,23 +8463,23 @@ C
          INDEX(1,1)=1
          IF(NPHT.GT.1) THEN
             DO 30 I=2,NPHT
-               DO 20 J=1,I-1
+               DO J=1,I-1
                   IF(IPHT(I).EQ.IPHT(J)) THEN
                      IFILE(I)=IFILE(J)
                      NELEM(IFILE(I))=NELEM(IFILE(I))+1
                      INDEX(IFILE(I),NELEM(IFILE(I)))=I
                      GO TO 30
                   END IF
-   20          CONTINUE
+               END DO
                NUMFIL=NUMFIL+1
                IFILE(I)=NUMFIL
                NELEM(NUMFIL)=1
                INDEX(NUMFIL,1)=I
    30       CONTINUE
          END IF
-         DO 40 IFIL=1,NUMFIL
+         DO IFIL=1,NUMFIL
             IEND(IFIL)=0
-   40    CONTINUE
+         END DO
       END IF
    50 IF(NUMFIL.LE.0) RETURN
 c
@@ -8520,26 +8505,28 @@ C
          DW=WPHT1-WPHT0
          A1=(WPHT1-WLAM(3))/DW
          A2=(WLAM(3)-WPHT0)/DW
-         DO 130 I=1,NPHT1
+         DO I=1,NPHT1
             INDX=INDEX(IFIL,I)
             PHOT(1,INDX)=0.
             PHOT(2,INDX)=0.
             PHOT(3,INDX)=(A1*PHT0(I)+A2*PHT1(I))*1.E-18
-            DO 130 IJ=4,MFRQ
+            DO IJ=4,MFRQ
                PHOT(IJ,INDX)=0.
-  130    CONTINUE
+            END DO
+         END DO
          DO 190 IJ=4,MFRQ
             IF(WLAM(IJ).LE.WPHT1) THEN
                A1=(WPHT1-WLAM(IJ))/DW
                A2=(WLAM(IJ)-WPHT0)/DW
-               DO 140 I=1,NPHT1
+               DO I=1,NPHT1
                   INDX=INDEX(IFIL,I)
                   PHOT(IJ,INDX)=(A1*PHT0(I)+A2*PHT1(I))*1.E-18
-  140          CONTINUE
+               END DO
              ELSE
                WPHT0=WPHT1
-               DO 150 I=1,NPHT1
-  150             PHT0(I)=PHT1(I)
+               DO I=1,NPHT1
+                  PHT0(I)=PHT1(I)
+               END DO
                IFSML=0
   160          READ(IPHT1,*,END=180) WPHT1,(PHT1(I),I=1,NPHT1)
                IF(WPHT1.LT.WLAM(IJ)) THEN
@@ -8555,27 +8542,28 @@ C
                DW=WPHT1-WPHT0
                A1=(WPHT1-WLAM(IJ))/DW
                A2=(WLAM(IJ)-WPHT0)/DW
-               DO 170 I=1,NPHT1
+               DO I=1,NPHT1
                   INDX=INDEX(IFIL,I)
                   PHOT(IJ,INDX)=(A1*PHT0(I)+A2*PHT1(I))*1.E-18
-  170          CONTINUE
+               END DO
             END IF
             GO TO 190
   180       IEND(IFIL)=1      
-            DO 185 I=1,NPHT1
+            DO I=1,NPHT1
                INDX=INDEX(IFIL,I)
                PHOT(IJ,INDX)=0.
-  185       CONTINUE
+            END DO
   190    CONTINUE
          PHOT(1,INDX)=PHOT(3,INDX)
          PHOT(2,INDX)=PHOT(MFRQ,INDX)
          GO TO 300
   200    IEND(IFIL)=2
-         DO 210 IJ=1,MFREQ
-            DO 210 I=1,NELEM(IFIL)
+         DO IJ=1,MFREQ
+            DO I=1,NELEM(IFIL)
                INDX=INDEX(IFIL,I)
                PHOT(IJ,INDX)=0.
-  210    CONTINUE
+         END DO
+      END DO
   300 CONTINUE
       RETURN
       END
@@ -9563,18 +9551,10 @@ C
 C
       WRITE(6,611) NLIN0
   611 FORMAT(/' ATOMIC LINES        :',I10/)
-c     WRITE(6,611) NLIN0,NNLT,NGRIEM
-c 611 FORMAT(/' LINES - TOTAL        :',I10
-c    *       /' LINES - NLTE         :',I10
-c    *       /' LINES - GRIEM        :',I10/)
   601 FORMAT('0 **** MORE LINES THAN MLIN0, LINE LIST TRUNCATED '/
      *'       AT LAMBDA',F15.4,'  NM'/)
-c 602 FORMAT('0 **** MORE LINES WITH SPECIAL PROFILES THAN MPRF'/
-c    *'       FOR LINES WITH LAMBDA GREATER THAN',F15.4,'  NM'/)
   603 FORMAT('0 **** MORE LINES WITH GRIEM PROFILES THAN MGRIEM'/
      *'       FOR LINES WITH LAMBDA GREATER THAN',F15.4,'  NM'/)
-c 604 FORMAT('0 **** MORE LINES IN NLTE OPTION THAN MNLT'/
-c    *'       FOR LINES WITH LAMBDA GREATER THAN',F15.4,'  NM'/)
       RETURN
       END
 C
@@ -9607,7 +9587,7 @@ C
       BNU=BN*(XX*1.E-15)**3
       HKF=HK*XX
       if(ifwin.gt.0) XX=un
-      DO 20 ID=1,ND
+      DO ID=1,ND
          T=TEMP(ID)
          ANE=ELEC(ID)
          EXH=EXP(HKF/T)
@@ -9622,11 +9602,11 @@ C
          end if
          AHE=RRR(ID,1,2)
          VDWC(ID)=(AH+VW1*AHE+0.85*ANH2(ID))*(T*TENM4)**VW2
-         DO 10 IAT=1,MATOM
+         DO IAT=1,MATOM
             IF(AMAS(IAT).GT.0.)
      *      DOPA1(IAT,ID)=UN/(XX*DP0*SQRT(DP1*T/AMAS(IAT)+VTURB(ID)))
-   10 CONTINUE
-   20 CONTINUE
+         END DO
+      END DO
       RETURN
       END
 C
@@ -10027,24 +10007,24 @@ C
 C
       IF(IEVEN.EQ.1) THEN
          IND=0
-         DO 110 J=1,NEVEN(INION)
+         DO J=1,NEVEN(INION)
             IF(EXCL.LE.ELIMEV(INION,J)) THEN
                IND=J
                GO TO 120
             END IF
-  110    CONTINUE
+         END DO
          ILWN=0
          GO TO 145
   120    CONTINUE
          ILWN=INDEV(INION,IND)
 C
          IND=0
-         DO 130 J=1,NODD(INION)
+         DO J=1,NODD(INION)
             IF(EXCU.LE.ELIMOD(INION,J)) THEN
                IND=J
                GO TO 140
             END IF
-  130    CONTINUE
+         END DO
          IUN=0
          GO TO 145
   140    CONTINUE
@@ -10054,24 +10034,24 @@ C
 C
        ELSE IF(IEVEN.EQ.0) THEN
          IND=0
-         DO 150 J=1,NODD(INION)
+         DO J=1,NODD(INION)
             IF(EXCL.LE.ELIMOD(INION,J)) THEN
                IND=J
                GO TO 160
             END IF
-  150    CONTINUE
+         END DO
          ILWN=0
          GO TO 200
   160    CONTINUE
          ILWN=INDOD(INION,IND)
 C
          IND=0
-         DO 170 J=1,NEVEN(INION)
+         DO J=1,NEVEN(INION)
             IF(EXCU.LE.ELIMEV(INION,J)) THEN
                IND=J
                GO TO 180
             END IF
-  170    CONTINUE
+         END DO
          IUN=0
          GO TO 200
   180    CONTINUE
@@ -10086,12 +10066,12 @@ c
 C        level identification: using only energy limits
 C
          IND=0
-         DO 210 J=1,NLEVS(INION)
+         DO J=1,NLEVS(INION)
             IF(EXCL.LE.ELIML(INION,J)) THEN
                IND=J
                GO TO 220
             END IF
-  210    CONTINUE
+         END DO
          ILWN=0
          IUN=0
          GO TO 300
@@ -10099,12 +10079,12 @@ C
          ILWN=INDLV(INION,IND)
 C
          IND=0
-         DO 230 J=1,NLEVS(INION)
+         DO J=1,NLEVS(INION)
             IF(EXCU.LE.ELIML(INION,J)) THEN
                IND=J
                GO TO 240
             END IF
-  230    CONTINUE
+         END DO
          IUN=0
          GO TO 300
   240    CONTINUE
@@ -10118,7 +10098,7 @@ C
 
          IND=0
          INMATCHL=0
-         DO 310 J=1,NLEVS(INION)
+         DO J=1,NLEVS(INION)
 
             IF(EXCL.GE.ENION1(INDLV(INION,J))   .AND.
      *         EXCL.LE.ENION2(INDLV(INION,J)).   AND.
@@ -10137,7 +10117,7 @@ C
                INMATCHL=INMATCHL+1
 C               GO TO 320
             END IF
-  310    CONTINUE
+         END DO
          IF (INMATCHL.GT.1)
      *       WRITE(11,'(A55,1X,F12.4)')
      *       ' NLTSET: WARNING-- multiple matches for lower level of ',
@@ -10152,7 +10132,7 @@ C
 C
          IND=0
          INMATCHU=0
-         DO 330 J=1,NLEVS(INION)
+         DO J=1,NLEVS(INION)
 
             IF(EXCU.GE.ENION1(INDLV(INION,J))   .AND.
      *         EXCU.LE.ENION2(INDLV(INION,J)).   AND.
@@ -10171,7 +10151,7 @@ C
                INMATCHU=INMATCHU+1
 C               GO TO 340
             END IF
-  330    CONTINUE
+         END DO
          IF (INMATCHU.GT.1)
      *       WRITE(11,'(A55,1X,F12.4)')
      *       ' NLTSET: WARNING-- multiple matches for upper level of ',
@@ -10292,7 +10272,7 @@ C
 C
       IF(NPHT.LE.0) RETURN
       T=TEMP(ID)
-      DO 10 IJ=1,NFRE
+      DO IJ=1,NFRE
          XX=FRE(IJ)
          X15=XX*1.E-15
          BNU=BN*X15*X15*X15
@@ -10300,8 +10280,8 @@ C
          EXH=EXP(HKF/T)
          PLANF(IJ)=BNU/(EXH-1.)
          STIMU(IJ)=1.-1./EXH
-   10 CONTINUE
-      DO 30 I=1,NPHT
+      END DO
+      DO I=1,NPHT
          IF(JPHT(I).LE.0) THEN
             IAT=int(APHT(I))
             X=(APHT(I)-FLOAT(IAT)+1.E-4)*1.E2
@@ -10311,12 +10291,12 @@ C
             JJ=JPHT(I)
             POP=POPUL(JJ,ID)
          END IF
-         DO 20 IJ=1,NFRE
+         DO IJ=1,NFRE
             AB=PHOT(IJ,I)*POP*STIMU(IJ)
             ABSO(IJ)=ABSO(IJ)+AB
             EMIS(IJ)=EMIS(IJ)+AB*PLANF(IJ)
-   20    CONTINUE
-   30 CONTINUE
+         END DO
+      END DO
       RETURN
       END
 
@@ -10356,7 +10336,7 @@ C     line is a transition between explicit levels of the
 C     input model
 C
       NKI=NNEXT(IEL(ILW))
-      DO 60 ID=1,ND
+      DO ID=1,ND
          T=TEMP(ID)
          COR=1.
          PP=PNLT(IAT,ION,ID)
@@ -10382,7 +10362,7 @@ C
          DOP=DP0*SQRT(DP1*T+VTURB(ID))
          SLIN(ILNLT,ID)=BNU/(X-UN)
          if(pi.gt.0.) ABCENT(ILNLT,ID)=PI*(UN-UN/X)*EGF/DOP
-   60 CONTINUE
+      END DO
       RETURN
 C
 C     Approximate NLTE for resonance lines - second order escape
@@ -10393,7 +10373,7 @@ C
   100 CONTINUE
       ALMIL=2.997925E17/FREQ0(IL)
       HKF=HK*FREQ0(IL)
-      DO 110 ID=1,ND
+      DO ID=1,ND
          T=TEMP(ID)
          DOP=DP0*SQRT(DP1*T+VTURB(ID))
          X=EXP(HKF/T)
@@ -10416,7 +10396,7 @@ C
          E=EPS(T,ELEC(ID),ALMIL,ION,IUN)
          XK2=XK2DOP(TAU)
          SLIN(ILNLT,ID)=SQRT(E/(E+(1.-E)*XK2))*BNU/(X-1.)
-  110 CONTINUE
+      END DO
       RETURN
       END
 C
@@ -10444,11 +10424,11 @@ C
       COMMON/NLTPOP/PNLT(MATOM,MION,MDEPTH)
       common/lasers/lasdel
 C
-      DO 10 IJ=1,NFREQ
+      DO IJ=1,NFREQ
          ABLIN(IJ)=0.
          ABLINN(IJ)=0.
          EMLIN(IJ)=0.
-   10 CONTINUE
+      END DO
 C
       IF(NLIN.EQ.0) RETURN
 C
@@ -10525,19 +10505,19 @@ C        *********
 C
          IF(LPR) THEN
 C
-            DO 40 IJ=IJ1,IJ2
+            DO IJ=IJ1,IJ2
                XF=ABS(FREQ(IJ)-FR0)*DOP1
                ABLIN(IJ)=ABLIN(IJ)+AB0*VOIGTK(AGAM,XF)
-   40       CONTINUE
+            END DO
 C
 C        special expressions for 4 selected He I lines
 C
          ELSE
-            DO 60 IJ=3,NFREQ
+            DO IJ=3,NFREQ
                FR=FREQ(IJ)
                ABL=AB0*PHE1(ID,FR,ISP-1)
                ABLIN(IJ)=ABLIN(IJ)+ABL
-   60       CONTINUE
+            END DO
          END IF
 C
 C        **********
@@ -10547,38 +10527,38 @@ C
        ELSE
          IF(LPR) THEN
 C
-            DO 80 IJ=IJ1,IJ2
+            DO IJ=IJ1,IJ2
                XF=ABS(FREQ(IJ)-FR0)*DOP1
                ABL=AB0*VOIGTK(AGAM,XF)
                ABLINN(IJ)=ABLINN(IJ)+ABL
                EMLIN(IJ)=EMLIN(IJ)+ABL*SL0
-   80       CONTINUE
+            END DO
 C
 C        again, special expressions for 4 selected He I lines
 C
          ELSE
-            DO 90 IJ=3,NFREQ
+            DO IJ=3,NFREQ
                FR=FREQ(IJ)
                ABL=AB0*PHE1(ID,FR,ISP-1)
                ABLINN(IJ)=ABLINN(IJ)+ABL
                EMLIN(IJ)=EMLIN(IJ)+ABL*SL0
-   90       CONTINUE
+            END DO
          END IF
       END IF
   100 CONTINUE
 C
-      DO 110 IJ=3,NFREQ
+      DO IJ=3,NFREQ
          EMLIN(IJ)=EMLIN(IJ)+ABLIN(IJ)*PLAN(ID)
          ABLIN(IJ)=ABLIN(IJ)+ABLINN(IJ)
-  110 CONTINUE
+      END DO
 C
 C     special routine for selected He II lines
 C
       IF(NSP.EQ.0) RETURN
-      DO 120 IS=1,NSP
+      DO IS=1,NSP
          ISP=ISP0(IS)
          IF(ISP.GE.6.AND.ISP.LE.24) CALL PHE2(ISP,ID,ABLIN,EMLIN)
-  120 CONTINUE
+      END DO
 C
       RETURN
       END
@@ -10613,14 +10593,13 @@ C
       common/linrej/ilne(mdepth),ilvi(mdepth)
       common/velaux/velmax,iemoff,nltoff,itrad
 C
-      DO 10 IJ=1,NFREQ
+      DO IJ=1,NFREQ
          ABLIN(IJ)=0.
          ABLINN(IJ)=0.
          EMLIN(IJ)=0.
-   10 CONTINUE
+      END DO
       wdil(id)=1.
       plw=plan(id)*wdil(id)
-c      plw=xjcon(id)
 C
       IF(NLIN.EQ.0) RETURN
 C
@@ -10766,19 +10745,19 @@ C        *********
 C
          IF(LPR) THEN
 C
-            DO 40 IJ=IJ1,IJ2
+            DO IJ=IJ1,IJ2
                XF=ABS(FREQ(IJ)-FR0)*DOP1
                ABLIN(IJ)=ABLIN(IJ)+AB0*VOIGTK(AGAM,XF)
-   40       CONTINUE
+            END DO
 C
 C        special expressions for 4 selected He I lines
 C
-         ELSE
-            DO 60 IJ=1,NFREQ
+          ELSE
+            DO IJ=1,NFREQ
                FR=FREQ(IJ)
                ABL=AB0*PHE1(ID,FR,ISP-1)
                ABLIN(IJ)=ABLIN(IJ)+ABL
-   60       CONTINUE
+            END DO
          END IF
 C
 C        **********
@@ -10788,43 +10767,41 @@ C
        ELSE
          IF(LPR) THEN
 C
-            DO 80 IJ=IJ1,IJ2
+            DO IJ=IJ1,IJ2
                XF=ABS(FREQ(IJ)-FR0)*DOP1
                ABL=AB0*VOIGTK(AGAM,XF)
                ABLINN(IJ)=ABLINN(IJ)+ABL
-               if(ilne(id).gt.0) go to 80
-               EMLIN(IJ)=EMLIN(IJ)+ABL*SL0
-   80       CONTINUE
+               if(ilne(id).le.0) EMLIN(IJ)=EMLIN(IJ)+ABL*SL0
+           END DO
 C
 C        again, special expressions for 4 selected He I lines
 C
          ELSE
-            DO 90 IJ=1,NFREQ
+            DO IJ=1,NFREQ
                FR=FREQ(IJ)
                ABL=AB0*PHE1(ID,FR,ISP-1)
                ABLINN(IJ)=ABLINN(IJ)+ABL
-               if(ilne(id).gt.0) go to 90
-               EMLIN(IJ)=EMLIN(IJ)+ABL*SL0
-   90       CONTINUE
+               if(ilne(id).le.0) EMLIN(IJ)=EMLIN(IJ)+ABL*SL0
+            END DO
          END IF
       END IF
   100 CONTINUE
 C
       if(vel(id).le.velmax) then
-      DO 110 IJ=1,NFREQ
+      DO IJ=1,NFREQ
          PLA=BNUE(IJ)/(EXP(HKT*FREQ(IJ))-1.)
          EMLIN(IJ)=EMLIN(IJ)+ABLIN(IJ)*pla*wdil(id)
          ABLIN(IJ)=ABLIN(IJ)+ABLINN(IJ)
-  110 CONTINUE
+      END DO
       end if
 C
 C     special routine for selected He II lines
 C
       IF(NSP.EQ.0) RETURN
-      DO 120 IS=1,NSP
+      DO IS=1,NSP
          ISP=ISP0(IS)
          IF(ISP.GE.6.AND.ISP.LE.24) CALL PHE2(ISP,ID,ABLIN,EMLIN)
-  120 CONTINUE
+      END DO
 C
       RETURN
       END
@@ -10867,8 +10844,9 @@ C
 C     Stark broadening - Griem
 C
        ELSE 
-         DO 10 I=1,4
-   10       WGR(I)=WGR0(I,IGRIEM(IL))
+         DO I=1,4
+            WGR(I)=WGR0(I,IGRIEM(IL))
+         END DO
          FR=FREQ0(IL)
          ION=MOD(INDAT(IL),100)
          CALL GRIEM(ID,T,ANE,ION,FR,WGR,GAM)
@@ -10969,16 +10947,16 @@ C
      *          1.860,  5.320,  7.070,  7.150/
       DATA C /2*0.,1.83E-4,0.,1.13E-4,5*0.,1.6E-4,9*0./
 C
-      IF(W(1,IND).EQ.0.) GO TO 10
-      J=JT(ID)
-      GAM=((TI0(ID)*W(J,IND)+TI1(ID)*W(J-1,IND)+TI2(ID)*W(J-2,IND))
-     *     *ANE
-     *    +(TI0(ID)*V(J,IND)+TI1(ID)*V(J-1,IND)+TI2(ID)*V(J-2,IND))
-     *     *ANP)*1.884E3/W(5,IND)**2
-      IF(GAM.LT.0.) GAM=0.
-      RETURN
-   10 GAM=C(IND)*T**0.16667*ANE
-      RETURN
+      IF(W(1,IND).EQ.0.) THEN
+         GAM=C(IND)*T**0.16667*ANE
+       ELSE
+         J=JT(ID)
+         GAM=((TI0(ID)*W(J,IND)+TI1(ID)*W(J-1,IND)+TI2(ID)*W(J-2,IND))
+     *        *ANE
+     *       +(TI0(ID)*V(J,IND)+TI1(ID)*V(J-1,IND)+TI2(ID)*V(J-2,IND))
+     *        *ANP)*1.884E3/W(5,IND)**2
+         IF(GAM.LT.0.) GAM=0.
+      END IF
       END
 C
 C ********************************************************************
@@ -11031,15 +11009,16 @@ C
      *         -1.669969409D01,  -3.666448000D01/
       XK2DOP=1.D0
       IF(TAU.LE.0.) RETURN
-      IF(TAU.GT.11.) GO TO 10
-      P=A0+TAU*(A1+TAU*(A2+TAU*(A3+TAU*A4)))
-      Q=B0+TAU*(B1+TAU*(B2+TAU*(B3+TAU*(B4+TAU*B5))))
-      XK2DOP=TAU/PI2SQ*LOG(TAU/PISQ)+P/Q
-      RETURN
-   10 X=1.D0/LOG(TAU/PISQ)
-      P=C0+X*(C1+X*(C2+X*(C3+X*C4)))
-      Q=D0+X*(D1+X*(D2+X*(D3+X*(D4+X*D5))))
-      XK2DOP=P/Q/2.D0/TAU/SQRT(LOG(TAU/PISQ))
+      IF(TAU.LE.11.) THEN
+         P=A0+TAU*(A1+TAU*(A2+TAU*(A3+TAU*A4)))
+         Q=B0+TAU*(B1+TAU*(B2+TAU*(B3+TAU*(B4+TAU*B5))))
+         XK2DOP=TAU/PI2SQ*LOG(TAU/PISQ)+P/Q
+       ELSE
+         X=1.D0/LOG(TAU/PISQ)
+         P=C0+X*(C1+X*(C2+X*(C3+X*C4)))
+         Q=D0+X*(D1+X*(D2+X*(D3+X*(D4+X*D5))))
+         XK2DOP=P/Q/2.D0/TAU/SQRT(LOG(TAU/PISQ))
+      END IF
       RETURN
       END
 C
@@ -11071,7 +11050,7 @@ C
 c  502 FORMAT(/////////////////////10X,I3)
   502 FORMAT(/////////////////////10X,I3/)
       WRITE(6,600) TEF,GRAV
-      DO 10 ID=1,ND
+      DO ID=1,ND
          READ(8,*) DM(ID),TEMP(ID),P,ELEC(ID)
          AN=P/TEMP(ID)/BOLK
          DENS(ID)=WMM(ID)*(AN-ELEC(ID))
@@ -11086,7 +11065,6 @@ c           AN=TOTN(ID)
                ATTOT(IAT,ID)=DENS(ID)/WMM(ID)/YTOT(ID)*ABUND(IAT,ID)
             END DO
          END IF
-c        WRITE(6,601) ID,DM(ID),TEMP(ID),ELEC(ID),DENS(ID)
          CALL WNSTOR(ID)
          CALL SABOLF(ID)
          CALL RATMAT(ID,ES,BS)
@@ -11094,9 +11072,7 @@ c        WRITE(6,601) ID,DM(ID),TEMP(ID),ELEC(ID),DENS(ID)
          DO J=1,NLEVEL
             POPUL(J,ID)=POPLTE(J)
          END DO
-   10 CONTINUE
-c     WRITE(77,503) ND, 3
-c     WRITE(77,504) (DM(ID),ID=1,ND)
+      END DO
       DO ID=1,ND
          WRITE(77,504) TEMP(ID),ELEC(ID),DENS(ID)
       END DO
@@ -11165,7 +11141,7 @@ C
       READ(8,*) (DEPTH(I),I=1,NDPTH)
       ND=NDPTH
       NUMP=ABS(NUMPAR)
-      DO 30 ID=1,NDPTH
+      DO ID=1,NDPTH
          READ(8,*) (X(I),I=1,NUMP)
          TEMP(ID)=X(1)
          ELEC(ID)=X(2)
@@ -11211,7 +11187,6 @@ c
          DO I=1,NLEV0
             POPUL(I,ID)=POPLTE(I)
             PLTE(I,ID)=POPLTE(I)
-c           if(id.eq.1) write(6,651) i,ip,popul(i,id),plte(i,id)
          END DO
 c
 c        if the input file fort.8 contains also NLTE level populations
@@ -11222,18 +11197,7 @@ c
             DO I=1,NLEV0
                j=iltot(i)
                POPUL(J,ID)=X(IP+I)*RELAB(IATM(I),ID)
-c              if(id.eq.1) write(6,651) i,j,x(ip+i),popul(i,id)
-c 651          format('in',2i4,1p2e12.4)
             END DO
-c           DO I=1,NLEV0
-c              j=iltot(i)
-c              if(popul(j,id).le.0.) then
-c                 IE=IEL(I)
-c                 N0I=NFIRST(IE)
-c                 NKI=NNEXT(IE)
-c                 POPUL(J,ID)=ELEC(ID)*POPUL(iltot(NKI),ID)*SBF(I)
-c              end if
-c           END DO
 c
 c           in the case the input "NLTE populations are in fact b-factors,
 c           compute the real populations
@@ -11245,7 +11209,7 @@ c
                end do
             end if
          END IF
-   30 CONTINUE
+      END DO
 C
       close(8)
 c
@@ -11254,21 +11218,22 @@ c
      *        ' ------------------'/
      *         1H ,8X,'MASS',9X,'T',9X,'NE',9X,'DENS'//)
          nd=ndpth
-         DO 40 ID=1,ND
+         DO ID=1,ND
             DM(ID)=DEPTH(ID)
             write(6,601) id,dm(id),temp(id),elec(id),dens(id),
      *       popul(1,id)
   601       format(i6,1pe10.3,0pf10.1,1p4e12.3)
-   40    CONTINUE
+         END DO
 C
-      DO 100 ID=1,ND
+      DO ID=1,ND
          BCON=ELEC(ID)/TEMP(ID)/SQRT(TEMP(ID))*2.0706E-16
-         DO 100 IONE=1,NION
+         DO IONE=1,NION
             ION=IZ(IONE)
             IAT=NUMAT(IATM(NFIRST(IONE)))
             NKI=NNEXT(IONE)
             IF(ION.GT.0) PNLT(IAT,ION,ID)=POPUL(NKI,ID)/G(NKI)*BCON
-  100 CONTINUE
+         END DO
+      END DO
 c
 c     check abundances
 c
@@ -11339,24 +11304,24 @@ C
             N1=N0A(IAT)
             NK=NKA(IAT)
             IF(N1.LE.0) THEN
-               DO 1 I=N0A(IAT),NKA(IAT)
+               DO I=N0A(IAT),NKA(IAT)
                   N1=I
                   IF(I.GT.0) GO TO 2
-    1          CONTINUE
+               END DO
     2          CONTINUE
             END IF
             IF(N1.LE.0) GO TO 50
             NLP=NK-N1+1
-            DO 20 I=N1,NK
-               DO 10 J=N1,NK
+            DO I=N1,NK
+               DO J=N1,NK
                   AP(I-N1+1,J-N1+1)=A(I,J)
-   10          CONTINUE
+               END DO
                BP(I-N1+1)=B(I)
-   20       CONTINUE
+            END DO
             CALL LINEQS(AP,BP,POPP1,NLP,MLEVEL)
-            DO 30 I=N1,NK
+            DO I=N1,NK
                 POPP(I)=POPP1(I-N1+1)
-   30       CONTINUE
+            END DO
    50    CONTINUE
       RETURN
       END
@@ -11425,7 +11390,7 @@ C
 C
       PARAMETER (S = 2.0706E-16)
       IFESE=0
-      DO 100 II=1,NLEVEL
+      DO II=1,NLEVEL
          READ(ICHANG,*) IOLD,MODE,NXTOLD,ISINEW,ISIOLD,NXTSIO,REL
          IF(MODE.GE.3) IFESE=IFESE+1
          IF(REL.EQ.0.) REL=1.
@@ -11454,16 +11419,18 @@ C
                CALL SABOLF(ID)
                CALL RATMAT(ID,ESEMAT,BESE)
                CALL LINEQS(ESEMAT,BESE,POPLTE,NLEVEL,MLEVEL)
-               DO 50 III=1,NLEVEL
-   50             POPULL(III,ID)=POPLTE(III)
+               DO III=1,NLEVEL
+                  POPULL(III,ID)=POPLTE(III)
+               END DO
             END IF
             POPUL0(II,ID)=POPULL(II,ID)
    90    CONTINUE
-  100 CONTINUE
-      DO 110 I=1,NLEVEL
-         DO 110 ID=1,ND
+      END DO
+      DO I=1,NLEVEL
+         DO ID=1,ND
             POPUL(I,ID)=POPUL0(I,ID)
-  110 CONTINUE
+         END DO
+      END DO
       RETURN
       END
 C
@@ -11553,17 +11520,17 @@ C
           else
              nl1up=nquant(nlst)
          end if
-         DO 10 II=NFIRST(ION),NLAST(ION)
+         DO II=NFIRST(ION),NLAST(ION)
             if(ifwop(ii).lt.0) then
                E=EH*QZ*QZ/TK
                SUM=0.
-               DO 5 J=nl1up,NLMX
+               DO J=nl1up,NLMX
                   XJ=J
                   XI=J*J
                   X=E/XI
                   FI=XI*EXP(X)*WNHINT(J,ID)
                   SUM=SUM+FI
-    5          CONTINUE
+               END DO
                g(ii)=sum*two
                gmer(imrg(ii),id)=g(ii)
             end if
@@ -11572,7 +11539,7 @@ C
             SB=CFN*G(II)*EXP(X)
             SBF(II)=SB
             SSBF=SSBF+SB
-   10    CONTINUE
+         END DO
 C
 C     Upper sums
 C
@@ -11581,47 +11548,47 @@ C
 C
 C     1. More exact approach - using (exact) partition functions
 C
-         IAT=NUMAT(IATM(NFIRST(ION)))
-         XMX=XMAX*SQRT(QZ)
-         CALL PARTF(IAT,IZ(ION),T,ANE,XMX,U)
-         EE=ENION(NFIRST(ION))/TK
-         if(ee.gt.110.) ee=110.
-         CFE=CFN*EXP(EE)
-         USUM(ION)=CFE*U-SSBF
-         xx=(ssbf-sbf(nfirst(ion)))/sbf(nfirst(ion))
-         IF(USUM(ION).LT.0.or.ee.ge.109.or.xx.lt.1.e-7) USUM(ION)=0.
-         IF(USUM(ION).LT.0.) USUM(ION)=0.
+            IAT=NUMAT(IATM(NFIRST(ION)))
+            XMX=XMAX*SQRT(QZ)
+            CALL PARTF(IAT,IZ(ION),T,ANE,XMX,U)
+            EE=ENION(NFIRST(ION))/TK
+            if(ee.gt.110.) ee=110.
+            CFE=CFN*EXP(EE)
+            USUM(ION)=CFE*U-SSBF
+            xx=(ssbf-sbf(nfirst(ion)))/sbf(nfirst(ion))
+            IF(USUM(ION).LT.0.or.ee.ge.109.or.xx.lt.1.e-7) USUM(ION)=0.
+            IF(USUM(ION).LT.0.) USUM(ION)=0.
 C
 C     2. Approximate approach - summation over fixed number of upper
 C        levels, assumed hydrogenic (ie. their ionization energy and
 C        statistical weight hydrogenic)
 C
-         else if(iups.gt.0) then
-         SUM=0.
-         DSUM=0.
-         E=EH*QZ*QZ/TK
-         DO 30 J=NQUANT(NLAST(ION))+1,IUPS
-            XI=J*J
-            X=E/XI
-            FI=XI*EXP(X)
-            SUM=SUM+FI
-   30    CONTINUE
-         USUM(ION)=SUM*CON*TWO
+          else if(iups.gt.0) then
+            SUM=0.
+            DSUM=0.
+            E=EH*QZ*QZ/TK
+            DO J=NQUANT(NLAST(ION))+1,IUPS
+               XI=J*J
+               X=E/XI
+               FI=XI*EXP(X)
+               SUM=SUM+FI
+            END DO
+            USUM(ION)=SUM*CON*TWO
 C
 c        3. occupation probability form
 c
          else 
-         SUM=0.
-         DSUM=0.
-         E=EH*QZ*QZ/TK
-         DO 40 J=NQUANT(NLAST(ION))+1,NLMX
-            XJ=J
-            XI=J*J
-            X=E/XI
-            FI=XI*EXP(X)*WNHINT(J,ID)
-            SUM=SUM+FI
-   40    CONTINUE
-         USUM(ION)=SUM*CON*TWO
+            SUM=0.
+            DSUM=0.
+            E=EH*QZ*QZ/TK
+            DO J=NQUANT(NLAST(ION))+1,NLMX
+               XJ=J
+               XI=J*J
+               X=E/XI
+               FI=XI*EXP(X)*WNHINT(J,ID)
+               SUM=SUM+FI
+            END DO
+            USUM(ION)=SUM*CON*TWO
          end if
    50 CONTINUE
       RETURN
@@ -12147,10 +12114,6 @@ C
       NUNIT=0
       NQHT=0
       IF(IASV.EQ.0) GOTO 100
-c     WRITE(6,600)
-c 600 FORMAT(///,' DETAILED PHOTOIONIZATION CROSS-SECTIONS',
-c    * ' (EXPLICIT LEVELS)',/,
-c    * ' ---------------------------------------',/)
       DO 10 I=1,NION
         N1=NFIRST(I)
         N2=NLAST(I)
@@ -12176,8 +12139,6 @@ c    * ' ---------------------------------------',/)
         ATI=IIAT+0.01*(IIZ-1)
         NBFI=NSUP
         IF(NSUP.GT.(N2-N1+1)) NBFI=(N2-N1+1)
-c    *   call quit(' Too many bf-trans. in input file (SIGAVS)')
-c       WRITE(6,601) ATI,INSA
         DO 12 II=1,NBFI
           READ(INSA,*,END=500,ERR=500) IILO,EELO,GGLO,NFCRR
           IK=N1+IILO-1
@@ -12185,8 +12146,6 @@ c       WRITE(6,601) ATI,INSA
      *      call quit(' Inconsistent level numbering in SIGAVS')
           IF(IIAT.NE.26) GOTO 13
           ECMR=XIFE(IIZ)-EELO
-c         DE=ABS((ENION(IK)-HCCM*ECMR)/ENION(IK))
-c         IF(DE.GT.1.D-4) call quit(' Incorrect energy level in SIGAVS')
    13     READ(INSA,*,END=500,ERR=500) FR0,CR0
           NFD=1
           FRD(NFD)=FR0
@@ -12224,17 +12183,15 @@ c         IF(DE.GT.1.D-4) call quit(' Incorrect energy level in SIGAVS')
      *        call quit(' Too many frequencies in SIGAVS')
    14     CONTINUE
           CRMX(IK)=0.
-          DO 15 IJ=1,NFD
+          DO IJ=1,NFD
             CRMX(IK)=MAX(CRMX(IK),CRD(IJ))
-   15     CONTINUE
+          END DO
           IF(CRMX(IK).GT.0.) THEN
-c           WRITE(6,601) ATI,IILO,EELO,NFD
-c 601       FORMAT(F7.2,I6,F13.3,I8)
             NFCR(IK)=NFD
-            DO 16 IJ=1,NFD
+            DO IJ=1,NFD
               FRECR(IK,IJ)=FRD(NFD-IJ+1)
               CROSR(IK,IJ)=CRD(NFD-IJ+1)*BAM
-   16       CONTINUE
+            END DO
           ENDIF
    12   CONTINUE
    10 CONTINUE
@@ -12304,17 +12261,17 @@ c
             ENDIF
   130     CONTINUE
           CRMY(IK)=0.
-          DO 140 IJ=1,NFD
+          DO IJ=1,NFD
             CRMY(IK)=MAX(CRMY(IK),CRD(IJ))
-  140     CONTINUE
+          END DO
           IF(CRMY(IK).GT.0.) THEN
             WRITE(6,611) ATIR,IILO,EELO,NFD
   611       FORMAT(F7.2,I6,F13.3,I8)
             NFQHT(IK)=NFD
-            DO 150 IJ=1,NFD
+            DO IJ=1,NFD
               FRECQ(IK,IJ)=FRD(NFD-IJ+1)
               QHOT(IK,IJ)=CRD(NFD-IJ+1)*BAM
-  150       CONTINUE
+            END DO
           ENDIF
   120   CONTINUE
   110 CONTINUE
@@ -12356,7 +12313,7 @@ C
          nfre=nfreqc
       end if
 c
-      DO 10 IJ=1,NFRE
+      DO IJ=1,NFRE
          XX=FRE(IJ)
          X15=XX*1.E-15
          BNU=BN*X15*X15*X15
@@ -12364,25 +12321,25 @@ c
          EXH=EXP(HKF/T)
          PLANF(IJ)=BNU/(EXH-1.)
          STIMU(IJ)=1.-1./EXH
-   10 CONTINUE
+      END DO
 C
       IF(IASV.EQ.0) GOTO 100
       IF(ID.EQ.1) THEN
         DO 40 I=1,NLEVEL
           IF(CRMX(I).EQ.0.) GOTO 40
           IK1=MAX0(2,IJP(I))
-          DO 42 IJ=3,NFRE
-            DO 45 IK=IK1,NFCR(I)
+          DO IJ=3,NFRE
+            DO IK=IK1,NFCR(I)
               IF(FRECR(I,IK).LT.FRE(IJ)) THEN
                 IK2=IK
                 GOTO 46
               ENDIF
-   45       CONTINUE
+            END DO
    46       IK1=IK2
             IF(IJ.EQ.3) IJP(I)=IK1
             DFR=(FRE(IJ)-FRECR(I,IK1))/(FRECR(I,IK1-1)-FRECR(I,IK1))
             PHOTI(I,IJ)=CROSR(I,IK1)+DFR*(CROSR(I,IK1-1)-CROSR(I,IK1))
-   42     CONTINUE
+          END DO
           PHOTI(I,1)=PHOTI(I,3)
           PHOTI(I,2)=PHOTI(I,NFREQ)
    40   CONTINUE
@@ -12390,11 +12347,11 @@ C
       DO 30 I=1,NLEVEL
         IF(CRMX(I).EQ.0.) GOTO 30
         POP=POPUL(I,ID)
-        DO 20 IJ=1,NFRE
+        DO IJ=1,NFRE
           AB=PHOTI(I,IJ)*POP*STIMU(IJ)
           ABSO(IJ)=ABSO(IJ)+AB
           EMIS(IJ)=EMIS(IJ)+AB*PLANF(IJ)
-   20   CONTINUE
+        END DO
    30 CONTINUE
 C
   100 IF(NQHT.EQ.0) RETURN
@@ -12403,12 +12360,12 @@ C
           IF(CRMY(I).EQ.0.) GOTO 110
           IK1=MAX0(2,IJQ(I))
           DO 120 IJ=3,NFRE
-            DO 125 IK=IK1,NFQHT(I)
+            DO IK=IK1,NFQHT(I)
               IF(FRECQ(I,IK).LT.FRE(IJ)) THEN
                 IK2=IK
                 GOTO 126
               ENDIF
-  125       CONTINUE
+            END DO
   126       IK1=IK2
             IF(IJ.EQ.3) IJQ(I)=IK1
             DFR=(FRE(IJ)-FRECQ(I,IK1))/(FRECQ(I,IK1-1)-FRECQ(I,IK1))
@@ -12422,11 +12379,11 @@ C
         X=(AQHT(I)-FLOAT(IAT)+1.E-4)*100.
         ION=INT(X)+1
         POP=RRR(ID,ION,IAT)*GQHT(I)*EXP(-EQHT(I)*C3/T)
-        DO 220 IJ=3,NFRE
+        DO IJ=3,NFRE
           AB=PHOTI(I,IJ)*POP*STIMU(IJ)
           ABSO(IJ)=ABSO(IJ)+AB
           EMIS(IJ)=EMIS(IJ)+AB*PLANF(IJ)
-  220   CONTINUE
+        END DO
   210 CONTINUE
 C
       RETURN
@@ -12779,10 +12736,6 @@ c     parameter (sthe=1.e21)
       data iread/0/
 c
       if(iread.eq.0) then
-c        nxhhe=679
-c        open(unit=67,
-c    *   file='siglyhhe_21_T14500.lam',
-c    *   status='old')
          it=0
          do i=1,nxmax
             read(67,*,err=5,end=5) xl,sig
@@ -12796,10 +12749,6 @@ c    *   status='old')
             xlhhe(i)=xlhh0(nxhhe-i+1)
             sighhe(i)=sighh0(nxhhe-i+1)
          end do
-c        do i=1,nxhhe
-c           j=nxhhe-i+1
-c           read(67,*) xlhhe(j),sighhe(j)
-c        end do
          close(67)
          iread=1
       end if
@@ -12886,14 +12835,15 @@ C
      T .0045526,.0043924,.0042405,.0040964,.0039595/
 C
       N=MVOI
-      DO 10 I=1,N
-   10    H0TAB(I)=FLOAT(I-1)/VSTEPS
+      DO I=1,N
+         H0TAB(I)=FLOAT(I-1)/VSTEPS
+      END DO
       CALL INTERP(TABVI,TABH1,H0TAB,H1TAB,81,N,2,0,0)
-      DO 20 I=1,N
+      DO I=1,N
          VV=(FLOAT(I-1)/VSTEPS)**2
          H0TAB(I)=EXP(-VV)
          H2TAB(I)=H0TAB(I)-(VV+VV)*H0TAB(I)
-   20 CONTINUE
+      END DO
       RETURN
       END
 C
@@ -12925,22 +12875,24 @@ C
          END IF
          RETURN
       END IF
-      IF(A.GT.C14) GO TO 10
-      IF(A+V.GT.C32) GO TO 10
-      VV=V*V
-      HH1=H1TAB(IV)+H0TAB(IV)*C11283
-      HH2=H2TAB(IV)+HH1*C11283-H0TAB(IV)
-      HH3=(ONE-H2TAB(IV))*C37613-HH1*C23*VV+HH2*C11283
-      HH4=(THREE*HH3-HH1)*C37613+H0TAB(IV)*C23*VV*VV
-      VOIGTK=((((HH4*A+HH3)*A+HH2)*A+HH1)*A+H0TAB(IV))*
-     *       (((CV1*A+CV2)*A+CV3)*A+CV4)
-      RETURN
-   10 AA=A*A
-      VV=V*V
-      U=(AA+VV)*C14142
-      UU=U*U
-      VOIGTK=((((AA-TEN*VV)*AA*THREE+FIFTN*VV*VV)/UU+THREE*VV-AA)/UU+
-     *       ONE)*A*C79788/U
+c     IF(A.GT.C14) GO TO 10
+c     IF(A+V.GT.C32) GO TO 10
+      IF(A.LE.C14.AND.A+V.LE.C32) THEN
+         VV=V*V
+         HH1=H1TAB(IV)+H0TAB(IV)*C11283
+         HH2=H2TAB(IV)+HH1*C11283-H0TAB(IV)
+         HH3=(ONE-H2TAB(IV))*C37613-HH1*C23*VV+HH2*C11283
+         HH4=(THREE*HH3-HH1)*C37613+H0TAB(IV)*C23*VV*VV
+         VOIGTK=((((HH4*A+HH3)*A+HH2)*A+HH1)*A+H0TAB(IV))*
+     *          (((CV1*A+CV2)*A+CV3)*A+CV4)
+       ELSE
+         AA=A*A
+         VV=V*V
+         U=(AA+VV)*C14142
+         UU=U*U
+         VOIGTK=((((AA-TEN*VV)*AA*THREE+FIFTN*VV*VV)/UU+
+     *          THREE*VV-AA)/UU+ONE)*A*C79788/U
+      END IF
       RETURN
       END
 C
@@ -14337,23 +14289,31 @@ C
 c      save indexs, indexm, index0, is, im, ig0, igpr,
 c     *     xl, chion, alf, gam
 C
-      IF(ICOMP.NE.0) GO TO 5
-      IND=1
-      DO 1 K=1,NIONS
-         INDEXS(K)=IND
-         IND=IND+IS(K)
-    1 CONTINUE
-      IND=1
-      DO 2 K=1,NSS
-         INDEXM(K)=IND
-         IND=IND+IM(K)
-    2 CONTINUE
-      ICOMP=1
-    5 CONTINUE
+      IF(ICOMP.EQ.0) THEN
+         IND=1
+         DO K=1,NIONS
+            INDEXS(K)=IND
+            IND=IND+IS(K)
+         END DO
+         IND=1
+         DO K=1,NSS
+            INDEXM(K)=IND
+            IND=IND+IM(K)
+         END DO
+         ICOMP=1
+      END IF
 c
       IF((IAT.EQ.26.or.iat.eq.28)
-     *  .AND.IZI.GE.4.AND.IZI.LE.9) GO TO 70
-      IF(IAT.GT.30.AND.IZI.LE.3) GO TO 80
+     *  .AND.IZI.GE.4.AND.IZI.LE.9) THEN
+         if(iat.eq.26) call pffe(IZI,T,ANE,U)
+         if(iat.eq.28) call pfni(izi,t,u,dut,dun)
+         RETURN
+      END IF
+c
+      IF(IAT.GT.30.AND.IZI.LE.3) THEN
+         CALL PFHEAV(IAT,IZI,3,T,ANE,U)
+         RETURN
+      END IF
       IF(IAT.GT.8 .AND. IZI.GT.5) then
          u=igle(iat-izi+1)
          return
@@ -14366,63 +14326,64 @@ c
             call irwpf(iat,izi,0,t,u0)
             u=u0
             return
-          end if
+         end if
        else if(iat.gt.30.and.izi.le.3) then
-         go to 80
+         CALL PFHEAV(IAT,IZI,3,T,ANE,U)
       end if
 c
-      IF(IZI.LE.0.OR.IZI.GT.9.OR.IAT.LE.0.OR.IAT.GT.30) GO TO 50
+      IF(IZI.LE.0.OR.IZI.GT.9.OR.IAT.LE.0.OR.IAT.GT.30) THEN
+         CALL PFSPEC(IAT,IZI,T,ANE,U)
+         RETURN
+      END IF
+c
       MODE=MODPF(IAT)
-      IF(MODE.LT.0) GO TO 50
-      IF(MODE.GT.0) GO TO 60
-      I0=INDEX0(IZI,IAT)
-      IF(I0) 40,50,10
-   10 QZ=IZI
-C     MAX=XMAXN*SQRT(QZ)
-      XMAX=XMAXN
-      THET=5040.4/T
-      A=31.321*QZ*QZ*THET
-      XMAX2=XMAX*XMAX
-      QAS1=XMAX*THIRD*(XMAX2+TRHA*XMAX+HALF)
-      IS0=INDEXS(I0)
-      ISS=IS0+IS(I0)-1
-      SU1=0.
-      SQA=0.
-      DO 30 K=IS0,ISS
-         XXL=XL(K)
-         GPR=IGPR(K)
-         X=CHION(K)*THET
-         EX=0.
-         IF(X.LT.30) EX=EXP(-X*2.30258029299405)
-         QAS=(QAS1-XXL*THIRD*(XXL*XXL+TRHA*XXL+HALF)+(XMAX-XXL)*
-     *       (UN+A*HALF/XXL/XMAX)*A)*GPR*EX
-         SQA=SQA+QAS
-         M0=INDEXM(K)
-         M1=M0+IM(K)-1
-         AL1=0.
-         DO 20 M=M0,M1
-            XG=GAM(M)*THET
-            IF(XG.GT.20.) GO TO 20
-            XM=EXP(-XG*2.30258029299405)*ALF(M)
-            AL1=AL1+XM
-   20    CONTINUE
-         SU1=SU1+AL1
-   30 CONTINUE
-      U=IG0(I0)
-      U=U+SU1+SQA
-      IF(U.LT.0.) U=IG0(I0)
-      RETURN
-   40 U=FLOAT(-I0)
-      RETURN
-   50 CALL PFSPEC(IAT,IZI,T,ANE,U)
-      RETURN
-   60 u=igle(iat-izi+1)
-C      U=PFSTD(IZI,IAT)
-      RETURN
-   70 if(iat.eq.26) call pffe(IZI,T,ANE,U)
-      if(iat.eq.28) call pfni(izi,t,u,dut,dun)
-      RETURN
-   80 CALL PFHEAV(IAT,IZI,3,T,ANE,U)
+      IF(MODE.LT.0) THEN
+         CALL PFSPEC(IAT,IZI,T,ANE,U)
+       ELSE IF(MODE.GT.0) THEN
+         U=IGLE(IAT-IZI+1)
+       ELSE
+         I0=INDEX0(IZI,IAT)
+         IF(I0.GT.0) THEN
+            QZ=IZI
+            XMAX=XMAXN
+            THET=5040.4/T
+            A=31.321*QZ*QZ*THET
+            XMAX2=XMAX*XMAX
+            QAS1=XMAX*THIRD*(XMAX2+TRHA*XMAX+HALF)
+            IS0=INDEXS(I0)
+            ISS=IS0+IS(I0)-1
+            SU1=0.
+            SQA=0.
+            DO K=IS0,ISS
+               XXL=XL(K)
+               GPR=IGPR(K)
+               X=CHION(K)*THET
+               EX=0.
+               IF(X.LT.30) EX=EXP(-X*2.30258029299405)
+               QAS=(QAS1-XXL*THIRD*(XXL*XXL+TRHA*XXL+HALF)+(XMAX-XXL)*
+     *             (UN+A*HALF/XXL/XMAX)*A)*GPR*EX
+               SQA=SQA+QAS
+               M0=INDEXM(K)
+               M1=M0+IM(K)-1
+               AL1=0.
+               DO M=M0,M1
+                  XG=GAM(M)*THET
+                  IF(XG.LE.20.) THEN
+                     XM=EXP(-XG*2.30258029299405)*ALF(M)
+                     AL1=AL1+XM
+                  END IF
+               END DO
+               SU1=SU1+AL1
+            END DO
+            U=IG0(I0)
+            U=U+SU1+SQA
+            IF(U.LT.0.) U=IG0(I0)
+          ELSE IF(I0.LT.0) THEN
+            U=FLOAT(-I0)
+          ELSE
+            CALL PFSPEC(IAT,IZI,T,ANE,U)
+         END IF
+      END IF
       RETURN
       END
 C
@@ -14601,16 +14562,19 @@ c
         j2=nne
         goto 16
       endif
-      do 10 j=1,nne-1      
+      do j=1,nne-1      
         if(pne.ge.pn(j).and.pne.lt.pn(j+1)) go to 15
-   10 continue
-   15 j1=j
+      end do
+   15 continue
+      j1=j
       j2=j1+1
       if(pne.lt.pn(1)) j2=1
-   16 do 20 i=1,49
+   16 continue
+      do i=1,49
          if(t0.ge.tt(i).and.t0.lt.tt(i+1)) go to 25
-   20 continue
-   25 i1=i
+      end do
+   25 continue
+      i1=i
       i2=i+1
       if(t0.gt.tt(50)) then
         i1=50
@@ -14746,67 +14710,84 @@ C      replaced by its inverse
 C
       INCLUDE 'PARAMS.FOR'
       DIMENSION A(NR,NR)
-      IF(N.EQ.1) GO TO 250
-      DO 50 I=2,N
+C
+      IF(N.EQ.1) THEN 
+         A(1,1)=1.0D0/A(1,1)
+         RETURN
+      END IF
+C
+      DO I=2,N
          IM1=I-1
-         DO 20 J=1,IM1
+         DO J=1,IM1
             JM1=J-1
             DIV=A(J,J)
             SUM=0.
-            IF(JM1.LT.1) GO TO 20
-            DO 10 K=1,JM1
-   10          SUM=SUM+A(I,K)*A(K,J)
-   20       A(I,J)=(A(I,J)-SUM)/DIV
-         DO 40 J=I,N
+            IF(JM1.GE.1) THEN
+               DO K=1,JM1
+                  SUM=SUM+A(I,K)*A(K,J)
+               END DO
+            END IF
+            A(I,J)=(A(I,J)-SUM)/DIV
+         END DO
+         DO J=I,N
             SUM=0.
-            DO 30 K=1,IM1
-   30          SUM=SUM+A(I,K)*A(K,J)
-   40       A(I,J)=A(I,J)-SUM
-   50 CONTINUE
-      DO 80 II=2,N
+            DO K=1,IM1
+               SUM=SUM+A(I,K)*A(K,J)
+            END DO
+            A(I,J)=A(I,J)-SUM
+         END DO
+      END DO
+      DO II=2,N
          I=N+2-II
          IM1=I-1
-         IF(IM1.LT.1) GO TO 80
-         DO 70 JJ=1,IM1
-            J=I-JJ
-            JP1=J+1
-            SUM=0.
-            IF(JP1.GT.IM1) GO TO 70
-            DO 60 K=JP1,IM1
-   60          SUM=SUM+A(I,K)*A(K,J)
-   70       A(I,J)=-A(I,J)-SUM
-   80 CONTINUE
-      DO 110 II=1,N
+         IF(IM1.GE.1) THEN
+            DO JJ=1,IM1
+               J=I-JJ
+               JP1=J+1
+               SUM=0.
+               IF(JP1.LE.IM1) THEN
+                  DO K=JP1,IM1
+                     SUM=SUM+A(I,K)*A(K,J)
+                  END DO
+               END IF
+               A(I,J)=-A(I,J)-SUM
+            END DO
+         END IF
+      END DO
+      DO II=1,N
          I=N+1-II
          DIV=A(I,I)
          IP1=I+1
-         IF(IP1.GT.N) GO TO 110
-         DO 100 JJ=IP1,N
-            J=N+IP1-JJ
-            SUM=0.
-            DO 90 K=IP1,J
-   90          SUM=SUM+A(I,K)*A(K,J)
-            A(I,J)=-SUM/DIV
-  100    CONTINUE
-  110 A(I,I)=1.0D0/A(I,I)
+         IF(IP1.LE.N) THEN
+            DO JJ=IP1,N
+               J=N+IP1-JJ
+               SUM=0.
+               DO K=IP1,J
+                  SUM=SUM+A(I,K)*A(K,J)
+               END DO
+               A(I,J)=-SUM/DIV
+            END DO
+         END IF
+         A(I,I)=1.0D0/A(I,I)
+      END DO
 C
-      DO 240 I=1,N
-         DO 230 J=1,N
+      DO I=1,N
+         DO J=1,N
             K0=I
             IF(J.GE.I) GO TO 220
             SUM=0.
-  200       DO 210 K=K0,N
-  210          SUM=SUM+A(I,K)*A(K,J)
+  200       DO K=K0,N
+               SUM=SUM+A(I,K)*A(K,J)
+            END DO
             GO TO 230
   220       K0=J
             SUM=A(I,K0)
             IF(K0.EQ.N) GO TO 230
             K0=K0+1
             GO TO 200
-  230    A(I,J)=SUM
-  240 CONTINUE
-      RETURN
-  250 A(1,1)=1.0D0/A(1,1)
+  230       A(I,J)=SUM
+         END DO
+      END DO
       RETURN
       END
 C
@@ -14830,52 +14811,62 @@ C
       INCLUDE 'PARAMS.FOR'
       DIMENSION A(NR,NR),B(NR),X(NR),D(MLEVEL)
       DIMENSION IP(MLEVEL)
-      DO 70 I=1,N
-         DO 10 J=1,N
-   10       D(J)=A(J,I)
+      DO I=1,N
+         DO J=1,N
+            D(J)=A(J,I)
+         END DO
          IM1=I-1
-         IF(IM1.LT.1) GO TO 40
-         DO 30 J=1,IM1
-            IT=IP(J)
-            A(J,I)=D(IT)
-            D(IT)=D(J)
-            JP1=J+1
-            DO 20 K=JP1,N
-   20          D(K)=D(K)-A(K,J)*A(J,I)
-   30    CONTINUE
-   40    AM=ABS(D(I))
+         IF(IM1.GE.1) THEN
+            DO J=1,IM1
+               IT=IP(J)
+               A(J,I)=D(IT)
+               D(IT)=D(J)
+               JP1=J+1
+               DO K=JP1,N
+                  D(K)=D(K)-A(K,J)*A(J,I)
+               END DO
+            END DO
+         END IF
+         AM=ABS(D(I))
          IP(I)=I
-         DO 50 K=I,N
-            IF(AM.GE.ABS(D(K))) GO TO 50
-            IP(I)=K
-            AM=ABS(D(K))
-   50    CONTINUE
+         DO K=I,N
+            IF(AM.LT.ABS(D(K))) THEN
+               IP(I)=K
+               AM=ABS(D(K))
+            END IF
+         END DO
          IT=IP(I)
          A(I,I)=D(IT)
          D(IT)=D(I)
          IP1=I+1
          IF(IP1.GT.N) GO TO 80
-         DO 60 K=IP1,N
-   60       A(K,I)=D(K)/A(I,I)
-   70 CONTINUE
-   80 DO 100 I=1,N
+         DO K=IP1,N
+            A(K,I)=D(K)/A(I,I)
+         END DO
+      END DO
+   80 CONTINUE
+      DO I=1,N
          IT=IP(I)
          X(I)=B(IT)
          B(IT)=B(I)
          IP1=I+1
          IF(IP1.GT.N) GO TO 110
-         DO 90 J=IP1,N
-   90       B(J)=B(J)-A(J,I)*X(I)
-  100 CONTINUE
-  110 DO 140 I=1,N
+         DO J=IP1,N
+            B(J)=B(J)-A(J,I)*X(I)
+         END DO
+      END DO
+  110 CONTINUE
+      DO I=1,N
          K=N-I+1
          SUM=0.
          KP1=K+1
-         IF(KP1.GT.N) GO TO 130
-         DO 120 J=KP1,N
-  120       SUM=SUM+A(K,J)*X(J)
-  130    X(K)=(X(K)-SUM)/A(K,K)
-  140 CONTINUE
+         IF(KP1.LE.N) THEN
+            DO J=KP1,N
+               SUM=SUM+A(K,J)*X(J)
+            END DO
+         END IF
+         X(K)=(X(K)-SUM)/A(K,K)
+      END DO
       RETURN
       END
 C
@@ -14929,7 +14920,16 @@ C
       INCLUDE 'PARAMS.FOR'
       DIMENSION X(1),Y(1),XX(1),YY(1)
       EXP10(X0)=EXP(X0*2.30258509299405D0)
-      IF(NPOL.LE.0.OR.NX.LE.0) GO TO 200
+      IF(NPOL.LE.0.OR.NX.LE.0) THEN
+         N=NX
+         IF(NXX.GE.NX) N=NXX
+         DO I=1,N
+            XX(I)=X(I)
+            YY(I)=Y(I)
+         END DO
+         RETURN
+      END IF
+C
       IF(ILOGX.NE.0) THEN
          DO I=1,NX
             X(I)=LOG10(X(I))
@@ -14949,18 +14949,17 @@ C
       DO ID=1,NXX
          XXX=XX(ID)
          DO I=NM1,NUP
-            IF(XXX.LE.X(I)) GO TO 70
+            IF(XXX.LE.X(I)) GO TO 10
          END DO
          I=NUP
-   70    J=I-NM
+   10    J=I-NM
          JJ=J+NPOL-1
          YYY=0.
          DO K=J,JJ
             T=1.
-            DO 80 M=J,JJ
-               IF(K.EQ.M) GO TO 80
-               T=T*(XXX-X(M))/(X(K)-X(M))
-   80       CONTINUE
+            DO M=J,JJ
+               IF(K.NE.M) T=T*(XXX-X(M))/(X(K)-X(M))
+            END DO
             YYY=Y(K)*T+YYY
          END DO
          YY(ID)=YYY
@@ -14982,12 +14981,6 @@ C
          END DO
       END IF
       RETURN
-  200 N=NX
-      IF(NXX.GE.NX) N=NXX
-      DO I=1,N
-         XX(I)=X(I)
-         YY(I)=Y(I)
-      END DO
       RETURN
       END
 C
@@ -16758,7 +16751,7 @@ C
         ET=TEMP/11604.8
         P=(14.69D0-0.20-0.6667*LOG10(DNE))
 C 
-        DO 10 I=1,NLEV
+        DO I=1,NLEV
            U1=FLOAT(NE(I))
            ZSTAR=Z-S(I)
            IF (ZSTAR.GT.0)THEN
@@ -16774,7 +16767,7 @@ C
                 U1=0.0
            ENDIF
            U=U+U1
- 10     CONTINUE
+        END DO
         RETURN
         END
 C
@@ -17421,59 +17414,58 @@ c removed elements with z<28
       NION2=MIN0(JNION+2,NIONS)                                                  
       N=N-1                                                                     
 C                                                                               
-      DO 18 ION=1,NION2                                                         
-      Z=ION                                                                     
-      POTLO(ION)=POTLOW*Z                                                       
-      N=N+1 
-      nnn6n=nnn(6+6*(N-1))  
-c     nnn6n=nnn(6,n)                                                                  
-      NNN100=NNN6N/100 
-      XN1= NNN100                                                     
-      IP(ION)=XN1*1.e-3                                               
-      IG=NNN6N-NNN100*100  
-      GGG=IG                                                   
-      T2000=IP(ION)*T211                                                  
-      IT=MAX0(1,MIN0(9, INT(T/T2000-HALF))) 
-      XIT=IT                                   
-      DT=T/T2000-XIT-HALF                                                
-      PMIN=ONE                                                                   
-      I=(IT+1)/2                                                                
-      nnnin=nnn(i+6*(N-1))  
-c     nnnin=nnn(i,n)                                                                  
-      K1=NNNIN/100000                                                        
-      K2=NNNIN-K1*100000                                                     
-      K3=K2/10                                                                  
-      xk1=k1                                                
-      xk3=k3
-      KSCALE=K2-K3*10                                                           
-      IF(MOD(IT,2).EQ.0)GO TO 12                                                
-      P1=XK1*SCALE(KSCALE)                                                
-      P2=XK3*SCALE(KSCALE)                                                
-      IF(DT.GE.0.)GO TO 13                                                      
-      IF(KSCALE.GT.1)GO TO 13                                                   
-      KP1=int(P1)
-      IF(KP1.NE. INT(P2+.5))GO TO 13                                            
-      PMIN=KP1                                                                  
-      GO TO 13                                                                  
-   12 continue
-      xk3=k3
-      P1=XK3*SCALE(KSCALE)                                                
-      nnni1n=nnn(i+1+6*(N-1))  
-c     nnni1n=nnn(i+1,n)                                                                  
-      K1=NNNI1N/100000                                                      
-      KSCALE=MOD(NNNI1N,10) 
-      xk1=k1                                                
-      P2=XK1*SCALE(KSCALE)                                                
-   13 PART(ION)= MAX (PMIN,P1+(P2-P1)*DT)                                       
-      IF(GGG.EQ.0..OR.POTLO(ION).LT..1.OR.T.LT.T2000*4.)GO TO 18               
-      IF(T.GT.(T2000*11.)) TV=(T2000*11.)*TVCON                          
-      D1=.1/TV                                                                  
-      D2=POTLO(ION)/TV  
-      DX=SQRT(HIONEV*Z*Z/TV/D2)**3                                                       
-      PART(ION)=PART(ION)+GGG*EXP(-IP(ION)/TV)*       
-     *          (DX*(THIRD+(ONE-(HALF+(X18+D2*X120)*D2)*D2)*D2)-                              
-     *           DX*(THIRD+(ONE-(HALF+(X18+D1*X120)*D1)*D1)*D1))                              
-   18 CONTINUE                                                                  
+      DO ION=1,NION2                                                         
+         Z=ION                                                                     
+         POTLO(ION)=POTLOW*Z                                                       
+         N=N+1 
+         nnn6n=nnn(6+6*(N-1))  
+         NNN100=NNN6N/100 
+         XN1= NNN100                                                     
+         IP(ION)=XN1*1.e-3                                               
+         IG=NNN6N-NNN100*100  
+         GGG=IG                                                   
+         T2000=IP(ION)*T211                                                  
+         IT=MAX0(1,MIN0(9, INT(T/T2000-HALF))) 
+         XIT=IT                                   
+         DT=T/T2000-XIT-HALF                                                
+         PMIN=ONE                                                                   
+         I=(IT+1)/2                                                                
+         nnnin=nnn(i+6*(N-1))  
+         K1=NNNIN/100000                                                        
+         K2=NNNIN-K1*100000                                                     
+         K3=K2/10                                                                  
+         xk1=k1                                                
+         xk3=k3
+         KSCALE=K2-K3*10                                                           
+         IF(MOD(IT,2).EQ.0)GO TO 12                                                
+         P1=XK1*SCALE(KSCALE)                                                
+         P2=XK3*SCALE(KSCALE)                                                
+         IF(DT.GE.0.)GO TO 13                                                      
+         IF(KSCALE.GT.1)GO TO 13                                                   
+         KP1=int(P1)
+         IF(KP1.NE. INT(P2+.5)) GO TO 13                                            
+         PMIN=KP1                                                                  
+         GO TO 13                                                                  
+   12    continue
+         xk3=k3
+         P1=XK3*SCALE(KSCALE)                                                
+         nnni1n=nnn(i+1+6*(N-1))  
+         K1=NNNI1N/100000                                                      
+         KSCALE=MOD(NNNI1N,10) 
+         xk1=k1                                                
+         P2=XK1*SCALE(KSCALE)                                                
+   13    CONTINUE
+         PART(ION)= MAX (PMIN,P1+(P2-P1)*DT)                                       
+         IF(GGG.NE.0..AND.POTLO(ION).GE..1.AND.T.GE.T2000*4.) THEN               
+            IF(T.GT.(T2000*11.)) TV=(T2000*11.)*TVCON                          
+            D1=.1/TV                                                                  
+            D2=POTLO(ION)/TV  
+            DX=SQRT(HIONEV*Z*Z/TV/D2)**3                                                       
+            PART(ION)=PART(ION)+GGG*EXP(-IP(ION)/TV)*       
+     *              (DX*(THIRD+(ONE-(HALF+(X18+D2*X120)*D2)*D2)*D2)-                              
+     *              DX*(THIRD+(ONE-(HALF+(X18+D1*X120)*D1)*D1)*D1))
+         END IF                              
+      END DO                                                        
       u=part(jnion)
       RETURN                                                                    
       END                                                                       
@@ -17672,12 +17664,14 @@ c
       enddo
 c
       if(iatnum.eq.1) open(inp,file='ioniz.dat',status='old')
-      do 10 it=1,mtemp
-         do 10 ie=1,melec
+      do it=1,mtemp
+         do ie=1,melec
             fracm(it,ie)=0.
-            do 10 ion=1,mion1
+            do ion=1,mion1
                frac(it,ie,ion)=0.
-   10 continue
+            end do
+         end do
+      end do
 c
       read(inp,*)
       read(inp,*) it0,it1,itstp
@@ -17750,10 +17744,10 @@ C
       X=EXP(P4*LOG(UN+P3*ACOR))
       DWC2(ID)=P2*X
       A3=ACOR*ACOR*ACOR
-      DO 10 IZZ=1,MZZ
+      DO IZZ=1,MZZ
          Z3(IZZ)=IZZ*IZZ*IZZ
          DWC1(IZZ,ID)=P1*(X+P5*(IZZ-1.)*A3)
-   10 CONTINUE
+      END DO
       RETURN
       END
 C
@@ -18515,9 +18509,7 @@ C
       DO IL0=1,NLINML(ILIST)
          IL=INMLIN(IL0,ILIST) 
          ALAM=2.997925D18/FREQM(IL,ILIST)
-c        ID=IDSTD
          IJCN=IJCMTR(IL0,ILIST)
-c        IF(IJCN.GE.1.AND.IJCN.LE.NFREQS) ID=IREFD(IJCN)
          IMOL=INDATM(IL,ILIST)
          DOP1=DOPMOL(IMOL,ID)
          ANE=ELEC(ID)
@@ -18732,23 +18724,24 @@ C
 C
       IF(ISTART.EQ.0) THEN
       ISTART=1
-      DO 2 IWAVE=1,22
+      DO IWAVE=1,22
          WFFLOG(IWAVE)=LOG(91.134D0/WAVEK(IWAVE))
-         DO 2 ITHETA=1,11
+         DO ITHETA=1,11
             FFLOG(IWAVE,ITHETA)=LOG(FFCS(ITHETA,IWAVE)*1.E-26)
-    2 CONTINUE
+         END DO
+      END DO
       ENDIF
 C
       WAVE=2.99792458E17/FR
       WAVELOG=LOG(WAVE) 
 C
-      DO 21 ITHETA=1,11
+      DO ITHETA=1,11
          DO IWAVE=1,22
             FFLOG2(IWAVE)=FFLOG(IWAVE,ITHETA)
          END DO
          FFTLOG=YLINTP(WAVELOG,WFFLOG,FFLOG2,22,22)
          FFTT(ITHETA)=EXP(FFTLOG)/THETAFF(ITHETA)*CONFF
-   21 CONTINUE
+      END DO
 c
       THETA=CONTH/T
       FFTH=YLINTP(THETA,THETAFF,FFTT,11,11)
@@ -19223,8 +19216,8 @@ C
         TEM25=TEM**2*SQRT(TEM)
         DO I=1,NMETAL
            NELEMI = NELEMX(I)
-*
-* calculation of the partition functions following Irwin (1981)
+c
+c calculation of the partition functions following Irwin (1981)
 C
            call irwpf(nelemi,1,0,tem,g0)
            call irwpf(nelemi,2,0,tem,g1)
@@ -19374,10 +19367,6 @@ C
         DO I=1,NMETAL
            NELEMI = NELEMX(I)
            PEREV=PEREV+XKP(NELEMI)*P(NELEMI)*(1.+xk2(nelemi)/pe)
-c        write(6,631) i,nelemi,p(nelemi),XKP(NELEMI)*P(NELEMI),
-c    *   xkp(nelemi),xk2(nelemi),1.+xk2(nelemi)/pe,
-c    *   XKP(NELEMI)*P(NELEMI)*(1.+xk2(nelemi)/pe),perev
-c 631    format(2i4,1p7e11.3)
         END DO
 C
         PEREV=SQRT(PEREV/(1.0+SPNION/PE))
@@ -20467,62 +20456,6 @@ C
       ENDIF
       FLUX(IJ)=FLUX(IJ)+WMUH(IU)*RIM(1)
 c
-c      if(ij.eq.1.or.ij.eq.3.or.ij.eq.5.or.ij.eq.9.or.ij.eq.83) then
-c      if(iu.eq.2.or.iu.eq.20.or.iu.eq.60.or.iu.eq.80) then
-c      do id=1,iud
-c         write(79,679) ij,iu,id,ab0(id),st0(id),sctd(id),
-c     *                 tau(id),rim(id),
-c     *                 flux(ij)
-c      end do
-c      end if
-c      end if
-c  679 format(3i5,1p6e12.4)
-C
-c      CFX=WMUH(IU)*RIM(1)
-c      write(78,780) ij,iu,wlobs(ij),cfx,RIM(1)
-c  780 format(2i4,f10.3,1p2e16.8)
-C
-c     if(iflux.ge.1) then
-C
-C     output of emergent specific intensities to Unit 10 (line points)
-C     or 18 (two continuum points)
-C
-c     IF(IJ.GT.2) THEN
-c     WRITE(10,618) WLAM(IJ),FLUX(IJ),RIM(1),IU
-c     ELSE
-c     WRITE(18,618) WLAM(IJ),FLUX(IJ),RIM(1),IU
-c     END IF
-c     end if
-c 618 FORMAT(1H ,f10.3,2pe15.5,i5)
-C
-C     if needed (if iprin.ge.3), output of interesting physical
-C     quantities at the monochromatic optical depth  tau(nu)=2/3
-C
-c     IF(IPRIN.GE.3) THEN
-c     T0=LOG(TAU(IREF+1)/TAU(IREF))
-c     X0=LOG(TAU(IREF+1)/TAUREF)/T0
-c     X1=LOG(TAUREF/TAU(IREF))/T0
-c     DMREF=EXP(LOG(DM(IREF))*X0+LOG(DM(IREF+1))*X1)
-c     TREF=EXP(LOG(TEMP(IREF))*X0+LOG(TEMP(IREF+1))*X1)
-c     STREF=EXP(LOG(ST0(IREF))*X0+LOG(ST0(IREF+1))*X1)
-c     SSREF=EXP(LOG(-SS0(IREF))*X0+LOG(-SS0(IREF+1))*X1)
-c     SREF=STREF+SSREF
-c     ALM=2.997925E18/FREQ(IJ)
-c     WRITE(36,636) IJ,ALM,IREF,DMREF,TREF,STREF,SSREF,SREF
-c 636 FORMAT(1H ,I3,F10.3,I4,1PE10.3,0PF10.1,1X,1P3E10.3)
-c     END IF
-C
-C       Contribution to J and H
-C
-c        do id=1,nud(iu)
-c          rad1(id)=rad1(id)+wmuj(iu,id)*uf(id)
-c          ali1(id)=ali1(id)+wmuj(iu,id)*af(id)
-c        end do
-c        FLUXc(IJ)=FLUXc(IJ)+WMUH(IU)*RIM(1)
-C
-C
-C     end of the loop over frequencies
-C
   500 CONTINUE
       RETURN
       END
@@ -21410,7 +21343,6 @@ c
       IF(IT.LT.1) IT=1
       TN=FLOAT(IT)*fihu+1500.
       SBFOH=EXP((CROSSOHT(IT)+(CROSSOHT(IT+1)-CROSSOHT(IT))*
-c    *     (T-TN)*fihui)*tenl)*PART
      *     (T-TN)*fihui)*tenl)
       RETURN
       END
@@ -21560,10 +21492,10 @@ C
       NT=NTHXEN(ILINE)
       NE=NEHXEN(ILINE)
 C
-      DO 10 IZZ=1,NE-1
+      DO IZZ=1,NE-1
          IPZ=IZZ
          IF(Z0.LE.XNEXEN(IZZ+1,ILINE)) GO TO 20
-   10 CONTINUE
+      END DO
    20 N0Z=IPZ-NZ/2+1
       IF(N0Z.LT.1) N0Z=1
       IF(N0Z.GT.NE-NZ+1) N0Z=NE-NZ+1
@@ -21572,10 +21504,10 @@ C
       DO IZZ=N0Z,N1Z
          I0Z=IZZ-N0Z+1
          ZZ(I0Z)=XNEXEN(IZZ,ILINE)
-         DO 30 IX=1,NT-1
+         DO IX=1,NT-1
             IPX=IX
             IF(X0.LE.XTXEN(IX+1,ILINE)) GO TO 40
-   30    CONTINUE
+         END DO
    40    N0X=IPX-NX/2+1
          IF(N0X.LT.1) N0X=1
          IF(N0X.GT.NT-NX+1) N0X=NT-NX+1
