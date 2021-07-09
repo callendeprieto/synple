@@ -155,8 +155,9 @@ c     if reguired, normalization to get a relative spectrum
 c    
       if(irel.eq.1) then
          call interp(wcon0,fcon0,wlam0,fcn,ncon0,nlam0,2,0,0)
-         do 50 i=1,nlam0
-   50       flam0(i)=flam0(i)/fcn(i)
+         do i=1,nlam0
+            flam0(i)=flam0(i)/fcn(i)
+         end do
       end if
 c
 c -----------------------------------------------------------------
@@ -175,13 +176,15 @@ c
          end if
          if(stepr.le.0.) then
             nlam1=nlam0
-            do 80 i=1,nlam1
-   80          wlam1(i)=wlam0(i)
+            do i=1,nlam1
+               wlam1(i)=wlam0(i)
+            end do
           else
             XN=(ALAM1-ALAM0)/STEPR
             NLAM1=INT(XN)+1
-            DO 90 I=1,NLAM1
-   90          WLAM1(I)=ALAM0+STEPR*(I-1)
+            DO I=1,NLAM1
+               WLAM1(I)=ALAM0+STEPR*(I-1)
+            END DO
          end if
          CALL ROTINS(1,FLAM0,FLAM1,WLAM0,WLAM1,NLAM0,NLAM1,
      *               NROT,VROT,0.d0)
@@ -191,10 +194,10 @@ c
 c  no rotational convolution if VROT=0
 c
          nlam1=nlam0
-         do 100 i=1,nlam1
+         do i=1,nlam1
             wlam1(i)=wlam0(i)
             flam1(i)=flam0(i)
-  100    continue
+         end do
       end if
 c
 c ------------------------------------------------------------------
@@ -227,20 +230,21 @@ c
          END IF
          NINS=INT(XN)
          IF(NINS.LT.10) NINS=10
-c         write(6,*) 'number of integration points - instrum.',nins
          IF(NINS.GT.MCONV) then
             write(6,*) 'nins too large'
             stop
          end if
          if(stepi.le.0.) then
             nlam2=nlam1
-            do 110 i=1,nlam2
-  110          wlam2(i)=wlam1(i)
+            do i=1,nlam2
+               wlam2(i)=wlam1(i)
+            end do
           else
             XNI=(ALAM1-ALAM0)/STEPI
             NLAM2=INT(XNI)+1
-            DO 120 I=1,NLAM2
-  120          WLAM2(I)=ALAM0+STEPI*(I-1)
+            DO I=1,NLAM2
+               WLAM2(I)=ALAM0+STEPI*(I-1)
+            END DO
          end if
          CALL ROTINS(2,FLAM1,FLAM2,WLAM1,WLAM2,NLAM1,NLAM2,
      *               NINS,0.d0,FWHM)
@@ -260,9 +264,9 @@ c
 c  values of wavelengths (in A) -   WLAM2 versus
 c  corresponding values of fluxes - FLAM2
 c
-      do 200 i=1,nlam2
+      do i=1,nlam2
          write(11,600) wlam2(i),flam2(i)
-  200 continue
+      end do
   600 format(f10.3,1pe10.3)
 c
 c     rewind 7
@@ -311,9 +315,9 @@ C
      *          IGCALC(MLAM)
 C
       NR1=NR+1
-      DO 10 I=1,NLAMY
+      DO I=1,NLAMY
          IGCALC(I)=0
-   10 CONTINUE
+      END DO
 C
       IF(MODE.EQ.1.or.mode.eq.3) THEN
          DLAM=YLAM(NLAMY)-YLAM(1)
@@ -322,9 +326,9 @@ C
           ELSE
             NCALG=INT(DLAM/DLROT)+1
             NSTEP=NLAMY/NCALG
-            DO 20 I=1,NCALG
+            DO I=1,NCALG
                IGCALC(I*NSTEP+1)=1
-   20       CONTINUE
+            END DO
             SLAM=YLAM(1)
          END IF
        ELSE IF(MODE.EQ.2) THEN
@@ -344,17 +348,17 @@ c
       X0=XLAM(1)
       X1=X0+XLMAX
       HM0=HINP(1)
-      DO 50 I=1,NLAMY
+      DO I=1,NLAMY
          IF(YLAM(I).LE.X0) THEN
             IEND0=I
             HOUT(I)=HM0
           ELSE IF(YLAM(I).LE.X1) THEN
             INTR0=I
           ELSE
-            GO TO 60
+            GO TO 10
          END IF
-   50 CONTINUE
-   60 CONTINUE
+      END DO
+   10 CONTINUE
 c
 c  b) end of the interval
 c
@@ -366,17 +370,17 @@ c
       END IF
       X1=X0-XLMAX
       HP0=HINP(NLAMX)
-      DO 70 I=NLAMY,1,-1
+      DO I=NLAMY,1,-1
          IF(YLAM(I).GE.X0) THEN
             IEND1=I
             HOUT(I)=HP0
           ELSE IF(YLAM(I).GE.X1) THEN
             INTR1=I
           ELSE
-            GO TO 80
+            GO TO 20
          END IF
-   70 CONTINUE
-   80 CONTINUE
+      END DO
+   20 CONTINUE
 C
 C ------------------------------------------------------------
 C wavelength by wavelength convolution; integral calculated by
@@ -387,18 +391,18 @@ C 1. points near the beginning of the interval
 C
       IF(INTR0.GE.1) THEN
       K0=1
-      DO 390 I=IEND0+1,INTR0
+      DO I=IEND0+1,INTR0
          HOUT(I)=0.
-         DO 310 K=K0,NLAMX
+         DO K=K0,NLAMX
             K0=K
-            IF(XLAM(K).GT.YLAM(I)) GO TO 320
-  310    CONTINUE
-  320    K0=K0-1
-         DO 350 J=1,NR1
+            IF(XLAM(K).GT.YLAM(I)) GO TO 30
+         END DO
+   30    K0=K0-1
+         DO J=1,NR1
             A2=(J-1)*DLAM
             ALAM=YLAM(I)+A2
             K=K0+1
-  330       CONTINUE
+   40       CONTINUE
             IF(ALAM.LT.XLAM(K)) THEN
                HPLUS=HINP(K-1)+(HINP(K)-HINP(K-1))/(XLAM(K)-XLAM(K-1))*
      *               (ALAM-XLAM(K-1))
@@ -407,15 +411,15 @@ C
                HOUT(I)=HOUT(I)+HINP(K)*G(J)
              ELSE
                K=K+1
-               GO TO 330
+               GO TO 40
             END IF
-  350    CONTINUE 
+         END DO
 C  
-         DO 380 J=1,NR1
+         DO 80 J=1,NR1
             A2=(J-1)*DLAM
             ALAM=YLAM(I)-A2
             K=K0
-  360       CONTINUE
+  60        CONTINUE
             IF(ALAM.GT.XLAM(K)) THEN
                HMINUS=HINP(K)+(HINP(K+1)-HINP(K))/(XLAM(K+1)-XLAM(K))*
      *                (ALAM-XLAM(K))
@@ -426,21 +430,20 @@ C
                K=K-1
                IF(K.LT.1) THEN
                   HOUT(I)=HOUT(I)+HM0*G(J)
-                  GO TO 380
+                  GO TO 80
                END IF
-               GO TO 360
+               GO TO 60
             END IF
-  380    CONTINUE
+  80     CONTINUE
          IF(K0.LE.0) K0=1
-  390 CONTINUE
+      END DO
       END IF
 C  
 C 2. inner points
 C
-c 601 format(5i5)
       if(intr0.le.0) intr0=1
       K0=1
-      DO 300 I=INTR0+1,INTR1-1
+      DO I=INTR0+1,INTR1-1
 C
 C        re-evaluate the kernel function if necessary
 c
@@ -453,12 +456,12 @@ c
 c        perform the convolution integral
 c
          HOUT(I)=0.
-         DO 110 K=K0,NLAMX
+         DO K=K0,NLAMX
             K0=K
             IF(XLAM(K).GT.YLAM(I)) GO TO 120
-  110    CONTINUE
+         END DO
   120    K0=K0-1
-         DO 200 J=1,NR1
+         DO J=1,NR1
             A2=(J-1)*DLAM
             ALAM=YLAM(I)+A2
             K=K0+1
@@ -473,9 +476,65 @@ c
                K=K+1
                GO TO 130
             END IF
+         END DO 
+C 
+         DO J=1,NR1
+            A2=(J-1)*DLAM
+            ALAM=YLAM(I)-A2
+            K=K0
+  140       CONTINUE
+            IF(ALAM.GT.XLAM(K)) THEN
+               HMINUS=HINP(K)+(HINP(K+1)-HINP(K))/(XLAM(K+1)-XLAM(K))*
+     *                (ALAM-XLAM(K))
+               HOUT(I)=HOUT(I)+HMINUS*G(J)
+             ELSE IF(ALAM.EQ.XLAM(K)) THEN
+               HOUT(I)=HOUT(I)+HINP(K)*G(J)
+             ELSE
+               K=K-1
+               GO TO 140
+            END IF
+         END DO
+         IF(K0.LE.0) K0=1
+      END DO
+C  
+C 3. points near the end of the interval
+C
+      IF(INTR1.LT.NLAMY) THEN
+      IF(MODE.EQ.1.AND.DLAM.GT.DLROT) THEN
+         SLAM=YLAM(NLAMY)
+         CALL KERNEL(MODE,NR,VROT,SLAM,FWHM,XLMAX,G)
+         DLAM=XLMAX/NR
+      END IF
+      K0=NLAMX
+      DO I=IEND1,INTR1,-1
+         HOUT(I)=0.
+         DO K=K0,1,-1
+            K0=K
+            IF(XLAM(K).LT.YLAM(I)) GO TO 150
+         END DO
+  150    CONTINUE
+         DO 200 J=1,NR1
+            A2=(J-1)*DLAM
+            ALAM=YLAM(I)+A2
+            K=K0+1
+  160       CONTINUE
+            IF(ALAM.LT.XLAM(K)) THEN
+               HPLUS=HINP(K-1)+(HINP(K)-HINP(K-1))/(XLAM(K)-XLAM(K-1))*
+     *               (ALAM-XLAM(K-1))
+               HOUT(I)=HOUT(I)+HPLUS*G(J)
+             ELSE IF(ALAM.EQ.XLAM(K)) THEN
+               HOUT(I)=HOUT(I)+HINP(K)*G(J)
+             ELSE
+               K=K+1
+               IF(K.GT.NLAMX) THEN
+                  HOUT(I)=HOUT(I)+HP0*G(J)
+                  GO TO 200
+               END IF
+               GO TO 160
+            END IF
   200    CONTINUE 
 C  
-         DO 220 J=1,NR1
+         DO J=1,NR1
             A2=(J-1)*DLAM
             ALAM=YLAM(I)-A2
             K=K0
@@ -490,65 +549,9 @@ C
                K=K-1
                GO TO 210
             END IF
-  220    CONTINUE
+         END DO
          IF(K0.LE.0) K0=1
-  300 CONTINUE
-C  
-C 3. points near the end of the interval
-C
-      IF(INTR1.LT.NLAMY) THEN
-      IF(MODE.EQ.1.AND.DLAM.GT.DLROT) THEN
-         SLAM=YLAM(NLAMY)
-         CALL KERNEL(MODE,NR,VROT,SLAM,FWHM,XLMAX,G)
-         DLAM=XLMAX/NR
-      END IF
-      K0=NLAMX
-      DO 500 I=IEND1,INTR1,-1
-         HOUT(I)=0.
-         DO 410 K=K0,1,-1
-            K0=K
-            IF(XLAM(K).LT.YLAM(I)) GO TO 420
-  410    CONTINUE
-  420    CONTINUE
-         DO 450 J=1,NR1
-            A2=(J-1)*DLAM
-            ALAM=YLAM(I)+A2
-            K=K0+1
-  430       CONTINUE
-            IF(ALAM.LT.XLAM(K)) THEN
-               HPLUS=HINP(K-1)+(HINP(K)-HINP(K-1))/(XLAM(K)-XLAM(K-1))*
-     *               (ALAM-XLAM(K-1))
-               HOUT(I)=HOUT(I)+HPLUS*G(J)
-             ELSE IF(ALAM.EQ.XLAM(K)) THEN
-               HOUT(I)=HOUT(I)+HINP(K)*G(J)
-             ELSE
-               K=K+1
-               IF(K.GT.NLAMX) THEN
-                  HOUT(I)=HOUT(I)+HP0*G(J)
-                  GO TO 450
-               END IF
-               GO TO 430
-            END IF
-  450    CONTINUE 
-C  
-         DO 470 J=1,NR1
-            A2=(J-1)*DLAM
-            ALAM=YLAM(I)-A2
-            K=K0
-  460       CONTINUE
-            IF(ALAM.GT.XLAM(K)) THEN
-               HMINUS=HINP(K)+(HINP(K+1)-HINP(K))/(XLAM(K+1)-XLAM(K))*
-     *                (ALAM-XLAM(K))
-               HOUT(I)=HOUT(I)+HMINUS*G(J)
-             ELSE IF(ALAM.EQ.XLAM(K)) THEN
-               HOUT(I)=HOUT(I)+HINP(K)*G(J)
-             ELSE
-               K=K-1
-               GO TO 460
-            END IF
-  470    CONTINUE
-         IF(K0.LE.0) K0=1
-  500 CONTINUE
+      END DO
       END IF
       RETURN
       END
@@ -617,7 +620,7 @@ C evaluation of the kernel function G
 C
       DLAM=XLMAX/NR
       NR1=NR+1
-      DO 10 J=1,NR1
+      DO J=1,NR1
          X=(J-1)*DLAM
          IF(MODE.EQ.1) THEN
             X1=ABS(1.-(X/XLMAX)**2)
@@ -627,26 +630,26 @@ C
           ELSE IF(MODE.EQ.3) THEN
             G(J)=gm(j)
          END IF
-   10 CONTINUE
+      END DO
 C
 C renormalization in order to have   integral(G) = 1
 C
       SUM=0.
-      DO 20 J=2,NR
+      DO J=2,NR
          SUM=SUM+TWO*G(J)
-   20 CONTINUE
+      END DO
       SUM=SUM+G(1)+G(NR1)
       SUM=ONE/DLAM/SUM
 C
-      DO 30 J=1,NR1
+      DO J=1,NR1
          G(J)=G(J)*SUM
-   30 CONTINUE
+      END DO
 c
 c  multiply by integration weights for trapezoidal integration
 c
-      DO 40 J=1,NR1 
+      DO J=1,NR1 
          G(J)=G(J)*DLAM
-   40 CONTINUE
+      END DO
       G(1)=HALF*G(1)
       G(NR1)=HALF*G(NR1)
       RETURN
@@ -677,54 +680,70 @@ C
       implicit real*8 (a-h,o-z)
       DIMENSION X(1),Y(1),XX(1),YY(1)
       EXP10(X0)=EXP(X0*2.30258509299405D0)
-      IF(NPOL.LE.0.OR.NX.LE.0) GO TO 200
-      IF(ILOGX.EQ.0) GO TO 30
-      DO 10 I=1,NX
-   10    X(I)=LOG10(X(I))
-      DO 20 I=1,NXX
-   20    XX(I)=LOG10(XX(I))
-   30 IF(ILOGY.EQ.0) GO TO 50
-      DO 40 I=1,NX
-   40    Y(I)=LOG10(Y(I))
-   50 NM=(NPOL+1)/2
+      IF(NPOL.LE.0.OR.NX.LE.0) THEN
+         N=NX
+         IF(NXX.GE.NX) N=NXX
+         DO I=1,N
+            XX(I)=X(I)
+            YY(I)=Y(I)
+         END DO
+         RETURN
+      END IF
+C
+      IF(ILOGX.NE.0) THEN
+         DO I=1,NX
+            X(I)=LOG10(X(I))
+         END DO
+         DO I=1,NXX
+            XX(I)=LOG10(XX(I))
+         END DO
+      END IF
+      IF(ILOGY.NE.0) THEN
+         DO I=1,NX
+            Y(I)=LOG10(Y(I))
+         END DO
+      END IF
+      NM=(NPOL+1)/2
       NM1=NM+1
       NUP=NX+NM1-NPOL
-      DO 100 ID=1,NXX
+      DO ID=1,NXX
          XXX=XX(ID)
-         DO 60 I=NM1,NUP
-            IF(XXX.LE.X(I)) GO TO 70
-   60    CONTINUE
+         DO I=NM1,NUP
+            IF(XXX.LE.X(I)) GO TO 10
+         END DO
          I=NUP
-   70    J=I-NM
+   10    J=I-NM
          JJ=J+NPOL-1
          YYY=0.
-         DO 90 K=J,JJ
+         DO K=J,JJ
             T=1.
-            DO 80 M=J,JJ
-               IF(K.EQ.M) GO TO 80
-               T=T*(XXX-X(M))/(X(K)-X(M))
-   80       CONTINUE
-   90    YYY=Y(K)*T+YYY
+            DO M=J,JJ
+               IF(K.NE.M) T=T*(XXX-X(M))/(X(K)-X(M))
+            END DO
+            YYY=Y(K)*T+YYY
+         END DO
          YY(ID)=YYY
-  100 CONTINUE
-      IF(ILOGX.EQ.0) GO TO 130
-      DO 110 I=1,NX
-  110    X(I)=EXP10(X(I))
-      DO 120 I=1,NXX
-  120    XX(I)=EXP10(XX(I))
-  130 IF(ILOGY.EQ.0) RETURN
-      DO 140 I=1,NX
-  140    Y(I)=EXP10(Y(I))
-      DO 150 I=1,NXX
-  150    YY(I)=EXP10(YY(I))
+      END DO
+      IF(ILOGX.NE.0) THEN
+         DO I=1,NX
+            X(I)=EXP10(X(I))
+         END DO
+         DO I=1,NXX
+            XX(I)=EXP10(XX(I))
+         END DO
+      END IF
+      IF(ILOGY.NE.0) THEN
+         DO I=1,NX
+            Y(I)=EXP10(Y(I))
+         END DO
+         DO I=1,NXX
+           YY(I)=EXP10(YY(I))
+         END DO
+      END IF
       RETURN
-  200    N=NX
-         IF(NXX.GE.NX) N=NXX
-      DO 210 I=1,N
-         XX(I)=X(I)
-  210    YY(I)=Y(I)
       RETURN
       END
 C
+C
 C ********************************************************************
-C ********************************************************************
+C *i******************************************************************
