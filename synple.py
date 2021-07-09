@@ -2345,7 +2345,7 @@ stepfwhm=0.0, clean=True, reuseinputfiles=False, logfile='syn.log'):
   f = open('fort.5','w')
   f.write( ' %s %s %s \n' % ("'fort.7'", "'fort.17'", "'fort.11'") )
   f.write( ' %f %f %f \n' % (vrot, space, steprot) )
-  f.write( ' %f %f \n' % (fwhm, stepfwhm) )
+  f.write( ' %f %f %f \n' % (fwhm, stepfwhm, 0.0) )
   print('stepfwhm=',stepfwhm)
   f.write( ' %f %f %i \n' % (np.min(wave), np.max(wave), 0) )
   f.close()
