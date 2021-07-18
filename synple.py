@@ -254,7 +254,10 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     if teff < 4000.: cutoff0=500.
     if teff < 3500.: cutoff0=1000.
     if teff < 3000.: cutoff0=1500. 
-  write55(wrange,space,imode,inlte,2,cutoff0,strength,vmicro,linelist,atmostype) #synspec control file
+  write55(wrange,dw=space,imode=imode,inlte=inlte, hydprf=2, \
+          cutoff0=cutoff0,strength=strength,vmicro=vmicro,   \
+          linelist=linelist,atmostype=atmostype)
+  #synspec control file
   writetas('tas',nd,linelist,nonstd=nonstd)               #non-std param. file
   create_links(linelist)                                  #auxiliary data
 
@@ -1154,7 +1157,8 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
 
 
 
-def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], \
+def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=1, \
+    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], \
     tlt = (20,3.08,0.068), tlrho = (20,-14.0,0.59), \
     tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), \
     tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), tvmicro=(1,1.0,0.0), \
@@ -1171,22 +1175,35 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
   ----------
   wrange: tuple or list of two floats
       initial and ending wavelengths (angstroms)
-  dw: float
+  dlw: float
+      step in log10(lambda) for the output opacity table.
       Unlike in 'syn', interpolation to a constant step will always be done
-      (default is None for automatic selection based on the first model of the list)
+      to build the opacity table. If one wishes to resolve lines, it is advisable
+      to use dlw ~ 1e-6 or smaller. However, for tables used to build model atmospheres
+      dlw ~ 1e-5 suffices in more cases. NOTE that the actual calculation uses a different
+      step, computed internally to ensure that lines are resolved.
+      (default value is 2.1e-5)
+  binary: boolean
+      when true, the output table is written in binary format to speed up
+      reading it from tlusty
+      (default is False)
   strength: float, optional
       threshold in the line-to-continuum opacity ratio for 
       selecting lines (default is 1e-4)
+  inttab: int
+      a switch for determining the mode of transformation of opacities from
+      the actual calculation to the opacity table:
+      1 indicates that the opacities in the table are simply interpolated
+      any other integer will cause that the stored opacities are averaged 
+      over bins to approximately preserve the integral over wavelength. 
+      This latter option can be useful for model construction, where the integral 
+      is what matters, and be sufficient to work with values dlw>1e-5.
+      (default is 1)
   linelist: array of str
       filenames of the line lists, the first one corresponds to 
       the atomic lines and all the following ones (optional) to
       molecular lines. Give an empty array for a continuum-only (+ H and HeII lines) table
       (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
-  atom: str
-      'ap18' -- generic opacities used in Allende Prieto+ 2018
-      'yo19' -- restricted set for NLTE calculations for APOGEE 2019 (Osorio+ 2019)
-      'hhm' -- continuum opacity is simplified to H and H-
-      (default 'ap18')
   tlt: tuple
     log10(T) triad (n, llimit, step) for opacity grid
     (default values  chosen for grid lt = np.arange(20)*0.068 + 3.08,
@@ -1205,15 +1222,21 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
     [N/Fe] triad
   tofe: tuple
     [O/Fe] triad
-  rfeh: tuple
+  trfeh: tuple
     [r/Fe] triad (r-elements abundance ratio)
-  sfeh: tuple
+  tsfeh: tuple
     [s.Fe] triad (s-elements abundance ratio)
+  tvmidro: tuple
+    vmicro triad (km/s)
   zexclude: list
     atomic numbers of the elements whose opacity is NOT to be
     included in the table
     (default None)
-
+  atom: str
+      'ap18' -- generic opacities used in Allende Prieto+ 2018
+      'yo19' -- restricted set for NLTE calculations for APOGEE 2019 (Osorio+ 2019)
+      'hhm' -- continuum opacity is simplified to H and H-
+      (default 'ap18')
   """
 
   #synspec does not currently run in parallel
@@ -1304,6 +1327,8 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
 
   linelist = checklinelistpath(linelist)
 
+  space = np.mean(wrange) / clight * 2.355 / 3. * np.sqrt(0.1289**2 * np.min(10.**lt) / 100. + np.min(vmicros)** 2 / 2.)
+
   cutoff0=250.
   if 10.**min(lt) < 4000.: cutoff0=500.
   if 10.**min(lt) < 3500.: cutoff0=1000.
@@ -1314,7 +1339,8 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
   z_metals = np.arange(97,dtype=int) + 3
   #Ar usually included among alphas in MARCS and not in Kurucz/Meszaros
   z_alphas = np.array([8,10,12,14,16,18,20,22],dtype=int) 
-  # rs increases: notes and data below from comments in the MARCS code (provided by B.Edvardsson) 
+  # rs increases: notes and data below from comments in the MARCS code 
+  # (provided by B.Edvardsson) 
   # Fractional r-process abundance for Ga-Bi (r+s simply assumed == 100%) | Date 2000-01-18
   # (Note: Ga-Sr (31-38) was just copied from Kaeppeler et al. 1989, below)
   # s-process from Stellar models: Arlandini C., Kaeppeler F., Wisshak K.,
@@ -1401,7 +1427,9 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
                       imode = -4 
                   else: imode = -3
 
-                  write55(wrange,dw=dw,imode=imode,inlte=0,hydprf=0, \
+
+
+                  write55(wrange,dw=space,imode=imode,inlte=0,hydprf=0, \
                   cutoff0=cutoff0, strength=strength, vmicro=vmicro, \
                   linelist=linelist)
 
@@ -1409,8 +1437,9 @@ def polyopt(wrange=(9.e2,1.e5),dw=0.1,strength=1e-3, linelist=['gfallx3_bpo.19',
                   
                   writetas('tas',1,linelist)
 
-                  write2(lt,lrho,wrange,filename='opt.dat', \
-                  strength=strength,inttab=1)
+
+                  write2(lt,lrho,wrange, filename='opt.data', \
+                  dlw=dlw, binary=binary,strength=strength,inttab=inttab)
 
                   if zexclude != None: 
                     write3(zexclude)
