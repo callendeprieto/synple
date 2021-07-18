@@ -1429,9 +1429,9 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
 
 
 
-                  write55(wrange,dw=space,imode=imode,inlte=0,hydprf=0, \
-                  cutoff0=cutoff0, strength=strength, vmicro=vmicro, \
-                  linelist=linelist)
+                  write55(wrange,dw=space,imode=imode,inlte=0,hydprf=0,      \
+                          cutoff0=cutoff0, strength=strength, vmicro=vmicro, \
+                          linelist=linelist)
 
                   write5(9999.,9.9,abu,atom)
                   
@@ -1439,7 +1439,7 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
 
 
                   write2(lt,lrho,wrange, filename='opt.data', \
-                  dlw=dlw, binary=binary,strength=strength,inttab=inttab)
+                         dlw=dlw, binary=binary,strength=strength,inttab=inttab)
 
                   if zexclude != None: 
                     write3(zexclude)
@@ -1466,9 +1466,11 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
 
 
 
-def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
-  tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), \
-    ignore_missing_models=False, ext='mod'):
+def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, \
+                  tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
+                  tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), \
+                  tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), \
+                  ignore_missing_models=False, ext='mod'):
 
   """Collects all the MARCS models in modeldir that are part of a regular grid defined
   by triads in various parameters. Each triad has three values (n, llimit, step)
