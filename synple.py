@@ -3760,7 +3760,92 @@ def read_multiline_fltarray(fhandle,arrlen):
 
   return (arr)
 
+def read_opt(filename):
+    """Reads a synspec/tlusty opacity table (see routine polyopt)
 
+    Parameters
+    ----------
+       filename: string
+                 name of the file containing the opacity table
+
+
+   Returns
+   -------
+       lt: float array
+            log10(T) for opacity grid (T in K)
+       lrho:  float array
+            log10(rho)  for opacity grid (rho in gr/cm3)
+       lambda0: numpy float array
+            vacuum wavelength (Angstroms)
+       lopa: numpy float array
+            log10(opacity/rho), where opacity is in cm-1, and opacity/rho in cm2/gr
+       abu_eos: array of floats (99 elements) 
+            chemical abundances relative to hydrogen (N(X)/N(H)) adopted for the 
+            equation of state (elements not explicit in the table header are assigned
+            zero abundance)
+       abu_opa: array of floats (99 elements)
+            chemical abundances relative to hydrogen (N(X)/N(H)) adopted for the 
+            opacities in the table  (elements not explicit in the table header are assigned
+            zero abundance)
+
+    """
+
+    symbol, mass, sol = elements()
+    abu_eos = np.zeros(99)
+    abu_opa = np.zeros(99)
+
+    f = open(filename,'r')
+    entry = f.readline()
+    entry = f.readline()
+    entry = f.readline()
+    while entry != "\n":
+        #print(entry)
+        entries = entry.split()
+        try:
+            index = symbol.index(entries[0])
+            abu_eos[index] = float(entries[1])
+            abu_opa[index] = float(entries[2])
+        except ValueError:
+            print("the line ",entry," is not recognized as describing the abundance of an element")
+        entry = f.readline()
+
+    while entry[:13] != "number of fre":
+        entry = f.readline()
+
+    entry = f.readline()
+    entries = entry.split()
+    nlambda = np.int64(entries[0])
+    lambda0 = np.zeros(nlambda, dtype = float)
+    nt = int(entries[1])
+    nrho = int(entries[2])
+    lopa = np.zeros( (nlambda,nrho,nt), dtype=float)
+    print('nrho, nt, nlambda = ', nrho, nt, nlambda)
+    
+
+    while entry[:13] != "log temperatu":
+        entry = f.readline()
+    
+    lt = read_multiline_fltarray(f,nt)
+
+    while entry[:13] != "log densities":
+        entry = f.readline()
+    
+    lrho = read_multiline_fltarray(f,nrho)
+
+    entry = f.readline()
+    i = 0
+    while entry != "":
+        entry = f.readline()
+        if  entry[1:13] == "*** frequenc":
+            entries = entry.split()
+            assert (int(entries[-2]) == i+1), 'The frequencies do not appear in order: '+entries[-2]+' != '+str(i+1)
+            lambda0[i] = float(entries[-1])
+            entry = f.readline()
+            arr = read_multiline_fltarray(f,nt*nrho)
+            lopa[i,:,:] = np.reshape(arr, (nrho,nt))
+            i += 1
+
+    return(lrho,lt,lambda0,lopa,abu_eos,abu_opa)
 
 def interp_spl(xout, x, y):
 
