@@ -4740,7 +4740,7 @@ C
       CALL PHTION(ID,ABSO,EMIS,FREQ,NFREQ)
       CALL PHTX(ID,ABSO,EMIS,FREQ,0)
 C
-       if(imode.ge.0) then
+       if(imode.ge.0.and.imode0.ge.0) then
           do ij=1,nfreq
              abso(ij)=abso(ij)+scat(ij)
           end do
