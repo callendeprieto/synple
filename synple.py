@@ -1586,6 +1586,9 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, \
     print('Error: sfe triad must have three elements (n, llimit, step)')
     return ()
 
+  if not os.path.isabs(modeldir): 
+        modeldir = os.path.join (os.getcwd(), modeldir)
+
   files = []
 
   fi = open('files.txt','w')
@@ -1709,6 +1712,9 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
     print('Error: cfe triad must have three elements (n, llimit, step)')
     return ()
 
+  if not os.path.isabs(modeldir): 
+        modeldir = os.path.join (os.getcwd(), modeldir)
+
   files = []
 
   fi = open('files.txt','w')
@@ -1823,6 +1829,8 @@ def collect_k2odfnew(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0)
     print('Error: afe triad must have three elements (n, llimit, step)')
     return ()
 
+  if not os.path.isabs(modeldir): 
+        modeldir = os.path.join (os.getcwd(), modeldir)
 
   files = []
 
