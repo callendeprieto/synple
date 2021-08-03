@@ -1733,6 +1733,7 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
                     filename = (sformat % (teff,logg,mcode,abs(feh)*10.,ccode,cfe*10.,acode,afe*10.) )
 
                     file = os.path.join(modeldir,filename)
+                    print(file)
 
                     if ignore_missing_models == False:
                       assert os.path.isfile(file), 'Cannot find model '+filename+' in modeldir '+modeldir                   
