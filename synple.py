@@ -1612,19 +1612,18 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, \
                     if ((tofe[0] == 1) and (abs(tofe[1]) < 1e-7) and (abs(tofe[2]) < 1e-7) ):
                       ofe = afe 
 
-                    sformat = "%s%4i_g%+.1f_%s_z%+.2f_a%+.2f_c%+.2f_n%+.2f_o%+.2f_r%+.2f_s%+.2f."+ext+"*"
+                    sformat = "%s%4i_g%+.1f_%s_z%+.2f_a%+.2f_c%+.2f_n%+.2f_o%+.2f_r%+.2f_s%+.2f."+ext
                     filename = (sformat % (a1,teff,logg,code,feh,afe,cfe,nfe,ofe,rfe,sfe) )
 
-                    file = glob.glob(os.path.join(modeldir,'**',filename),recursive=True)
-                    
-
+                    file = os.path.join(modeldir,filename)
+          
                     if ignore_missing_models == False:
-                      assert len(file) > 0, 'Cannot find model '+filename+' in modeldir '+modeldir                   
-                      assert len(file) == 1, 'More than one model matches '+filename+' in modeldir '+modeldir
+                      assert os.path.isfile(file), 'Cannot find model '+filename+' in modeldir '+modeldir                   
+                      files.append(file)
+
                     else:
-                      if (len(file) == 0): files.append('missing')
-                      
-                    if (len(file) == 1): files.append(file[0])
+                      if (len(file) == 0): files.append('missing')          
+
 
                     fi.write( "%s  %4i %+.1f %+.2f %+.2f %+.2f %+.2f %+.2f %+.2f %+.2f\n" % (files[-1],teff,logg,feh,afe,cfe,nfe,ofe,rfe,sfe) )
 
@@ -1729,25 +1728,18 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
                     if cfe >= 0.: ccode='p'
                     if feh >= 0.: mcode='p'
 
-                    #sformat = "t%05ig%3.1fm%s%02ic%s%02io%s%02i."+ext+"*"
                     sformat = "t%05ig%3.1fm%s%02ic%s%02io%s%02i."+ext
                     filename = (sformat % (teff,logg,mcode,abs(feh)*10.,ccode,cfe*10.,acode,afe*10.) )
 
-                    #file = glob.glob(os.path.join(modeldir,'**',filename),recursive=True)
                     file = os.path.join(modeldir,filename)
-                    print('file=',file)
-                    print('len(file)=',len(file))
 
                     if ignore_missing_models == False:
-                      #assert len(file) > 0, 'Cannot find model '+filename+' in modeldir '+modeldir                   
                       assert os.path.isfile(file), 'Cannot find model '+filename+' in modeldir '+modeldir                   
-                      #assert len(file) == 1, 'More than one model matches '+filename+' in modeldir '+modeldir
                       files.append(file)
 
                     else:
                       if (len(file) == 0): files.append('missing')
                       
-                    #if (len(file) == 1): files.append(file[0])
 
                     fi.write( "%s  %4i %+.1f %+.2f %+.2f %+.2f \n" % (files[-1],teff,logg,feh,afe,cfe) )
 
