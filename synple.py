@@ -1729,19 +1729,25 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
                     if cfe >= 0.: ccode='p'
                     if feh >= 0.: mcode='p'
 
-                    sformat = "t%05ig%3.1fm%s%02ic%s%02io%s%02i."+ext+"*"
+                    #sformat = "t%05ig%3.1fm%s%02ic%s%02io%s%02i."+ext+"*"
+                    sformat = "t%05ig%3.1fm%s%02ic%s%02io%s%02i."+ext
                     filename = (sformat % (teff,logg,mcode,abs(feh)*10.,ccode,cfe*10.,acode,afe*10.) )
 
-                    file = glob.glob(os.path.join(modeldir,'**',filename),recursive=True)
-                    
+                    #file = glob.glob(os.path.join(modeldir,'**',filename),recursive=True)
+                    file = os.path.join(modeldir,filename)
+                    print('file=',file)
+                    print('len(file)=',len(file))
 
                     if ignore_missing_models == False:
-                      assert len(file) > 0, 'Cannot find model '+filename+' in modeldir '+modeldir                   
-                      assert len(file) == 1, 'More than one model matches '+filename+' in modeldir '+modeldir
+                      #assert len(file) > 0, 'Cannot find model '+filename+' in modeldir '+modeldir                   
+                      assert os.path.isfile(file), 'Cannot find model '+filename+' in modeldir '+modeldir                   
+                      #assert len(file) == 1, 'More than one model matches '+filename+' in modeldir '+modeldir
+                      files.append(file)
+
                     else:
                       if (len(file) == 0): files.append('missing')
                       
-                    if (len(file) == 1): files.append(file[0])
+                    #if (len(file) == 1): files.append(file[0])
 
                     fi.write( "%s  %4i %+.1f %+.2f %+.2f %+.2f \n" % (files[-1],teff,logg,feh,afe,cfe) )
 
