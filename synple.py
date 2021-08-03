@@ -1742,6 +1742,8 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
                       
                     files.append(file)
 
+                    print(files)
+
                     fi.write( "%s  %4i %+.1f %+.2f %+.2f %+.2f \n" % (files[-1],teff,logg,feh,afe,cfe) )
 
 
