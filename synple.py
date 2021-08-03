@@ -904,7 +904,7 @@ def delta(modelfile, wrange, elements, enhance=0.2, dw=None, strength=1e-4, vmic
         s.write("#SBATCH  -o "+dir+"_%j.out"+" \n")          
         s.write("#SBATCH  -e "+dir+"_%j.err"+" \n")
         #s.write("#SBATCH  -n "+str(nthreads)+" \n")
-        s.write("#SBATCH  --ntasks-per-node="+str(16)+" \n")
+        s.write("#SBATCH  --ntasks-per-node="+str(1)+" \n")
         s.write("#SBATCH  --cpus-per-task="+str(1)+" \n")
         s.write("#SBATCH  -t 04:00:00"+" \n") #hh:mm:ss
         s.write("#SBATCH  -D "+os.path.abspath(os.curdir)+" \n")
