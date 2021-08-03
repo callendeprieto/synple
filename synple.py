@@ -1619,10 +1619,10 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, \
           
                     if ignore_missing_models == False:
                       assert os.path.isfile(file), 'Cannot find model '+filename+' in modeldir '+modeldir                   
-                      files.append(file)
-
                     else:
-                      if (len(file) == 0): files.append('missing')          
+                      if not os.path.isfile(file): file = 'missing'
+                      
+                    files.append(file) 
 
 
                     fi.write( "%s  %4i %+.1f %+.2f %+.2f %+.2f %+.2f %+.2f %+.2f %+.2f\n" % (files[-1],teff,logg,feh,afe,cfe,nfe,ofe,rfe,sfe) )
@@ -1735,11 +1735,10 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
 
                     if ignore_missing_models == False:
                       assert os.path.isfile(file), 'Cannot find model '+filename+' in modeldir '+modeldir                   
-                      files.append(file)
-
                     else:
-                      if (len(file) == 0): files.append('missing')
+                      if not os.path.isfile(file): file = 'missing'
                       
+                    files.append(file)
 
                     fi.write( "%s  %4i %+.1f %+.2f %+.2f %+.2f \n" % (files[-1],teff,logg,feh,afe,cfe) )
 
