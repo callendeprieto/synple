@@ -1616,6 +1616,7 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, \
                     filename = (sformat % (a1,teff,logg,code,feh,afe,cfe,nfe,ofe,rfe,sfe) )
 
                     file = os.path.join(modeldir,filename)
+                    print(file)
           
                     if ignore_missing_models == False:
                       assert os.path.isfile(file), 'Cannot find model '+filename+' in modeldir '+modeldir                   
