@@ -1095,7 +1095,7 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
           s.write("#SBATCH  -o "+dir+"_%j.out"+" \n")
           s.write("#SBATCH  -e "+dir+"_%j.err"+" \n")
           #s.write("#SBATCH  -n "+str(nthreads)+" \n")
-          s.write("#SBATCH  --ntasks-per-node="+str(16)+" \n")
+          s.write("#SBATCH  --ntasks-per-node="+str(1)+" \n")
           s.write("#SBATCH  --cpus-per-task="+str(1)+" \n")
           s.write("#SBATCH  -t 04:00:00"+" \n") #hh:mm:ss
           s.write("#SBATCH  -D "+os.path.abspath(os.curdir)+" \n")
@@ -1398,7 +1398,7 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
                   s.write("#SBATCH  -e "+dir+"_%j.err"+" \n")
                   #s.write("#SBATCH  -n "+str(nthreads)+" \n")
                   #s.write("#SBATCH  --ntasks-per-node "+str(4)+" \n")
-                  s.write("#SBATCH  --ntasks-per-node="+str(16)+" \n")
+                  s.write("#SBATCH  --ntasks-per-node="+str(1)+" \n")
                   s.write("#SBATCH  --cpus-per-task="+str(1)+" \n")
                   s.write("#SBATCH  -t 48:00:00"+" \n") #hh:mm:ss
                   s.write("#SBATCH  -D "+os.path.abspath(os.curdir)+" \n")
