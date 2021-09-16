@@ -64,6 +64,7 @@ synpledir = os.path.dirname(os.path.realpath(__file__))
 modeldir = synpledir + "/models"
 modelatomdir = synpledir + "/data"
 linelistdir = synpledir + "/linelists"
+linelist0 = ['gfallx3_bpo.19','kmol3_0.01_30.20']
 bindir = synpledir + "/bin"
 synspec = bindir + "/synspec54"
 rotin = bindir + "/rotin"
@@ -84,7 +85,7 @@ two =  " 2 "
 
 
 def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
-    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], atom='ap18', vrot=0.0, fwhm=0.0, \
+    linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
     steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, lte=None, 
     compute=True, tmpdir=None):
 
@@ -123,7 +124,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       filenames of the line lists, the first one corresponds to 
       the atomic lines and all the following ones (optional) to
       molecular lines
-      (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
+      (default is in array linelist0)
   atom: str
       'ap18' -- generic opacities used in Allende Prieto+ 2018
       'yo19' -- restricted set for NLTE calculations for APOGEE 2019 (Osorio+ 2019)
@@ -344,7 +345,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
 
 def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
-    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],atom='ap18', vrot=0.0, fwhm=0.0, \
+    linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
     steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, lte=None,
     compute=True, nthreads=1):
 
@@ -375,7 +376,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       filenames of the line lists, the first one corresponds to 
       the atomic lines and all the following ones (optional) to
       molecular lines
-      (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
+      (default is in array linelist0)
   atom: str
       'ap18' -- generic opacities used in Allende Prieto+ 2018
       'yo19' -- restricted set for NLTE calculations for APOGEE 2019 (Osorio+ 2019)
@@ -465,7 +466,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   return(x,y,z)
 
 def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
-    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], atom='ap18', vrot=0.0, fwhm=0.0, \
+    linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
     steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, lte=None, 
     compute=True, nthreads=1):
 
@@ -496,7 +497,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       filenames of the line lists, the first one corresponds to 
       the atomic lines and all the following ones (optional) to
       molecular lines
-      (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
+      (default is in array linelist0)
   atom: str
       'ap18' -- generic opacities used in Allende Prieto+ 2018
       'yo19' -- restricted set for NLTE calculations for APOGEE 2019 (Osorio+ 2019)
@@ -609,7 +610,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
 def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
     vmicro=None, vrot=0.0, fwhm=0.0, nfe=0.0, \
-    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], atom='ap18', \
+    linelist=linelist0, atom='ap18', \
     steprot=0.0, stepfwhm=0.0,  clean=True, save=None, lte=None, nthreads=1):
 
   """Computes synthetic spectra for a list of files. The values of vmicro, vrot, 
@@ -650,7 +651,7 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
       filenames of the line lists, the first one corresponds to 
       the atomic lines and all the following ones (optional) to
       molecular lines
-      (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
+      (default is in array linelist0)
   atom: str
       'ap18' -- generic opacities used in Allende Prieto+ 2018
       'yo19' -- restricted set for NLTE calculations for APOGEE 2019 (Osorio+ 2019)
@@ -777,7 +778,7 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
 
 
 def delta(modelfile, wrange, elements, enhance=0.2, dw=None, strength=1e-4, vmicro=None, abu=None, \
-    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], atom='ap18', vrot=0.0, fwhm=0.0, \
+    linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
     steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, lte=None, 
     compute=False, tmpdir=None):
 
@@ -813,7 +814,7 @@ def delta(modelfile, wrange, elements, enhance=0.2, dw=None, strength=1e-4, vmic
       filenames of the line lists, the first one corresponds to 
       the atomic lines and all the following ones (optional) to
       molecular lines
-      (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
+      (default is in array linelist0)
   atom: str
       'ap18' -- generic opacities used in Allende Prieto+ 2018
       'yo19' -- restricted set for NLTE calculations for APOGEE 2019 (Osorio+ 2019)
@@ -912,7 +913,7 @@ def delta(modelfile, wrange, elements, enhance=0.2, dw=None, strength=1e-4, vmic
 
 
       x, y, z = syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=vmicro, abu=abu, \
-          linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], atom=atom, vrot=vrot, fwhm=fwhm, \
+          linelist=linelist, atom=atom, vrot=vrot, fwhm=fwhm, \
           steprot=steprot, stepfwhm=stepfwhm,  clean=False, lte=lte, \
           compute=False, tmpdir='.')
 
@@ -953,7 +954,7 @@ def delta(modelfile, wrange, elements, enhance=0.2, dw=None, strength=1e-4, vmic
 
 def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
     vmicro=None, vrot=0.0, fwhm=0.0, nfe=0.0, \
-    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'],atom='ap18', \
+    linelist=linelist0, atom='ap18', \
     steprot=0.0, stepfwhm=0.0,  clean=True, save=None, lte=None):
 
   """Sets up a directory tree for computing synthetic spectra for a list of files in 
@@ -993,7 +994,7 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
       filenames of the line lists, the first one corresponds to 
       the atomic lines and all the following ones (optional) to
       molecular lines
-      (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
+      (default is in array linelist0)
   atom: str
       'ap18' -- generic opacities used in Allende Prieto+ 2018
       'yo19' -- restricted set for NLTE calculations for APOGEE 2019 (Osorio+ 2019)
@@ -1158,7 +1159,7 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
 
 
 def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=1, \
-    linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], \
+    linelist=linelist0, \
     tlt = (20,3.08,0.068), tlrho = (20,-14.0,0.59), \
     tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), \
     tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), tvmicro=(1,1.0,0.0), \
@@ -1203,7 +1204,7 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
       filenames of the line lists, the first one corresponds to 
       the atomic lines and all the following ones (optional) to
       molecular lines. Give an empty array for a continuum-only (+ H and HeII lines) table
-      (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
+      (default is in array linelist0)
   tlt: tuple
     log10(T) triad (n, llimit, step) for opacity grid
     (default values  chosen for grid lt = np.arange(20)*0.068 + 3.08,
@@ -2560,7 +2561,7 @@ def checkinput(wrange, vmicro, linelist):
       filenames of the line lists, the first one corresponds to 
       the atomic lines and all the following ones (optional) to
       molecular lines
-      (default ['gfallx3_bpo.19','kmol3_0.01_30.20'] from Allende Prieto+ 2018)
+      (default is in array linelist0)
 
   Returns
   ------
@@ -2675,7 +2676,7 @@ def write2(lt,lrho,wrange, filename='opt.data', dlw=2.1e-5, binary=False,strengt
 
 def write55(wrange,dw=1e-2,imode=0,inlte=0,hydprf=2,cutoff0=200., \
   strength=1e-4,vmicro=0.0, \
-  linelist=['gfallx3_bpo.19','kmol3_0.01_30.20'], atmostype='kurucz'):
+  linelist=linelist0, atmostype='kurucz'):
 
 
   #imode,idst,iprin

@@ -8,10 +8,13 @@ WGET = `which wget`
 GUNZIP = `which gunzip`
 
 #general line lists
-STANDARD = gfallx3_bpo.19 kmol3_0.01_30.20
+STANDARD = gfATO.19 gfMOL.20 gfTiO.20
 
 #apogee
 HBAND = synspec.20200921nlte.19 synspec.20200921nltesun.20 synspec.20200921nltegiant.20 synspec.h2o-BC8.5V.20
+
+#Allende Prieto et al. 2018
+OLD = gfallx3_bpo.19 kmol3_0.01_30.20
 
 #
 #Yeisson-synple                     SDSS-SAS
@@ -27,7 +30,8 @@ TMP1 = $(STANDARD:.19=.11)
 BINARIES = $(TMP1:.20=.11)
 TMP2 = $(HBAND:.19=.11)
 HBANDBINARIES = $(TMP2:.20=.11)
-
+TMP3 = $(OLD:.19=.11)
+OLDBINARIES = $(TMP3:.20=.11)
 
 
 all:    $(STANDARD) $(BINARIES)
@@ -38,7 +42,7 @@ $(STANDARD):
                 ${GUNZIP} $$file.gz ; \
 	done
 
-$(BINARIES):
+$(BINARIES): $(STANDARD)
 	for file in $(STANDARD) ; do \
 		echo $$file | ../bin/list2bin ; \
 	done
@@ -46,14 +50,29 @@ $(BINARIES):
 apogee: $(HBAND) $(HBANDBINARIES)
 
 $(HBAND):
-	for file in ${HBAND} ; do \
+	for file in $(HBAND) ; do \
 		${WGET} ${FTP}$$file.gz ; \
                 ${GUNZIP} $$file.gz ; \
 	done
 
 $(HBANDBINARIES): $(HBAND)
-	for file in ${HBAND} ; do \
+	for file in $(HBAND) ; do \
 		echo $$file | ../bin/list2bin ; \
 	done
 
+old:    $(OLD)  $(OLDBINARIES)
+
+$(OLD):  
+	for file in $(OLD) ; do \
+		${WGET} ${FTP}$$file.gz ; \
+                ${GUNZIP} $$file.gz ; \
+	done
+
+$(OLDBINARIES): $(OLD)
+	for file in $(OLD) ; do \
+		echo $$file | ../bin/list2bin ; \
+	done
+
+clean: 
+	rm -f $(OLD) $(OLDBINARIES) $(STANDARD) $(BINARIES) $(HBAND) $(HBANDBINARIES)
 
