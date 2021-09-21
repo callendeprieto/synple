@@ -71,15 +71,16 @@ The atomic and molecular line lists are sizable and need to be downloaded separa
 \noindent where the automated download requires that {\tt wget} is available in your system, otherwise download the line lists manually from \\ {\tt ftp://carlos:allende@ftp.ll.iac.es/linelists} and copy them to the synple/linelists directory.
 
 You need to make synple visible to Python by including the synple directory in your PYTHONPATH variable. Say you've placed the synple parent directory in your home, then you can add it in the linux shell by typing (or including in your .bashrc or .cshrc files)
-\begin{table}
+\begin{table}[h]
 \begin{tabular}{ll}
 bash: & export PYTHONPATH="\$PYTHONPATH:\$HOME/synple"  \\
 csh:  & setenv PYTHONPATH = "\$PYTHONPATH:\$HOME/synple" .
 \end{tabular}
 \end{table}
 
+The set of atomic and molecular line lists provided with synple v1.1 and above is sizeable, requiring at least 12 GB. For that reason some users may prefer to install synple in a location other than their home directory, and the PYTHONPATH must be set accordingly.
 
-
+For many purposes it suffices to use the smaller line lists provided with v1.0, which will take less than 1 GB. To do so users should replace the {\tt make} command run in the linelists folder by {\tt make old}. 
 
 \section{Examples}
 

@@ -8,8 +8,7 @@ WGET = `which wget`
 GUNZIP = `which gunzip`
 
 #general line lists
-STANDARD =  gfallx3_bpo.19 kmol3_0.01_30.20
-#STANDARD = gfATO.19 gfMOL.20 gfTiO.20
+STANDARD =  gfall08oct17hix.19 kmol2019.20
 
 #apogee
 HBAND = synspec.20200921nlte.19 synspec.20200921nltesun.20 synspec.20200921nltegiant.20 synspec.h2o-BC8.5V.20
