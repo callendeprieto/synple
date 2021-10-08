@@ -436,11 +436,14 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   tmpdir = ''.join(random.choices(string.ascii_lowercase + string.digits, k = 16))
 
-  delta = (wrange[1]-wrange[0])/nthreads
+  #delta = (wrange[1]-wrange[0])/nthreads #linear
+  power=9 # best load balancing splitting in wavelength as (log(lambda))**(1/power)
+  delta = ((np.log10(wrange[1]))**(1/power)-(np.log10(wrange[0]))**(1/power))/nthreads
   pars = []
   for i in range(nthreads):
 
-    wrange1 = (wrange[0]+delta*i,wrange[0]+delta*(i+1))
+    #wrange1 = (wrange[0]+delta*i,wrange[0]+delta*(i+1))
+    wrange1 = ((10.**((np.log10(wrange[0]))**(1/power)+delta*i))**2,(10.**((np.log10(wrange[0]))**(1/power)+delta*(i+1)))**2)
 
     pararr = [modelfile, wrange1, dw, strength, vmicro, abu, \
       linelist, atom, vrot, fwhm, \
@@ -582,11 +585,14 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   constants = ray.put(rest)
 
-  delta = (wrange[1]-wrange[0])/nthreads
+  #delta = (wrange[1]-wrange[0])/nthreads #linear split
+  power=9 # best load balancing splitting in wavelength as (log(lambda))**(1/power)
+  delta = ((np.log10(wrange[1]))**(1/power)-(np.log10(wrange[0]))**(1/power))/nthreads
   pars = []
   for i in range(nthreads):
 
-    wrange1 = (wrange[0]+delta*i,wrange[0]+delta*(i+1))
+    #wrange1 = (wrange[0]+delta*i,wrange[0]+delta*(i+1))
+    wrange1 = ((10.**((np.log10(wrange[0]))**(1/power)+delta*i))**2,(10.**((np.log10(wrange[0]))**(1/power)+delta*(i+1)))**2)
     folder = tmpdir+'-'+str(i)
 
     pararr = [wrange1, folder ]
