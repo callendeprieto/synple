@@ -64,7 +64,7 @@ synpledir = os.path.dirname(os.path.realpath(__file__))
 modeldir = synpledir + "/models"
 modelatomdir = synpledir + "/data"
 linelistdir = synpledir + "/linelists"
-linelist0 = ['gfall08oct17hix.19','kmol2019.20']
+linelist0 = ['gfATO.19','gfMOL.20']
 bindir = synpledir + "/bin"
 synspec = bindir + "/synspec54"
 rotin = bindir + "/rotin"
@@ -2533,13 +2533,21 @@ def checklinelistpath(linelist):
 
   i = 0 
   for entry in linelist: 
-    if os.path.isfile(entry):
-      if not os.path.isabs(entry): 
-        ll = os.path.join (os.getcwd(), entry)
-        if os.path.isfile(ll): linelist[i] = ll
+    if os.path.isfile(entry+".11"): 
+      entry = entry+".11" #give preference to the binary file
+    elif os.path.isfile(entry):
+      pass
     else:
-      ll = os.path.join(linelistdir,entry)
+      entry = os.path.join(linelistdir,entry)
+      if os.path.isfile(entry+".11"): entry = entry+".11"
+
+    assert(os.path.isfile(entry)), 'The line list '+entry+' is neither accessible in the working directory nor in the linelistdir ('+linelistdir+') folder'
+    
+    linelist[i] = entry
+    if not os.path.isabs(entry): 
+      ll = os.path.join (os.getcwd(), entry)
       if os.path.isfile(ll): linelist[i] = ll
+
     i = i + 1
 
   return(linelist)
@@ -2603,17 +2611,31 @@ def checkinput(wrange, vmicro, linelist):
 def getlinelistrange(atomiclinelist):
 #finds out min and max wavelengths for a line list
 
-  f = open(atomiclinelist,'r')
-  line = f.readline()
-  entries = line.split()
-  minlambda = float(entries[0])*10.
-  fsize = os.path.getsize(atomiclinelist)
-  f.seek(fsize-103)
-  line = f.readline()
-  f.close()
-  entries = line.split()
-  maxlambda = float(entries[0])*10.
-  nlines = int(0.01 * fsize)
+  if atomiclinelist[-3:] == '.11':
+    file00 = atomiclinelist[:-3]+'.00'
+    assert (os.path.isfile(file00)),'The file '+file00+' reporting linelist statistics is missing'
+    f = open(file00,'r')
+    lines = f.readlines()
+    entries = lines[0].split()
+    nlines = np.int64(entries[0])
+    entries = lines[1].split()
+    minlambda = float(entries[0])*10.
+    entries = lines[2].split()
+    maxlambda = float(entries[0])*10.
+    f.close()
+  else:
+    f = open(atomiclinelist,'r')
+    line = f.readline()
+    entries = line.split()
+    minlambda = float(entries[0])*10.
+    fsize = os.path.getsize(atomiclinelist)
+    f.seek(fsize-103)
+    line = f.readline()
+    f.close()
+    entries = line.split()
+    maxlambda = float(entries[0])*10.
+    nlines = int(0.01 * fsize)
+
 
   return(nlines, minlambda,maxlambda)
 
@@ -2689,11 +2711,12 @@ def write55(wrange,dw=1e-2,imode=0,inlte=0,hydprf=2,cutoff0=200., \
   if (atmostype == 'tlusty' or atmostype == 'marcs'): inmod = 1 
   else: inmod = 0
 
-  inlist = 11
+  all_inlist = []
   for file in linelist:
-    binaryfile = file[:-2]+'11'
-    if not os.path.isfile(binaryfile): inlist = 10
-    if os.path.isfile(binaryfile): assert (inlist == 11), 'The line list files must be all either in ascii or binary!'    
+    inlist = 10
+    if file[-3:] == '.11' : inlist = 11
+    all_inlist.append(inlist)
+    assert (inlist - all_inlist[0] == 0), 'The line list files must be all either text or binary!'
 
   f = open('fort.55','w')
   f.write(" "+str(imode)+" "+2*zero+"\n")

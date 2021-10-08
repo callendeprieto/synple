@@ -3,55 +3,63 @@ c     ================
 c
 c     transforms an ASCII line list to a binary
 c
+c     INPUT:  std input - ASCII list
+c
+c     OUTPUT: fort.12 - binary list
+c             std. output gives an info on number of lines
+c
       implicit real*8 (a-h,o-z)
-      character*80 infile,outfile
+      character*102 rec
+      dimension x(10),j(7)
 c
-      n=0
-      read(*,*) infile
-      i = len_trim(infile)
-      if (infile(i-1:i) .eq. '19') then
-          itype = 1
-      else
-          itype = 2
-      endif
-
-      outfile = infile
-      outfile(i-1:i) = '11'
-      write(*,*) 'reading/writing =',infile, '/', outfile
-      open(19,file=infile,status='old')
-      open(11,file=outfile,status='new',form='unformatted')
+c     first, find the format of the line list by examining the 1st record
 c
-c     itype: type of the line list
-c          = 0 - classical atomic line list
-c          = 1 - atomic line list with Carlos' extended parameters
-c          = 2 - molecular line list
-c 
-      if(itype.eq.0) then
-   10    continue
-         read(19,*,err=10,end=20) alam,anum,gf,excl,ql,excu,qu,gr,gs,gw
-         write(11) alam,anum,gf,excl,ql,excu,qu,gr,gs,gw
-         n=n+1
-         go to 10
-   20    continue
-       else if(itype.eq.1) then
-   30    continue
-         read(19,*,err=30,end=40) alam,anum,gf,excl,ql,excu,qu,
-     *        gr,gs,gw,i1,i2,i3,i4,i5,i6,i7
-         write(11) alam,anum,gf,excl,ql,excu,qu,gr,gs,gw,
-     *        i1,i2,i3,i4,i5,i6,i7
-         n=n+1
-         go to 30
-   40    continue
-c
-       else
-   50    continue
-         read(19,*,err=50,end=60) alam,anum,gf,excl,gr,gs,gw
-         write(11) alam,anum,gf,excl,gr,gs,gw
-         n=n+1
-         go to 50
-   60    continue
+      n=1
+      npr=10
+      npi=7
+      read(5,'(a102)') rec
+      write(*,*) rec
+      read(rec,*,iostat=kst) (x(i),i=1,10),(j(i),i=1,7)
+      if(kst.ne.0) then
+         read(rec,*,iostat=kst1) (x(i),i=1,10),j(1)
+         npr=10
+         npi=1
+         if(kst1.ne.0) then
+            read(rec,*,iostat=kst2) (x(i),i=1,9)
+            npr=9
+            npi=0
+            if(kst2.ne.0) then
+               read(rec,*,iostat=kst3) (x(i),i=1,7)
+               npr=7
+               npi=0
+               if(kst3.ne.0) then
+                  read(rec,*,iostat=kst4) (x(i),i=1,4)
+                  npr=4
+                  npi=0
+                  if(kst4.ne.0) then
+                     write(*,*) 
+     *               'no applicable format of the line list detected'
+                     stop
+                  end if
+               end if
+            end if
+         end if
       end if
 c
-      write(6,601) n, outfile
-  601 format(i10,'  lines included in the binary file ',a80)
+      write(6,600) npr,npi
+  600 format('number of parameters in the list; real,int:',2i4)
+      write(12) (x(i),i=1,npr),(j(i),i=1,npi)
+c
+c     read the list and transport to binary
+c
+   10 continue
+      read(5,*,err=10,end=20) (x(i),i=1,npr),(j(i),i=1,npi)
+      n=n+1
+      write(12) (x(i),i=1,npr),(j(i),i=1,npi)
+      go to 10
+   20 continue
+c
+      write(6,601) n
+  601 format(i10,'  lines included in the binary file fort.12')
       end
+
