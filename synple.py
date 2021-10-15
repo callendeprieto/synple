@@ -27,17 +27,17 @@ of 0.1 angstroms
 To perform the calculations above in python and compare the emergent normalized profiles
 
    >>> from synple import syn
-   >>> x, y, z = syn('ksun.mod', (6160.,6164.))
-   >>> x2, y2, z2 = syn('ksun.mod', (6160.,6164.), vmicro=1.1, fwhm=0.1)
+   >>> s = syn('ksun.mod', (6160.,6164.))
+   >>> s2 = syn('ksun.mod', (6160.,6164.), vmicro=1.1, fwhm=0.1)
 
    in plain python
    >>> import matplotlib.pyplot as plt
    >>> plt.ion()
-   >>> plt.plot(x,y/z, x2, y2/z2)
+   >>> plt.plot(s[0],s[1]/s[2], s2[0], s2[1]/s2[2])
 
    or ipython
    In [1]: %pylab
-   In [2]: plot(x,y/z, x2, y2/z2)
+   In [2]: plot(s[0],s[1]/s[2], s2[0], s2[1]/s2[2])
 
 
 """
@@ -85,9 +85,9 @@ two =  " 2 "
 
 
 def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
-    linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
-    steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, lte=None, 
-    compute=True, tmpdir=None):
+    linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0,  \
+    steprot=0.0, stepfwhm=0.0,  lineid=False, clean=True, save=False, synfile=None, \
+    lte=None, compute=True, tmpdir=None):
 
   """Computes a synthetic spectrum
 
@@ -142,6 +142,10 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   stepfwhm: float
       wavelength step for Gaussian convolution (angstroms)
       set to 0. for automatic adjustment (default 0.)
+  lineid: bool
+      set to True to add line identifications to the ouput. They will take the form
+      of a list with three arrays (wavelengths, lineids and predicted EWs) 
+      (default False)  
   clean: bool
       True by the default, set to False to avoid the removal of the synspec
       temporary files/links (default True)
@@ -176,6 +180,15 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       flux (H_lambda in ergs/s/cm2/A)
   cont: numpy array of floats
       continuum flux (same units as flux)
+
+  ---- if lineid is True
+  lalilo: list with three arrays
+        la: numpy array of floats
+            wavelenghts of lines (angstroms)
+        li: numpy array of str
+            line identifidation
+        lo: numpy array of floats
+            predicted equivalent width (miliangstroms)
 
   """
 
@@ -250,12 +263,17 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   write5(teff,logg,abu,atom,inlte=inlte,atommode=atommode,atominfo=atominfo)   #abundance/opacity file  
   write8(teff,logg,nd,atmos,atmostype)                    #model atmosphere
+
+  #set iprin to 2 to ouput lineids from synspec
+  iprin = 0
+  if lineid: iprin = 2
+
   cutoff0=250.
   if logg > 3.0:
     if teff < 4000.: cutoff0=500.
     if teff < 3500.: cutoff0=1000.
     if teff < 3000.: cutoff0=1500. 
-  write55(wrange,dw=space,imode=imode,inlte=inlte, hydprf=2, \
+  write55(wrange,dw=space,imode=imode,iprin=iprin, inlte=inlte, hydprf=2, \
           cutoff0=cutoff0,strength=strength,vmicro=vmicro,   \
           linelist=linelist,atmostype=atmostype)
   #synspec control file
@@ -315,6 +333,36 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       #flux = np.interp(wave3, wave, flux)
       wave = wave3
 
+    if lineid == True:
+      assert (os.path.isfile('fort.12')), 'Error: I cannot read the file *fort.12* in '+tmpdir+' -- looks like synspec has crashed, please look at '+logfile
+
+      d = np.loadtxt('fort.12', usecols=(0,1,2,3,4,5,6), dtype=str)
+      la = []
+      li = []
+      lo = []
+      for i in range(len(d[:,0])): 
+        la.append(d[i,0])
+        li.append(d[i,1]+d[i,2])
+        lo.append(d[i,6])
+      la = np.array(la, dtype=float)
+      li = np.array(li, dtype=str)
+      lo = np.array(lo, dtype=float)
+      if (os.path.isfile('fort.15')): 
+        d = np.loadtxt('fort.15', usecols=(0,1,2,3,4,5), dtype=str)
+        la2 = []
+        li2 = []
+        lo2 = []
+        for i in range(len(d[:,0])): 
+          la2.append(d[i,0])
+          li2.append(d[i,1])
+          lo2.append(d[i,5])
+        la2 = np.array(la2, dtype=float)
+        li2 = np.array(li2, dtype=str)
+        lo2 = np.array(lo2, dtype=float)
+        la = np.concatenate((la, la2))
+        li = np.concatenate((li, li2))
+        lo = np.concatenate((lo, lo2))
+
     if clean == True: 
       cleanup_fort()
       if os.path.islink('data'): os.unlink('data')
@@ -340,14 +388,18 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
         synfile = tmpstr[:tmpstr.rfind('.')]+'.syn'
       np.savetxt(synfile,(wave,flux,cont))
 
+  if lineid: 
+    s = wave, flux, cont, [la,li,lo]
+  else:
+    s = wave, flux, cont
 
-  return(wave, flux, cont)
+  return(s)
 
 
 def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
-    steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, lte=None,
-    compute=True, nthreads=1):
+    steprot=0.0, stepfwhm=0.0, lineid=False, clean=True, save=False, synfile=None, \
+    lte=None, compute=True, nthreads=1):
 
   """Computes a synthetic spectrum, splitting the spectral range in nthreads parallel calculations
 
@@ -394,6 +446,10 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   stepfwhm: float
       wavelength step for Gaussian convolution (angstroms)
       set to 0. for automatic adjustment (default 0.)
+  lineid: bool
+      set to True to add line identifications to the ouput. They will take the form
+      of a list with three arrays (wavelengths, lineids and predicted EWs) 
+      (default False)  
   clean: bool
       True by the default, set to False to avoid the removal of the synspec
       temporary files/links (default True)
@@ -426,6 +482,16 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   cont: numpy array of floats
       continuum flux (same units as flux)
 
+
+---- if lineid is True
+  lalilo: list with three arrays
+        la: numpy array of floats
+            wavelenghts of lines (angstroms)
+        li: numpy array of str
+            line identifidation
+        lo: numpy array of floats
+            predicted equivalent width (miliangstroms)
+
   """
 
   from multiprocessing import Pool,cpu_count
@@ -448,7 +514,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
     pararr = [modelfile, wrange1, dw, strength, vmicro, abu, \
       linelist, atom, vrot, fwhm, \
-      steprot, stepfwhm,  clean, save, synfile, lte, \
+      steprot, stepfwhm,  lineid, clean, save, synfile, lte, \
       compute, tmpdir+'-'+str(i) ]
     pars.append(pararr)
 
@@ -460,19 +526,31 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   x = results[0][0]
   y = results[0][1]
   z = results[0][2]
+  if lineid: la, li, lo = results[0][3]
 
   if len(results) > 1:
     for i in range(len(results)-1):
       x = np.concatenate((x, results[i+1][0][1:]) )
       y = np.concatenate((y, results[i+1][1][1:]) )
       z = np.concatenate((z, results[i+1][2][1:]) )
+      if lineid: 
+        la2, li2, lo2 = results[i+1][3]
+        la = np.concatenate((la, la2[1:]) )
+        li = np.concatenate((li, li2[1:]) )
+        lo = np.concatenate((lo, lo2[1:]) )
 
-  return(x,y,z)
+  if lineid: 
+    s = x, y, z, [la,li,lo]
+  else:
+    s = x, y, z
+
+  return(s)
+
 
 def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
-    steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, lte=None, 
-    compute=True, nthreads=1):
+    steprot=0.0, stepfwhm=0.0,  lineid=False, clean=True, save=False, synfile=None, \
+    lte=None, compute=True, nthreads=1):
 
   """Computes a synthetic spectrum, splitting the spectral range in nthreads parallel calculations 
 
@@ -519,6 +597,10 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   stepfwhm: float
       wavelength step for Gaussian convolution (angstroms)
       set to 0. for automatic adjustment (default 0.)
+  lineid: bool
+      set to True to add line identifications to the ouput. They will take the form
+      of a list with three arrays (wavelengths, lineids and predicted EWs) 
+      (default False)  
   clean: bool
       True by the default, set to False to avoid the removal of the synspec
       temporary files/links (default True)
@@ -551,6 +633,15 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   cont: numpy array of floats
       continuum flux (same units as flux)
 
+ ---- if lineid is True
+  lalilo: list with three arrays
+        la: numpy array of floats
+            wavelenghts of lines (angstroms)
+        li: numpy array of str
+            line identifidation
+        lo: numpy array of floats
+            predicted equivalent width (miliangstroms)
+
   """
 
   import psutil
@@ -562,14 +653,14 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     wrange,tmpdir = vari
 
     modelfile,dw,strength,vmicro,abu,linelist, \
-    atom,vrot,fwhm,steprot,stepfwhm,clean,save,synfile,compute = cons
+    atom,vrot,fwhm,steprot,stepfwhm,lineid,clean,save,synfile,compute = cons
 
-    x, y, z = syn(modelfile, wrange, dw, strength, vmicro, abu, \
+    s = syn(modelfile, wrange, dw, strength, vmicro, abu, \
               linelist, atom, vrot, fwhm, \
-              steprot, stepfwhm,  clean, save, synfile, lte, \
-              compute, tmpdir)
+              steprot, stepfwhm,  lineid, clean, save, synfile, \
+              lte, compute, tmpdir)
 
-    return(x,y,z)
+    return(s)
 
 
   if nthreads == 0: 
@@ -582,7 +673,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   ray.init(num_cpus=nthreads)
 
   rest = [ modelfile,dw,strength,vmicro,abu,linelist, \
-    atom,vrot,fwhm,steprot,stepfwhm,clean,save,synfile,compute ]
+    atom,vrot,fwhm,steprot,stepfwhm,lineid,clean,save,synfile,compute ]
 
   constants = ray.put(rest)
 
@@ -605,21 +696,32 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   x = results[0][0]
   y = results[0][1]
   z = results[0][2]
+  if lineid: la, li, lo = results[0][3]
 
   if len(results) > 1:
     for i in range(len(results)-1):
       x = np.concatenate((x, results[i+1][0][1:]) )
       y = np.concatenate((y, results[i+1][1][1:]) )
       z = np.concatenate((z, results[i+1][2][1:]) )
+      if lineid: 
+        la2, li2, lo2 = results[i+1][3]
+        la = np.concatenate((la, la2[1:]) )
+        li = np.concatenate((li, li2[1:]) )
+        lo = np.concatenate((lo, lo2[1:]) )
 
-  return(x,y,z)
+  if lineid: 
+    s = x, y, z, [la,li,lo]
+  else:
+    s = x, y, z
+
+  return(s)
 
 
 
 def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
     vmicro=None, vrot=0.0, fwhm=0.0, nfe=0.0, \
     linelist=linelist0, atom='ap18', \
-    steprot=0.0, stepfwhm=0.0,  clean=True, save=None, lte=None, nthreads=1):
+    steprot=0.0, stepfwhm=0.0, clean=True, save=None, lte=None, nthreads=1):
 
   """Computes synthetic spectra for a list of files. The values of vmicro, vrot, 
   fwhm, and nfe can be iterables. Whether or not dw is specified the results will be 
@@ -700,6 +802,7 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
       flux (H_lambda in ergs/s/cm2/A)
   cont: numpy array of floats (2D -- as many rows as models input)
       continuum flux (same units as flux)
+
 
   """
 
@@ -1438,7 +1541,7 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
 
 
 
-                  write55(wrange,dw=space,imode=imode,inlte=0,hydprf=0,      \
+                  write55(wrange,dw=space,imode=imode,iprin=0,inlte=0,hydprf=0,      \
                           cutoff0=cutoff0, strength=strength, vmicro=vmicro, \
                           linelist=linelist)
 
@@ -2704,7 +2807,7 @@ def write2(lt,lrho,wrange, filename='opt.data', dlw=2.1e-5, binary=False,strengt
   return()
 
 
-def write55(wrange,dw=1e-2,imode=0,inlte=0,hydprf=2,cutoff0=200., \
+def write55(wrange,dw=1e-2,imode=0,iprin=0,inlte=0,hydprf=2,cutoff0=200., \
   strength=1e-4,vmicro=0.0, \
   linelist=linelist0, atmostype='kurucz'):
 
@@ -2727,7 +2830,7 @@ def write55(wrange,dw=1e-2,imode=0,inlte=0,hydprf=2,cutoff0=200., \
     assert (inlist - all_inlist[0] == 0), 'The line list files must be all either text or binary!'
 
   f = open('fort.55','w')
-  f.write(" "+str(imode)+" "+2*zero+"\n")
+  f.write(" "+str(imode)+" "+zero+" "+str(iprin)+"\n")
   f.write(" "+str(inmod)+3*zero+"\n")
   f.write(5*zero+"\n")
   f.write(one+str(abs(inlte))+zero+str(inlist)+zero+"\n")
@@ -4518,6 +4621,6 @@ if __name__ == "__main__":
         vrot = float(sys.argv[6])
 
   #symbol, mass, sol = elements()
-  x, y, z = syn(modelfile, (wstart,wend), save=True, vmicro=vmicro, vrot=vrot, fwhm=fwhm)
+  s = syn(modelfile, (wstart,wend), save=True, vmicro=vmicro, vrot=vrot, fwhm=fwhm)
 
 
