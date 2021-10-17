@@ -2663,6 +2663,51 @@ def checklinelistpath(linelist):
 
   return(linelist)
 
+#apply lineid tags to an existing plot 
+def tag(s, minew=10., normalized=True):
+ 
+  x = s[0]
+  y = s[1]
+  z = s[2]
+
+  if normalized:
+    y = y/z
+    ylabel = 'normalized flux'
+  else:
+    ylabel = 'flux'
+
+  plt.figure()
+  plt.clf()
+  plt.ion()
+  plt.plot(x,y)
+  plt.xlim([min(x),max(x)])
+  plt.ylim([min(y)*0.1,max(y)*1.1])
+  plt.xlabel('wavelength (A)')
+  plt.ylabel(ylabel)
+
+  lalilo = s[3] 
+  la = lalilo[0]
+  li = lalilo[1]
+  lo = lalilo[2]
+
+  pli = 0.
+  pla = 0.
+  pres = 0.0
+
+  for i in range(len(la)):
+    if lo[i] >= minew:
+      res = min(y[(abs(x-la[i]) < la[i]*1e-5)])
+      if li[i] == pli and abs(la[i]-pla) < la[i]*1e-4 and abs(res-pres) < res*0.1:
+        pass
+      else:
+        plt.text(la[i]*(1.-2e-5),res*(1.-0.1),li[i])
+        pla=la[i]
+        pli=li[i]
+        pres=res
+
+  plt.show()
+
+  return None
 
 def checkinput(wrange, vmicro, linelist):
 
@@ -2701,6 +2746,9 @@ def checkinput(wrange, vmicro, linelist):
   # there are two more values which are possible but not considered in this routine
   # imode = -3 for regular opacity tables (TLUSTY)
   # imode = -4 for continuum-only (+ H and HeII lines) opacity tables
+
+
+  assert (wrange[1] > wrange[0]),'the ending wavelength for the spectral range must be larger than the starting wavelength'
 
   if len(linelist) == 0: 
     imode = 2  # no atomic or molecular line list -> pure continuum and no molecules
