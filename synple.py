@@ -888,14 +888,13 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
   return(wave, flux, cont)
 
 
-def delta(modelfile, wrange, elements, enhance=0.2, dw=None, strength=1e-4, vmicro=None, abu=None, \
+def polydelta(modelfile, wrange, elem, enhance=0.2, strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
-    steprot=0.0, stepfwhm=0.0,  clean=True, save=False, synfile=None, lte=None, 
-    compute=False, tmpdir=None):
+    steprot=0.0, stepfwhm=0.0,  lte=None):
 
-  """Computes a synthetic spectrum and then loops over the chemical elements in the 'element'
-  array, increasing their abundances for one at a time, computing a spectrum for each.
-  The computed spectrum can be written to a file (save == True). 
+  """Sets a a dir tree to compute synthetic spectra for an input model, and then as
+many spectra as elements are input in the elem array (symbols), increasing their 
+abundances for one at a time.
 
 
   Parameters
@@ -904,14 +903,10 @@ def delta(modelfile, wrange, elements, enhance=0.2, dw=None, strength=1e-4, vmic
       file with a model atmosphere
   wrange: tuple or list of two floats
       initial and ending wavelengths (angstroms)
-  elements: array of str
+  elem: array of str
       symbols for the elements for which the abundance will be enhanced
   enhance: float, optional
       abundance enhancement (dex)
-  dw: float, optional
-      wavelength step for the output fluxes
-      this will trigger interpolation at the end
-      (default is None for automatic frequency selection)
   strength: float, optional
       threshold in the line-to-continuum opacity ratio for 
       selecting lines (default is 1e-4)
@@ -943,41 +938,18 @@ def delta(modelfile, wrange, elements, enhance=0.2, dw=None, strength=1e-4, vmic
   stepfwhm: float
       wavelength step for Gaussian convolution (angstroms)
       set to 0. for automatic adjustment (default 0.)
-  clean: bool
-      True by the default, set to False to avoid the removal of the synspec
-      temporary files/links (default True)
-  save: bool
-      set to True to save the computed spectrum to a file (default False)
-      the root of the model atmosphere file, with an extension ".syn" will be used
-      but see the parameter synfile to change that
-  synfile: str
-      when save is True, this can be used to set the name of the output file
-      (default None)
   lte: bool
       this flag can be set to True to enforce LTE in NLTE models. MARCS, Kurucz, the 
       class of Phoenix models used here are always LTE models. Tlusty models
       can be LTE or NLTE, and this keyword will ignore the populations and compute
       assuming LTE for a input NLTE Tlusty model.
       (default None)
-  compute: bool
-      set to False to skip the actual synspec run, triggering clean=False
-      (default True)
-  tmpdir: string
-      a temporary directory with this name will be created to store
-      the temporary synspec input/output files, and the synple log file (usually named
-      syn.log) will be named as tmpdir_syn.log. When tmp is None a random string is used
-      for this folder
-      (default None)
 
   Returns
   -------
-  wave: numpy array of floats
-      wavelengths (angstroms)
-  flux: numpy array of floats
-      flux (H_lambda in ergs/s/cm2/A)
-  cont: numpy array of floats
-      continuum flux (same units as flux)
-
+  A directory tree set up to perform calculations (hyd0000001/2/3...). Each
+  folder contains a *.job script. The output spectra go to files named 
+  0000001fort.7 in each .
   """
 
   #synspec does not currently run in parallel
@@ -988,8 +960,14 @@ def delta(modelfile, wrange, elements, enhance=0.2, dw=None, strength=1e-4, vmic
   if vmicro == None: vmicro = vmicro2
   if abu == None: abu = abu2
 
+
+  #change chemical symbols into indices
+  symbol, mass, sol = elements()
+  index = []
+  for entry in elem: index.append(symbol.index(entry))
+
   idir = 0
-  for element in elements:
+  for j in range(len(elem)+1):
 
       idir = idir + 1
       dir = ( "hyd%07d" % (idir) )
@@ -1022,8 +1000,10 @@ def delta(modelfile, wrange, elements, enhance=0.2, dw=None, strength=1e-4, vmic
         s.write("#SBATCH  -D "+os.path.abspath(os.curdir)+" \n")
         s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n\n\n")
 
+      abu3 = abu[:]
+      if j > 0: abu3[index[j-1]] = abu3[index[j-1]]*10.**(enhance)
 
-      x, y, z = syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=vmicro, abu=abu, \
+      x, y, z = syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=vmicro, abu=abu3, \
           linelist=linelist, atom=atom, vrot=vrot, fwhm=fwhm, \
           steprot=steprot, stepfwhm=stepfwhm,  clean=False, lte=lte, \
           compute=False, tmpdir='.')
@@ -1054,13 +1034,108 @@ def delta(modelfile, wrange, elements, enhance=0.2, dw=None, strength=1e-4, vmic
       s.close()
       os.chmod(sfile ,0o755)
 
-  try:
-    os.chdir('..')
-  except OSError:
-      print( "cannot exit dir hyd%07d" % (idir) )
+      try:
+          os.chdir('..')
+      except OSError:
+          print( "cannot exit dir hyd%07d" % (idir) )
 
 
   return(None,None,None)
+
+def collectdelta(modelfile, wrange, elem, enhance=0.2, 
+    strength=1e-4, vmicro=None, abu=None, \
+    linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
+    steprot=0.0, stepfwhm=0.0,  lte=None):
+
+  """Collects the spectra, after computed, in a dir tree created with polydelta.
+
+
+  Parameters
+  ----------
+  modelfile : str
+      file with a model atmosphere
+  wrange: tuple or list of two floats
+      initial and ending wavelengths (angstroms)
+  elem: array of str
+      symbols for the elements for which the abundance will be enhanced
+  enhance: float, optional
+      abundance enhancement (dex)
+  strength: float, optional
+      threshold in the line-to-continuum opacity ratio for 
+      selecting lines (default is 1e-4)
+  vmicro: float, optional
+      microturbulence (km/s) 
+      (default is taken from the model atmosphere)
+  abu: array of floats (99 elements), optional
+      chemical abundances relative to hydrogen (N(X)/N(H))
+      (default taken from input model atmosphere)
+  linelist: array of str
+      filenames of the line lists, the first one corresponds to 
+      the atomic lines and all the following ones (optional) to
+      molecular lines
+      (default is in array linelist0)
+  atom: str
+      'ap18' -- generic opacities used in Allende Prieto+ 2018
+      'yo19' -- restricted set for NLTE calculations for APOGEE 2019 (Osorio+ 2019)
+      'hhm' -- continuum opacity is simplified to H and H-
+      (default 'ap18')
+  vrot: float
+      projected rotational velocity (km/s)
+      (default 0.)
+  steprot: float
+      wavelength step for convolution with rotational kernel (angstroms)
+      set to 0. for automatic adjustment (default 0.)
+  fwhm: float
+      Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
+      (default 0.)
+  stepfwhm: float
+      wavelength step for Gaussian convolution (angstroms)
+      set to 0. for automatic adjustment (default 0.)
+  lte: bool
+      this flag can be set to True to enforce LTE in NLTE models. MARCS, Kurucz, the 
+      class of Phoenix models used here are always LTE models. Tlusty models
+      can be LTE or NLTE, and this keyword will ignore the populations and compute
+      assuming LTE for a input NLTE Tlusty model.
+      (default None)
+
+  Returns
+  -------
+  x   float arr with wavelengths
+  y   float array with the original and the perturbed abundances (2D)
+  """
+
+
+  atmostype, teff, logg, vmicro2, abu2, nd, atmos = read_model(modelfile)
+
+  if vmicro == None: vmicro = vmicro2
+  if abu == None: abu = abu2
+
+
+  idir = 0
+  for j in range(len(elem)+1):
+
+      idir = idir + 1
+      dir = ( "hyd%07d" % (idir) )
+      try:
+        os.chdir(dir)
+      except OSError:
+        print( "cannot change dir to hyd%07d" % (idir) )
+
+      x, y  = np.loadtxt('0000001fort.7', unpack=True)
+
+      if j == 0:
+          xx = x
+          yy = y
+      else:
+          yy = np.vstack ( (yy, interp_spl(xx, x, y) ) )
+
+      try:
+          os.chdir('..')
+      except OSError:
+          print( "cannot exit dir hyd%07d" % (idir) )
+
+
+  return(xx,yy)
 
 
 def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
