@@ -86,7 +86,8 @@ two =  " 2 "
 
 def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0,  \
-    steprot=0.0, stepfwhm=0.0,  lineid=False, clean=True, save=False, synfile=None, \
+    steprot=0.0, stepfwhm=0.0,  lineid=False, tag=False,  \
+    clean=True, save=False, synfile=None, \
     lte=None, compute=True, tmpdir=None):
 
   """Computes a synthetic spectrum
@@ -146,6 +147,10 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       set to True to add line identifications to the ouput. They will take the form
       of a list with three arrays (wavelengths, lineids and predicted EWs) 
       (default False)  
+  tag: bool
+      set to True to produce a plot showing the line identifications. It implicitly
+      sets lineid to True, overiding whatever value is passed to lineid
+      (default False)
   clean: bool
       True by the default, set to False to avoid the removal of the synspec
       temporary files/links (default True)
@@ -181,7 +186,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   cont: numpy array of floats
       continuum flux (same units as flux)
 
-  ---- if lineid is True
+  ---- if lineid (or tag) is True
   lalilo: list with three arrays
         la: numpy array of floats
             wavelenghts of lines (angstroms)
@@ -265,6 +270,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   write8(teff,logg,nd,atmos,atmostype)                    #model atmosphere
 
   #set iprin to 2 to ouput lineids from synspec
+  if tag: lineid = True
   iprin = 0
   if lineid: iprin = 2
 
@@ -393,12 +399,15 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   else:
     s = wave, flux, cont
 
+  if tag: tags(s)
+
   return(s)
 
 
 def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
-    steprot=0.0, stepfwhm=0.0, lineid=False, clean=True, save=False, synfile=None, \
+    steprot=0.0, stepfwhm=0.0, lineid=False, tag=False,  \
+    clean=True, save=False, synfile=None, \
     lte=None, compute=True, nthreads=1):
 
   """Computes a synthetic spectrum, splitting the spectral range in nthreads parallel calculations
@@ -450,6 +459,10 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       set to True to add line identifications to the ouput. They will take the form
       of a list with three arrays (wavelengths, lineids and predicted EWs) 
       (default False)  
+  tag: bool
+      set to True to produce a plot showing the line identifications. It implicitly
+      sets lineid to True, overiding whatever value is passed to lineid
+      (default False)
   clean: bool
       True by the default, set to False to avoid the removal of the synspec
       temporary files/links (default True)
@@ -483,7 +496,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       continuum flux (same units as flux)
 
 
----- if lineid is True
+---- if lineid (or tag) is True 
   lalilo: list with three arrays
         la: numpy array of floats
             wavelenghts of lines (angstroms)
@@ -500,6 +513,9 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   if nthreads == 0: 
     nthreads = cpu_count()
 
+  #override lineid when tag is True
+  if tag: lineid = True
+
   tmpdir = ''.join(random.choices(string.ascii_lowercase + string.digits, k = 16))
 
   #delta = (wrange[1]-wrange[0])/nthreads #linear
@@ -514,7 +530,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
     pararr = [modelfile, wrange1, dw, strength, vmicro, abu, \
       linelist, atom, vrot, fwhm, \
-      steprot, stepfwhm,  lineid, clean, save, synfile, lte, \
+      steprot, stepfwhm,  lineid, tag, clean, save, synfile, lte, \
       compute, tmpdir+'-'+str(i) ]
     pars.append(pararr)
 
@@ -544,12 +560,15 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   else:
     s = x, y, z
 
+  if tag: tags(s)
+
   return(s)
 
 
 def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
-    steprot=0.0, stepfwhm=0.0,  lineid=False, clean=True, save=False, synfile=None, \
+    steprot=0.0, stepfwhm=0.0,  lineid=False, tag=False, \
+    clean=True, save=False, synfile=None, \
     lte=None, compute=True, nthreads=1):
 
   """Computes a synthetic spectrum, splitting the spectral range in nthreads parallel calculations 
@@ -601,6 +620,10 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       set to True to add line identifications to the ouput. They will take the form
       of a list with three arrays (wavelengths, lineids and predicted EWs) 
       (default False)  
+  tag: bool
+      set to True to produce a plot showing the line identifications. It implicitly
+      sets lineid to True, overiding whatever value is passed to lineid
+      (default False)
   clean: bool
       True by the default, set to False to avoid the removal of the synspec
       temporary files/links (default True)
@@ -633,7 +656,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   cont: numpy array of floats
       continuum flux (same units as flux)
 
- ---- if lineid is True
+ ---- if lineid (or tag) is True
   lalilo: list with three arrays
         la: numpy array of floats
             wavelenghts of lines (angstroms)
@@ -653,11 +676,11 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     wrange,tmpdir = vari
 
     modelfile,dw,strength,vmicro,abu,linelist, \
-    atom,vrot,fwhm,steprot,stepfwhm,lineid,clean,save,synfile,compute = cons
+    atom,vrot,fwhm,steprot,stepfwhm,lineid,tag,clean,save,synfile,compute = cons
 
     s = syn(modelfile, wrange, dw, strength, vmicro, abu, \
               linelist, atom, vrot, fwhm, \
-              steprot, stepfwhm,  lineid, clean, save, synfile, \
+              steprot, stepfwhm,  lineid, tag, clean, save, synfile, \
               lte, compute, tmpdir)
 
     return(s)
@@ -666,6 +689,8 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   if nthreads == 0: 
     nthreads = psutil.cpu_count(logical=False)
 
+  if tag: lineid = True
+
   print('nthreads=',nthreads)
 
   tmpdir = ''.join(random.choices(string.ascii_lowercase + string.digits, k = 16))
@@ -673,7 +698,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   ray.init(num_cpus=nthreads)
 
   rest = [ modelfile,dw,strength,vmicro,abu,linelist, \
-    atom,vrot,fwhm,steprot,stepfwhm,lineid,clean,save,synfile,compute ]
+    atom,vrot,fwhm,steprot,stepfwhm,lineid,tag, clean,save,synfile,compute ]
 
   constants = ray.put(rest)
 
@@ -692,6 +717,8 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     pars.append(pararr)
 
   results = ray.get([fun.remote(pars[i],constants) for i in range(nthreads)])
+
+  ray.shutdown()
 
   x = results[0][0]
   y = results[0][1]
@@ -713,6 +740,8 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     s = x, y, z, [la,li,lo]
   else:
     s = x, y, z
+
+  if tag: tags(s)
 
   return(s)
 
@@ -2739,7 +2768,7 @@ def checklinelistpath(linelist):
   return(linelist)
 
 #apply lineid tags to an existing plot 
-def tag(s, minew=10., normalized=True):
+def tags(s, minew=10., normalized=True):
  
   x = s[0]
   y = s[1]
