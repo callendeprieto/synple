@@ -408,7 +408,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
     steprot=0.0, stepfwhm=0.0, lineid=False, tag=False,  \
     clean=True, save=False, synfile=None, \
-    lte=None, compute=True, nthreads=1):
+    lte=False, compute=True, nthreads=1):
 
   """Computes a synthetic spectrum, splitting the spectral range in nthreads parallel calculations
 
@@ -478,7 +478,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       class of Phoenix models used here are always LTE models. Tlusty models
       can be LTE or NLTE, and this keyword will ignore the populations and compute
       assuming LTE for a input NLTE Tlusty model.
-      (default None)
+      (default False)
   compute: bool
       set to False to skip the actual synspec run, triggering clean=False
       (default True)
@@ -569,7 +569,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
     steprot=0.0, stepfwhm=0.0,  lineid=False, tag=False, \
     clean=True, save=False, synfile=None, \
-    lte=None, compute=True, nthreads=1):
+    lte=False, compute=True, nthreads=1):
 
   """Computes a synthetic spectrum, splitting the spectral range in nthreads parallel calculations 
 
@@ -639,7 +639,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       class of Phoenix models used here are always LTE models. Tlusty models
       can be LTE or NLTE, and this keyword will ignore the populations and compute
       assuming LTE for a input NLTE Tlusty model.
-      (default None)
+      (default False)
   compute: bool
       set to False to skip the actual synspec run, triggering clean=False
       (default True)
@@ -750,7 +750,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
     vmicro=None, vrot=0.0, fwhm=0.0, nfe=0.0, \
     linelist=linelist0, atom='ap18', \
-    steprot=0.0, stepfwhm=0.0, clean=True, save=None, lte=None, nthreads=1):
+    steprot=0.0, stepfwhm=0.0, clean=True, save=None, lte=False, nthreads=1):
 
   """Computes synthetic spectra for a list of files. The values of vmicro, vrot, 
   fwhm, and nfe can be iterables. Whether or not dw is specified the results will be 
@@ -816,7 +816,7 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
       class of Phoenix models used here are always LTE models. Tlusty models
       can be LTE or NLTE, and this keyword will ignore the populations and compute
       assuming LTE for a input NLTE Tlusty model.
-      (default None)
+      (default False)
   nthreads: int
       choose the number of cores to use in the calculation
       (default 1, 0 has the meaning that the code should take all the cores available)
@@ -919,7 +919,7 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
 
 def polydelta(modelfile, wrange, elem, enhance=0.2, strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
-    steprot=0.0, stepfwhm=0.0,  lte=None):
+    steprot=0.0, stepfwhm=0.0,  lte=False):
 
   """Sets a a dir tree to compute synthetic spectra for an input model, and then as
 many spectra as elements are input in the elem array (symbols), increasing their 
@@ -972,7 +972,7 @@ abundances for one at a time.
       class of Phoenix models used here are always LTE models. Tlusty models
       can be LTE or NLTE, and this keyword will ignore the populations and compute
       assuming LTE for a input NLTE Tlusty model.
-      (default None)
+      (default False)
 
   Returns
   -------
@@ -1074,7 +1074,7 @@ abundances for one at a time.
 def collectdelta(modelfile, wrange, elem, enhance=0.2, 
     strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
-    steprot=0.0, stepfwhm=0.0,  lte=None):
+    steprot=0.0, stepfwhm=0.0,  lte=False, save=False):
 
   """Collects the spectra, after computed, in a dir tree created with polydelta.
 
@@ -1125,7 +1125,10 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
       class of Phoenix models used here are always LTE models. Tlusty models
       can be LTE or NLTE, and this keyword will ignore the populations and compute
       assuming LTE for a input NLTE Tlusty model.
-      (default None)
+      (default False)
+  save: bool
+      set to true for producing an .dlt file with all the model spectra
+      (default False)
 
   Returns
   -------
@@ -1139,6 +1142,24 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
   if vmicro == None: vmicro = vmicro2
   if abu == None: abu = abu2
 
+  if save:
+      out = open(modelfile+'.dlt','w')
+      out.write('MODEL   = '+modelfile+'\n')
+      out.write('TEFF    = '+str(teff)+'\n')
+      out.write('LOGG    = '+str(logg)+'\n')
+      out.write('VMICRO  = '+str(vmicro)+'\n')
+      out.write('WRANGE  = '+' '.join(map(str,wrange))+'\n')
+      out.write('ELEM    = '+' '.join(elem)+'\n')
+      out.write('ENHANCE = '+str(enhance)+'\n')
+      out.write('STRENGTH= '+str(strength)+'\n')
+      out.write('LINELIST= '+' '.join(linelist)+'\n')
+      out.write('ATOM    = '+atom+'\n')
+      out.write('VROT    = '+str(vrot)+'\n')
+      out.write('FWHM    = '+str(fwhm)+'\n')
+      out.write('STEPROT = '+str(steprot)+'\n')
+      out.write('STEPFWHM= '+str(stepfwhm)+'\n')
+      out.write('LTE     = '+str(lte)+'\n')
+      out.write('ABU     = '+' '.join(map(str,abu))+'\n')
 
   idir = 0
   for j in range(len(elem)+1):
@@ -1155,8 +1176,13 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
       if j == 0:
           xx = x
           yy = y
+          if save: 
+              np.savetxt(out,[x], fmt='%12.5e')
+              np.savetxt(out,[y], fmt='%12.5e')
       else:
-          yy = np.vstack ( (yy, interp_spl(xx, x, y) ) )
+          yy2 = interp_spl(xx, x, y)
+          yy = np.vstack ( (yy, yy2 ) )
+          if save: np.savetxt(out,[yy2], fmt='%12.5e')
 
       try:
           os.chdir('..')
@@ -1166,11 +1192,56 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
 
   return(xx,yy)
 
+def mkfilters(dltfile,wavelengths,fwhm=None,vrot=None):
+
+  """produces FERRE filters from a dlt file (output from collectdelta)
+
+  """
+
+  f = open(dltfile,'r')
+  flux = False
+
+  k = 0
+  hd = {}
+  for line in f:
+    #print('line=',line)
+    if '=' in line:
+      b = line.split('=')
+      hd[b[0].strip()] = b[1]
+    else:
+      if flux:
+        y = np.array(line.split(), dtype=float)
+        #y2 = interp_spl(wavelengths, x, y)
+        y2 = np.interp(wavelengths, x, y)
+        if k == 0: 
+          yref = y2
+        else:
+          f2 = open(elem[k-1]+'.flt','w')
+          we = y2/yref/np.median(y2/yref)
+          wp = we > 1.0
+          we[wp] = 1.0
+          if np.min(we) > 0.999:
+            we[:] = 1.0
+          else:
+            we = (we - np.min(we))/(np.max(we) - np.min(we))
+          we = 1.- we
+          np.savetxt(f2,we, fmt='%12.5e')
+          f2.close()
+        k = k + 1
+      else:
+        x = np.array(line.split(), dtype=float)
+        flux = True
+        elem = hd['ELEM'].strip().split()
+
+
+  return None
+
+
 
 def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
     vmicro=None, vrot=0.0, fwhm=0.0, nfe=0.0, \
     linelist=linelist0, atom='ap18', \
-    steprot=0.0, stepfwhm=0.0,  clean=True, save=None, lte=None):
+    steprot=0.0, stepfwhm=0.0,  clean=True, save=None, lte=True):
 
   """Sets up a directory tree for computing synthetic spectra for a list of files in 
   parallel. The values of vmicro, vrot, fwhm, and nfe can be iterables. Whether or not 
@@ -1235,7 +1306,7 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
       class of Phoenix models used here are always LTE models. Tlusty models
       can be LTE or NLTE, and this keyword will ignore the populations and compute
       assuming LTE for a input NLTE Tlusty model.
-      (default None)
+      (default False)
 
   Returns
   -------
