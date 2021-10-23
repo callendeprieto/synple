@@ -1074,7 +1074,7 @@ abundances for one at a time.
 def collectdelta(modelfile, wrange, elem, enhance=0.2, 
     strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
-    steprot=0.0, stepfwhm=0.0,  lte=False, save=False):
+    steprot=0.0, stepfwhm=0.0,  lte=False, save=True):
 
   """Collects the spectra, after computed, in a dir tree created with polydelta.
 
@@ -1166,6 +1166,9 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
 
       idir = idir + 1
       dir = ( "hyd%07d" % (idir) )
+
+      #print('j,idir=',j,idir)
+
       try:
         os.chdir(dir)
       except OSError:
@@ -1177,18 +1180,20 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
           xx = x
           yy = y
           if save: 
-              np.savetxt(out,[x], fmt='%12.5e')
-              np.savetxt(out,[y], fmt='%12.5e')
+              np.savetxt(out,[xx], fmt='%12.5e')
+              np.savetxt(out,[yy], fmt='%12.5e')
       else:
           yy2 = interp_spl(xx, x, y)
           yy = np.vstack ( (yy, yy2 ) )
           if save: np.savetxt(out,[yy2], fmt='%12.5e')
+
 
       try:
           os.chdir('..')
       except OSError:
           print( "cannot exit dir hyd%07d" % (idir) )
 
+  out.close()
 
   return(xx,yy)
 
@@ -1210,29 +1215,53 @@ def mkfilters(dltfile,wavelengths,fwhm=None,vrot=None):
       hd[b[0].strip()] = b[1]
     else:
       if flux:
+        print('k=',k)
         y = np.array(line.split(), dtype=float)
         #y2 = interp_spl(wavelengths, x, y)
         y2 = np.interp(wavelengths, x, y)
-        if k == 0: 
+        if k == 0:
+          wrange = list(map(float,hd['WRANGE'].split()))
+          assert(np.min(wavelengths) >= wrange[0]),'Attempted to interpolate to wavelengths shorter than the minimum in the input dlt file '+dltfile 
+          assert(np.max(wavelengths) <= wrange[1]),'Attempted to interpolate to wavelengths longer than the maximum in the input dlt file '+dltfile 
           yref = y2
         else:
-          f2 = open(elem[k-1]+'.flt','w')
+          #f2 = open(elem[k-1]+'.flt','w')
           we = y2/yref/np.median(y2/yref)
           wp = we > 1.0
           we[wp] = 1.0
           if np.min(we) > 0.999:
             we[:] = 1.0
-          else:
-            we = (we - np.min(we))/(np.max(we) - np.min(we))
+          #else:
+            #we = (we - np.min(we))/(np.max(we) - np.min(we))
           we = 1.- we
-          np.savetxt(f2,we, fmt='%12.5e')
-          f2.close()
+          if k == 1:
+            yy = we
+          else:
+            yy = np.vstack ( (yy, we ) )
+          #np.savetxt(f2,we, fmt='%12.5e')
+          #f2.close()
         k = k + 1
       else:
         x = np.array(line.split(), dtype=float)
         flux = True
         elem = hd['ELEM'].strip().split()
 
+  f.close()
+
+  #print(yy.shape)
+ 
+
+  #write out the filter files
+  k = 0
+  total = np.sum(yy,0)
+  for el in elem:
+    f = open(el+'.flt','w')
+    res = 2.* yy[k,:] - total 
+    wn = res < 0.
+    res[wn] = 0.0 
+    np.savetxt(f,res, fmt='%12.5e')
+    k = k + 1
+    f.close()
 
   return None
 
