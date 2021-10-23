@@ -1076,7 +1076,7 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
     steprot=0.0, stepfwhm=0.0,  lte=False, save=True):
 
-  """Collects the spectra, after computed, in a dir tree created with polydelta.
+  """Collects the spectra, after computed, in a dir tree created with polydelta, and writes them out to an output file (modelfile.dlt)
 
 
   Parameters
@@ -1132,8 +1132,9 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
 
   Returns
   -------
-  x   float arr with wavelengths
-  y   float array with the original and the perturbed abundances (2D)
+  No data are return, but a file (modelfile.dlt) is produced with a header, and then
+  the wavelength array, the flux for the input abundances, and the perturbed flux with
+  enhanced abundance for each of the elements in elem.
   """
 
 
@@ -1178,13 +1179,11 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
 
       if j == 0:
           xx = x
-          yy = y
           if save: 
               np.savetxt(out,[xx], fmt='%12.5e')
-              np.savetxt(out,[yy], fmt='%12.5e')
+              np.savetxt(out,[y], fmt='%12.5e')
       else:
           yy2 = interp_spl(xx, x, y)
-          yy = np.vstack ( (yy, yy2 ) )
           if save: np.savetxt(out,[yy2], fmt='%12.5e')
 
 
@@ -1195,7 +1194,7 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
 
   out.close()
 
-  return(xx,yy)
+  return None
 
 def mkfilters(dltfile,wavelengths,fwhm=None,vrot=None):
 
