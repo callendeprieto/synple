@@ -1196,11 +1196,34 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
 
   return None
 
-def mkfilters(dltfile,wavelengths,fwhm=None,vrot=None):
+def mkfilters(dltfile,wavelengths,fwhm=0.0,unit='km/s'):
 
   """produces FERRE filters from a dlt file (output from collectdelta)
 
+
+  Parameters
+  ----------
+  dltfile : str
+      file with the fluxes for abundance perturbations in various elements, produced by 
+      polydelta+collectdelta
+  wavelengths: float array
+      wavelength array for which we want the filters to be resampled (angstroms). These 
+      should match those of the FERRE grid with which the filters will be used
+  fwhm: float
+      Gaussian broadening: macroturbulence, instrumental, etc. (angstroms or km/s)
+      (default 0.)
+  unit: str
+      Units for the FWHM of the Gaussian kernel ('km/s' or 'A')
+       (default 'km/s')
+
+  Returns
+  -------
+  No data are return, but a file (modelfile.dlt) is produced with a header, and then
+  the wavelength array, the flux for the input abundances, and the perturbed flux with
+  enhanced abundance for each of the elements in elem.
   """
+
+  assert (unit == 'km/s' or unit == 'A'),'unit for FWHM must be km/s or A (Angstroms)'
 
   f = open(dltfile,'r')
   flux = False
@@ -1214,10 +1237,18 @@ def mkfilters(dltfile,wavelengths,fwhm=None,vrot=None):
       hd[b[0].strip()] = b[1]
     else:
       if flux:
-        print('k=',k)
         y = np.array(line.split(), dtype=float)
-        #y2 = interp_spl(wavelengths, x, y)
-        y2 = np.interp(wavelengths, x, y)
+        if fwhm > 0.0:
+          if unit == 'km/s':
+            xc,yc = vgconv(x,y,fwhm)
+          else:
+            xc,yc = lgconv(x,y,fwhm)
+        else:
+          xc = x[:]
+          yc = y[:]
+
+        #y2 = interp_spl(wavelengths, xc, yc)
+        y2 = np.interp(wavelengths, xc, yc)
         if k == 0:
           wrange = list(map(float,hd['WRANGE'].split()))
           assert(np.min(wavelengths) >= wrange[0]),'Attempted to interpolate to wavelengths shorter than the minimum in the input dlt file '+dltfile 
