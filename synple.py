@@ -1074,7 +1074,7 @@ abundances for one at a time.
 def collectdelta(modelfile, wrange, elem, enhance=0.2, 
     strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
-    steprot=0.0, stepfwhm=0.0,  lte=False, save=True):
+    steprot=0.0, stepfwhm=0.0,  lte=False):
 
   """Collects the spectra, after computed, in a dir tree created with polydelta, and writes them out to an output file (modelfile.dlt)
 
@@ -1125,9 +1125,6 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
       class of Phoenix models used here are always LTE models. Tlusty models
       can be LTE or NLTE, and this keyword will ignore the populations and compute
       assuming LTE for a input NLTE Tlusty model.
-      (default False)
-  save: bool
-      set to true for producing an .dlt file with all the model spectra
       (default False)
 
   Returns
@@ -1197,7 +1194,7 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
 
   return None
 
-def mkflt(dltfile,wavelengths,fwhm=0.0,unit='km/s'):
+def mkflt(dltfile,wavelengths,fwhm=0.0,unit='km/s',outdir='.'):
 
   """produces FERRE filters from a dlt file (output from collectdelta)
 
@@ -1217,11 +1214,14 @@ def mkflt(dltfile,wavelengths,fwhm=0.0,unit='km/s'):
       Units for the FWHM of the Gaussian kernel ('km/s' or 'A')
        (default 'km/s')
 
+  outdir: str
+      Folder to place the output flt files
+       (default is './')
+
   Returns
   -------
-  No data are return, but a file (modelfile.dlt) is produced with a header, and then
-  the wavelength array, the flux for the input abundances, and the perturbed flux with
-  enhanced abundance for each of the elements in elem.
+  No data are return, but a FERRE filter file is written for each of the elements which
+  abundance has been perturned in the input dlt file (see ELEM in the header of the file).
   """
 
   assert (unit == 'km/s' or unit == 'A'),'unit for FWHM must be km/s or A (Angstroms)'
@@ -1287,7 +1287,7 @@ def mkflt(dltfile,wavelengths,fwhm=0.0,unit='km/s'):
   k = 0
   total = np.sum(yy,0)
   for el in elem:
-    f = open(el+'.flt','w')
+    f = open(os.path.join(outdir,el+'.flt'),'w')
     res = 2.* yy[k,:] - total 
     wn = res < 0.
     res[wn] = 0.0 
