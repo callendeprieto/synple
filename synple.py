@@ -1197,7 +1197,7 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
 
   return None
 
-def mkfilters(dltfile,wavelengths,fwhm=0.0,unit='km/s'):
+def mkflt(dltfile,wavelengths,fwhm=0.0,unit='km/s'):
 
   """produces FERRE filters from a dlt file (output from collectdelta)
 
@@ -1296,7 +1296,6 @@ def mkfilters(dltfile,wavelengths,fwhm=0.0,unit='km/s'):
     f.close()
 
   return None
-
 
 
 def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
