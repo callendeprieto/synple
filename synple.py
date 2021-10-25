@@ -335,8 +335,8 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       nsamples = int((wrange[1] - wrange[0])/dw) + 1
       wave3 = np.arange(nsamples)*dw + wrange[0]
       cont = np.interp(wave3, wave2, flux2)
-      flux = interp_spl(wave3, wave, flux)      
-      #flux = np.interp(wave3, wave, flux)
+      flux = np.interp(wave3, wave, flux)
+      #flux = interp_spl(wave3, wave, flux)      
       wave = wave3
 
     if lineid == True:
@@ -905,12 +905,12 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
               if dw == None: dw = np.median(np.diff(x2))
               nsamples = int((wrange[1] - wrange[0])/dw) + 1
               wave = np.arange(nsamples)*dw + wrange[0]
-              #flux = np.interp(wave, x2, y2)
-              flux = interp_spl(wave, x2, y2)
+              flux = np.interp(wave, x2, y2)
+              #flux = interp_spl(wave, x2, y2)
               cont = np.interp(wave, x2, z2)
             else:
-              #flux = np.vstack ( (flux, np.interp(wave, x, y) ) )
-              flux = np.vstack ( (flux, interp_spl(wave, x, y) ) )
+              flux = np.vstack ( (flux, np.interp(wave, x, y) ) )
+              #flux = np.vstack ( (flux, interp_spl(wave, x, y) ) )
               cont = np.vstack ( (cont, np.interp(wave, x, z) ) )
 
 
@@ -1183,7 +1183,8 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
               np.savetxt(out,[xx], fmt='%12.5e')
               np.savetxt(out,[y], fmt='%12.5e')
       else:
-          yy2 = interp_spl(xx, x, y)
+          yy2 = np.interp(xx, x, y)
+          #yy2 = interp_spl(xx, x, y)
           if save: np.savetxt(out,[yy2], fmt='%12.5e')
 
 
@@ -1247,8 +1248,9 @@ def mkfilters(dltfile,wavelengths,fwhm=0.0,unit='km/s'):
           xc = x[:]
           yc = y[:]
 
-        #y2 = interp_spl(wavelengths, xc, yc)
         y2 = np.interp(wavelengths, xc, yc)
+        #y2 = interp_spl(wavelengths, xc, yc)
+
         if k == 0:
           wrange = list(map(float,hd['WRANGE'].split()))
           assert(np.min(wavelengths) >= wrange[0]),'Attempted to interpolate to wavelengths shorter than the minimum in the input dlt file '+dltfile 
@@ -2480,10 +2482,11 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
                     
                             print('idir,iconv, dw=',idir,iconv,dw)
                             print(wave.shape,flux.shape)
-                            if np.max(flux) - np.min(flux) < 1e-7:
-                              y = np.interp(x, wave, flux)
-                            else:
-                              y = interp_spl(x, wave, flux)
+                            y = np.interp(x, wave, flux)
+                            #if np.max(flux) - np.min(flux) < 1e-7:
+                            #  y = np.interp(x, wave, flux)
+                            #else:
+                            #  y = interp_spl(x, wave, flux)
                             print(x.shape,y.shape)
                             #plt.plot(wave,flux,'b',x,y,'.')
                             #plt.show()
@@ -4554,8 +4557,8 @@ def lgconv(xinput, yinput, fwhm, ppr=None):
     minx = np.min(xinput)
     maxx = np.max(xinput)
     x = np.linspace(minx,maxx,nel)
-    #y = np.interp( x, xinput, yinput)
-    y = interp_spl( x, xinput, yinput)
+    y = np.interp( x, xinput, yinput)
+    #y = interp_spl( x, xinput, yinput)
   else:                       #input linearly sampled
     x = xinput
     y = yinput
@@ -4620,8 +4623,8 @@ def vgconv(xinput,yinput,fwhm, ppr=None):
     x = np.linspace(minx,maxx,nel)
     step = x[1] - x[0]
     x = np.exp(x)
-    #y = np.interp( x, xinput, yinput)
-    y = interp_spl( x, xinput, yinput)
+    y = np.interp( x, xinput, yinput)
+    #y = interp_spl( x, xinput, yinput)
   else:
     x = xinput
     y = yinput
@@ -4687,8 +4690,8 @@ def rotconv(xinput,yinput,vsini, ppr=None):
     x = np.linspace(minx,maxx,nel)
     step = x[1] - x[0]
     x = np.exp(x)
-    #y = np.interp( x, xinput, yinput)
-    y = interp_spl( x, xinput, yinput)
+    y = np.interp( x, xinput, yinput)
+    #y = interp_spl( x, xinput, yinput)
   else:
     x = xinput
     y = yinput
