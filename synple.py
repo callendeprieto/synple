@@ -389,10 +389,28 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
      
 
     if save == True:
+
+      out = ['MODEL   = '+modelfile+'\n']
+      out.append('TEFF    = '+str(teff)+'\n')
+      out.append('LOGG    = '+str(logg)+'\n')
+      out.append('VMICRO  = '+str(vmicro)+'\n')
+      out.append('WRANGE  = '+' '.join(map(str,wrange))+'\n')
+      out.append('STRENGTH= '+str(strength)+'\n')
+      out.append('LINELIST= '+' '.join(linelist)+'\n')
+      out.append('ATOM    = '+atom+'\n')
+      out.append('VROT    = '+str(vrot)+'\n')
+      out.append('FWHM    = '+str(fwhm)+'\n')
+      out.append('STEPROT = '+str(steprot)+'\n')
+      out.append('STEPFWHM= '+str(stepfwhm)+'\n')
+      out.append('LTE     = '+str(lte)+'\n')
+      out.append('ABU     = '+' '.join(map(str,abu))+'\n')
+
+      header = ''.join(out)
+
       if synfile == None: 
         tmpstr = os.path.split(modelfile)[-1]
         synfile = tmpstr[:tmpstr.rfind('.')]+'.syn'
-      np.savetxt(synfile,(wave,flux,cont))
+      np.savetxt(synfile,(wave,flux,cont),header=header)
 
   if lineid: 
     s = wave, flux, cont, [la,li,lo]
