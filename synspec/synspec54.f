@@ -975,13 +975,6 @@ c    *                            IFRQ0,IFRQ1,OSC,CPARAM
      *     IFRQ0,IFRQ1,OSC,CPARAM
          NCOL=0
       END IF
-      IF (NCOL.NE.0) THEN
-         DO IIC=1,NCOL
-            READ(IUNIT,*) ITYPE, NCTEMP
-            READ(IUNIT,*) (CTEMP(IFIT),IFIT=1,NCTEMP)
-            READ(IUNIT,*) (CRATE(IFIT),IFIT=1,NCTEMP)
-         END DO
-      END IF
 c
       IF(II.EQ.0) THEN
          IF(JJ.EQ.0) GO TO 30
@@ -1065,6 +1058,14 @@ C
       END IF
       IBF(II)=IFANCY
       INDEXP(II)=IABS(MODE)
+      IF (NCOL.NE.0) THEN
+         DO IIC=1,NCOL
+            READ(IUNIT,*) ITYPE, NCTEMP
+            READ(IUNIT,*) (CTEMP(IFIT),IFIT=1,NCTEMP)
+            READ(IUNIT,*) (CRATE(IFIT),IFIT=1,NCTEMP)
+         END DO
+      END IF
+c
       IF(II.LT.NLAST(ION)) GO TO 10
    15 READ(IUNIT,501) A
       IF(A.NE.'*') GO TO 15
