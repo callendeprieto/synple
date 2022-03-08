@@ -110,7 +110,8 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       initial and ending wavelengths (angstroms)
   dw: float, optional
       wavelength step for the output fluxes
-      this will trigger interpolation at the end
+      this will trigger interpolation at the end.
+      A negative value will lead to interpolation to a uniform step in ln(lambda)
       (default is None for automatic frequency selection)
   strength: float, optional
       threshold in the line-to-continuum opacity ratio for 
@@ -332,8 +333,13 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       print('convol ellapsed time ',end - start, 'seconds')
 
     if (dw != None): 
-      nsamples = int((wrange[1] - wrange[0])/dw) + 1
-      wave3 = np.arange(nsamples)*dw + wrange[0]
+      if (dw < 0.):
+        ldw=np.abs(dw)/np.mean(wrange)
+        nsamples = int((np.log(wrange[1]) - np.log(wrange[0]))/ldw) + 1
+        wave3 = np.exp(np.arange(nsamples)*ldw + np.log(wrange[0]))
+      else:
+        nsamples = int((wrange[1] - wrange[0])/dw) + 1
+        wave3 = np.arange(nsamples)*dw + wrange[0]
       cont = np.interp(wave3, wave2, flux2)
       flux = np.interp(wave3, wave, flux)
       #flux = interp_spl(wave3, wave, flux)      
@@ -441,6 +447,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   dw: float, optional
       wavelength step for the output fluxes
       this will trigger interpolation at the end
+      A negative value will lead to interpolation to a uniform step in ln(lambda)
       (default is None for automatic selection)
   strength: float, optional
       threshold in the line-to-continuum opacity ratio for 
@@ -602,6 +609,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   dw: float, optional
       wavelength step for the output fluxes
       this will trigger interpolation at the end
+      A negative value will lead to interpolation to a uniform step in ln(lambda)
       (default is None for automatic selection)
   strength: float, optional
       threshold in the line-to-continuum opacity ratio for 
@@ -784,6 +792,7 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
       initial and ending wavelengths (angstroms)
   dw: float
       wavelength step for the output fluxes.
+      A negative value will lead to interpolation to a uniform step in ln(lambda).
       Unlike in 'syn', interpolation to a constant step will always be done
       (default is None for automatic selection based on the first model of the list)
   strength: float, optional
@@ -921,8 +930,14 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
 
             if entry == modelfiles[0] and vmicro1 == vmicros[0] and vrot1 == vrots[0] and fwhm1 == fwhms[0] and nfe1 == nfes[0]:
               if dw == None: dw = np.median(np.diff(x2))
-              nsamples = int((wrange[1] - wrange[0])/dw) + 1
-              wave = np.arange(nsamples)*dw + wrange[0]
+              if (dw < 0.):
+                ldw=np.abs(dw)/np.mean(wrange)
+                nsamples = int((np.log(wrange[1]) - np.log(wrange[0]))/ldw) + 1
+                wave = np.exp(np.arange(nsamples)*ldw + np.log(wrange[0]))
+              else:
+                nsamples = int((wrange[1] - wrange[0])/dw) + 1
+                wave = np.arange(nsamples)*dw + wrange[0]
+
               flux = np.interp(wave, x2, y2)
               #flux = interp_spl(wave, x2, y2)
               cont = np.interp(wave, x2, z2)
@@ -1316,15 +1331,13 @@ def mkflt(dltfile,wavelengths,fwhm=0.0,unit='km/s',outdir='.'):
   return None
 
 
-def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
+def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
     vmicro=None, vrot=0.0, fwhm=0.0, nfe=0.0, \
     linelist=linelist0, atom='ap18', \
     steprot=0.0, stepfwhm=0.0,  clean=True, save=None, lte=True):
 
   """Sets up a directory tree for computing synthetic spectra for a list of files in 
-  parallel. The values of vmicro, vrot, fwhm, and nfe can be iterables. Whether or not 
-  dw is specified the results will be placed on a common wavelength scale by interpolation.
-  When not specified, dw will be chosen as appropriate for the first model in modelfiles.
+  parallel. The values of vmicro, vrot, fwhm, and nfe can be iterables. 
 
 
   Parameters
@@ -1333,9 +1346,6 @@ def polysyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
       files with model atmospheres
   wrange: tuple or list of two floats
       initial and ending wavelengths (angstroms)
-  dw: float
-      Unlike in 'syn', interpolation to a constant step will always be done
-      (default is None for automatic selection based on the first model of the list)
   strength: float, optional
       threshold in the line-to-continuum opacity ratio for 
       selecting lines (default is 1e-4)
