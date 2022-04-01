@@ -1993,7 +1993,9 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, \
                     sformat = "%s%4i_g%+.1f_%s_z%+.2f_a%+.2f_c%+.2f_n%+.2f_o%+.2f_r%+.2f_s%+.2f."+ext
                     filename = (sformat % (a1,teff,logg,code,feh,afe,cfe,nfe,ofe,rfe,sfe) )
 
-                    file = os.path.join(modeldir,filename)
+                    file = glob.glob(os.path.join(modeldir,filename))
+                    assert len(file) < 2,'Multiple files matching the pattern'
+                    file = file[0]
           
                     if ignore_missing_models == False:
                       assert os.path.isfile(file), 'Cannot find model '+filename+' in modeldir '+modeldir                   
@@ -2111,7 +2113,9 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
                     sformat = "t%05ig%3.1fm%s%02ic%s%02io%s%02i."+ext
                     filename = (sformat % (teff,logg,mcode,abs(feh)*10.,ccode,cfe*10.,acode,afe*10.) )
 
-                    file = os.path.join(modeldir,filename)
+                    file = glob.glob(os.path.join(modeldir,filename))
+                    assert len(file) < 2, 'Multiple files matching the pattern'
+                    file = file[0]
 
                     if ignore_missing_models == False:
                       assert os.path.isfile(file), 'Cannot find model '+filename+' in modeldir '+modeldir                   
