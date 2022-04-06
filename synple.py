@@ -611,7 +611,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     if synfile == None: 
       tmpstr = os.path.split(modelfile)[-1]
       synfile = tmpstr[:tmpstr.rfind('.')]+'.syn'
-    np.savetxt(synfile,(wave,flux,cont),header=header)
+    np.savetxt(synfile,(x,y,z),header=header)
 
 
 
@@ -828,7 +828,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     if synfile == None: 
       tmpstr = os.path.split(modelfile)[-1]
       synfile = tmpstr[:tmpstr.rfind('.')]+'.syn'
-    np.savetxt(synfile,(wave,flux,cont),header=header)
+    np.savetxt(synfile,(x,y,z),header=header)
 
   if lineid: 
     s = x, y, z, [la,li,lo]
