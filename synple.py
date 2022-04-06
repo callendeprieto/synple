@@ -534,6 +534,15 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   from multiprocessing import Pool,cpu_count
 
+  #basic checks on the line list and model atmosphere
+  linelist, modelfile = checksynspec(linelist,modelfile)
+
+  #read model atmosphere
+  atmostype, teff, logg, vmicro2, abu2, nd, atmos = read_model(modelfile)
+
+  if vmicro == None: vmicro = vmicro2
+  if abu == None: abu = abu2
+
 
   if nthreads == 0: 
     nthreads = cpu_count()
@@ -737,6 +746,15 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
     return(s)
 
+
+  #basic checks on the line list and model atmosphere
+  linelist, modelfile = checksynspec(linelist,modelfile)
+
+  #read model atmosphere
+  atmostype, teff, logg, vmicro2, abu2, nd, atmos = read_model(modelfile)
+
+  if vmicro == None: vmicro = vmicro2
+  if abu == None: abu = abu2
 
   if nthreads == 0: 
     nthreads = psutil.cpu_count(logical=False)
