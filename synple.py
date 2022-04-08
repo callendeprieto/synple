@@ -238,7 +238,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   startdir = os.getcwd()
   logfile = os.path.join(startdir,os.path.split(tmpdir)[-1]) + "_" + logfile
   try:
-    os.mkdir(tmpdir)
+    if tmpdir != '.': os.mkdir(tmpdir)
   except OSError:
     print( "cannot create tmpdir %s " % (tmpdir) )
   try:
@@ -1102,7 +1102,7 @@ abundances for one at a time.
       idir = idir + 1
       dir = ( "hyd%07d" % (idir) )
       try:
-        os.mkdir(dir)
+        if dir != '.': os.mkdir(dir)
       except OSError:
         print( "cannot create dir hyd%07d" % (idir) )
       try:
@@ -1516,7 +1516,7 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
         dir = ( "hyd%07d" % (idir) )
         dirfile.write(str(idir)+' folder='+dir+' model='+entry+' vmicro='+str(vmicro1)+' [N/Fe]='+str(nfe1)+' \n')
         try:
-          os.mkdir(dir)
+          if dir != '.': os.mkdir(dir)
         except OSError:
           print( "cannot create dir hyd%07d" % (idir) )
         try:
@@ -1557,6 +1557,7 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
           x, y, z = syn(entry, wrange, dw=None, strength=strength, vmicro=vmicro1, \
           abu=abu1, linelist=linelist, atom=atom, lte=lte, clean=False, compute=False, tmpdir=".")
 
+          s.write("cd "+os.path.abspath(os.curdir)+" \n")
           s.write(synspec+" < "+"fort.5"+"\n")
 
           si = open("fort.55",'r')
@@ -1818,7 +1819,7 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
                   idir = idir + 1
                   dir = ( "hyd%07d" % (idir) )
                   try:
-                    os.mkdir(dir)
+                    if dir != '.': os.mkdir(dir)
                   except OSError:
                     print( "cannot create dir hyd%07d" % (idir) )
                   try:
