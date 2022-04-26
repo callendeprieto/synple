@@ -432,7 +432,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
     steprot=0.0, stepfwhm=0.0, lineid=False, tag=False,  \
     clean=True, save=False, synfile=None, \
-    lte=False, compute=True, nthreads=1):
+    lte=False, compute=True, nthreads=0):
 
   """Computes a synthetic spectrum, splitting the spectral range in nthreads parallel calculations
 
@@ -509,7 +509,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       (default True)
   nthreads: int
       choose the number of cores to use in the calculation
-      (default 1, 0 has the meaning that the code should take all the cores available)
+      (default 0, which has the meaning that the code should take all the cores available except 1)
 
   Returns
   -------
@@ -545,7 +545,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
 
   if nthreads == 0: 
-    nthreads = cpu_count()
+    nthreads = int(cpu_count() - 1)
 
   #override lineid when tag is True
   if tag: lineid = True
@@ -629,7 +629,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
     steprot=0.0, stepfwhm=0.0,  lineid=False, tag=False, \
     clean=True, save=False, synfile=None, \
-    lte=False, compute=True, nthreads=1):
+    lte=False, compute=True, nthreads=0):
 
   """Computes a synthetic spectrum, splitting the spectral range in nthreads parallel calculations 
 
@@ -706,7 +706,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       (default True)
   nthreads: int
       choose the number of cores to use in the calculation
-      (default 1, 0 has the meaning that the code should take all the cores available)
+      (default 0, which has the meaning that the code should take all the cores available except 1)
 
   Returns
   -------
@@ -757,7 +757,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   if abu == None: abu = abu2
 
   if nthreads == 0: 
-    nthreads = psutil.cpu_count(logical=False)
+    nthreads = int(psutil.cpu_count(logical=False) - 1)
 
   if tag: lineid = True
 
@@ -844,7 +844,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
     vmicro=None, vrot=0.0, fwhm=0.0, nfe=0.0, \
     linelist=linelist0, atom='ap18', \
-    steprot=0.0, stepfwhm=0.0, clean=True, save=None, lte=False, nthreads=1):
+    steprot=0.0, stepfwhm=0.0, clean=True, save=None, lte=False, nthreads=0):
 
   """Computes synthetic spectra for a list of files. The values of vmicro, vrot, 
   fwhm, and nfe can be iterables. Whether or not dw is specified the results will be 
@@ -914,7 +914,7 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
       (default False)
   nthreads: int
       choose the number of cores to use in the calculation
-      (default 1, 0 has the meaning that the code should take all the cores available)
+      (default 0, which has the meaning that the code should take all the cores available but one)
 
 
 
