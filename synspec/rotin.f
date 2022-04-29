@@ -5,9 +5,9 @@ c Program for performing rotational and instrumental convolution
 c for a calculated stellar spectrum obtained by program SYNSPEC
 c -------------------------------------------------------------------
 c
-      PARAMETER (MLAM=1000000,
-     *           MCON=20000)
-      PARAMETER (MCONV=500000)
+      PARAMETER (MLAM=4000000,
+     *           MCON=40000)
+      PARAMETER (MCONV=1000000)
       implicit real*8 (a-h,o-z)
       DIMENSION FLAM0(MLAM),FLAM1(MLAM),FLAM2(MLAM),FCN(MLAM),
      *          WLAM0(MLAM),WLAM1(MLAM),WLAM2(MLAM),
@@ -304,9 +304,9 @@ C  FWHM  - full width at half maximum of the instrum. profile function
 C ---------------------------------------------------------------------
 C
       implicit real*8 (a-h,o-z)
-      PARAMETER (MCONV=500000,
+      PARAMETER (MCONV=1000000,
      *           MCONV1=MCONV+1)
-      PARAMETER (MLAM=1000000)
+      PARAMETER (MLAM=4000000)
       PARAMETER (ONE=1.,
      *           TWO=2.,
      *           HALF=0.5)
