@@ -9,10 +9,9 @@ GUNZIP = `which gunzip`
 
 #general line lists
 #STANDARD =  gfall08oct17hix.19 kmol2019.20  #original
-STANDARD =  gfATO.19 gfMOL.20		     #gfMOL.20 reduced with redulis/gfelim>-8)
+#STANDARD =  gfATO.19 gfMOL.20		     #gfMOL.20 reduced with redulis/gfelim>-8)
+STANDARD =  gfATO.19 gfMOLsun.20 gfTiO.20 H2O-8.20 #TiO and H2O from EXOMOL(gfelim>-8)
 
-#Add TiO and H2O (EXOMOL line lists reduced with redulis/gfelim>-8)
-COOL = gfTiO.20 H2O-8.20
 
 #Allende Prieto et al. 2018
 OLD = gfallx3_bpo.19 kmol3_0.01_30.20
@@ -36,8 +35,6 @@ HBAND = synspec.20200921nlte.19 synspec.20200921nltesun.20 synspec.20200921nlteg
 all: 
 	$(call sequence, $(STANDARD))
 
-cool: 
-	$(call sequence, $(COOL))
 
 old:
 	$(call sequence, $(OLD))
