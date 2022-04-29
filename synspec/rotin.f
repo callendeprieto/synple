@@ -7,7 +7,7 @@ c -------------------------------------------------------------------
 c
       PARAMETER (MLAM=1000000,
      *           MCON=20000)
-      PARAMETER (MCONV=50000)
+      PARAMETER (MCONV=500000)
       implicit real*8 (a-h,o-z)
       DIMENSION FLAM0(MLAM),FLAM1(MLAM),FLAM2(MLAM),FCN(MLAM),
      *          WLAM0(MLAM),WLAM1(MLAM),WLAM2(MLAM),
@@ -304,9 +304,9 @@ C  FWHM  - full width at half maximum of the instrum. profile function
 C ---------------------------------------------------------------------
 C
       implicit real*8 (a-h,o-z)
-      PARAMETER (MCONV=5000,
+      PARAMETER (MCONV=500000,
      *           MCONV1=MCONV+1)
-      PARAMETER (MLAM=100000)
+      PARAMETER (MLAM=1000000)
       PARAMETER (ONE=1.,
      *           TWO=2.,
      *           HALF=0.5)
@@ -584,7 +584,7 @@ C   XLMAX- width of the kernel
 C   G    - normalized kernel function
 C
       implicit real*8 (a-h,o-z)
-      PARAMETER (MCONV=5000, MCONV1=MCONV+1)
+      PARAMETER (MCONV=500000, MCONV1=MCONV+1)
       PARAMETER (ONE=1.,
      *           TWO=2.,
      *           HALF=0.5)
