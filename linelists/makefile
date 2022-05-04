@@ -47,7 +47,7 @@ hband:
 
 
 clean: 
-	rm -f *.19 *.20 *.11 *.gz
+	rm -f *.19 *.20 *.11 *.00 *.gz
 
 
 define sequence
