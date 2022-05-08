@@ -12,6 +12,8 @@ GUNZIP = `which gunzip`
 #STANDARD =  gfATO.19 gfMOL.20		     #gfMOL.20 reduced with redulis/gfelim>-8)
 STANDARD =  gfATO.19 gfMOLsun.20 gfTiO.20 H2O-8.20 #TiO and H2O from EXOMOL(gfelim>-8)
 
+#isotopic ratios more typical of a red giant (after 1st dredge up)
+GIANT = gfMOLgiant.20 # to replace gfMOLsun (also reduced with redulis/gfelim>-8)
 
 #Allende Prieto et al. 2018
 OLD = gfallx3_bpo.19 kmol3_0.01_30.20
