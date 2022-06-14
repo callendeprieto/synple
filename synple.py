@@ -4664,6 +4664,9 @@ def lgconv(xinput, yinput, fwhm, ppr=None):
     y = yinput
 
   step = x[1] - x[0]
+
+  assert (fwhm > 2*step), 'cannot convolve since fwhm is <= 2*step'
+
   sigma=fwhm/2.0/np.sqrt(-2.0*np.log(0.5))
   npoints = 2*int(3*fwhm/2./step)+1
   half = npoints * step /2.
@@ -4681,6 +4684,7 @@ def lgconv(xinput, yinput, fwhm, ppr=None):
 
   if ppr != None:
     fac = int(fwhm / step / ppr)
+    assert (fac != 0),'cannot resample since fac is = 0, increase fwhm or reduce ppr'
     subset = np.arange(x.size / fac, dtype=int) * fac 
     x = x[subset]
     y = y[subset]
@@ -4731,6 +4735,9 @@ def vgconv(xinput,yinput,fwhm, ppr=None):
     step = np.log(xinput[1])-np.log(xinput[0])
 
   fwhm = fwhm/clight # inverse of the resolving power
+
+  assert (fwhm > 2*step), 'cannot convolve since fwhm is <= 2*step'
+
   sigma=fwhm/2.0/np.sqrt(-2.0*np.log(0.5))
   npoints = 2*int(3*fwhm/2./step)+1
   half = npoints * step /2.
@@ -4746,6 +4753,7 @@ def vgconv(xinput,yinput,fwhm, ppr=None):
 
   if ppr != None:
     fac = int(fwhm / step / ppr)
+    assert (fac != 0),'cannot resample since fac is = 0, increase fwhm or reduce ppr'
     print(fwhm,step,ppr,fac)
     subset = np.arange(x.size / fac, dtype=int) * fac 
     x = x[subset]
@@ -4797,6 +4805,9 @@ def rotconv(xinput,yinput,vsini, ppr=None):
     y = yinput
 
   deltamax=vsini/clight
+
+  assert (deltamax > 2*step), 'cannot convolve since vsini is <= 2*step'
+
   npoints = 2*int(deltamax/step)+1
   xx = np.linspace(-deltamax,deltamax,npoints)
   c1=2.0*(1.0-epsilon)/np.pi/(1.0-epsilon/3.0)/deltamax
@@ -4813,6 +4824,7 @@ def rotconv(xinput,yinput,vsini, ppr=None):
 
   if ppr != None:
     fac = int(deltamax / step / ppr)
+    assert (fac != 0),'cannot resample since fac is = 0, reduce fwhm or ppr'
     subset = np.arange(x.size / fac, dtype=int) * fac 
     x = x[subset]
     y = y[subset]
@@ -4837,7 +4849,7 @@ def smooth(x,n):
   return(x2)
 
 
-def gsynth(synthfile,fwhm=0.0,outsynthfile=None,ppr=5,wrange=None,freeze=None):
+def gsynth(synthfile,fwhm=0.0,units='km/s',outsynthfile=None,ppr=5,wrange=None,freeze=None):
 
   """Smooth the spectra in a FERRE grid by Gaussian convolution
 
@@ -4846,8 +4858,12 @@ def gsynth(synthfile,fwhm=0.0,outsynthfile=None,ppr=5,wrange=None,freeze=None):
   synthfile: str
       name of the input FERRE synth file 
   fwhm: float
-      FWHM of the Gaussian kernel (km/s)      
+      FWHM of the Gaussian kernel in A or km/s
       (default is 0.0, which means no convolution is performed)
+  units: str
+      units for the FWHM ('A' for a constant resolution in Angstroms, 
+      'km/s' for a constant resolution in velocity
+      (default is 'km/s')
   outsynthfile: str
       name of the output FERRE synth file
       (default is the same as synth file, but starting with 'n')
@@ -4871,7 +4887,9 @@ def gsynth(synthfile,fwhm=0.0,outsynthfile=None,ppr=5,wrange=None,freeze=None):
 
   """
 
-  if outsynthfile is None: outsynthfile='n'+synthfile[1:]
+  if outsynthfile is None: 
+    assert synthfile[0] != 'n', 'default output file name starts with n_. Given that the input starts with n too, please choose an anternative outsynthfile'
+    outsynthfile='n'+synthfile[1:]
   logw=0
 
   #read header, update and write out
@@ -4895,6 +4913,8 @@ def gsynth(synthfile,fwhm=0.0,outsynthfile=None,ppr=5,wrange=None,freeze=None):
     hd.append(line)
 
   assert (len(n_p) == len(steps) & len(n_p) == len(llimits) & len(n_p) == len(labels) & len(n_p) == ndim), 'The dimension of the parameters from the header are inconsistent'
+
+  assert (units == 'km/s' or units == 'A'), 'units must be either km/s or A'
 
   #update header parameters
   x = np.arange(npix)*wave[1]+wave[0]
@@ -4923,12 +4943,15 @@ def gsynth(synthfile,fwhm=0.0,outsynthfile=None,ppr=5,wrange=None,freeze=None):
     
   if fwhm > 1.e-7:
     y = np.ones(npix)
-    xx,yy = vgconv(x,y,fwhm,ppr=ppr)
+    if units == 'km/s':
+      print('fwhm=',fwhm)
+      xx,yy = vgconv(x,y,fwhm,ppr=ppr)
+    else:
+      xx,yy = lgconv(x,y,fwhm,ppr=ppr)
   else:
     print('Warning -- fwhm <= 1.e-7, no convolution will be performed, ppr will be ignored')
     xx = x
   
-  print(len(x),len(xx))
   
   if wrange is not None: 
     section2 = np.where( (xx >= wrange[0]) & (xx <= wrange[1]) ) 
@@ -4952,10 +4975,30 @@ def gsynth(synthfile,fwhm=0.0,outsynthfile=None,ppr=5,wrange=None,freeze=None):
           jlabel = jlabel + 1
           line = " LABEL("+str(jlabel)+") = "+ilabel+"\n"
     if "NPIX" in line: line = " NPIX = "+str(len(xx))+"\n"
-    if "WAVE" in line: line = " WAVE = "+str(np.log10(xx[0]))+" "+str(np.log10(xx[1])-np.log10(xx[0]))+"\n"
-    if "LOGW" in line: line = " LOGW = 1 \n"
-    if "RESOLUTION" in line: line = " RESOLUTION = "+str(clight/np.sqrt(clight**2/resolution**2 + fwhm**2))+"\n"
+    if "WAVE" in line: 
+      if units == 'km/s': 
+        line = " WAVE = "+str(np.log10(xx[0]))+" "+str(np.log10(xx[1])-np.log10(xx[0]))+"\n"
+      else:
+        line = " WAVE = "+str(xx[0])+" "+str(xx[1]-xx[0])+"\n"
+    if "LOGW" in line: 
+      if units == 'km/s':
+        line = " LOGW = 1 \n"
+      else:
+        line = " LOGW = 0 \n"
+    if "RESOLUTION" in line: 
+        if units == 'km/s': 
+            line = " RESOLUTION = "+str(clight/np.sqrt(clight**2/resolution**2 + fwhm**2))+"\n"
+        else:
+            line = " RESOLUTION = "+str(mean(wrange)/np.sqrt(mean(wrange)**2/resolution**2 + fwhm**2))+"\n"
     fout.write(line)
+
+  if resolution not in locals(): 
+        if units == 'km/s': 
+             line = " RESOLUTION = "+str(clight/fwhm)+"\n"
+        else:
+             line = " RESOLUTION = "+str(mean(wrange)/fwhm)+"\n"
+
+  fout.write(line)
 
   #smooth and write data
   k = 0
@@ -4976,7 +5019,10 @@ def gsynth(synthfile,fwhm=0.0,outsynthfile=None,ppr=5,wrange=None,freeze=None):
     y = np.array(line.split(),dtype=float)
     if wrange is not None: y = y [section1]
     if fwhm > 1.e-7:
-      xx,yy = vgconv(x,y,fwhm,ppr=ppr)
+      if units == 'km/s':
+        xx,yy = vgconv(x,y,fwhm,ppr=ppr)
+      else:
+        xx,yy = lgconv(x,y,fwhm,ppr=ppr)
     else:
       xx,yy = x, y 
     if wrange is not None: yy = yy[section2]
