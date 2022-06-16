@@ -3037,7 +3037,7 @@ def tags(s, minew=10., normalized=True):
       if li[i] == pli and abs(la[i]-pla) < la[i]*1e-4 and abs(res-pres) < res*0.1:
         pass
       else:
-        plt.text(la[i]*(1.-2e-5),res*(1.-0.1),li[i])
+        plt.text(la[i]*(1.-2e-5),res-0.07*max(y),li[i])
         pla=la[i]
         pli=li[i]
         pres=res
