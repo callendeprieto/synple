@@ -2617,7 +2617,7 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
     n_p.append(int(tlogg[0]))
     labels.append('logg')
     llimits.append(tlogg[1])
-    steps.append(tteff[2])
+    steps.append(tlogg[2])
   if tfeh[0] > 1:
     ndim = ndim + 1
     n_p.append(int(tfeh[0]))
