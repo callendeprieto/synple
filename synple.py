@@ -2183,6 +2183,7 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
                     filename = (sformat % (teff,logg,mcode,abs(feh)*10.,ccode,cfe*10.,acode,afe*10.) )
 
                     file = glob.glob(os.path.join(modeldir,filename))
+                    print('filename=',filename)
                     print('file=',file)
                     assert len(file) < 2, 'Multiple files matching the pattern'
                     file = file[0]
