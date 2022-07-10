@@ -4993,7 +4993,8 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',outsynthfile=None,ppr=5,wrange=None,f
             line = " RESOLUTION = "+str(mean(wrange)/np.sqrt(mean(wrange)**2/resolution**2 + fwhm**2))+"\n"
     fout.write(line)
 
-  if resolution not in locals(): 
+  try: resolution
+  except NameError:: 
         if units == 'km/s': 
              line = " RESOLUTION = "+str(clight/fwhm)+"\n"
         else:
