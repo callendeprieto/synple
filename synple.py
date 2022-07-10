@@ -4994,7 +4994,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',outsynthfile=None,ppr=5,wrange=None,f
     fout.write(line)
 
   try: resolution
-  except NameError:: 
+  except NameError: 
         if units == 'km/s': 
              line = " RESOLUTION = "+str(clight/fwhm)+"\n"
         else:
