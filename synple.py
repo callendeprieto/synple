@@ -4991,7 +4991,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',outsynthfile=None,ppr=5,wrange=None,f
             line = " RESOLUTION = "+str(clight/np.sqrt(clight**2/resolution**2 + fwhm**2))+"\n"
         else:
             line = " RESOLUTION = "+str(mean(wrange)/np.sqrt(mean(wrange)**2/resolution**2 + fwhm**2))+"\n"
-    fout.write(line)
+    if line[1] != "/": fout.write(line)
 
   try: resolution
   except NameError: 
@@ -4999,8 +4999,9 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',outsynthfile=None,ppr=5,wrange=None,f
              line = " RESOLUTION = "+str(clight/fwhm)+"\n"
         else:
              line = " RESOLUTION = "+str(mean(wrange)/fwhm)+"\n"
+        fout.write(line)
 
-  fout.write(line)
+  fout.write(" /\n")
 
   #smooth and write data
   k = 0
