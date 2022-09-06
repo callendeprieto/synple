@@ -2339,7 +2339,7 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
            tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0),  
            tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0), 
            trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), 
-           vmicro=None, nfe=None, vrot=None, fwhm=None, wrange=None, dw=None,
+           vmicro=None, nfe=None, vrot=0.0, fwhm=None, wrange=None, dw=None,
            logw=0, ignore_missing_models=False):
 
 
@@ -2383,7 +2383,7 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
       (default 0.)
   fwhm: float, can be an iterable
       Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
-      (default 0.)
+      (default None)
   wrange: tuple or list of two floats, optional
       initial and ending wavelengths (angstroms)
       (default None -- chosen by the code from the first input spectrum)
@@ -2505,7 +2505,7 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
 
   hdr = mkhdr(tteff=tteff, tlogg=tlogg, tfeh=tfeh, tafe=tafe, 
               tcfe=tcfe, tnfe=tnfe, tofe=tofe, trfe=trfe, tsfe=tsfe,
-              vmicro=vmicro, nfe=nfe, vrot=vrot, fwhm=fwhm)
+              vmicro=vmicro, nfe=nfe, vrot=None, fwhm=None)
 
   if os.path.isfile(synthfile): 
     print('Warning -- the output file ',synthfile,' exists and will be overwritten')
@@ -2514,6 +2514,9 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
 
   f = open(synthfile,'a')
 
+  #look for the first sucessful calculation and define the wavelength for the grid  and write the header
+  nfreq = 0
+  break_out = False
   idir = 0
 
   for teff in teffs:
@@ -2533,15 +2536,12 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
                         idir = idir + 1
                         dir = ( "hyd%07d" % (idir) )
 
-                        iconv = 0
-                        for vrot1 in vrots:
-                          for fwhm1 in fwhms:
-
-                            iconv = iconv + 1
-                            outconv = ("%07dfort.7" % (iconv) )
-                            file = os.path.join(dir,outconv)
+                        iconv = 1
+                        outconv = ("%07dfort.7" % (iconv) )
+                        file = os.path.join(dir,outconv)
  
-                            if idir == 1 and iconv == 1:
+                        if os.path.isfile(file):
+                              print('first successful calculation is for idir=',idir)
                               assert os.path.isfile(file), 'Cannot find model '+file 
                               wave, flux = np.loadtxt(file, unpack=True)
                               if wrange is None: 
@@ -2582,23 +2582,63 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
                               f.write(' &SYNTH\n')
                               for entry in hdr: f.write(' '+entry + ' = ' + hdr[entry] + '\n')
                               f.write(' /\n')
+                              break_out = True
+                              break
+                              
+                      if break_out: break
+                    if break_out: break
+                  if break_out: break
+                if break_out: break
+              if break_out: break
+            if break_out: break
+          if break_out: break
+        if break_out: break
+      if break_out: break
+    if break_out: break
+						  
+  
+                              
+  assert nfreq > 0, 'could not find a single successful calculation in this grid'
+  
+  #now read, interpolate and write out the calculations
+  idir = 0
 
+  for teff in teffs:
+    for logg in loggs:
+      for feh in fehs:
+        for afe in afes:
+          for cfe in cfes:
+            for nfe in nfes:
+              for ofe in ofes:
+                for rfe in rfes:
+                  for sfe in sfes: 
+                    for vmicro1 in vmicros:
+                      for nfe1 in nfes1:
+                
+                        print(teff,logg,feh,afe,cfe,nfe,ofe,rfe,sfe,vmicro1,nfe1)
+
+                        idir = idir + 1
+                        dir = ( "hyd%07d" % (idir) )
+
+                        iconv = 0
+                        for vrot1 in vrots:
+                          for fwhm1 in fwhms:
+
+                            iconv = iconv + 1
+                            outconv = ("%07dfort.7" % (iconv) )
+                            file = os.path.join(dir,outconv)
+ 
+                            if os.path.isfile(file):
+                                wave, flux = np.loadtxt(file, unpack=True)
                             else:
-                              if os.path.isfile(file):
-                                  wave, flux = np.loadtxt(file, unpack=True)
+                              if ignore_missing_models == False:
+                                assert os.path.isfile(file), 'Cannot find model '+file                  
                               else:
-                                if ignore_missing_models == False:
-                                  assert os.path.isfile(file), 'Cannot find model '+file                  
-                                else:
-                                  wave, flux = (np.array([np.min(x),np.max(x)]), np.array([0.0, 0.0]))
+                                wave, flux = (np.array([np.min(x),np.max(x)]), np.array([0.0, 0.0]))
                     
                             print('idir,iconv, dw=',idir,iconv,dw)
                             print(wave.shape,flux.shape)
                             y = np.interp(x, wave, flux)
-                            #if np.max(flux) - np.min(flux) < 1e-7:
-                            #  y = np.interp(x, wave, flux)
-                            #else:
-                            #  y = interp_spl(x, wave, flux)
                             print(x.shape,y.shape)
                             #plt.plot(wave,flux,'b',x,y,'.')
                             #plt.show()
