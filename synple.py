@@ -2064,13 +2064,18 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, \
                     filename = (sformat % (a1,teff,logg,code,feh,afe,cfe,nfe,ofe,rfe,sfe) )
 
                     file = glob.glob(os.path.join(modeldir,filename))
-                    assert len(file) < 2,'Multiple files matching the pattern'
-                    file = file[0]
-          
+                    assert len(file) < 2, 'Multiple files matching the pattern'
+                    if len(file) < 1: 
+                      file = 'missing'
+                    else:
+                      file = file[0]
+
                     if ignore_missing_models == False:
+                      assert file is not 'missing'
                       assert os.path.isfile(file), 'Cannot find model '+filename+' in modeldir '+modeldir                   
                     else:
-                      if not os.path.isfile(file): file = 'missing'
+                      if file is not 'missing': 
+                        if not os.path.isfile(file): file = 'missing'
                       
                     files.append(file) 
 
@@ -2184,13 +2189,19 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
                     filename = (sformat % (teff,logg,mcode,ceil(abs(feh)*10.),ccode,cfe*10.,acode,ceil(abs(afe)*10.)))
 
                     file = glob.glob(os.path.join(modeldir,filename))
+                    print(file)
                     assert len(file) < 2, 'Multiple files matching the pattern'
-                    file = file[0]
+                    if len(file) < 1: 
+                      file = 'missing'
+                    else:
+                      file = file[0]
 
                     if ignore_missing_models == False:
+                      assert file is not 'missing'
                       assert os.path.isfile(file), 'Cannot find model '+filename+' in modeldir '+modeldir                   
                     else:
-                      if not os.path.isfile(file): file = 'missing'
+                      if file is not 'missing': 
+                        if not os.path.isfile(file): file = 'missing'
                       
                     files.append(file)
 
