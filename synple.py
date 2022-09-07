@@ -2782,7 +2782,41 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
   hdr['COMMENTS3'] = "'pwd is "+pwd+"'"
 
   return(hdr)
+  
+def fill_synth(d):
+	
+    from scipy.interpolate import Rbf
 
+    ndim = d.ndim-1
+    n_p = d.shape[:-1]
+    nfreq = d.shape[-1]	
+    
+    dd = np.reshape(d, (np.product(n_p),nfreq) )
+    dd2 = np.sum(dd, dd.ndim-1)
+    wi = np.where(dd2 + 1e-31 > 1e-30)[0]
+    wo = np.where(dd2 + 1e-31 < 1e-30)[0]
+
+    print(wi)
+    print(wo)
+
+    print('ndim=',ndim)
+    print('n_p=',n_p)
+    
+    ll = []
+    for i in np.arange(ndim):
+      print('i,n_p[i]=',i,n_p[i])
+      ll.append(np.arange(n_p[i]))
+    iarr = np.array(list(product(*ll)))
+
+    for i in np.arange(nfreq):
+      rbfi  = Rbf(*np.transpose(iarr[wi]), dd [ wi, i ] )
+      dd [ : , i ] = rbfi (*np.transpose(iarr))
+    
+    d2 = np.reshape(dd, tuple(n_p)+(nfreq,) ) 
+    
+    return(d2)
+  
+  
 def getallt(modelfiles):
 
   """Collects all the values for temperature, density and electron number density
