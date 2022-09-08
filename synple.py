@@ -2783,15 +2783,114 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
 
   return(hdr)
   
-def fill_synth(d):
-	
-    from scipy.interpolate import Rbf
+#extract the header of a synthfile
+def head_synth(synthfile):
+    meta=0
+    multi=0
+    file=open(synthfile,'r')
+    line=file.readline()
+    header={}
+    while (1):
+        line=file.readline()
+        part=line.split('=')
+        if (len(part) < 2): 
+          meta=meta+1
+          if (meta>multi): 
+            if multi>0: multi_header.append(header)
+            break
+          else:
+            if (meta > 1): multi_header.append(header)
+            header={}
+            line=file.readline()
+        else:
+          k=part[0].strip()
+          v=part[1].strip()
+          header[k]=v
+          if k == 'MULTI': 
+            multi=int(v)
+            multi_header=[]
+    if (multi > 1): header=multi_header
+    return header
 
+#extract the wavelength array for a FERRE synth file
+def lambda_synth(synthfile):
+    multi_header=head_synth(synthfile)
+    if ndim(multi_header) == 0: multi_header=[multi_header]
+    xx=[]
+    j=0
+    for header in multi_header:
+      tmp=header['WAVE'].split()
+      npix=int(header['NPIX'])
+      step=float(tmp[1])
+      x0=float(tmp[0])
+      x=arange(npix)*step+x0
+      if header['LOGW']:
+        if int(header['LOGW']) == 1: x=10.**x
+        if int(header['LOGW']) == 2: x=exp(x)   
+      j=j+1
+      xx.append(x)
+
+    if len(xx)>1: x=xx[:]
+
+    return x
+
+#read a synthfile
+def read_synth(synthfile):
+    meta=0
+    multi=0
+    file=open(synthfile,'r')
+    line=file.readline()
+    header={}
+    nlines=1
+    while (1):
+        line=file.readline()
+        nlines+=1
+        part=line.split('=')
+        if (len(part) < 2): 
+          meta=meta+1
+          if (meta>multi): 
+            if multi>0: multi_header.append(header)
+            break
+          else:
+            if (meta > 1): multi_header.append(header)
+            header={}
+            line=file.readline()
+            nlines+=1
+        else:
+          k=part[0].strip()
+          v=part[1].strip()
+          header[k]=v
+          if k == 'MULTI': 
+            multi=int(v)
+            multi_header=[]
+    if (multi > 1): header=multi_header
+    file.close()
+
+    if ndim(header) > 0: 
+      snp=header[0]['N_P'] 
+    else: 
+      snp=header['N_P']
+
+    n_p = tuple(array(snp.split(),dtype=int)) + (-1,)
+    data=loadtxt(synthfile, skiprows=nlines, dtype=float)
+    data = reshape( data, n_p)
+    
+
+    return header,data
+  
+def fill_synth(d,function='multiquadric'):
+    """
+    Completes data rows with zeros interpolating using Rbf from 
+    non-zero rows 
+    """
+    
+    from scipy.interpolate import Rbf
+    
     ndim = d.ndim-1
     n_p = d.shape[:-1]
     nfreq = d.shape[-1]	
     
-    dd = np.reshape(d, (np.product(n_p),nfreq) )
+    dd = np.reshape(d.copy(), (np.product(n_p),nfreq) )
     dd2 = np.sum(dd, dd.ndim-1)
     wi = np.where(dd2 + 1e-31 > 1e-30)[0]
     wo = np.where(dd2 + 1e-31 < 1e-30)[0]
@@ -2801,21 +2900,46 @@ def fill_synth(d):
 
     print('ndim=',ndim)
     print('n_p=',n_p)
-    
-    ll = []
-    for i in np.arange(ndim):
-      print('i,n_p[i]=',i,n_p[i])
-      ll.append(np.arange(n_p[i]))
-    iarr = np.array(list(product(*ll)))
 
+    #get loop indices for entries in grid
+    iarr = getaa(n_p)
+    
     for i in np.arange(nfreq):
-      rbfi  = Rbf(*np.transpose(iarr[wi]), dd [ wi, i ] )
-      dd [ : , i ] = rbfi (*np.transpose(iarr))
+      print('freq i=',i)
+      print('coeff. calculation ...')
+      
+      rbfi  = Rbf(*np.transpose(iarr[wi]), dd [ wi, i ], 
+                  function=function )
+      print('interpolation...')
+      dd [ wo , i ] = rbfi (*np.transpose(iarr[wo]))
     
     d2 = np.reshape(dd, tuple(n_p)+(nfreq,) ) 
     
     return(d2)
+
+def getaa(n_p):
+    """
+    Generates a matrix with len(n_p) columns and product(n_p)
+    rows which can be used to transform ndim nested loops into a single 
+    loop
+
+    Parameters
+    ----------
+    np:	iterable giving the	elements in each dimension
+
+    Returns
+    -------
+    aa:	- int array  with indices
+
+	"""
+		    
+    ndim = len(n_p)
+    ll = []
+    for i in np.arange(ndim):
+      ll.append(np.arange(n_p[i]))
+    aa = np.array(list(product(*ll)))
   
+    return(aa)
   
 def getallt(modelfiles):
 
