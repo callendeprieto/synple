@@ -2815,7 +2815,7 @@ def head_synth(synthfile):
 #extract the wavelength array for a FERRE synth file
 def lambda_synth(synthfile):
     multi_header=head_synth(synthfile)
-    if ndim(multi_header) == 0: multi_header=[multi_header]
+    if np.ndim(multi_header) == 0: multi_header=[multi_header]
     xx=[]
     j=0
     for header in multi_header:
@@ -2823,10 +2823,10 @@ def lambda_synth(synthfile):
       npix=int(header['NPIX'])
       step=float(tmp[1])
       x0=float(tmp[0])
-      x=arange(npix)*step+x0
+      x=np.arange(npix)*step+x0
       if header['LOGW']:
         if int(header['LOGW']) == 1: x=10.**x
-        if int(header['LOGW']) == 2: x=exp(x)   
+        if int(header['LOGW']) == 2: x=np.exp(x)   
       j=j+1
       xx.append(x)
 
@@ -2866,19 +2866,57 @@ def read_synth(synthfile):
     if (multi > 1): header=multi_header
     file.close()
 
-    if ndim(header) > 0: 
+    if np.ndim(header) > 0: 
       snp=header[0]['N_P'] 
     else: 
       snp=header['N_P']
 
-    n_p = tuple(array(snp.split(),dtype=int)) + (-1,)
-    data=loadtxt(synthfile, skiprows=nlines, dtype=float)
-    data = reshape( data, n_p)
+    n_p = tuple(np.array(snp.split(),dtype=int)) + (-1,)
+    data=np.loadtxt(synthfile, skiprows=nlines, dtype=float)
+    data = np.reshape( data, n_p)
     
 
     return header,data
-  
-def fill_synth(d,function='multiquadric'):
+    
+def write_synth(synthfile,d,hdr=None):
+	
+    ndim = d.ndim-1
+    n_p = d.shape[:-1]
+    npix = d.shape[-1]
+    
+    pwd=os.path.abspath(os.curdir)
+    nowtime=time.ctime(time.time())
+    osinfo=os.uname()
+   
+
+    if hdr is None:
+        #minimal header        
+        hdr = {}
+        hdr['DATE'] = "'"+nowtime+"'"
+        hdr['N_OF_DIM'] = str(ndim)
+        hdr['N_P'] = '  '.join(map(str,n_p))
+        for i in range(ndim): hdr['LABEL('+str(i+1)+")"] = "'"+"unknown"+"'"
+        hdr['LLIMITS'] = '  '.join(map(str,np.zeros(ndim)))
+        hdr['STEPS'] = '  '.join(map(str,np.ones(ndim)))
+        hdr['COMMENTS1'] = "'created by write_synth, without axis information'"
+        hdr['COMMENTS2'] = "'"+osinfo[0]+' '+osinfo[2]+'.'+osinfo[4]+' running on '+osinfo[1]+"'"
+        hdr['COMMENTS3'] = "'pwd is "+pwd+"'"
+
+    fout = open(synthfile,'w')
+    fout.write(' &SYNTH\n')
+    for entry in hdr: fout.write(' '+entry + ' = ' + hdr[entry] + '\n')
+    fout.write(' /\n')
+
+    #now the data	
+    if ndim > 1:
+        dd = np.reshape( d, (np.product(n_p), npix) )
+    for entry in range(np.product(n_p)):
+        dd[entry,:].tofile(fout,sep=" ",format="%0.4e")
+        fout.write("\n")
+
+    return(None)			
+			
+def fill_synth(d,function='cubic'):
     """
     Completes data rows with zeros interpolating using Rbf from 
     non-zero rows 
@@ -2916,6 +2954,7 @@ def fill_synth(d,function='multiquadric'):
     d2 = np.reshape(dd, tuple(n_p)+(nfreq,) ) 
     
     return(d2)
+    
 
 def getaa(n_p):
     """
