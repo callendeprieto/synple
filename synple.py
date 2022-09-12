@@ -86,7 +86,7 @@ two =  " 2 "
 
 
 def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
-    linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0,  \
+    linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
     steprot=0.0, stepfwhm=0.0,  lineid=False, tag=False,  \
     clean=True, save=False, synfile=None, \
     lte=None, compute=True, tmpdir=None):
@@ -99,8 +99,8 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   grid is chosen internally, but can also be set by adding a constant wavelength step (dw).
   The abundances and microturbulence velocity can be set through the abu and vmicro 
   parameters, but default values will be taken from the model atmosphere. Rotational and 
-  Gaussian broadening can be introduced (vrot and fwhm parameters). The computed spectrum 
-  can be written to a file (save == True). 
+  Gaussian broadening can be introduced (vrot and fwhm parameters), as well as radial-tangential
+  macroturbulence. The computed spectrum  can be written to a file (save == True). 
 
 
   Parameters
@@ -136,12 +136,15 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   vrot: float
       projected rotational velocity (km/s)
       (default 0.)
-  steprot: float
-      wavelength step for convolution with rotational kernel (angstroms)
-      set to 0. for automatic adjustment (default 0.)
   fwhm: float
       Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
       (default 0.)
+  vmacro: float
+      Radial-tangential macroturbulence (km/s)
+      (default 0.)
+  steprot: float
+      wavelength step for convolution with rotational kernel (angstroms)
+      set to 0. for automatic adjustment (default 0.)
   stepfwhm: float
       wavelength step for Gaussian convolution (angstroms)
       set to 0. for automatic adjustment (default 0.)
@@ -324,10 +327,11 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     end = time.time()
     print('syn ellapsed time ',end - start, 'seconds')
 
-    if fwhm > 0. or vrot > 0.:
+    if fwhm > 0. or vrot > 0. or vmacro > 0.:
       start = time.time()
-      print( vrot, fwhm, space, steprot, stepfwhm)
-      wave, flux = call_rotin (wave, flux, vrot, fwhm, space, steprot, stepfwhm, clean=False, \
+      print( vrot, fwhm, vmacro, space, steprot, stepfwhm)
+      wave, flux = call_rotin (wave, flux, vrot, fwhm, vmacro, \
+        space, steprot, stepfwhm, clean=False, \
         reuseinputfiles=True, logfile=logfile)
       if dw == None: cont = np.interp(wave, wave2, flux2)
       end = time.time()
@@ -407,6 +411,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       out.append('ATOM    = '+atom+'\n')
       out.append('VROT    = '+str(vrot)+'\n')
       out.append('FWHM    = '+str(fwhm)+'\n')
+      out.append('VMACRO    = '+str(vmacro)+'\n')
       out.append('STEPROT = '+str(steprot)+'\n')
       out.append('STEPFWHM= '+str(stepfwhm)+'\n')
       out.append('LTE     = '+str(lte)+'\n')
@@ -430,7 +435,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
 
 def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
-    linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
+    linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
     steprot=0.0, stepfwhm=0.0, lineid=False, tag=False,  \
     clean=True, save=False, synfile=None, \
     lte=False, compute=True, nthreads=0):
@@ -472,12 +477,15 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   vrot: float
       projected rotational velocity (km/s)
       (default 0.)
-  steprot: float
-      wavelength step for convolution with rotational kernel (angstroms)
-      set to 0. for automatic adjustment (default 0.)
   fwhm: float
       Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
       (default 0.)
+  vmacro: float
+      Radial-tangential macroturbulence (km/s)
+      (default 0.)
+  steprot: float
+      wavelength step for convolution with rotational kernel (angstroms)
+      set to 0. for automatic adjustment (default 0.)
   stepfwhm: float
       wavelength step for Gaussian convolution (angstroms)
       set to 0. for automatic adjustment (default 0.)
@@ -564,7 +572,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
                 10.**( ( (np.log10(wrange[0]))**(1./power) +delta*(i+1) )**power )   )
 
     pararr = [modelfile, wrange1, dw, strength, vmicro, abu, \
-      linelist, atom, vrot, fwhm, \
+      linelist, atom, vrot, fwhm, vmacro, \
       steprot, stepfwhm,  lineid, tag, clean, False, None, lte, \
       compute, tmpdir+'-'+str(i) ]
     pars.append(pararr)
@@ -602,6 +610,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     out.append('ATOM    = '+atom+'\n')
     out.append('VROT    = '+str(vrot)+'\n')
     out.append('FWHM    = '+str(fwhm)+'\n')
+    out.append('VMACRO  = '+str(vmacro)+'\n')
     out.append('STEPROT = '+str(steprot)+'\n')
     out.append('STEPFWHM= '+str(stepfwhm)+'\n')
     out.append('LTE     = '+str(lte)+'\n')
@@ -627,7 +636,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
 
 def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
-    linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
+    linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
     steprot=0.0, stepfwhm=0.0,  lineid=False, tag=False, \
     clean=True, save=False, synfile=None, \
     lte=False, compute=True, nthreads=0):
@@ -669,12 +678,15 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   vrot: float
       projected rotational velocity (km/s)
       (default 0.)
-  steprot: float
-      wavelength step for convolution with rotational kernel (angstroms)
-      set to 0. for automatic adjustment (default 0.)
   fwhm: float
       Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
       (default 0.)
+  vmacro: float
+      Radial-tangential macroturbulence (km/s)
+      (default 0.)      
+  steprot: float
+      wavelength step for convolution with rotational kernel (angstroms)
+      set to 0. for automatic adjustment (default 0.)
   stepfwhm: float
       wavelength step for Gaussian convolution (angstroms)
       set to 0. for automatic adjustment (default 0.)
@@ -738,10 +750,10 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     wrange,tmpdir = vari
 
     modelfile,dw,strength,vmicro,abu,linelist, \
-    atom,vrot,fwhm,steprot,stepfwhm,lineid,tag,clean,save,synfile,compute = cons
+    atom,vrot,fwhm,vmacro,steprot,stepfwhm,lineid,tag,clean,save,synfile,compute = cons
 
     s = syn(modelfile, wrange, dw, strength, vmicro, abu, \
-              linelist, atom, vrot, fwhm, \
+              linelist, atom, vrot, fwhm, vmacro, \
               steprot, stepfwhm,  lineid, tag, clean, save, synfile, \
               lte, compute, tmpdir)
 
@@ -769,7 +781,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   ray.init(num_cpus=nthreads)
 
   rest = [ modelfile,dw,strength,vmicro,abu,linelist, \
-    atom,vrot,fwhm,steprot,stepfwhm,lineid,tag,clean,False,None,compute ]
+    atom,vrot,fwhm,vmacro,steprot,stepfwhm,lineid,tag,clean,False,None,compute ]
 
   constants = ray.put(rest)
 
@@ -819,6 +831,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     out.append('ATOM    = '+atom+'\n')
     out.append('VROT    = '+str(vrot)+'\n')
     out.append('FWHM    = '+str(fwhm)+'\n')
+    out.append('VMACRO  = '+str(vmacro)+'\n')
     out.append('STEPROT = '+str(steprot)+'\n')
     out.append('STEPFWHM= '+str(stepfwhm)+'\n')
     out.append('LTE     = '+str(lte)+'\n')
@@ -843,7 +856,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
 
 def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
-    vmicro=None, vrot=0.0, fwhm=0.0, nfe=0.0, \
+    vmicro=None, vrot=0.0, fwhm=0.0, vmacro=0.0, nfe=0.0, \
     linelist=linelist0, atom='ap18', \
     steprot=0.0, stepfwhm=0.0, clean=True, save=None, lte=False, nthreads=0):
 
@@ -879,6 +892,9 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
   fwhm: float, can be an iterable
       Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
       (default 0.)
+  vmacro: float
+      Radial-tangential macroturbulence (km/s)
+      (default 0.)            
   nfe: float, can be an iterable
       [N/Fe] nitrogen abundance change from the one specified in the array 'abu' (dex)
       (default 0.)
@@ -951,6 +967,12 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
   except TypeError:
     nfwhm = 1
     fwhms = [ fwhm ]   
+  try:
+    nvmacro = len(vmacro)
+    vmacros = vmacro
+  except TypeError:
+    nvmacro = 1
+    vmacros = [ vmacro ]
   try: 
     nnfe = len(nfe)
     nnfes = nfe
@@ -984,43 +1006,44 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
             
         for vrot1 in vrots:
           for fwhm1 in fwhms:
+            for vmacro1 in vmacros:
 
-            if fwhm1> 0. or vrot1 > 0.:
-              start = time.time()
-              print( entry, vmicro1, nfe1, vrot1, fwhm1, space)
-              x2, y2 = call_rotin (x, y, vrot, fwhm, space, steprot, stepfwhm, \
-              clean=False, reuseinputfiles=True)
-              z2 = np.interp(x2, x, z)
-              end = time.time()
-              print('convol ellapsed time ',end - start, 'seconds')
-            else:
-              x2, y2, z2 = x, y, z
-
-
-            if entry == modelfiles[0] and vmicro1 == vmicros[0] and vrot1 == vrots[0] and fwhm1 == fwhms[0] and nfe1 == nfes[0]:
-              if dw == None: dw = np.median(np.diff(x2))
-              if (dw < 0.):
-                ldw=np.abs(dw)/np.mean(wrange)
-                nsamples = int((np.log(wrange[1]) - np.log(wrange[0]))/ldw) + 1
-                wave = np.exp(np.arange(nsamples)*ldw + np.log(wrange[0]))
+              if fwhm1> 0. or vrot1 > 0. or vmacro1 > 0.:
+                start = time.time()
+                print( entry, vmicro1, nfe1, vrot1, fwhm1, vmacro1, space)
+                x2, y2 = call_rotin (x, y, vrot1, fwhm1, vmacro1, space, \
+                steprot, stepfwhm, clean=False, reuseinputfiles=True)
+                z2 = np.interp(x2, x, z)
+                end = time.time()
+                print('convol ellapsed time ',end - start, 'seconds')
               else:
-                nsamples = int((wrange[1] - wrange[0])/dw) + 1
-                wave = np.arange(nsamples)*dw + wrange[0]
+                x2, y2, z2 = x, y, z
 
-              flux = np.interp(wave, x2, y2)
-              #flux = interp_spl(wave, x2, y2)
-              cont = np.interp(wave, x2, z2)
-            else:
-              flux = np.vstack ( (flux, np.interp(wave, x, y) ) )
-              #flux = np.vstack ( (flux, interp_spl(wave, x, y) ) )
-              cont = np.vstack ( (cont, np.interp(wave, x, z) ) )
+              if (entry == modelfiles[0] and vmicro1 == vmicros[0] and vrot1 == vrots[0] 
+                  and fwhm1 == fwhms[0] and vmacro1 == vmacros[0] and nfe1 == nfes[0] ):
+                if dw == None: dw = np.median(np.diff(x2))
+                if (dw < 0.):
+                  ldw=np.abs(dw)/np.mean(wrange)
+                  nsamples = int((np.log(wrange[1]) - np.log(wrange[0]))/ldw) + 1
+                  wave = np.exp(np.arange(nsamples)*ldw + np.log(wrange[0]))
+                else:
+                  nsamples = int((wrange[1] - wrange[0])/dw) + 1
+                  wave = np.arange(nsamples)*dw + wrange[0]
+
+                flux = np.interp(wave, x2, y2)
+                #flux = interp_spl(wave, x2, y2)
+                cont = np.interp(wave, x2, z2)
+              else:
+                flux = np.vstack ( (flux, np.interp(wave, x, y) ) )
+                #flux = np.vstack ( (flux, interp_spl(wave, x, y) ) )
+                cont = np.vstack ( (cont, np.interp(wave, x, z) ) )
 
 
   return(wave, flux, cont)
 
 
 def polydelta(modelfile, wrange, elem, enhance=0.2, strength=1e-4, vmicro=None, abu=None, \
-    linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
+    linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
     steprot=0.0, stepfwhm=0.0,  lte=False):
 
   """Sets a a dir tree to compute synthetic spectra for an input model, and then as
@@ -1060,12 +1083,15 @@ abundances for one at a time.
   vrot: float
       projected rotational velocity (km/s)
       (default 0.)
-  steprot: float
-      wavelength step for convolution with rotational kernel (angstroms)
-      set to 0. for automatic adjustment (default 0.)
   fwhm: float
       Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
       (default 0.)
+  vmacro: float
+      Radial-tangential macroturbulence (km/s)
+      (default 0.)      
+  steprot: float
+      wavelength step for convolution with rotational kernel (angstroms)
+      set to 0. for automatic adjustment (default 0.)
   stepfwhm: float
       wavelength step for Gaussian convolution (angstroms)
       set to 0. for automatic adjustment (default 0.)
@@ -1135,7 +1161,7 @@ abundances for one at a time.
       if j > 0: abu3[index[j-1]] = abu3[index[j-1]]*10.**(enhance)
 
       x, y, z = syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=vmicro, abu=abu3, \
-          linelist=linelist, atom=atom, vrot=vrot, fwhm=fwhm, \
+          linelist=linelist, atom=atom, vrot=vrot, fwhm=fwhm, vmacro=vmacro, \
           steprot=steprot, stepfwhm=stepfwhm,  clean=False, lte=lte, \
           compute=False, tmpdir='.')
 
@@ -1154,7 +1180,7 @@ abundances for one at a time.
         f = open(inconv,'w')
         f.write( ' %s %s %s \n' % ("'fort.7'", "'fort.17'", outconv) )
         f.write( ' %f %f %f \n' % (vrot, space, steprot) )
-        f.write( ' %f %f %f \n' % (fwhm, stepfwhm, 0.0) )
+        f.write( ' %f %f %f \n' % (fwhm, stepfwhm, vmacro) )
         print('stepfwhm=',stepfwhm)
         f.write( ' %f %f %i \n' % (wrange[0], wrange[1], 0) )
         f.close()
@@ -1175,7 +1201,7 @@ abundances for one at a time.
 
 def collectdelta(modelfile, wrange, elem, enhance=0.2, 
     strength=1e-4, vmicro=None, abu=None, \
-    linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, \
+    linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
     steprot=0.0, stepfwhm=0.0,  lte=False):
 
   """Collects the spectra, after computed, in a dir tree created with polydelta, and writes them out to an output file (modelfile.dlt)
@@ -1213,12 +1239,15 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
   vrot: float
       projected rotational velocity (km/s)
       (default 0.)
-  steprot: float
-      wavelength step for convolution with rotational kernel (angstroms)
-      set to 0. for automatic adjustment (default 0.)
   fwhm: float
       Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
       (default 0.)
+  vmacro: float
+      Radial-tangential macroturbulence (km/s)
+      (default 0.)
+  steprot: float
+      wavelength step for convolution with rotational kernel (angstroms)
+      set to 0. for automatic adjustment (default 0.)
   stepfwhm: float
       wavelength step for Gaussian convolution (angstroms)
       set to 0. for automatic adjustment (default 0.)
@@ -1256,6 +1285,7 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
       out.write('ATOM    = '+atom+'\n')
       out.write('VROT    = '+str(vrot)+'\n')
       out.write('FWHM    = '+str(fwhm)+'\n')
+      out.write('VMACRO  = '+str(vmacro)+'\n')
       out.write('STEPROT = '+str(steprot)+'\n')
       out.write('STEPFWHM= '+str(stepfwhm)+'\n')
       out.write('LTE     = '+str(lte)+'\n')
@@ -1401,7 +1431,7 @@ def mkflt(dltfile,wavelengths,fwhm=0.0,unit='km/s',outdir='.'):
 
 
 def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
-    vmicro=None, vrot=0.0, fwhm=0.0, nfe=0.0, \
+    vmicro=None, vrot=0.0, fwhm=0.0, vmacro=0.0, nfe=0.0, \
     linelist=linelist0, atom='ap18', \
     steprot=0.0, stepfwhm=0.0,  clean=True, save=None, lte=True):
 
@@ -1429,6 +1459,9 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
       (default 0.)
   fwhm: float, can be an iterable
       Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
+      (default 0.)
+  vmacro: float
+      Radial-tangential macroturbulence (km/s)
       (default 0.)
   nfe: float, can be an iterable
       [N/Fe] nitrogen abundance change from the one specified in the array 'abu' (dex)
@@ -1498,7 +1531,13 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
     fwhms = fwhm
   except TypeError:
     nfwhm = 1
-    fwhms = [ fwhm ]   
+    fwhms = [ fwhm ] 
+  try:
+    nvmacro = len(vmacro)
+    vmacros = vmacro
+  except TypeError:
+    nvmacro = 1
+    vmacros = [ vmacro ]  
   try: 
     nnfe = len(nfe)
     nnfes = nfe
@@ -1570,24 +1609,25 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
           iconv = 0
           for vrot1 in vrots:
             for fwhm1 in fwhms:
+              for vmacro1 in vmacros:
 
-              print('iconv=',iconv)
+                print('iconv=',iconv)
 
-              dirfile.write(' -- '+str(iconv+1)+' vrot='+str(vrot1)+' fwhm='+str(fwhm1)+'\n')
-              iconv = iconv + 1
-              inconv = ("%07dfort.5" % (iconv) )
-              outconv = ("'%07dfort.7'" % (iconv) )
-              if fwhm1> 0. or vrot1 > 0.:
-                f = open(inconv,'w')
-                f.write( ' %s %s %s \n' % ("'fort.7'", "'fort.17'", outconv) )
-                f.write( ' %f %f %f \n' % (vrot1, space, steprot) )
-                f.write( ' %f %f %f \n' % (fwhm1, stepfwhm, 0.0) )
-                print('stepfwhm=',stepfwhm)
-                f.write( ' %f %f %i \n' % (wrange[0], wrange[1], 0) )
-                f.close()
-                s.write(rotin+" < "+inconv+"\n")
-              else:
-                s.write("cp "+" fort.7 "+outconv[1:-1]+"\n")
+                dirfile.write(' -- '+str(iconv+1)+' vrot='+str(vrot1)+' fwhm='+str(fwhm1)+'\n')
+                iconv = iconv + 1
+                inconv = ("%07dfort.5" % (iconv) )
+                outconv = ("'%07dfort.7'" % (iconv) )
+                if vrot1 > 0.0 or fwhm1 > 0. or vmacro1 > 0.:
+                  f = open(inconv,'w')
+                  f.write( ' %s %s %s \n' % ("'fort.7'", "'fort.17'", outconv) )
+                  f.write( ' %f %f %f \n' % (vrot1, space, steprot) )
+                  f.write( ' %f %f %f \n' % (fwhm1, stepfwhm, vmacro1) )
+                  print('stepfwhm=',stepfwhm)
+                  f.write( ' %f %f %i \n' % (wrange[0], wrange[1], 0) )
+                  f.close()
+                  s.write(rotin+" < "+inconv+"\n")
+                else:
+                  s.write("cp "+" fort.7 "+outconv[1:-1]+"\n")
 
           s.close()
           os.chmod(sfile ,0o755)
@@ -2088,8 +2128,7 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, \
   return(files)
 
 def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
-  tcfe=(1,0.0,0.0),  \
-    ignore_missing_models=False, ext='mod'):
+  tcfe=(1,0.0,0.0), ignore_missing_models=False, ext='mod'):
 
   """Collects all the (APOGEE ATLAS9) Kurucz models in modeldir that are part of a regular grid defined
   by triads in various parameters. Each triad has three values (n, llimit, step)
@@ -2339,8 +2378,8 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
            tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0),  
            tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0), 
            trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), 
-           vmicro=None, nfe=None, vrot=0.0, fwhm=None, wrange=None, dw=None,
-           logw=0, ignore_missing_models=False):
+           vmicro=0.0, nfe=0.0, vrot=0.0, fwhm=0.0, vmacro=0.0, 
+           wrange=None, dw=None, logw=0, ignore_missing_models=False):
 
 
 
@@ -2383,7 +2422,10 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
       (default 0.)
   fwhm: float, can be an iterable
       Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
-      (default None)
+      (default 0.0)
+  vmacro: float, can be an iterable
+      Radial-tangential macroturbulence (km/s)
+      (default 0.)
   wrange: tuple or list of two floats, optional
       initial and ending wavelengths (angstroms)
       (default None -- chosen by the code from the first input spectrum)
@@ -2501,11 +2543,17 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
   except TypeError:
     nfwhm = 1
     fwhms = [ fwhm ]   
+  try:
+    nvmacro = len(vmacro)
+    vmacros = vmacro
+  except TypeError:
+    nvmacro = 1
+    vmacros = [ vmacro ]
 
 
   hdr = mkhdr(tteff=tteff, tlogg=tlogg, tfeh=tfeh, tafe=tafe, 
               tcfe=tcfe, tnfe=tnfe, tofe=tofe, trfe=trfe, tsfe=tsfe,
-              vmicro=vmicro, nfe=nfe, vrot=None, fwhm=None)
+              vmicro=vmicro, nfe=nfe, vrot=vrot, fwhm=fwhm, vmacro=vmacro)
 
   if os.path.isfile(synthfile): 
     print('Warning -- the output file ',synthfile,' exists and will be overwritten')
@@ -2623,26 +2671,27 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
                         iconv = 0
                         for vrot1 in vrots:
                           for fwhm1 in fwhms:
-
-                            iconv = iconv + 1
-                            outconv = ("%07dfort.7" % (iconv) )
-                            file = os.path.join(dir,outconv)
+                            for vmacro1 in vmacros:
+								
+                              iconv = iconv + 1
+                              outconv = ("%07dfort.7" % (iconv) )
+                              file = os.path.join(dir,outconv)
  
-                            if os.path.isfile(file):
+                              if os.path.isfile(file):
                                 wave, flux = np.loadtxt(file, unpack=True)
-                            else:
-                              if ignore_missing_models == False:
-                                assert os.path.isfile(file), 'Cannot find model '+file                  
                               else:
-                                wave, flux = (np.array([np.min(x),np.max(x)]), np.array([0.0, 0.0]))
+                                if ignore_missing_models == False:
+                                  assert os.path.isfile(file), 'Cannot find model '+file                  
+                                else:
+                                  wave, flux = (np.array([np.min(x),np.max(x)]), np.array([0.0, 0.0]))
                     
-                            print('idir,iconv, dw=',idir,iconv,dw)
-                            print(wave.shape,flux.shape)
-                            y = np.interp(x, wave, flux)
-                            print(x.shape,y.shape)
-                            #plt.plot(wave,flux,'b',x,y,'.')
-                            #plt.show()
-                            np.savetxt(f,[y], fmt='%12.5e')
+                              print('idir,iconv, dw=',idir,iconv,dw)
+                              print(wave.shape,flux.shape)
+                              y = np.interp(x, wave, flux)
+                              print(x.shape,y.shape)
+                              #plt.plot(wave,flux,'b',x,y,'.')
+                              #plt.show()
+                              np.savetxt(f,[y], fmt='%12.5e')
 
   f.close()
 
@@ -2651,7 +2700,7 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
 def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
               tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0),   \
               trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), \
-              vmicro=None, nfe=None, vrot=None, fwhm=None):
+              vmicro=0.0, nfe=0.0, vrot=0.0, fwhm=0.0, vmacro=0.0):
 
   ndim = 0
   n_p = []
@@ -2712,7 +2761,7 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
     labels.append('[s/Fe]')
     llimits.append(tsfe[1])
     steps.append(tsfe[2])
-  if vmicro is not None and len(vmicro) > 1:
+  if np.abs(np.max(vmicro)) > 1e-7 and len(vmicro) > 1:
     ndim = ndim + 1    
     n_p.append(len(vmicro))
     labels.append('vmicro')
@@ -2728,7 +2777,7 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
       labels[-1]='log10vmicro'
       llimits[-1]=vmicro[0]
       steps[-1]=vmicro[1]-vmicro[0]
-  if nfe is not None and len(nfe) > 1:
+  if np.abs(np.max(nfe)) > 1e-7 and len(nfe) > 1:
     ndim = ndim + 1
     n_p.append(len(nfe))
     labels.append('[N/Fe]')
@@ -2736,7 +2785,7 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
     steps.append(nfe[1]-nfe[0])
     dnfe=np.diff(nfe)
     assert np.max(dnfe) - np.min(dnfe) < 1.e-7, '[N/Fe] values are not linearly spaced!'
-  if vrot is not None and len(vrot) > 1:
+  if np.abs(np.max(vrot)) > 1e-7 and len(vrot) > 1:
     ndim = ndim + 1
     n_p.append(len(vrot))
     labels.append('vrot')
@@ -2750,7 +2799,7 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
       labels[-1]='log10vrot'
       llimits[-1]=vrot[0]
       steps[-1]=vrot[1]-vrot[0]
-  if fwhm is not None and len(fwhm) > 1:
+  if np.abs(np.max(fwhm)) > 1e-7 and len(fwhm) > 1:
     ndim = ndim + 1
     n_p.append(len(fwhm))
     labels.append('FWHM')
@@ -2764,6 +2813,21 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
       labels[-1]='log10FWHM'
       llimits[-1]=fwhm[0]
       steps[-1]=fwhm[1]-fwhm[0]
+  if np.abs(np.min(vmacro)) > 1e-7 and len(vmacro) > 1:
+    ndim = ndim + 1
+    n_p.append(len(vmacro))
+    labels.append('VMACRO')
+    llimits.append(vmacro[0])
+    steps.append(vmacro[1]-vmacro[0])
+    dvmacro=np.diff(vmacro)
+    if np.max(dvmacro) - np.min(dvmacro) > 1.e-7:
+      vmacro = np.log10(vmacro)
+      dvmacro=np.diff(vmacro)
+      assert np.max(dvmacro) - np.min(dvmacro) < 1.e-7, 'vmacro values are neither linearly spaced or linearly spaced in log!'
+      labels[-1]='log10vmacro'
+      llimits[-1]=vmacro[0]
+      steps[-1]=vmacro[1]-vmacro[0]
+
 
   pwd=os.path.abspath(os.curdir)
   nowtime=time.ctime(time.time())
@@ -2836,6 +2900,10 @@ def lambda_synth(synthfile):
 
 #read a synthfile
 def read_synth(synthfile):
+    """
+    Reads a FERRE spectral grid from disk
+    """
+	
     meta=0
     multi=0
     file=open(synthfile,'r')
@@ -2879,6 +2947,9 @@ def read_synth(synthfile):
     return header,data
     
 def write_synth(synthfile,d,hdr=None):
+    """
+    Writes a FERRE spectral grid to disk
+    """
 	
     ndim = d.ndim-1
     n_p = d.shape[:-1]
@@ -3018,8 +3089,9 @@ def getallt(modelfiles):
 
 
 
-def call_rotin(wave=None, flux=None, vrot=0.0, fwhm=0.0, space=1e-2, steprot=0.0, 
-stepfwhm=0.0, clean=True, reuseinputfiles=False, logfile='syn.log'):
+def call_rotin(wave=None, flux=None, vrot=0.0, fwhm=0.0, vmacro=0.0, 
+  space=1e-2, steprot=0.0, stepfwhm=0.0, 
+  clean=True, reuseinputfiles=False, logfile='syn.log'):
 
 
   """Convolves a synthetic spectrum with a rotation and/or Gaussian kernel
@@ -3035,15 +3107,18 @@ stepfwhm=0.0, clean=True, reuseinputfiles=False, logfile='syn.log'):
   vrot: float
       projected rotational velocity (km/s)
       (default 0.)
+  fwhm: float
+      Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
+      (default 0.)
+  vmacro: float
+      Radial-tangential macroturbulence (km/s)
+      (default 0.)
   space: float, optional
       characteristic wavelength scale for variations in the spectrum (angstroms)
       (default is 1e-2)
   steprot: float
       wavelength step for convolution with rotational kernel (angstroms)
       set to 0. for automatic adjustment (default 0.)
-  fwhm: float
-      Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
-      (default 0.)
   stepfwhm: float
       wavelength step for Gaussian convolution (angstroms)
       set to 0. for automatic adjustment (default 0.)
@@ -3079,7 +3154,7 @@ stepfwhm=0.0, clean=True, reuseinputfiles=False, logfile='syn.log'):
   f = open('fort.5','w')
   f.write( ' %s %s %s \n' % ("'fort.7'", "'fort.17'", "'fort.11'") )
   f.write( ' %f %f %f \n' % (vrot, space, steprot) )
-  f.write( ' %f %f %f \n' % (fwhm, stepfwhm, 0.0) )
+  f.write( ' %f %f %f \n' % (fwhm, stepfwhm, vmacro) )
   print('stepfwhm=',stepfwhm)
   f.write( ' %f %f %i \n' % (np.min(wave), np.max(wave), 0) )
   f.close()
