@@ -5358,6 +5358,113 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',outsynthfile=None,ppr=5,wrange=None,f
 
   fin.close()
   fout.close()
+  
+  
+def fit(xdata, ydata, modelfile, params, bounds,  
+        vmicro=0.0, abu=None, vrot=0.0, fwhm=0.0, vmacro=0.0,
+        dw=None, strength=1e-4, linelist=linelist0, atom='ap18',
+        steprot=0.0, stepfwhm=0.0, lte=None, method='Powell'):
+  
+  """
+  Fitting a piece of the spectrum to find the optimal value of one or
+  multiple params
+  """      
+  from scipy.optimize import minimize
+
+  #must check that all params are included in possible_parnames
+
+  atmostype, teff, logg, vmicro2, abu, nd, atmos = read_model(modelfile)   
+  wrange = ( np.min(xdata) - 0.5 , np.max(xdata) + 0.5 )
+
+  othernames = np.array(['modelfile','wrange','dw','strength', 
+                         'linelist', 'atom', 'steprot', 'stepfwhm'])
+  others = {}
+  for entry in othernames:
+	  others[entry] = locals()[entry]
+ 
+  possible_parnames = np.array(['vmicro', 'vrot', 'fwhm', 'vmacro'])
+  parnames = []
+  parvalues = []
+  for entry in possible_parnames:
+      if entry in params:
+         parnames.append(entry)
+         parvalues.append(locals()[entry])
+      else:
+          others[entry] = locals()[entry]
+       
+  if len(params) > len(parnames):
+      symbol, mass, sol = elements()
+      for entry in symbol:
+          if entry in params:
+             elindex = int(np.where(np.array(symbol) == entry)[0])
+             parnames.append(entry)
+             parvalues.append(np.log10(abu[elindex])-np.log10(sol[elindex])+3.)
+             print(entry,elindex)
+     
+
+  res = minimize(fun, np.array(parvalues), 
+                 ( xdata, ydata, parnames, others), method=method ,
+                 bounds = bounds )                 
+  
+  print('res=',res)
+  return(res)
+  		  
+
+def fun(parvalues, *args ):
+  """
+  Auxiliary to the routine fit
+  """
+
+  (xdata, ydata, parnames, others) = args
+  
+  argnames = np.array(['modelfile','wrange','dw','strength', 
+                         'linelist', 'atom', 'steprot', 'stepfwhm'])
+  for entry in argnames: 
+	  globals()[entry] = others[entry]
+	  print('assigning ',entry,' to ',others[entry])
+  
+  possible_parnames = ('vmicro', 'vrot', 'fwhm', 'vmacro')
+  k = 0
+  for entry in possible_parnames:
+      if entry in parnames: 
+          globals()[entry] = parvalues[k]
+          k = k + 1
+      else:
+          globals()[entry] = others[entry]
+          
+  atmostype, teff, logg, vmicro2, abu, nd, atmos = read_model(modelfile)
+
+  if len(parvalues) > k:
+      symbol, mass, sol = elements()
+      for entry in symbol:
+          if entry in parnames:
+              elindex = int(np.where(np.array(symbol) == entry)[0])
+              abu[elindex] = 10.**(parvalues[k] + np.log10(sol[elindex])-3.)
+              k = k + 1
+              #print('symbol[elindex]=',np.array(symbol)[elindex])
+              #print('entry=',entry)
+              #print('parnames=',parnames)
+
+
+  print('parnames=',parnames)
+  print('parvalues=',parvalues)		  
+	    
+  out = syn( modelfile, wrange , dw=dw, strength=strength , \
+    vmicro=vmicro, abu=abu, \
+    linelist=linelist, atom=atom, vrot=vrot, fwhm=fwhm, vmacro=vmacro, \
+    steprot=steprot, stepfwhm=stepfwhm,  lineid=False, tag=False,  \
+    clean=True, save=False, synfile=None, lte=None, compute=True, tmpdir=None)
+
+  chi = np.sum( (ydata - np.interp(xdata, out[0], out[1]/out[2]) )**2)
+  
+  #plt.clf()
+  #plt.plot(xdata,ydata,xdata,np.interp(xdata, out[0], out[1]/out[2]) )
+  #plt.show()
+  print('chi=',chi)
+  
+  return(chi)
+  
+  
 
 if __name__ == "__main__":
 
