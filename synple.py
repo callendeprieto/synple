@@ -71,9 +71,9 @@ synspec = bindir + "/synspec54"
 rotin = bindir + "/rotin"
 
 #internal synspec data files
-isdf = ['CIA_H2H2.dat', 'CIA.H2H2.Yi', 'CIA_H2H.dat', 'CIA_H2He.dat', 'CIA_HHe.dat', \
-        'irwin_bc.dat', 'irwin.dat', 'tremblay.dat', \
-        'tsuji.atoms', 'tsuji.molec', 'tsuji.molec_bc2']
+isdf = ['CIA_H2H2.dat',  'CIA_H2H.dat', 'CIA_H2He.dat', 'CIA_HHe.dat', \
+        'irwin_bc.dat',  'tremblay.dat', \
+        'tsuji.molec_bc2']
 
 #other stuff
 clight = 299792.458
