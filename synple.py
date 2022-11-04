@@ -2111,10 +2111,10 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, \
                       file = file[0]
 
                     if ignore_missing_models == False:
-                      assert file is not 'missing'
+                      assert file != 'missing'
                       assert os.path.isfile(file), 'Cannot find model '+filename+' in modeldir '+modeldir                   
                     else:
-                      if file is not 'missing': 
+                      if file != 'missing': 
                         if not os.path.isfile(file): file = 'missing'
                       
                     files.append(file) 
@@ -2236,10 +2236,10 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
                       file = file[0]
 
                     if ignore_missing_models == False:
-                      assert file is not 'missing'
+                      assert file != 'missing'
                       assert os.path.isfile(file), 'Cannot find model '+filename+' in modeldir '+modeldir                   
                     else:
-                      if file is not 'missing': 
+                      if file != 'missing': 
                         if not os.path.isfile(file): file = 'missing'
                       
                     files.append(file)

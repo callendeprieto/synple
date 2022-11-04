@@ -4,7 +4,7 @@
 #
 
 F90 = gfortran 
-OPT= -fno-automatic 
+OPT= -fno-automatic  
 
 #F90 = g95
 #OPT= -fstatic -Wl,--no-relax
