@@ -2235,6 +2235,8 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
                     else:
                       file = file[0]
 
+                    print('file=',file)
+
                     if ignore_missing_models == False:
                       assert file != 'missing'
                       assert os.path.isfile(file), 'Cannot find model '+filename+' in modeldir '+modeldir                   

@@ -1,8 +1,8 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=latex 2019.11.14)  21 SEP 2021 17:05
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=latex 2019.11.14)  10 NOV 2022 13:59
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**synple
+**synple.tex
 (./synple.tex
 LaTeX2e <2017-04-15>
 Babel <3.18> and hyphenation patterns for 84 language(s) loaded.
@@ -152,126 +152,124 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 
  [1
 
-] [2]
+]
 File: Figure_1.ps Graphic file (type eps)
- <Figure_1.ps>
-Underfull \hbox (badness 10000) in paragraph at lines 103--114
+ <Figure_1.ps> [2]
+Underfull \hbox (badness 10000) in paragraph at lines 100--111
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 103--114
+Underfull \hbox (badness 10000) in paragraph at lines 100--111
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 103--114
+Underfull \hbox (badness 10000) in paragraph at lines 100--111
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 115--123
+Underfull \hbox (badness 10000) in paragraph at lines 112--120
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 115--123
+Underfull \hbox (badness 10000) in paragraph at lines 112--120
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 121--131
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 121--131
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 121--131
 
  []
 
 [3]
-Underfull \hbox (badness 10000) in paragraph at lines 124--134
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 124--134
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 124--134
-
- []
-
 File: Figure_2a.ps Graphic file (type eps)
-<Figure_2a.ps>
+ <Figure_2a.ps>
 File: Figure_2b.ps Graphic file (type eps)
  <Figure_2b.ps>
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 154.
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 151.
 
 
 (/usr/share/texlive/texmf-dist/tex/latex/base/omscmr.fd
 File: omscmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 154.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 151.
 
-Underfull \hbox (badness 10000) in paragraph at lines 154--161
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 154--161
+Underfull \hbox (badness 10000) in paragraph at lines 151--158
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 162--168
+Underfull \hbox (badness 10000) in paragraph at lines 151--158
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 162--168
+Underfull \hbox (badness 10000) in paragraph at lines 159--165
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 159--165
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 175--190
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 175--190
 
  []
 
 [4]
-Underfull \hbox (badness 10000) in paragraph at lines 178--193
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 178--193
-
- []
-
 File: Figure_3.ps Graphic file (type eps)
-<Figure_3.ps>
+ <Figure_3.ps> [5]
 File: Figure_4.ps Graphic file (type eps)
  <Figure_4.ps>
-Underfull \hbox (badness 10000) in paragraph at lines 223--236
+Underfull \hbox (badness 10000) in paragraph at lines 220--233
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 223--236
+Underfull \hbox (badness 10000) in paragraph at lines 220--233
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 223--236
+Underfull \hbox (badness 10000) in paragraph at lines 220--233
 
  []
-
-[5]
-
-LaTeX Warning: Text page 6 contains only floats.
 
 [6]
 File: Figure_5.ps Graphic file (type eps)
  <Figure_5.ps>
-Underfull \hbox (badness 10000) in paragraph at lines 269--281
+Underfull \hbox (badness 10000) in paragraph at lines 266--278
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 269--281
+Underfull \hbox (badness 10000) in paragraph at lines 266--278
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 269--281
+Underfull \hbox (badness 10000) in paragraph at lines 266--278
 
  []
 
@@ -283,10 +281,10 @@ LaTeX Warning: There were multiply-defined labels.
 Here is how much of TeX's memory you used:
  1129 strings out of 492983
  15157 string characters out of 6134921
- 80765 words of memory out of 5000000
+ 79765 words of memory out of 5000000
  4721 multiletter control sequences out of 15000+600000
  8409 words of font info for 30 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 25i,8n,28p,845b,250s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 25i,8n,28p,684b,250s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on synple.dvi (8 pages, 25700 bytes).
+Output written on synple.dvi (8 pages, 24060 bytes).
