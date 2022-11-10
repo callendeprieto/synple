@@ -15,7 +15,7 @@ Starting in the main synple directory
 
  cd synspec
 
- make
+ make clean; make
 
  cd ..
  
@@ -25,7 +25,7 @@ Starting in the main synple directory
 
  cd linelists
 
- make
+ make clean; make
 
  cd ..
  
