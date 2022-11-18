@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""Python wrapper for synspec 
+
+Calculation of synthetic spectra of stars and convolution with a rotational/Gaussian kernel.
+Makes the use of synspec simpler, and retains the main functionalities (when used from
+python). The command line interface for the shell is even simpler but fairly limited. 
+
+For information on
+synspec visit http://nova.astro.umd.edu/Synspec43/synspec.html.
+
+Example
+-------
+
+To compute the solar spectrum between 6160 and 6164 angstroms, using a model atmosphere in
+the file ksun.mod (provided with the distribution), with the output going into the file
+sun.syn
+
+   $synple ksun.mod 6160. 6164. 
+
+To force a micro of 1.1 km/s, and convolve the spectrum with a Gaussian kernel with a fwhm 
+of 0.1 angstroms
+
+   $synple ksun.mod 6160. 6164. 1.1  0.1
+
+To perform the calculations above in python and compare the emergent normalized profiles
+
+   >>> from synple import syn
+   >>> s = syn('ksun.mod', (6160.,6164.))
+   >>> s2 = syn('ksun.mod', (6160.,6164.), vmicro=1.1, fwhm=0.1)
+
+   in plain python
+   >>> import matplotlib.pyplot as plt
+   >>> plt.ion()
+   >>> plt.plot(s[0],s[1]/s[2], s2[0], s2[1]/s2[2])
+
+   or ipython
+   In [1]: %pylab
+   In [2]: plot(s[0],s[1]/s[2], s2[0], s2[1]/s2[2])
+
+
+"""
+import os
+import sys
+
+from synple import synple
+
+
+if __name__ == "__main__":
+
+  npar = len(sys.argv)
+  assert (npar >= 4), 'Synple requires at least 3 input parameters (modelfile wstart wend)'
+  assert (npar <= 7), 'Synple requires at maximum 6 input parameters (modelfile wstart wend vmicro vrot fwhm)'
+  vmicro = None
+  vrot = 0.0
+  fwhm = 0.0
+  modelfile = sys.argv[1]
+  wstart = float(sys.argv[2])
+  wend = float(sys.argv[3])
+  if (npar > 4): 
+    vmicro = float(sys.argv[4])
+    if (npar > 5):
+      fwhm = float(sys.argv[5])
+      if (npar > 6):
+        vrot = float(sys.argv[6])
+
+  #symbol, mass, sol = elements()
+  s = synple.syn(modelfile, (wstart,wend), save=True, vmicro=vmicro, vrot=vrot, fwhm=fwhm)
+
+
