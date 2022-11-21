@@ -63,10 +63,10 @@ synpledir = os.path.dirname(os.path.realpath(__file__))
 
 #relative paths
 modeldir = synpledir + "/models"
-modelatomdir = synpledir + "../data"
-linelistdir = synpledir + "../linelists"
+modelatomdir = synpledir + "/../data"
+linelistdir = synpledir + "/../linelists"
 linelist0 = ['gfATO.19','gfMOLsun.20','gfTiO.20','H2O-8.20']
-bindir = synpledir + "../bin"
+bindir = synpledir + "/../bin"
 synspec = bindir + "/synspec54"
 rotin = bindir + "/rotin"
 
