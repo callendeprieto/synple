@@ -38,7 +38,7 @@ setup(name='synple',
       packages=find_packages(),
       classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: see LICENSE",
+        "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
       ],
       python_requires='>=3.6',
