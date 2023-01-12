@@ -3533,6 +3533,7 @@ def write55(wrange,dw=1e-2,imode=0,iprin=0,inlte=0,hydprf=2,cutoff0=200., \
   if (atmostype == 'tlusty' or atmostype == 'marcs'): inmod = 1 
   else: inmod = 0
 
+  inlist = 0
   all_inlist = []
   for file in linelist:
     inlist = 10
