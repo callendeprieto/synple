@@ -1894,9 +1894,9 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
 
                 
                   if abu is None: 
-					  abu2 = copy.copy(sol)
-			      else:
-					  abu2 = copy.copy(abu)
+                    abu2 = copy.copy(sol)
+		  else:
+		    abu2 = copy.copy(abu)
 
                   if (abs(feh) > 1e-7): 
                     for i in range(len(z_metals)): 
