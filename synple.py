@@ -1643,7 +1643,7 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
 
 
 def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=1, \
-    linelist=linelist0, \
+    abu=None, linelist=linelist0, \
     tlt = (20,3.08,0.068), tlrho = (20,-14.0,0.59), \
     tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), \
     tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), tvmicro=(1,1.0,0.0), \
@@ -1684,6 +1684,9 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
       This latter option can be useful for model construction, where the integral 
       is what matters, and be sufficient to work with values dlw>1e-5.
       (default is 1)
+  abu: array of floats (99 elements), optional
+    chemical abundances relative to hydrogen (N(X)/N(H))
+    (default is solar -- see the function 'elements' )
   linelist: array of str
       filenames of the line lists, the first one corresponds to 
       the atomic lines and all the following ones (optional) to
@@ -1890,23 +1893,26 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
                   s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n\n\n")
 
                 
-                  abu = copy.copy(sol)
+                  if abu is None: 
+					  abu2 = copy.copy(sol)
+			      else:
+					  abu2 = copy.copy(abu)
 
                   if (abs(feh) > 1e-7): 
                     for i in range(len(z_metals)): 
-                      abu[z_metals[i] - 1] = abu[z_metals[i] - 1] * 10.**feh
+                      abu2[z_metals[i] - 1] = abu2[z_metals[i] - 1] * 10.**feh
                   if (abs(afe) > 1e-7): 
                     for i in range(len(z_alphas)):
-                      abu[z_alphas[i] - 1] = abu[z_alphas[i] - 1] * 10.**afe
-                  if (abs(cfe) > 1e-7): abu[5] = abu[5] * 10.**cfe
-                  if (abs(nfe) > 1e-7): abu[6] = abu[6] * 10.**nfe
-                  if (abs(ofe) > 1e-7): abu[7] = abu[7] * 10.**ofe
+                      abu2[z_alphas[i] - 1] = abu2[z_alphas[i] - 1] * 10.**afe
+                  if (abs(cfe) > 1e-7): abu2[5] = abu2[5] * 10.**cfe
+                  if (abs(nfe) > 1e-7): abu2[6] = abu2[6] * 10.**nfe
+                  if (abs(ofe) > 1e-7): abu2[7] = abu2[7] * 10.**ofe
                   if (abs(rfe) > 1e-7): 
                       for i in range(len(z_rs)): 
-                        if rfrac[i] > 0.0: abu[z_rs[i] - 1] = abu[z_rs[i] - 1] * rfrac[i] * 10.**rfe
+                        if rfrac[i] > 0.0: abu2[z_rs[i] - 1] = abu2[z_rs[i] - 1] * rfrac[i] * 10.**rfe
                   if (abs(sfe) > 1e-7): 
                       for i in range(len(z_rs)): 
-                        if rfrac[i] > 0.0: abu[z_rs[i] - 1] = abu[z_rs[i] - 1] * (1.0 - rfrac[i]) * 10.**sfe
+                        if rfrac[i] > 0.0: abu2[z_rs[i] - 1] = abu2[z_rs[i] - 1] * (1.0 - rfrac[i]) * 10.**sfe
 
                   if (len(linelist) == 0): 
                       imode = -4 
@@ -1918,7 +1924,7 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
                           cutoff0=cutoff0, strength=strength, vmicro=vmicro, \
                           linelist=linelist)
 
-                  write5(9999.,9.9,abu,atom)
+                  write5(9999.,9.9,abu2,atom)
                   
                   writetas('tas',1,linelist)
 
