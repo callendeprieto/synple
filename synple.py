@@ -5,7 +5,7 @@
 
 Calculation of synthetic spectra of stars and convolution with a rotational/Gaussian kernel.
 Makes the use of synspec simpler, and retains the main functionalities (when used from
-python). The command line interface for the shell is even simpler but fairly limited. 
+python). The command line interface for the sheread_ll is even simpler but fairly limited. 
 
 For information on
 synspec visit http://nova.astro.umd.edu/Synspec43/synspec.html.
@@ -4735,7 +4735,39 @@ def read_opt(filename):
             i += 1
 
     return(lrho,lt,lambda0,lopa,abu_eos,abu_opa)
+    
+def read_copt(filename,nrho,nt):
+    """Reads a synspec/tlusty continuum opacity table (fort.26)
 
+    Parameters
+    ----------
+       filename: string
+                 name of the file containing the opacity table,
+                 this text file only contains opacity and the information
+                 about the densities/temperatures/abundances needs to
+                 be extracted from its associated full-opacity table
+
+       nrho: int
+                 number of density points in the table
+       nt:   int 
+                 number of temperature points in the table
+
+   Returns
+   -------
+       wave: 3D numpy float array (nwave, nrho, nt)
+            wavelenght in Angstroms
+            
+       lopa: 3D numpy float array (nwave, nrho, nt)
+            log10(opacity/rho), where opacity is in cm-1, and opacity/rho in cm2/gr
+    """
+            
+    c = np.loadtxt(filename)
+    wave = np.transpose( np.reshape(c[:,0], (nt,nrho,int(c.shape[0]/nt/nrho)) ) )
+    lopa = np.transpose( np.reshape(c[:,1], (nt,nrho,int(c.shape[0]/nt/nrho)) ) )
+
+    return(wave,lopa)
+    
+    
 def interp_spl(xout, x, y):
 
   """Interpolates in 1D using cubic splines
