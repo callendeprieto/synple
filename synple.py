@@ -1326,7 +1326,7 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
 
   return None
 
-def mkflt(dltfile,wavelengths,fwhm=0.0,unit='km/s',outdir='.'):
+def mkflt(dltfile,wavelengths,block=[],fwhm=0.0,unit='km/s',outdir='.'):
 
   """produces FERRE filters from a dlt file (output from collectdelta)
 
@@ -1339,6 +1339,8 @@ def mkflt(dltfile,wavelengths,fwhm=0.0,unit='km/s',outdir='.'):
   wavelengths: float array
       wavelength array for which we want the filters to be resampled (angstroms). These 
       should match those of the FERRE grid with which the filters will be used
+  block: array of 2-element arrays/tuples defining wavelength intervals to be block in the filters (set to zero values, i.e. not to be used by FERRE). Should have the same units as the wavelengths array (angstroms).
+      (default is [], so no region is to be blocked)
   fwhm: float
       Gaussian broadening: macroturbulence, instrumental, etc. (angstroms or km/s)
       (default 0.)
@@ -1382,6 +1384,11 @@ def mkflt(dltfile,wavelengths,fwhm=0.0,unit='km/s',outdir='.'):
 
         y2 = np.interp(wavelengths, xc, yc)
         #y2 = interp_spl(wavelengths, xc, yc)
+
+        if len(block) > 0:
+          for entry in block:
+            wblock = (wavelengths >= entry[0]) & (wavelengths <= entry[1])
+            y2[wblock] = 0.0
 
         if k == 0:
           wrange = list(map(float,hd['WRANGE'].split()))
@@ -3376,7 +3383,7 @@ def tags(s, minew=10., normalized=True):
 
   plt.show()
 
-  return None
+  return (pla,pli)
 
 def checkinput(wrange, vmicro, linelist):
 
