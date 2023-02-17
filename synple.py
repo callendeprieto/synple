@@ -1385,11 +1385,6 @@ def mkflt(dltfile,wavelengths,blocks=[],fwhm=0.0,unit='km/s',outdir='.'):
         y2 = np.interp(wavelengths, xc, yc)
         #y2 = interp_spl(wavelengths, xc, yc)
 
-        if len(blocks) > 0:
-          for entry in blocks:
-            wblock = (wavelengths >= entry[0]) & (wavelengths <= entry[1])
-            y2[wblock] = 0.0
-
         if k == 0:
           wrange = list(map(float,hd['WRANGE'].split()))
           assert(np.min(wavelengths) >= wrange[0]),'Attempted to interpolate to wavelengths shorter than the minimum in the input dlt file '+dltfile 
@@ -1405,6 +1400,13 @@ def mkflt(dltfile,wavelengths,blocks=[],fwhm=0.0,unit='km/s',outdir='.'):
           #else:
             #we = (we - np.min(we))/(np.max(we) - np.min(we))
           we = 1.- we
+
+          #apply blocks
+          if len(blocks) > 0:
+            for entry in blocks:
+              wblock = (wavelengths >= entry[0]) & (wavelengths <= entry[1])
+              if len(np.where(wblock)[0]) > 1: we[wblock] = 0.0
+
           if k == 1:
             yy = we
           else:
