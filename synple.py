@@ -2864,6 +2864,54 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
 
   return(hdr)
   
+#create a regular grid of model atmospheres
+def create_regular_kurucz(tteff=None, tlogg =None, \
+                          tfeh = (1,0.0,0.0), tmicro = (1.0, 0.0, 0.0), \
+                          **kargs):
+							  
+    """Creates scripts to compute a regular grid of Kurucz models using Sbordone's version 
+    of ATLAS9. The model grid is defined by triads of various parameters.  Each triad has 
+    three values (n, llimit, step) that define an array x = np.range(n)*step + llimit. 
+    Triads in teff (tteff) and logg (tlogg) are mandatory. Triads in [Fe/H] (tfeh) and 
+    microturbulence (tmicro) are optional since arrays with just one 0.0 are included by 
+    default. Any other chemical element can be added with additional triads, e.g. to 
+    vary sodium with 3 values [Na/Fe] = -0.2, 0.0 and +0.2 one would add a parameter
+    Na=(3,-0.2,0.2). The perl script mkk and Kurucz's atlas9 needs to be installed.
+    
+    Parameters
+    ----------
+    tteff: tuple
+      Teff triad (n, llimit, step)
+    tlogg: tuple
+      logg triad (n, llimit, step)
+    tfeh: tuple
+      [Fe/H] triad
+    tmicro: tuple
+       microturbulence triad
+    kargs:  tuples
+       as many triads as necessary, for other elemental variations [X/Fe]
+       e.g. Na=(3,-0.2,0.2), Al=(9, -0.5, 0.1), ...
+    """
+							  
+    n_p = [tteff[0],tlogg[0], tfeh[0], tmicro[0]]
+    llimits = [tteff[1], tlogg[1], tfeh[1], tmicro[1]]
+    steps  = [tteff[2], tlogg[2] , tfeh[2], tmicro[2]]
+    tags = ['teff', 'logg', 'METALS','MICRO'] 
+    tags.append(kargs.keys())
+    for entry in kargs.values(): 
+        print(entry)
+        n_p.append(entry[0])
+        llimits.append(entry[1])
+        steps.append(entry[2])
+	
+    aa = getaa(n_p)	
+    print(tags)
+    for i in range(len(aa[:,0])):
+	    print(aa[i,:]*steps+llimits)
+
+    return()
+
+  
 #extract the header of a synthfile
 def head_synth(synthfile):
     meta=0
