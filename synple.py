@@ -2892,12 +2892,14 @@ def create_regular_kurucz(tteff=None, tlogg =None, \
        as many triads as necessary, for other elemental variations [X/Fe]
        e.g. Na=(3,-0.2,0.2), Al=(9, -0.5, 0.1), ...
     """
+    
+    import stat
 							  
     n_p = [tteff[0],tlogg[0], tfeh[0], tmicro[0]]
     llimits = [tteff[1], tlogg[1], tfeh[1], tmicro[1]]
     steps  = [tteff[2], tlogg[2] , tfeh[2], tmicro[2]]
     tags = ['teff', 'logg', 'METALS','MICRO'] 
-    tags.append(kargs.keys())
+    for entry in list(map(str,kargs.keys())): tags.append(entry)
     for entry in kargs.values(): 
         print(entry)
         n_p.append(entry[0])
@@ -2905,10 +2907,41 @@ def create_regular_kurucz(tteff=None, tlogg =None, \
         steps.append(entry[2])
 	
     aa = getaa(n_p)	
-    print(tags)
+    
     for i in range(len(aa[:,0])):
-	    print(aa[i,:]*steps+llimits)
+       dir = ( "hyd%07d" % (i) )
+       try:
+         os.mkdir(dir)
+       except OSError:
+         print( "cannot create dir hyd%07d" % (i) )
+       
+       #setup the slurm script
+       sfile = os.path.join(dir,dir+".job")
+       now=time.strftime("%c")
+       s = open(sfile ,"w")
+       s.write("#!/bin/bash \n")
+       s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
+       s.write("#This script was written by synple on "+now+" \n")
+       s.write("#SBATCH  -J "+dir+" \n")
+       s.write("#SBATCH  -o "+dir+"_%j.out"+" \n")
+       s.write("#SBATCH  -e "+dir+"_%j.err"+" \n")
+       #s.write("#SBATCH  -n "+str(nthreads)+" \n")
+       s.write("#SBATCH  --ntasks-per-node="+str(1)+" \n")
+       s.write("#SBATCH  --cpus-per-task="+str(1)+" \n")
+       s.write("#SBATCH  -t 04:00:00"+" \n") #hh:mm:ss
+       s.write("#SBATCH  -D "+os.path.abspath(os.curdir)+" \n")
+       s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n\n\n")
 
+       comm = 'mkk '
+       for j in range(len(tags)):
+         comm = comm + tags[j]+'='+str(aa[i,j]*steps[j]+llimits[j])+' '
+       print(' '.join(map(str,aa[i,:]*steps+llimits)))
+       s.write(comm+'\n')
+       st = os.stat(sfile)
+       os.chmod(sfile, st.st_mode | stat.S_IEXEC)
+
+    s.close()
+    
     return()
 
   
