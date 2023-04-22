@@ -2933,9 +2933,12 @@ def create_regular_kurucz(tteff=None, tlogg =None, \
        s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n\n\n")
 
        comm = 'mkk '
-       for j in range(len(tags)):
+       for j in [0,1]:
          sst = ('%+.3f   ' % (aa[i,j]*steps[j]+llimits[j]) )
-         comm = comm + tags[j]+'='+sst
+         comm = comm + sst
+       for j in range(len(tags)-2):
+         sst = ('%+.3f   ' % (aa[i,j+2]*steps[j+2]+llimits[j+2]) )
+         comm = comm + tags[j+2]+'='+sst
        print(sst)
        print(comm)
        s.write(comm+'\n')
@@ -2948,7 +2951,7 @@ def create_regular_kurucz(tteff=None, tlogg =None, \
 
 #create an irregular grid of Kurucz model atmospheres
 def create_irregular_kurucz(n,pteff=None, plogg =None, \
-                          pfeh = (0.0,0.0), tmicro = (1.0, 1.0), \
+                          pfeh = (0.0,0.0), pmicro = (1.0, 1.0), \
                           **kargs):
 							  
     """Creates scripts to compute an iregular grid of Kurucz models using Sbordone's version 
@@ -2979,16 +2982,12 @@ def create_irregular_kurucz(n,pteff=None, plogg =None, \
     """
     
     import stat
-    from numpy import linspace
-							  
-    n_p = [tteff[0],tlogg[0], tfeh[0], tmicro[0]]
-    llimits = [tteff[1], tlogg[1], tfeh[1], tmicro[1]]
-    steps  = [tteff[2], tlogg[2] , tfeh[2], tmicro[2]]
-    
+    from numpy import linspace, vstack
+							      
     teff = linspace(pteff[0], pteff[1], num=n)
-    logg = linspace(plogg[0], plogg[0], num=n)
-    feh = linspace(pfeh[0], pfeh[0], num=n)
-    micro = linspace(pmicro[0], pmicro[0], num=n)
+    logg = linspace(plogg[0], plogg[1], num=n)
+    feh = linspace(pfeh[0], pfeh[1], num=n)
+    micro = linspace(pmicro[0], pmicro[1], num=n)
     pars = vstack ((teff,logg,feh,micro))
     tags = ['teff', 'logg', 'METALS','MICRO'] 
     for entry in list(map(str,kargs.keys())): tags.append(entry)
