@@ -1573,7 +1573,7 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
         except OSError:
           print( "cannot change dir to hyd%07d" % (idir) )
 
-        if entry == 'missing':
+        if entry == 'missing' or os.path.getsize(entry) == 0:
           pass
         else:
           #setup the slurm script
