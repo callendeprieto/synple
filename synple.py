@@ -85,7 +85,7 @@ two =  " 2 "
 
 
 
-def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
+def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=1.0, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
     steprot=0.0, stepfwhm=0.0,  lineid=False, tag=False,  \
     clean=True, save=False, synfile=None, \
@@ -119,7 +119,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       selecting lines (default is 1e-4)
   vmicro: float, optional
       microturbulence (km/s) 
-      (default is taken from the model atmosphere)
+      (default is 1.0 km/s, which is overriden by the value from the model atmosphere)
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
       (default taken from input model atmosphere)
@@ -2717,7 +2717,7 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
 def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
               tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0),   \
               trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), \
-              vmicro=0.0, nfe=0.0, vrot=0.0, fwhm=0.0, vmacro=0.0):
+              vmicro=1.0, nfe=0.0, vrot=0.0, fwhm=0.0, vmacro=0.0):
 
   ndim = 0
   n_p = []
@@ -2864,12 +2864,94 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
 
   return(hdr)
   
-#create a regular grid of model atmospheres
+#create a regular grid of Kurucz model atmospheres
 def create_regular_kurucz(tteff=None, tlogg =None, \
-                          tfeh = (1,0.0,0.0), tmicro = (1.0, 0.0, 0.0), \
+                          tfeh = (1,0.0,0.0), tmicro = (1, 1.0, 0.0), \
                           **kargs):
 							  
     """Creates scripts to compute a regular grid of Kurucz models using Sbordone's version 
+    of ATLAS9. The model grid is defined by triads of various parameters.  Each triad has 
+    three values (n, llimit, step) that define an array x = np.range(n)*step + llimit. 
+    Triads in teff (tteff) and logg (tlogg) are mandatory. Triads in [Fe/H] (tfeh) and 
+    microturbulence (tmicro) are optional since arrays with just one 0.0 are included by 
+    default. Any other chemical element can be added with additional triads, e.g. to 
+    vary sodium with 3 values [Na/Fe] = -0.2, 0.0 and +0.2 one would add a parameter
+    Na=(3,-0.2,0.2). The perl script mkk and Kurucz's atlas9 needs to be installed.
+    
+    Parameters
+    ----------
+    tteff: tuple
+      Teff triad (n, llimit, step)
+    tlogg: tuple
+      logg triad (n, llimit, step)
+    tfeh: tuple
+      [Fe/H] triad
+    tmicro: tuple
+       microturbulence triad
+    kargs:  tuples
+       as many triads as necessary, for other elemental variations [X/Fe]
+       e.g. Na=(3,-0.2,0.2), Al=(9, -0.5, 0.1), ...
+    """
+    
+    import stat
+							  
+    n_p = [tteff[0],tlogg[0], tfeh[0], tmicro[0]]
+    llimits = [tteff[1], tlogg[1], tfeh[1], tmicro[1]]
+    steps  = [tteff[2], tlogg[2] , tfeh[2], tmicro[2]]
+    tags = ['teff', 'logg', 'METALS','MICRO'] 
+    for entry in list(map(str,kargs.keys())): tags.append(entry)
+    for entry in kargs.values(): 
+        print(entry)
+        n_p.append(entry[0])
+        llimits.append(entry[1])
+        steps.append(entry[2])
+	
+    aa = getaa(n_p)	
+    
+    for i in range(len(aa[:,0])):
+       dir = ( "hyd%07d" % (i) )
+       try:
+         os.mkdir(dir)
+       except OSError:
+         print( "cannot create dir hyd%07d" % (i) )
+       
+       #setup the slurm script
+       sfile = os.path.join(dir,dir+".job")
+       now=time.strftime("%c")
+       s = open(sfile ,"w")
+       s.write("#!/bin/bash \n")
+       s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
+       s.write("#This script was written by synple on "+now+" \n")
+       s.write("#SBATCH  -J "+dir+" \n")
+       s.write("#SBATCH  -o "+dir+"_%j.out"+" \n")
+       s.write("#SBATCH  -e "+dir+"_%j.err"+" \n")
+       #s.write("#SBATCH  -n "+str(nthreads)+" \n")
+       s.write("#SBATCH  --ntasks-per-node="+str(1)+" \n")
+       s.write("#SBATCH  --cpus-per-task="+str(1)+" \n")
+       s.write("#SBATCH  -t 04:00:00"+" \n") #hh:mm:ss
+       s.write("#SBATCH  -D "+os.path.abspath(os.curdir)+" \n")
+       s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n\n\n")
+
+       comm = 'mkk '
+       for j in range(len(tags)):
+         sst = ('%+.3f   ' % (aa[i,j]*steps[j]+llimits[j]) )
+         comm = comm + tags[j]+'='+sst
+       print(sst)
+       print(comm)
+       s.write(comm+'\n')
+       st = os.stat(sfile)
+       os.chmod(sfile, st.st_mode | stat.S_IEXEC)
+
+    s.close()
+    
+    return()
+
+#create an irregular grid of Kurucz model atmospheres
+def create_irregular_kurucz(tteff=None, tlogg =None, \
+                          tfeh = (1,0.0,0.0), tmicro = (1, 1.0, 0.0), \
+                          **kargs):
+							  
+    """Creates scripts to compute an iregular grid of Kurucz models using Sbordone's version 
     of ATLAS9. The model grid is defined by triads of various parameters.  Each triad has 
     three values (n, llimit, step) that define an array x = np.range(n)*step + llimit. 
     Triads in teff (tteff) and logg (tlogg) are mandatory. Triads in [Fe/H] (tfeh) and 
@@ -3615,7 +3697,7 @@ def write2(lt,lrho,wrange, filename='opt.data', dlw=2.1e-5, binary=False,strengt
 
 
 def write55(wrange,dw=1e-2,imode=0,iprin=0,inlte=0,hydprf=2,cutoff0=200., \
-  strength=1e-4,vmicro=0.0, \
+  strength=1e-4,vmicro=1.0, \
   linelist=linelist0, atmostype='kurucz'):
 
 
@@ -4234,7 +4316,7 @@ def read_tlusty_model(modelfile,startdir=None):
   logg : float
       log10 of the surface gravity (cm s-2)
   vmicro : float
-      microturbulence velocity (km/s), by default 0.0 unless set with the parameter
+      microturbulence velocity (km/s), by default 1.0 unless set with the parameter
       VTB in the non-std. parameter file specified in the .5 file
   abu : list
       abundances, number densities of nuclei relative to hydrogen N(X)/N(H)
@@ -4298,7 +4380,7 @@ def read_tlusty_model(modelfile,startdir=None):
 
   #the micro might be encoded as VTB in the nonstdfile!!
   #this is a temporary patch, but need to parse that file
-  vmicro = 0.0
+  vmicro = 1.0
   if 'VTB' in nonstd: vmicro = float(nonstd['VTB'])
 
   line = f.readline()
@@ -4701,7 +4783,7 @@ def read_phoenix_text_model(modelfile):
     ne.append( float(entries[4].replace('D','E')) / bolk / float(entries[2]))
     dm.append ( float(entries[3].replace('D','E')) / 10.**logg )
 
-  vmicro = 0.0
+  vmicro = 1.0
   while (line[0:6] != " greli"):
     line = f.readline()
     if line == '':
@@ -5492,7 +5574,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',outsynthfile=None,ppr=5,wrange=None,f
   
   
 def fit(xdata, ydata, modelfile, params, bounds,  
-        vmicro=0.0, abu=None, vrot=0.0, fwhm=0.0, vmacro=0.0,
+        vmicro=1.0, abu=None, vrot=0.0, fwhm=0.0, vmacro=0.0,
         dw=None, strength=1e-4, linelist=linelist0, atom='ap18',
         steprot=0.0, stepfwhm=0.0, lte=None, method='Powell'):
   
