@@ -2909,7 +2909,7 @@ def create_regular_kurucz(tteff=None, tlogg =None, \
     aa = getaa(n_p)	
     
     for i in range(len(aa[:,0])):
-       dir = ( "hyd%07d" % (i) )
+       dir = ( "kur%07d" % (i) )
        try:
          os.mkdir(dir)
        except OSError:
@@ -2947,51 +2947,58 @@ def create_regular_kurucz(tteff=None, tlogg =None, \
     return()
 
 #create an irregular grid of Kurucz model atmospheres
-def create_irregular_kurucz(tteff=None, tlogg =None, \
-                          tfeh = (1,0.0,0.0), tmicro = (1, 1.0, 0.0), \
+def create_irregular_kurucz(n,pteff=None, plogg =None, \
+                          pfeh = (0.0,0.0), tmicro = (1.0, 1.0), \
                           **kargs):
 							  
     """Creates scripts to compute an iregular grid of Kurucz models using Sbordone's version 
-    of ATLAS9. The model grid is defined by triads of various parameters.  Each triad has 
-    three values (n, llimit, step) that define an array x = np.range(n)*step + llimit. 
-    Triads in teff (tteff) and logg (tlogg) are mandatory. Triads in [Fe/H] (tfeh) and 
-    microturbulence (tmicro) are optional since arrays with just one 0.0 are included by 
-    default. Any other chemical element can be added with additional triads, e.g. to 
-    vary sodium with 3 values [Na/Fe] = -0.2, 0.0 and +0.2 one would add a parameter
-    Na=(3,-0.2,0.2). The perl script mkk and Kurucz's atlas9 needs to be installed.
+    of ATLAS9. The model grid is defined by pairs of various parameters.  Each pair has 
+    two values (llimit, ulimit) that define the sampling interval. 
+    Pairs in teff (pteff) and logg (plogg) are mandatory. Pairs in [Fe/H] (pfeh) and 
+    microturbulence (pmicro) are optional since arrays with just one value (0.0 for [Fe/H]
+    and 1.0 for microturbulence) are included by default. Any other chemical element can 
+    be added with additional pairs, e.g. to vary sodium in the range -0.2 <= [Na/Fe] <= +0.2 
+    one would add a parameter Na=(-0.2,0.2). The perl script mkk and Kurucz's atlas9 needs 
+    to be installed.
     
     Parameters
     ----------
-    tteff: tuple
-      Teff triad (n, llimit, step)
-    tlogg: tuple
-      logg triad (n, llimit, step)
-    tfeh: tuple
-      [Fe/H] triad
-    tmicro: tuple
-       microturbulence triad
+    n: int
+      Number of models to produce
+    pteff: tuple
+      Teff pair (llimit, ulimit)
+    plogg: tuple
+      logg pair (llimit, ulimit)
+    pfeh: tuple
+      [Fe/H] pair
+    pmicro: tuple
+       microturbulence pair
     kargs:  tuples
-       as many triads as necessary, for other elemental variations [X/Fe]
-       e.g. Na=(3,-0.2,0.2), Al=(9, -0.5, 0.1), ...
+       as many pairs as necessary, for other elemental variations [X/Fe]
+       e.g. Na=(-0.2,0.2), Al=(-0.5, 0.2), ...
     """
     
     import stat
+    from numpy import linspace
 							  
     n_p = [tteff[0],tlogg[0], tfeh[0], tmicro[0]]
     llimits = [tteff[1], tlogg[1], tfeh[1], tmicro[1]]
     steps  = [tteff[2], tlogg[2] , tfeh[2], tmicro[2]]
+    
+    teff = linspace(pteff[0], pteff[1], num=n)
+    logg = linspace(plogg[0], plogg[0], num=n)
+    feh = linspace(pfeh[0], pfeh[0], num=n)
+    micro = linspace(pmicro[0], pmicro[0], num=n)
+    pars = vstack ((teff,logg,feh,micro))
     tags = ['teff', 'logg', 'METALS','MICRO'] 
     for entry in list(map(str,kargs.keys())): tags.append(entry)
     for entry in kargs.values(): 
         print(entry)
-        n_p.append(entry[0])
-        llimits.append(entry[1])
-        steps.append(entry[2])
-	
-    aa = getaa(n_p)	
-    
-    for i in range(len(aa[:,0])):
-       dir = ( "hyd%07d" % (i) )
+        newpar = linspace(entry[0], entry[1], num=n)
+        pars = vstack ((pars, newpar))
+	    
+    for i in range(len(pars[0,:])):
+       dir = ( "kur%07d" % (i) )
        try:
          os.mkdir(dir)
        except OSError:
@@ -3016,8 +3023,8 @@ def create_irregular_kurucz(tteff=None, tlogg =None, \
 
        comm = 'mkk '
        for j in range(len(tags)):
-         comm = comm + tags[j]+'='+str(aa[i,j]*steps[j]+llimits[j])+' '
-       print(' '.join(map(str,aa[i,:]*steps+llimits)))
+         comm = comm + tags[j]+'='+str(pars[j,i])+' '
+       print(' '.join(map(str,pars[:,i])))
        s.write(comm+'\n')
        st = os.stat(sfile)
        os.chmod(sfile, st.st_mode | stat.S_IEXEC)
