@@ -86,7 +86,7 @@ two =  " 2 "
 
 
 
-def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=1.0, abu=None, \
+def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
     steprot=0.0, stepfwhm=0.0,  lineid=False, tag=False,  \
     clean=True, save=False, synfile=None, \
@@ -120,7 +120,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=1.0, abu=None, \
       selecting lines (default is 1e-4)
   vmicro: float, optional
       microturbulence (km/s) 
-      (default is 1.0 km/s, which is overriden by the value from the model atmosphere)
+      (default is None, which is overriden by the value from the model atmosphere)
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
       (default taken from input model atmosphere)
