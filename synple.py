@@ -43,6 +43,7 @@ To perform the calculations above in python and compare the emergent normalized 
 """
 import os
 import sys
+import stat
 import string
 import random
 import subprocess
@@ -2395,7 +2396,7 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
            tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0),  
            tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0), 
            trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), 
-           vmicro=0.0, nfe=0.0, vrot=0.0, fwhm=0.0, vmacro=0.0, 
+           vmicro=1.0, nfe=0.0, vrot=0.0, fwhm=0.0, vmacro=0.0, 
            wrange=None, dw=None, logw=0, ignore_missing_models=False):
 
 
@@ -2717,8 +2718,8 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
 def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
               tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0),   \
               trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), \
-              vmicro=1.0, nfe=0.0, vrot=0.0, fwhm=0.0, vmacro=0.0):
-
+              vmicro=1.0, nfe=0.0, vrot=0.0, fwhm=0.0, vmacro=0.0):	  
+  
   ndim = 0
   n_p = []
   labels = []
@@ -2863,6 +2864,279 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
   hdr['COMMENTS3'] = "'pwd is "+pwd+"'"
 
   return(hdr)
+
+  
+def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,   
+           vmicro=1.0, vrot=0.0, fwhm=0.0, vmacro=0.0, 
+           wrange=None, dw=None, logw=0, ignore_missing_models=False,**elements):
+
+
+
+  """Collects the synthetic spectra part of an irregular grid. 
+   To track changes in Teff, logg and [Fe/H] one can activate the booleans teff,
+   logg and feh. To track changes in other elements additional booleans (e.g. Ca=True)
+   can be made active at the end of the parameter list (**element). 
+   The wavelength sampling can be chosen (the spectral range must be limited 
+   to the range of the computations), but the default is to take it from the first model.
+
+  Parameters
+  ----------
+  synthfile: str
+    Name of the output FERRE synth file
+  teff: boolean
+    Activate to track this parameter
+  logg: boolean
+    Activate to track this parameter
+  feh: tuple
+    Activate to track this parameter
+  vmicro: float, optional, can be an iterable
+      microturbulence (km/s) 
+      (default is taken from the model atmosphere)
+  vrot: float, can be an iterable
+      projected rotational velocity (km/s)
+      (default 0.)
+  fwhm: float, can be an iterable
+      Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
+      (default 0.0)
+  vmacro: float, can be an iterable
+      Radial-tangential macroturbulence (km/s)
+      (default 0.)
+  wrange: tuple or list of two floats, optional
+      initial and ending wavelengths (angstroms)
+      (default None -- chosen by the code from the first input spectrum)
+  dw: float, optional
+      wavelength step for the output fluxes
+      (default is None for automatic frequency selection)
+  logw: int
+      parameter that indicates whether the wavelength scale should be 
+      linear (0), log10 (1), or log (2)
+      (default 0)
+  ignore_missing_models: bool
+    set to True to avoid stopping when a model is missing,
+    in which case a None is entered in the returning list
+    
+  **elements: booleans
+    Activate to track additional chemical elements
+    e.g. Na=True, Ca=True
+ 
+  Returns
+  -------
+  None
+
+  """
+
+
+  try: 
+    nvmicro = len(vmicro)
+    vmicros = vmicro
+  except TypeError:
+    nvmicro = 1
+    vmicros = [ vmicro ]  
+  try: 
+    nvrot = len(vrot)
+    vrots = vrot
+  except TypeError:
+    nvrot = 1
+    vrots = [ vrot ]   
+  try: 
+    nfwhm = len(fwhm)
+    fwhms = fwhm
+  except TypeError:
+    nfwhm = 1
+    fwhms = [ fwhm ]   
+  try:
+    nvmacro = len(vmacro)
+    vmacros = vmacro
+  except TypeError:
+    nvmacro = 1
+    vmacros = [ vmacro ]
+
+  pars = []
+  if teff: pars.append('teff')
+  if logg: pars.append('logg')
+  if feh: pars.append('feh')
+  if nvmicro > 1: pars.append('vmicro')
+  for entry in elements.keys():
+    pars.append(entry)
+  if nvrot > 1: pars.append('vrot')
+  if nfwhm > 1: pars.append('fwhm')
+  if nvmacro > 1: pars.append('vmacro')
+
+
+  hdr = mkhdr_irregular(pars)
+
+  if os.path.isfile(synthfile): 
+    print('Warning -- the output file ',synthfile,' exists and will be overwritten')
+    f = open(synthfile,'w')
+    f.close()
+
+  f = open(synthfile,'a')
+
+  #look for the first sucessful calculation and define the wavelength for the grid  and write the header
+  nfreq = 0
+  break_out = False
+  idir = 0
+  
+  folders = sorted(glob.glob('hyd*'))
+  
+  ntot = 0
+  for entry in folders:
+                    idir = idir + 1
+                    dir = ( "hyd%07d" % (idir) )
+	         
+                    madaffile = os.path.join(entry,'fort.5')
+                    if ignore_missing_models == False:
+                      assert os.path.isfile(madaffile), 'Cannot find madaf file '+madaffile                  
+                    else:
+                      if not os.path.isfile(madaffile): continue
+
+                    teff,logg,vmicro2,abu = read_madaf(madaffile,startdir=entry)
+                    imode, iprin, inmod, inlte, hydprf, wrange, cutoff,  \
+                         strength, dw, molls, vmicro1 = read55(os.path.join(entry,'fort.55'))
+                    feh = np.log10(abu[25])+12-7.50
+	                                
+                    print(teff,logg,feh,vmicro1)
+                    
+                    ntot = ntot + 1
+
+                    iconv = 1
+                    outconv = ("%07dfort.7" % (iconv) )
+                    file = os.path.join(dir,outconv)
+                     
+                    if break_out == False and os.path.isfile(file):
+                          print('first successful calculation is for idir=',idir)
+                          wave, flux = np.loadtxt(file, unpack=True)
+                          if wrange is None: 
+                            minwave = np.min(wave)
+                            maxwave = np.max(wave)
+                          else:
+                            minwave = wrange[0]
+                            maxwave = wrange[1]
+
+                          if dw is None:
+                            dw = np.median(np.diff(wave))
+                        
+                          nfreq = np.floor((maxwave - minwave)/dw + 1)
+ 
+                          if logw == 0:
+                            x = minwave + np.arange(nfreq)*dw
+                          elif logw == 1:
+                            minwave = np.log10(minwave)
+                            dw = dw/(np.max(wave)+np.min(wave))*2./np.log(10.)
+                            x = minwave + np.arange(nfreq)*dw
+                            x = 10.**x
+                          elif logw == 2:
+                            minwave = np.log(minwave)
+                            dw = dw/(np.max(wave)+np.min(wave))*2.
+                            x = minwave + np.arange(nfreq)*dw
+                            x = np.exp(x)
+                          else:
+                            print('Error: logw can only be 0, 1 or 2')
+                            sys.exit()
+
+                          hdr['SYNTHFILE_INTERNAL'] = "'"+synthfile+"'"
+                          hdr['ID'] = "'"+synthfile[2:]+"'"
+                          hdr['NPIX'] = str(int(nfreq))
+                          hdr['WAVE'] = str(minwave) + ' ' + str(dw)
+                          hdr['LOGW'] = str(int(logw))
+                          if fwhm > 0.:
+                            hdr['RESOLUTION'] = str(np.min(x)/np.max(fwhm))
+  
+                          break_out = True
+                             
+                    #if break_out: pass						  
+  
+                              
+  assert nfreq > 0, 'could not find a single successful calculation in this grid'
+  ntot = ntot * nvrot * nfwhm * nvmacro
+  hdr['NTOT'] = str(ntot)
+  
+  #write header
+  f.write(' &SYNTH\n')
+  for entry in hdr: f.write(' '+entry + ' = ' + hdr[entry] + '\n')
+  f.write(' /\n')
+  
+  
+  #now read, interpolate and write out the calculations
+  idir = 0
+  for entry in folders:
+                    idir = idir + 1
+                    dir = ( "hyd%07d" % (idir) )
+	                
+                    madaffile = os.path.join(entry,'fort.5')
+                    if ignore_missing_models == False:
+                      assert os.path.isfile(madaffile), 'Cannot find madaf file '+madaffile                  
+                    else:
+                      if not os.path.isfile(madaffile): continue
+
+
+                    teff,logg,vmicro2,abu = read_madaf(madaffile,startdir=entry)
+                    imode, iprin, inmod, inlte, hydprf, wrange, cutoff, \
+                         strength, dw, molls, vmicro1 = read55(os.path.join(entry,'fort.55'))
+                    feh = np.log10(abu[25])+12-7.50
+	                  
+                    print(teff,logg,feh,vmicro1)
+
+                    pars = []
+                    if teff: pars.append(teff)
+                    if logg: pars.append(logg)
+                    if feh: pars.append(feh)
+                    if nvmicro > 1: pars.append(vmicro1)
+                    for el in elements.keys():
+                      pars.append(el)
+
+                    iconv = 0
+                    for vrot1 in vrots:
+                      for fwhm1 in fwhms:
+                        for vmacro1 in vmacros:
+								
+                          iconv = iconv + 1
+                          outconv = ("%07dfort.7" % (iconv) )
+                          file = os.path.join(dir,outconv)
+ 
+                          if nvrot > 1: pars.append(vrot1)
+                          if nfwhm > 1: pars.append(fwhm1)
+                          if nvmacro > 1: pars.append(vmacro1)
+
+                          if os.path.isfile(file):
+                            wave, flux = np.loadtxt(file, unpack=True)
+                          else:
+                            if ignore_missing_models == False:
+                              assert os.path.isfile(file), 'Cannot find model '+file                  
+                            else:
+                              wave, flux = (np.array([np.min(x),np.max(x)]), np.array([0.0, 0.0]))
+                 
+                          print('idir,iconv, dw=',idir,iconv,dw)
+                          print(wave.shape,flux.shape)
+                          y = np.interp(x, wave, flux)
+                          print(x.shape,y.shape)
+                          #plt.plot(wave,flux,'b',x,y,'.')
+                          #plt.show()
+                          np.savetxt(f,[pars+list(y)], fmt='%12.5e')
+
+  f.close()
+
+  return(None)
+
+def mkhdr_irregular(pars):	  
+  
+  ndim = len(pars)
+
+  pwd=os.path.abspath(os.curdir)
+  nowtime=time.ctime(time.time())
+  osinfo=os.uname()
+                    
+  hdr = {}
+  hdr['DATE'] = "'"+nowtime+"'"
+  hdr['N_OF_DIM'] = str(ndim)
+  for i in range(ndim): hdr['LABEL('+str(i+1)+")"] = "'"+pars[i]+"'"
+  hdr['TYPE'] = "'irregular'"
+  hdr['COMMENTS1'] = "'mixed and computed with synple-synspec'"
+  hdr['COMMENTS2'] = "'"+osinfo[0]+' '+osinfo[2]+'.'+osinfo[4]+' running on '+osinfo[1]+"'"
+  hdr['COMMENTS3'] = "'pwd is "+pwd+"'"
+
+  return(hdr)
+  
   
 #create a regular grid of Kurucz model atmospheres
 def create_regular_kurucz(tteff=None, tlogg =None, \
@@ -2893,7 +3167,6 @@ def create_regular_kurucz(tteff=None, tlogg =None, \
        e.g. Na=(3,-0.2,0.2), Al=(9, -0.5, 0.1), ...
     """
     
-    import stat
 							  
     n_p = [tteff[0],tlogg[0], tfeh[0], tmicro[0]]
     llimits = [tteff[1], tlogg[1], tfeh[1], tmicro[1]]
@@ -2909,11 +3182,11 @@ def create_regular_kurucz(tteff=None, tlogg =None, \
     aa = getaa(n_p)	
     
     for i in range(len(aa[:,0])):
-       dir = ( "kur%07d" % (i) )
+       dir = ( "kur%07d" % (i+1) )
        try:
          os.mkdir(dir)
        except OSError:
-         print( "cannot create dir hyd%07d" % (i) )
+         print( "cannot create dir kur%07d" % (i+1) )
        
        #setup the slurm script
        sfile = os.path.join(dir,dir+".job")
@@ -2938,7 +3211,7 @@ def create_regular_kurucz(tteff=None, tlogg =None, \
          comm = comm + sst
        for j in range(len(tags)-2):
          sst = ('%+.3f   ' % (aa[i,j+2]*steps[j+2]+llimits[j+2]) )
-         comm = comm + tags[j+2]+'='+sst
+         comm = comm + tags[j+2] + '=' + sst
        print(sst)
        print(comm)
        s.write(comm+'\n')
@@ -2981,27 +3254,25 @@ def create_irregular_kurucz(n,pteff=None, plogg =None, \
        e.g. Na=(-0.2,0.2), Al=(-0.5, 0.2), ...
     """
     
-    import stat
-    from numpy import linspace, vstack
 							      
-    teff = linspace(pteff[0], pteff[1], num=n)
-    logg = linspace(plogg[0], plogg[1], num=n)
-    feh = linspace(pfeh[0], pfeh[1], num=n)
-    micro = linspace(pmicro[0], pmicro[1], num=n)
-    pars = vstack ((teff,logg,feh,micro))
+    teff = np.random.random_sample(n)*(pteff[1]-pteff[0])+pteff[0]
+    logg = np.random.random_sample(n)*(plogg[1]-plogg[0])+plogg[0]
+    feh = np.random.random_sample(n)*(pfeh[1]-pfeh[0])+pfeh[0]
+    micro = np.random.random_sample(n)*(pmicro[1]-pmicro[0])+pmicro[0]
+    pars = np.vstack ((teff,logg,feh,micro))
     tags = ['teff', 'logg', 'METALS','MICRO'] 
     for entry in list(map(str,kargs.keys())): tags.append(entry)
     for entry in kargs.values(): 
         print(entry)
-        newpar = linspace(entry[0], entry[1], num=n)
-        pars = vstack ((pars, newpar))
+        newpar = np.random.random_sample(n)*(entry[1]-entry[0])+entry[0]
+        pars = np.vstack ((pars, newpar))
 	    
     for i in range(len(pars[0,:])):
-       dir = ( "kur%07d" % (i) )
+       dir = ( "kur%07d" % (i+1) )
        try:
          os.mkdir(dir)
        except OSError:
-         print( "cannot create dir hyd%07d" % (i) )
+         print( "cannot create dir kur%07d" % (i+1) )
        
        #setup the slurm script
        sfile = os.path.join(dir,dir+".job")
@@ -3021,9 +3292,16 @@ def create_irregular_kurucz(n,pteff=None, plogg =None, \
        s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n\n\n")
 
        comm = 'mkk '
-       for j in range(len(tags)):
-         comm = comm + tags[j]+'='+str(pars[j,i])+' '
-       print(' '.join(map(str,pars[:,i])))
+
+       for j in [0,1]:
+         sst = ('%+.3f   ' % (pars[j,i]) )
+         comm = comm + sst
+       
+       for j in range(len(tags)-2):
+         sst = ('%+.3f   ' % (pars[j+2,i]) )
+         comm = comm + tags[j+2] + '=' + sst
+
+       print(comm)
        s.write(comm+'\n')
        st = os.stat(sfile)
        os.chmod(sfile, st.st_mode | stat.S_IEXEC)
@@ -3701,6 +3979,59 @@ def write2(lt,lrho,wrange, filename='opt.data', dlw=2.1e-5, binary=False,strengt
 
   return()
 
+def read55(filename='fort.55'):
+
+
+  #imode,idst,iprin
+  #inmod,zero,ichang,ichemc
+  #lyman,zero,zero,zero,zero
+  #one,nlte,icontl,inlist,ifhe2
+  #ihydpr,ihe1pr,ihe2pr
+  #wstart,wend,cutoff,zero,strength,wdist 
+  #nmol-linelists unit20 unit21 ...
+  #vmicro
+
+  f = open(filename,'r')
+  line = f.readline()
+  entries = line.split()
+  imode = int(entries[0])
+  iprin = int(entries[2])
+  #f.write(" "+str(imode)+" "+zero+" "+str(iprin)+"\n")
+  
+  line = f.readline()
+  entries = line.split()
+  inmod = int(entries[0])
+  #f.write(" "+str(inmod)+3*zero+"\n")
+  
+  line = f.readline()
+  #f.write(5*zero+"\n")
+  
+  line = f.readline()
+  entries = line.split()
+  inlte = int(entries[0])
+  #f.write(one+str(abs(inlte))+zero+str(inlist)+zero+"\n")
+
+  line = f.readline()
+  entries = line.split()
+  hydprf = int(entries[0])
+  #f.write(str(hydprf)+2*zero+"\n")
+
+  line = f.readline()
+  entries = line.split()
+  wrange = [ float(entries[0]), float(entries[1]) ] 
+  cutoff0 = float(entries[2])
+  strength = float(entries[4])
+  dw = float(entries[5])
+  #f.write( ' %f %f %f %i %e %f \n ' % (wrange[0],   wrange[1], cutoff0, 0, strength, dw) )
+
+  line = f.readline()
+  molls = map(float,line.split())
+
+  line = f.readline()
+  vmicro = float(line)
+  f.close()
+
+  return(imode,iprin,inmod,inlte,hydprf,wrange,cutoff0,strength,dw,molls,vmicro)
 
 def write55(wrange,dw=1e-2,imode=0,iprin=0,inlte=0,hydprf=2,cutoff0=200., \
   strength=1e-4,vmicro=1.0, \
@@ -4345,6 +4676,96 @@ def read_tlusty_model(modelfile,startdir=None):
 
   if startdir is None: startdir = os.getcwd()
 
+  #read the madaf (.5) file
+  teff, logg, vmicro, abu = read_madaf(madaffile,startdir=startdir)
+  
+  #now the structure (.8) file
+  f = open(modelfile,'r')
+  line = f.readline()
+  entries = line.split()
+  nd = int(entries[0])
+  numpar = int(entries[1])
+  if (numpar < 0): 
+    numpop = abs(numpar) - 4 
+  else:
+    numpop = numpar - 3
+
+  assert (len(entries) == 2), 'There are more than two numbers in the first line of the model atmosphere'
+
+  dm = read_multiline_fltarray(f,nd)
+  atm = read_multiline_fltarray(f,nd*abs(numpar))
+  f.close()
+
+  atm = np.reshape(atm, (nd,abs(numpar)) )
+
+  if (numpar < 0):  # 4th column is number density n
+    if (numpop > 0): # explicit (usually NLTE) populations
+      if modelfile[-2] == ".":  # NLTE populations or departure coefficients
+        tp = np.dtype([('dm', 'f'), ('t','f'), ('ne','f'), ('rho','f'), ('n','f'), ('pop', 'f', (numpop))])
+      else: 
+        tp = np.dtype([('dm', 'f'), ('t','f'), ('ne','f'), ('rho','f'), ('n','f'), ('dep', 'f', (numpop))])
+    else:
+      tp = np.dtype([('dm', 'f'), ('t','f'), ('ne','f'), ('rho','f'), ('n','f')])  
+  else:
+    if (numpop > 0):
+      if modelfile[-2] == ".": # NLTE populations or departure coefficients
+        tp = np.dtype([('dm', 'f'), ('t','f'), ('ne','f'), ('rho','f'), ('pop', 'f', (numpop))])
+      else:
+        tp = np.dtype([('dm', 'f'), ('t','f'), ('ne','f'), ('rho','f'), ('dep', 'f', (numpop))])
+    else:
+      tp = np.dtype([('dm', 'f'), ('t','f'), ('ne','f'), ('rho','f') ])
+
+  atmos = np.zeros(nd, dtype=tp)
+
+  atmos['dm'] = dm
+  atmos['t'] = atm [:,0]
+  atmos['ne'] = atm [:,1]
+  atmos['rho'] = atm [:,2]
+  if (numpar < 0): atmos['n'] = atm [:,3]
+  if (numpop > 0): 
+    if modelfile[-2] == ".":
+      atmos['pop'] = atm [:,4:]
+    else:
+      atmos['dep'] = atm [:,4:]
+
+  return (teff,logg,vmicro,abu,nd,atmos)
+
+def read_madaf(madaffile,startdir=None):
+  
+  """Reads a Tlusty MADAF (.5) file with parameters and abundances. 
+
+  Parameters
+  ----------
+  madaffile: str
+      file name (.5) including the abundances and the micro (when specified in 
+      the non-std. parameter file)
+
+  startdir: str
+      directory where the calculations are initiated. The code will look at that
+      location to find the tlusty model atom directory and the non-std. parameter
+      file when a relative path is provided
+      (default is None, indicating it is the current working directory)
+  
+  Returns
+  -------
+
+  teff : float
+      effective temperature (K)
+  logg : float
+      log10 of the surface gravity (cm s-2)
+  vmicro : float
+      microturbulence velocity (km/s), by default 1.0 unless set with the parameter
+      VTB in the non-std. parameter file specified in the .5 file
+  abu : list
+      abundances, number densities of nuclei relative to hydrogen N(X)/N(H)
+      for elements Z=1,99 (H to Es)
+
+  """  
+
+  if startdir is None: startdir = os.getcwd()
+  
+  assert (os.path.isfile(madaffile)),'The input madaf file '+madaffile+' is not good'
+
   #we start reading the .5
   f = open(madaffile,'r')
   line = f.readline()
@@ -4407,57 +4828,7 @@ def read_tlusty_model(modelfile,startdir=None):
 
   f.close()
 
-  #now the .8
-  f = open(modelfile,'r')
-  line = f.readline()
-  entries = line.split()
-  nd = int(entries[0])
-  numpar = int(entries[1])
-  if (numpar < 0): 
-    numpop = abs(numpar) - 4 
-  else:
-    numpop = numpar - 3
-
-  assert (len(entries) == 2), 'There are more than two numbers in the first line of the model atmosphere'
-
-  dm = read_multiline_fltarray(f,nd)
-  atm = read_multiline_fltarray(f,nd*abs(numpar))
-  f.close()
-
-  atm = np.reshape(atm, (nd,abs(numpar)) )
-
-  if (numpar < 0):  # 4th column is number density n
-    if (numpop > 0): # explicit (usually NLTE) populations
-      if modelfile[-2] == ".":  # NLTE populations or departure coefficients
-        tp = np.dtype([('dm', 'f'), ('t','f'), ('ne','f'), ('rho','f'), ('n','f'), ('pop', 'f', (numpop))])
-      else: 
-        tp = np.dtype([('dm', 'f'), ('t','f'), ('ne','f'), ('rho','f'), ('n','f'), ('dep', 'f', (numpop))])
-    else:
-      tp = np.dtype([('dm', 'f'), ('t','f'), ('ne','f'), ('rho','f'), ('n','f')])  
-  else:
-    if (numpop > 0):
-      if modelfile[-2] == ".": # NLTE populations or departure coefficients
-        tp = np.dtype([('dm', 'f'), ('t','f'), ('ne','f'), ('rho','f'), ('pop', 'f', (numpop))])
-      else:
-        tp = np.dtype([('dm', 'f'), ('t','f'), ('ne','f'), ('rho','f'), ('dep', 'f', (numpop))])
-    else:
-      tp = np.dtype([('dm', 'f'), ('t','f'), ('ne','f'), ('rho','f') ])
-
-  atmos = np.zeros(nd, dtype=tp)
-
-  atmos['dm'] = dm
-  atmos['t'] = atm [:,0]
-  atmos['ne'] = atm [:,1]
-  atmos['rho'] = atm [:,2]
-  if (numpar < 0): atmos['n'] = atm [:,3]
-  if (numpop > 0): 
-    if modelfile[-2] == ".":
-      atmos['pop'] = atm [:,4:]
-    else:
-      atmos['dep'] = atm [:,4:]
-
-  return (teff,logg,vmicro,abu,nd,atmos)
-
+  return(teff, logg, vmicro, abu)
 
 def read_tlusty_extras(modelfile,startdir=None):
   
