@@ -1553,14 +1553,14 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
     nnfes = nfe
   except TypeError:
     nnfe = 1
-    nfes = [ nfe ] 
+    nnfes = [ nfe ] 
 
 
   idir = 0
   dirfile = open('dirtree.txt','w')
   for entry in modelfiles:
     for vmicro1 in vmicros:
-      for nfe1 in nfes:
+      for nfe1 in nnfes:
 
         idir = idir + 1
         dir = ( "hyd%07d" % (idir) )
