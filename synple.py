@@ -2427,7 +2427,6 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
     [r/Fe] triad (r-elements abundance ratio)
   sfeh: tuple
     [s.Fe] triad (s-elements abundance ratio)
-           vmicro=None, vrot=None, fwhm=None, nfe=None,
   vmicro: float, optional, can be an iterable
       microturbulence (km/s) 
       (default is taken from the model atmosphere)
@@ -2643,7 +2642,7 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
                               hdr['NPIX'] = str(int(nfreq))
                               hdr['WAVE'] = str(minwave) + ' ' + str(dw)
                               hdr['LOGW'] = str(int(logw))
-                              if fwhm is not None:
+                              if fwhm > 0.0:
                                 hdr['RESOLUTION'] = str(np.min(x)/np.max(fwhm))
                               f.write(' &SYNTH\n')
                               for entry in hdr: f.write(' '+entry + ' = ' + hdr[entry] + '\n')
