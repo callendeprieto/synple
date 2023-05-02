@@ -2779,7 +2779,7 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
     labels.append('[s/Fe]')
     llimits.append(tsfe[1])
     steps.append(tsfe[2])
-  if np.abs(np.max(vmicro)) > 1e-7 and len(vmicro) > 1:
+  if np.abs(np.max(vmicro)) > 1e-7 and not np.isscalar(vmicro):
     ndim = ndim + 1    
     n_p.append(len(vmicro))
     labels.append('vmicro')
