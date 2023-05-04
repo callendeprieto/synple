@@ -3490,7 +3490,7 @@ def fill_synth(d,function='cubic'):
     return(d2)
     
 
-def getaa(n_p):
+def getaa(n_p, dtype=int):
     """
     Generates a matrix with len(n_p) columns and product(n_p)
     rows which can be used to transform ndim nested loops into a single 
@@ -3509,7 +3509,7 @@ def getaa(n_p):
     ndim = len(n_p)
     ll = []
     for i in np.arange(ndim):
-      ll.append(np.arange(n_p[i]))
+      ll.append(np.arange(n_p[i], dtype=dtype))
     aa = np.array(list(product(*ll)))
   
     return(aa)
