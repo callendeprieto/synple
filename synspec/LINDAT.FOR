@@ -2,7 +2,7 @@
      *           MGRIEM  =     10,
      *           MNLT    =   2000,
      *           MSPHE2  =     20,
-     *           MLIN    = 190000,
+     *           MLIN    = 400000,
      *           MPRF    =  MLIN0)
 C
       PARAMETER (MLINM0  =9000000,
