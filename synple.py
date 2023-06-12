@@ -2169,7 +2169,7 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
   tie_afe: boolean
     if active, when there is no loop in [alpha/Fe] (n in tafe is 1),
     [alpha/Fe] is tied to [Fe/H]:
-    [alpha/Fe] is 0.5, 0.25, and 0. for [Fe/H]<=-1.5, 1.0, and >=-0.5,
+    [alpha/Fe] is 0.5, 0.25, and 0. for [Fe/H]<=-1.5, -1 and -0.5, and >=0,
     respectively
     (default: False)
   ignore_missing_models: bool
@@ -2241,9 +2241,9 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
                     if tie_afe and len(afes) == 1: 
                         if feh <= -1.5: 
                             afe = 0.5
-                        elif feh <= -1.0:
+                        elif feh <= -0.4:
                             afe = 0.25
-                        elif feh >= -0.5:
+                        else:
                             afe = 0.0
                     print(teff,logg,feh,afe,cfe)
                     mcode = 'm'
