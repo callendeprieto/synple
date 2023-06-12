@@ -2239,12 +2239,12 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
           for cfe in cfes:
                 
                     if tie_afe and len(afes) == 1: 
-						if feh <= -1.5: 
-							afe = 0.5
-					    elif feh <= -1.0:
-							afe = 0.25
-						elif feh >= -0.5:
-							afe = 0.0
+                        if feh <= -1.5: 
+                            afe = 0.5
+                        elif feh <= -1.0:
+                            afe = 0.25
+                        elif feh >= -0.5:
+                            afe = 0.0
                     print(teff,logg,feh,afe,cfe)
                     mcode = 'm'
                     acode = 'm'
