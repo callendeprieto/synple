@@ -1971,7 +1971,7 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, \
                   tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
                   tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), \
                   tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), \
-                  ignore_missing_models=False, ext='mod'):
+                  tie_afe=False, ignore_missing_models=False, ext='mod'):
 
   """Collects all the MARCS models in modeldir that are part of a regular grid defined
   by triads in various parameters. Each triad has three values (n, llimit, step)
@@ -2002,6 +2002,12 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, \
     [r/Fe] triad (r-elements abundance ratio)
   sfeh: tuple
     [s.Fe] triad (s-elements abundance ratio)
+  tie_afe: boolean
+    if active, when there is no loop in [alpha/Fe] (n in tafe is 1),
+    [alpha/Fe] is tied to [Fe/H]:
+    [alpha/Fe] is 0.5, 0.25, and 0. for [Fe/H]<=-1.5, -1 and -0.5, and >=0,
+    respectively
+    (default: False)    
   ignore_missing_models: bool
     set to True to avoid stopping when a model is missing,
     in which case a None is entered in the returning list
@@ -2103,7 +2109,15 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, \
               for ofe in ofes:
                 for rfe in rfes:
                   for sfe in sfes: 
-                
+					  
+					if tie_afe and len(afes) == 1: 
+                        if feh <= -1.5: 
+                            afe = 0.5
+                        elif feh <= -0.4:
+                            afe = 0.25
+                        else:
+                            afe = 0.0
+                            
                     print(teff,logg,feh,afe,cfe,nfe,ofe,rfe,sfe)
                     code = 'm*_t*_x3'
 
@@ -2287,7 +2301,7 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
 
 
 def collect_k2odfnew(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
-    ignore_missing_models=False):
+    tie_afe=False, ignore_missing_models=False):
 
   """Collects all the ODFNEW Castelli/Kurucz models in modeldir that are part of a regular grid defined
   by triads in various parameters. Each triad has three values (n, llimit, step)
@@ -2310,6 +2324,12 @@ def collect_k2odfnew(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0)
     [Fe/H] triad
   tafe: tuple
     [alpha/Fe] triad  
+  tie_afe: boolean
+    if active, when there is no loop in [alpha/Fe] (n in tafe is 1),
+    [alpha/Fe] is tied to [Fe/H]:
+    [alpha/Fe] is 0.4 and 0. for [Fe/H]<=-1. and any other case, 
+    respectively
+    (default: False)    
   ignore_missing_models: bool
     set to True to avoid stopping when a model is missing,
     in which case a None is entered in the returning list
@@ -2370,6 +2390,12 @@ def collect_k2odfnew(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0)
     for logg in loggs:
       for feh in fehs:
         for afe in afes:
+			
+			        if tie_afe and len(afes) == 1: 
+                        if feh <= -1.: 
+                            afe = 0.4
+                        else:
+                            afe = 0.0
                 
                     print(teff,logg,feh,afe)
                     code = 'k2odfnew.dat'
