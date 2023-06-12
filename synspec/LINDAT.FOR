@@ -6,7 +6,7 @@
      *           MPRF    =  MLIN0)
 C
       PARAMETER (MLINM0  =9000000,
-     *           MLINM   =1000000,
+     *           MLINM   =2000000,
      *           MMLIST  =      3)
 C
        REAL*4       EXCL0(MLIN0),
