@@ -2144,7 +2144,7 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, \
   return(files)
 
 def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
-  tcfe=(1,0.0,0.0), ignore_missing_models=False, ext='mod'):
+  tcfe=(1,0.0,0.0), tie_afe=False, ignore_missing_models=False, ext='mod'):
 
   """Collects all the (APOGEE ATLAS9) Kurucz models in modeldir that are part of a regular grid defined
   by triads in various parameters. Each triad has three values (n, llimit, step)
@@ -2166,6 +2166,12 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
     [alpha/Fe] triad  
   tcfe: tuple
     [C/Fe] triad
+  tie_afe: boolean
+    if active, when there is no loop in [alpha/Fe] (n in tafe is 1),
+    [alpha/Fe] is tied to [Fe/H]:
+    [alpha/Fe] is 0.5, 0.25, and 0. for [Fe/H]<=-1.5, 1.0, and >=-0.5,
+    respectively
+    (default: False)
   ignore_missing_models: bool
     set to True to avoid stopping when a model is missing,
     in which case a None is entered in the returning list
@@ -2232,6 +2238,13 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
         for afe in afes:
           for cfe in cfes:
                 
+                    if tie_afe and len(afes) == 1: 
+						if feh <= -1.5: 
+							afe = 0.5
+					    elif feh <= -1.0:
+							afe = 0.25
+						elif feh >= -0.5:
+							afe = 0.0
                     print(teff,logg,feh,afe,cfe)
                     mcode = 'm'
                     acode = 'm'
