@@ -2391,7 +2391,7 @@ def collect_k2odfnew(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0)
       for feh in fehs:
         for afe in afes:
 			
-			        if tie_afe and len(afes) == 1: 
+                    if tie_afe and len(afes) == 1: 
                         if feh <= -1.: 
                             afe = 0.4
                         else:
