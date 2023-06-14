@@ -3179,7 +3179,7 @@ def mkhdr_irregular(pars):
 #create a regular grid of Kurucz model atmospheres
 def create_regular_kurucz(tteff=None, tlogg =None, \
                           tfeh = (1,0.0,0.0), tmicro = (1, 1.0, 0.0), \
-                          **kargs):
+                          tie_afe=False, **kargs):
 							  
     """Creates scripts to compute a regular grid of Kurucz models using Sbordone's version 
     of ATLAS9. The model grid is defined by triads of various parameters.  Each triad has 
@@ -3200,6 +3200,12 @@ def create_regular_kurucz(tteff=None, tlogg =None, \
       [Fe/H] triad
     tmicro: tuple
        microturbulence triad
+    tie_afe: boolean
+      if active, when there is no loop in [alpha/Fe] (n in tafe is 1),
+      [alpha/Fe] is tied to [Fe/H]:
+      [alpha/Fe] is 0.5, for [Fe/H]<=-1.5, 0.0 for [Fe/H] >=0 and changes
+      linearly in between
+      (default: False)    
     kargs:  tuples
        as many triads as necessary, for other elemental variations [X/Fe]
        e.g. Na=(3,-0.2,0.2), Al=(9, -0.5, 0.1), ...
@@ -3210,6 +3216,7 @@ def create_regular_kurucz(tteff=None, tlogg =None, \
     llimits = [tteff[1], tlogg[1], tfeh[1], tmicro[1]]
     steps  = [tteff[2], tlogg[2] , tfeh[2], tmicro[2]]
     tags = ['teff', 'logg', 'METALS','MICRO'] 
+
     for entry in list(map(str,kargs.keys())): tags.append(entry)
     for entry in kargs.values(): 
         print(entry)
@@ -3250,6 +3257,19 @@ def create_regular_kurucz(tteff=None, tlogg =None, \
        for j in range(len(tags)-2):
          sst = ('%+.3f   ' % (aa[i,j+2]*steps[j+2]+llimits[j+2]) )
          comm = comm + tags[j+2] + '=' + sst
+         if tie_afe and tags[j+2] == "METALS":
+           feh = aa[i,j+2]*steps[j+2]+llimits[j+2]
+           if feh <= -1.5: 
+             afe = 0.5
+           elif feh >= 0.:
+             afe = 0.0
+           else:
+             afe = -1./3. * feh
+           alphas = ['O', 'Ne','Mg', 'Si', 'S', 'Ca', 'Ti']
+           for entry in alphas:
+             sst = ('%+.3f   ' % (afe) )
+             comm = comm + entry + '=' + sst
+ 
        print(sst)
        print(comm)
        s.write(comm+'\n')
@@ -3263,7 +3283,7 @@ def create_regular_kurucz(tteff=None, tlogg =None, \
 #create an irregular grid of Kurucz model atmospheres
 def create_irregular_kurucz(n,pteff=None, plogg =None, \
                           pfeh = (0.0,0.0), pmicro = (1.0, 1.0), \
-                          **kargs):
+                          tie_afe=False, **kargs):
 							  
     """Creates scripts to compute an iregular grid of Kurucz models using Sbordone's version 
     of ATLAS9. The model grid is defined by pairs of various parameters.  Each pair has 
@@ -3287,6 +3307,12 @@ def create_irregular_kurucz(n,pteff=None, plogg =None, \
       [Fe/H] pair
     pmicro: tuple
        microturbulence pair
+    tie_afe: boolean
+      if active, when there is no loop in [alpha/Fe] (n in tafe is 1),
+      [alpha/Fe] is tied to [Fe/H]:
+      [alpha/Fe] is 0.5, for [Fe/H]<=-1.5, 0.0 for [Fe/H] >=0 and changes
+      linearly in between
+      (default: False)    
     kargs:  tuples
        as many pairs as necessary, for other elemental variations [X/Fe]
        e.g. Na=(-0.2,0.2), Al=(-0.5, 0.2), ...
@@ -3338,6 +3364,19 @@ def create_irregular_kurucz(n,pteff=None, plogg =None, \
        for j in range(len(tags)-2):
          sst = ('%+.3f   ' % (pars[j+2,i]) )
          comm = comm + tags[j+2] + '=' + sst
+         if tie_afe and tags[j+2] == "METALS":
+           feh = pars[j+2,i]
+           if feh <= -1.5: 
+             afe = 0.5
+           elif feh >= 0.:
+             afe = 0.0
+           else:
+             afe = -1./3. * feh
+           alphas = ['O', 'Ne','Mg', 'Si', 'S', 'Ca', 'Ti']
+           for entry in alphas:
+             sst = ('%+.3f   ' % (afe) )
+             comm = comm + entry + '=' + sst
+         
 
        print(comm)
        s.write(comm+'\n')
