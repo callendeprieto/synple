@@ -2110,7 +2110,7 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, \
                 for rfe in rfes:
                   for sfe in sfes: 
 					  
-					if tie_afe and len(afes) == 1: 
+                    if tie_afe and len(afes) == 1: 
                         if feh <= -1.5: 
                             afe = 0.5
                         elif feh <= -0.4:
