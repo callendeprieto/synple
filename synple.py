@@ -6309,8 +6309,281 @@ def smooth(x,n):
   return(x2)
 
 
+def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
+    outsynthfile=None,ppr=5,wrange=None,freeze=None):
 
-def gsynth(synthfile,fwhm=0.0,units='km/s',outsynthfile=None,ppr=5,wrange=None,freeze=None):
+  """Convolve and/or redden spectra in a FERRE grid
+
+  Parameters
+  ----------
+  synthfile: str
+      name of the input FERRE synth file 
+  fwhm: float, can be an iterable
+      FWHM of the Gaussian kernel (in A or km/s) for convolution
+      (default 0.0, which means no convolution is performed)      
+  units: str
+      units for the FWHM ('A' for a constant resolution in Angstroms, 
+      'km/s' for a constant resolution in velocity
+      (default is 'km/s')
+  ebv: float or iterable with floats
+      E(B-V) to be applied to the model in the grid
+      (default is 0.0)
+  r_v: float or iterable with floats
+      ratio of total to V-band extinction A_V/E(B-V)
+  outsynthfile: str
+      name of the output FERRE synth file
+      (default is the same as synth file, but starting with 'n')
+  ppr: float, optional
+      Points per resolution element to downsample the convolved spectrum
+      (default is 5, set to None to keep the original sampling)
+  wrange: tuple
+      Starting and ending wavelengths (if a smaller range that 
+      the input's is desired)
+      (default None, to keep the original range)
+  freeze: dictionary
+      Allows to reduce the dimensionality of the grid. The keys are the labels
+      of the dimensions to freeze (as given in in the header of the input grid) 
+      with the values that should be adopted for those 'frozen' dimensions. 
+      Example: set freeze = {'TEFF': 5000.} to fix that value for the Teff dimension
+      in a grid.
+      (default None, to retain all the original dimensions)
+  Returns
+  -------
+  writes outsynthfile with the smooth spectra
+
+  """
+  
+  from extinction import apply,ccm89
+  from synple import vgconv
+  import numpy as np
+  from itertools import product
+  clight = 299792.458
+
+  if outsynthfile is None: 
+    assert synthfile[0] != 'n', 'default output file name starts with n_. Given that the input starts with n too, please choose an anternative outsynthfile'
+    outsynthfile='n'+synthfile[1:]
+  logw=0
+
+  #read header, update and write out
+  fin = open(synthfile,'r')
+  fout = open(outsynthfile,'w')
+  hd = []
+  labels = []
+  line = fin.readline()
+  hd.append(line)
+  while line[1] != "/":
+    line = fin.readline()
+    if "N_P" in line: n_p = np.array(line.split()[2:],dtype=int)
+    if "STEPS" in line: steps = np.array(line.split()[2:],dtype=float)
+    if "LLIMITS" in line: llimits = np.array(line.split()[2:],dtype=float)
+    if "LABEL" in line: labels.append(line.split()[-1][1:-1])
+    if "NPIX" in line: npix = int(line.split()[2])
+    if "N_OF_DIM" in line: ndim = int(line.split()[2])
+    if "WAVE" in line: wave = np.array(line.split()[2:],dtype=float)
+    if "LOGW" in line: logw = int(line.split()[2]) 
+    if "RESOLUTION" in line: resolution = float(line.split()[2])
+    hd.append(line)
+
+  assert (len(n_p) == len(steps) & len(n_p) == len(llimits) & len(n_p) == len(labels) & len(n_p) == ndim), 'The dimension of the parameters from the header are inconsistent'
+
+  assert (units == 'km/s' or units == 'A'), 'units must be either km/s or A'
+
+  #update header parameters
+  x = np.arange(npix)*wave[1]+wave[0]
+  if logw == 1: x=10.**x
+  if logw == 2: x=np.exp(x)
+  
+  newcol = []
+  try: 
+    nebv = len(ebv)
+    ebvs = ebv
+    print(ebvs)
+    print(ndim,labels)
+    #check they are uniformly spaced
+    debv = np.diff(ebvs)
+    print(np.max(debv),np.min(debv))
+    assert np.max(debv) - np.min(debv) < 1.e-7, 'ebv values are not linearly spaced!'
+    n_p = np.append(n_p,nebv)
+    steps = np.append(steps,ebvs[1]-ebvs[0])
+    llimits = np.append(llimits,ebvs[0])
+    labels.append('E(B-V)')
+    ndim = ndim + 1
+    newcol.append(ndim-1)
+    #update RESOLUTION?
+    print(ndim,labels)
+  except TypeError:
+    nebv = 1
+    ebvs = [ ebv ]
+
+  try: 
+    nfwhm = len(fwhm)
+    fwhms = fwhm
+    print(fwhms)
+    print(ndim,labels)
+    #check they are uniformly spaced
+    dfwhm = np.diff(fwhms)
+    print(np.max(dfwhm),np.min(dfwhm))
+    assert np.max(dfwhm) - np.min(dfwhm) < 1.e-7, 'fwhm values are not linearly spaced!'
+    n_p = np.append(n_p,nfwhm)
+    steps = np.append(steps,fwhms[1]-fwhms[0])
+    llimits = np.append(llimits,fwhms[0])
+    labels.append('FWHM')
+    ndim = ndim + 1
+    newcol.append(ndim-1)
+    minfwhm=np.min(fwhms)
+    #update RESOLUTION?
+    print(ndim,labels)
+  except TypeError:
+    nfwhm = 1
+    fwhms = [ fwhm ]
+
+  
+  #define indices for grid loops
+  ll = []
+  ind_n_p = []
+  i = 0
+  print('labels=',labels)
+  labels2 = []
+  for entry in labels:
+    if freeze is not None:   
+      lfkeys = list(freeze.keys())
+      if entry not in lfkeys: 
+          ind_n_p.append(i)
+          labels2.append(entry)
+    else:
+      ind_n_p.append(i)
+      labels2.append(entry)
+    ll.append(np.arange(n_p[i]))
+    i = i + 1
+  ind = np.array(list(product(*ll)))
+  
+  if wrange is not None:
+    assert (len(wrange) == 2), 'Error: wrange must have two elements'
+    section1 = np.where( (x >= wrange[0]*(1.-10.*np.max(fwhm)/clight)) & (x <= wrange[1]*(1.+10.*np.max(fwhm)/clight)) )
+    x = x[section1]
+    npix = len(x)
+    
+  if np.min(fwhms) > 1.e-7:
+    y = np.ones(npix)
+    if units == 'km/s':
+      print('min(fwhm)=',np.min(fwhms))
+      xx,yy = vgconv(x,y,np.min(fwhms),ppr=ppr)
+    else:
+      xx,yy = lgconv(x,y,np.min(fwhms),ppr=ppr)
+  else:
+    print('Warning -- fwhm <= 1.e-7, no convolution will be performed, ppr will be ignored')
+    xx = x
+  
+  
+  if wrange is not None: 
+    section2 = np.where( (xx >= wrange[0]) & (xx <= wrange[1]) ) 
+    xx = xx [section2]
+    
+  print(x,xx)
+  print(len(x),len(xx))
+  print(len(section1),len(section2))
+  
+  jlabel = 0
+  for line in hd:
+    if "N_OF_DIM" in line: line = " N_OF_DIM = "+str(len(ind_n_p))+"\n"    
+    if "N_P" in line: line = " N_P = "+' '.join(map(str,n_p[ind_n_p]))+"\n"   
+    if "STEPS" in line: line = " STEPS = "+' '.join(map(str,steps[ind_n_p]))+"\n"   
+    if "LLIMITS" in line: line = " LLIMITS = "+' '.join(map(str,llimits[ind_n_p]))+"\n"
+    if "LABEL" in line: 
+      if jlabel == 0:
+        for entry in labels2:
+          jlabel = jlabel + 1
+          ilabel = "'"+entry+"'"
+          line = " LABEL("+str(jlabel)+") = "+ilabel+"\n"
+          print('line=',line)
+          fout.write(line)
+        continue
+      else:
+        continue
+    if "NPIX" in line: line = " NPIX = "+str(len(xx))+"\n"
+    if "WAVE" in line: 
+      if units == 'km/s': 
+        line = " WAVE = "+str(np.log10(xx[0]))+" "+str(np.log10(xx[1])-np.log10(xx[0]))+"\n"
+      else:
+        line = " WAVE = "+str(xx[0])+" "+str(xx[1]-xx[0])+"\n"
+    if "LOGW" in line: 
+      if units == 'km/s':
+        line = " LOGW = 1 \n"
+      else:
+        line = " LOGW = 0 \n"
+    if "RESOLUTION" in line: 
+        if units == 'km/s': 
+            line = " RESOLUTION = "+str(clight/np.sqrt(clight**2/resolution**2 + np.min(fwhms)**2))+"\n"
+        else:
+            line = " RESOLUTION = "+str(mean(wrange)/np.sqrt(mean(wrange)**2/resolution**2 + np.min(fwhms)**2))+"\n"
+    if line[1] != "/": fout.write(line)
+
+  try: resolution
+  except NameError: 
+        if units == 'km/s': 
+             line = " RESOLUTION = "+str(clight/np.min(fwhms))+"\n"
+        else:
+             line = " RESOLUTION = "+str(mean(wrange)/np.min(fwhms))+"\n"
+        fout.write(line)
+
+  fout.write(" /\n")
+
+  #smooth and write data
+  k = 0 #increases only when a line from the original file is used
+  j = 0 #increases as we advance through the array ind
+  ntot = np.prod(n_p)
+  for i in ind:
+    j = j + 1
+    print('line ',j,' of ',ntot)
+    print(k,ntot,i)
+    print(i,steps,llimits)
+    par = i*steps+llimits
+    #print('par=',par)
+    #print('newcol=',newcol)
+    #print('i[newcol]=',i[newcol])
+    if len(newcol) == 0 or all(i[newcol] == 0):
+      print('reading!')
+      line = fin.readline()
+    if freeze is not None:
+      skip = True
+      for entry in lfkeys: 
+        if (abs(freeze[entry] - par[labels.index(entry)]) < 1e-6): skip = False
+      if skip: continue
+    y = np.array(line.split(),dtype=float)
+    print('len(y)=',len(y))
+    if wrange is not None: y = y [section1]
+      
+    #apply Gaussian convolution
+    if 'FWHM' in labels:
+      w = np.where(np.array(labels) == 'FWHM')
+      fwhmval = par[w[0][0]]
+      print(fwhmval)
+      if fwhmval > 1.e-7:
+        if units == 'km/s':
+          xx,yy = vgconv(x,y,fwhmval,ppr=ppr)
+        else:
+          xx,yy = lgconv(x,y,fwhmval,ppr=ppr)
+      else:
+        xx,yy = x, y          
+      
+    #apply extinction
+    if 'E(B-V)' in labels:
+      w = np.where(np.array(labels) == 'E(B-V)')
+      ebvval = par[w[0][0]]
+      print(ebvval)
+      yy = apply(ccm89(xx, ebvval* 3.1, 3.1), yy)
+		
+    if wrange is not None: yy = yy[section2]
+    
+    yy.tofile(fout,sep=" ",format="%0.4e")
+    fout.write("\n")
+    k = k + 1
+
+  fin.close()
+  fout.close()
+  
+
+def gsynth_old(synthfile,fwhm=0.0,units='km/s',outsynthfile=None,ppr=5,wrange=None,freeze=None):
 
   """Smooth the spectra in a FERRE grid by Gaussian convolution
 
