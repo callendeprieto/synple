@@ -2756,7 +2756,7 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
 def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
               tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0),   \
               trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), \
-              vmicro=1.0, nfe=0.0, vrot=0.0, fwhm=0.0, vmacro=0.0):	  
+              vmicro=1.0, nfe=0.0, vrot=0.0, fwhm=0.0, vmacro=0.0, **elements):	  
   
   ndim = 0
   n_p = []
@@ -2841,6 +2841,22 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
     steps.append(nfe[1]-nfe[0])
     dnfe=np.diff(nfe)
     assert np.max(dnfe) - np.min(dnfe) < 1.e-7, '[N/Fe] values are not linearly spaced!'
+    
+
+  for entry in elements.keys():
+    print('entry=',entry)
+    triad = elements[entry]
+    nentry = len(triad)
+    assert (nentry == 3), 'Error: element '+entry+' triad must have three elements (n, llimit, step)'
+    vals = np.arange(triad[0])*triad[2] + triad[1]
+    if np.abs(np.max(vals)) > 1e-7 and len(vals) > 1: 
+      n_p.append(len(vals))
+      labels.append(entry)
+      llimits.append(triad[1])       
+      steps.append(triad[2])
+      dvals=np.diff(vals)
+      assert np.max(dvals) - np.min(dvals) < 1.e-7, 'values for element '+entry+' are not linearly spaced!'
+    
   if np.abs(np.max(vrot)) > 1e-7 and len(vrot) > 1:
     ndim = ndim + 1
     n_p.append(len(vrot))
