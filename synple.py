@@ -3309,49 +3309,70 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
       steps.append(triad[2])
       dvals=np.diff(vals)
       assert np.max(dvals) - np.min(dvals) < 1.e-7, 'values for element '+entry+' are not linearly spaced!'
-    
-  if np.abs(np.max(vrot)) > 1e-7 and len(vrot) > 1:
+
+
+  try:
+    nvrot = len(vrot)
+    vrots = vrot
+  except TypeError:
+    nvrot = 1
+    vrots = [ vrot ]	    
+  if np.abs(np.max(vrots)) > 1e-7 and nvrot > 1:
     ndim = ndim + 1
-    n_p.append(len(vrot))
+    n_p.append(len(vrots))
     labels.append('vrot')
-    llimits.append(vrot[0])
-    steps.append(vrot[1]-vrot[0])
-    dvrot=np.diff(vrot)
+    llimits.append(vrots[0])
+    steps.append(vrots[1]-vrots[0])
+    dvrot=np.diff(vrots)
     if np.max(dvrot) - np.min(dvrot) > 1.e-7:
-      vrot = np.log10(vrot)
-      dvrot=np.diff(vrot)
+      vrots = np.log10(vrots)
+      dvrot = np.diff(vrots)
       assert np.max(dvrot) - np.min(dvrot) < 1.e-7, 'Vrot values are neither linearly spaced or linearly spaced in log!'
       labels[-1]='log10vrot'
-      llimits[-1]=vrot[0]
-      steps[-1]=vrot[1]-vrot[0]
-  if np.abs(np.max(fwhm)) > 1e-7 and len(fwhm) > 1:
+      llimits[-1]=vrots[0]
+      steps[-1]=vrots[1]-vrots[0]
+      
+  try:
+    nfwhm = len(fwhm)
+    fwhms = fwhm
+  except TypeError:
+    nfwhm = 1
+    fwhms = [ fwhm ]	          
+  if np.abs(np.max(fwhms)) > 1e-7 and len(fwhms) > 1:
     ndim = ndim + 1
-    n_p.append(len(fwhm))
+    n_p.append(len(fwhms))
     labels.append('FWHM')
-    llimits.append(fwhm[0])
-    steps.append(fwhm[1]-fwhm[0])
-    dfwhm=np.diff(fwhm)
+    llimits.append(fwhms[0])
+    steps.append(fwhms[1]-fwhms[0])
+    dfwhm=np.diff(fwhms)
     if np.max(dfwhm) - np.min(dfwhm) > 1.e-7:
-      fwhm = np.log10(fwhm)
-      dfwhm=np.diff(fwhm)
+      fwhms = np.log10(fwhms)
+      dfwhm=np.diff(fwhms)
       assert np.max(dfwhm) - np.min(dfwhm) < 1.e-7, 'FWHM values are neither linearly spaced or linearly spaced in log!'
       labels[-1]='log10FWHM'
-      llimits[-1]=fwhm[0]
-      steps[-1]=fwhm[1]-fwhm[0]
-  if np.abs(np.min(vmacro)) > 1e-7 and len(vmacro) > 1:
+      llimits[-1]=fwhms[0]
+      steps[-1]=fwhms[1]-fwhms[0]
+      
+  try:
+    nvmacro = len(vmacro)
+    vmacros = vmacro
+  except TypeError:
+    nvmacro = 1
+    vmacros = [ vmacro ]	          
+  if np.abs(np.min(vmacros)) > 1e-7 and len(vmacros) > 1:
     ndim = ndim + 1
-    n_p.append(len(vmacro))
+    n_p.append(len(vmacros))
     labels.append('VMACRO')
-    llimits.append(vmacro[0])
-    steps.append(vmacro[1]-vmacro[0])
-    dvmacro=np.diff(vmacro)
+    llimits.append(vmacros[0])
+    steps.append(vmacros[1]-vmacros[0])
+    dvmacro=np.diff(vmacros)
     if np.max(dvmacro) - np.min(dvmacro) > 1.e-7:
-      vmacro = np.log10(vmacro)
-      dvmacro=np.diff(vmacro)
+      vmacros = np.log10(vmacros)
+      dvmacro=np.diff(vmacros)
       assert np.max(dvmacro) - np.min(dvmacro) < 1.e-7, 'vmacro values are neither linearly spaced or linearly spaced in log!'
       labels[-1]='log10vmacro'
-      llimits[-1]=vmacro[0]
-      steps[-1]=vmacro[1]-vmacro[0]
+      llimits[-1]=vmacros[0]
+      steps[-1]=vmacros[1]-vmacros[0]
 
 
   pwd=os.path.abspath(os.curdir)
