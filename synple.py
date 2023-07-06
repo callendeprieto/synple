@@ -2517,7 +2517,7 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
     teffs = np.arange(tteff[0])*tteff[2] + tteff[1]
     if len(teffs) > 1: 
       pars.append('teff')
-      n_p.append(len(teff))
+      n_p.append(len(teffs))
       steps.append(tteff[2])
       llimits.append(tteff[1])
   except TypeError:
