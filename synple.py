@@ -2833,7 +2833,7 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
       labels[-1]='log10vmicro'
       llimits[-1]=vmicro[0]
       steps[-1]=vmicro[1]-vmicro[0]
-  if np.abs(np.max(nfe)) > 1e-7 and len(nfe) > 1:
+  if tnfe[0] > 1:
     ndim = ndim + 1
     n_p.append(len(nfe))
     labels.append('[N/Fe]')
@@ -2849,7 +2849,9 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
     nentry = len(triad)
     assert (nentry == 3), 'Error: element '+entry+' triad must have three elements (n, llimit, step)'
     vals = np.arange(triad[0])*triad[2] + triad[1]
-    if np.abs(np.max(vals)) > 1e-7 and len(vals) > 1: 
+    print('vals=',vals)
+    if len(vals) > 1: 
+      ndim = ndim + 1
       n_p.append(len(vals))
       labels.append(entry)
       llimits.append(triad[1])       
