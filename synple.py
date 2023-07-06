@@ -2429,9 +2429,392 @@ def collect_k2odfnew(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0)
   fi.close()
 
   return(files)
-
-
+  
+  
 def mkgrid(synthfile=None, tteff=None, tlogg=None, 
+           tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0),  
+           tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0), 
+           trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), 
+           vmicro=1.0, nfe=0.0, vrot=0.0, fwhm=0.0, vmacro=0.0, 
+           wrange=None, dw=None, logw=0, ignore_missing_models=False, **elements):
+
+
+
+  """Collects the synthetic spectra part of a regular grid defined
+  by triads in various parameters. Each triad has three values (n, llimit, step)
+  that define an array x = np.range(n)*step + llimit. Triads in teff (tteff) and logg (tlogg) are mandatory. Triads in [Fe/H] (tfeh), [alpha/Fe] (tafe), [C/Fe] (tcfe), [N/Fe] (tnfe), [O/Fe] (tofe), [r/Fe] (rfe), and [s/Fe] (sfe) are optional since  arrays with just one 0.0 are included by default. The wavelength sampling can be chosen (the spectral range must be limited to the range of the computations), but the default is to take it from the first model.
+
+  Parameters
+  ----------
+  synthfile: str
+    Name of the output FERRE synth file
+  tteff: tuple
+    Teff triad (n, llimit, step)
+  tlogg: tuple
+    logg triad (n, llimit, step)
+  tfeh: tuple
+    [Fe/H] triad
+  tafe: tuple
+    [alpha/Fe] triad  
+  tcfe: tuple
+    [C/Fe] triad
+  tnfe: tuple
+    [N/Fe] triad
+  tofe: tuple
+    [O/Fe] triad
+  rfeh: tuple
+    [r/Fe] triad (r-elements abundance ratio)
+  sfeh: tuple
+    [s.Fe] triad (s-elements abundance ratio)
+  vmicro: float, optional, can be an iterable
+      microturbulence (km/s) 
+      (default is taken from the model atmosphere)
+  nfe: float, can be an iterable
+      [N/Fe] nitrogen abundance change from the one specified in the array     
+      'abu' (dex)
+      (default 0.)
+  vrot: float, can be an iterable
+      projected rotational velocity (km/s)
+      (default 0.)
+  fwhm: float, can be an iterable
+      Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
+      (default 0.0)
+  vmacro: float, can be an iterable
+      Radial-tangential macroturbulence (km/s)
+      (default 0.)
+  wrange: tuple or list of two floats, optional
+      initial and ending wavelengths (angstroms)
+      (default None -- chosen by the code from the first input spectrum)
+  dw: float, optional
+      wavelength step for the output fluxes
+      (default is None for automatic frequency selection)
+  logw: int
+      parameter that indicates whether the wavelength scale should be 
+      linear (0), log10 (1), or log (2)
+      (default 0)
+  ignore_missing_models: bool
+    set to True to avoid stopping when a model is missing,
+    in which case a None is entered in the returning list    
+  elements:  tuples
+    as many triads as necessary, for other elemental variations [X/Fe]
+    e.g. Na=(3,-0.2,0.2), Al=(9, -0.5, 0.1), ...
+    
+ 
+  Returns
+  -------
+  None
+
+  """
+
+  pars = []
+  n_p = []
+  steps = []
+  llimits = []
+  #expanding the triads t* into iterables
+  try: 
+    nteff = len(tteff)
+    assert (nteff == 3), 'Error: Teff triad must have three elements (n, llimit, step)'
+    teffs = np.arange(tteff[0])*tteff[2] + tteff[1]
+    if len(teffs) > 1: 
+      pars.append('teff')
+      n_p.append(len(teff))
+      steps.append(tteff[2])
+      llimits.append(tteff[1])
+  except TypeError:
+    print('Error: Teff triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nlogg = len(tlogg)
+    assert (nlogg == 3), 'Error: logg triad must have three elements (n, llimit, step)'
+    loggs = np.arange(tlogg[0])*tlogg[2] + tlogg[1]
+    if len(loggs) > 1: 
+      pars.append('logg')
+      n_p.append(len(loggs))      
+      steps.append(tlogg[2])
+      llimits.append(tlogg[1])
+  except TypeError:
+    print('Error: logg triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nfeh = len(tfeh)
+    assert (nfeh == 3), 'Error: feh triad must have three elements (n, llimit, step)'
+    fehs = np.arange(tfeh[0])*tfeh[2] + tfeh[1]
+    if len(fehs) > 1: 
+      pars.append('feh')
+      n_p.append(len(fehs))      
+      steps.append(tfeh[2])
+      llimits.append(tfeh[1])      
+  except TypeError:
+    print('Error: feh triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nafe = len(tafe)
+    assert (nafe == 3), 'Error: afe triad must have three elements (n, llimit, step)'
+    afes = np.arange(tafe[0])*tafe[2] + tafe[1]
+    if len(afes) > 1: 
+      pars.append('afe')
+      n_p.append(len(afes))      
+      steps.append(tafe[2])
+      llimits.append(tafe[1])      
+  except TypeError:
+    print('Error: afe triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    ncfe = len(tcfe)
+    assert (ncfe == 3), 'Error: cfe triad must have three elements (n, llimit, step)'
+    cfes = np.arange(tcfe[0])*tcfe[2] + tcfe[1]
+    if len(cfes) > 1: 
+      pars.append('cfe')
+      n_p.append(len(cfes))      
+      steps.append(tcfe[2])
+      llimits.append(tcfe[1])      
+  except TypeError:
+    print('Error: cfe triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nnfe = len(tnfe)
+    assert (nnfe == 3), 'Error: nfe triad must have three elements (n, llimit, step)'
+    nfes = np.arange(tnfe[0])*tnfe[2] + tnfe[1]
+    if len(nfes) > 1: 
+      pars.append('nfe')
+      n_p.append(len(nfes))      
+      steps.append(tnfe[2])
+      llimits.append(tnfe[1])      
+  except TypeError:
+    print('Error: nfe triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nofe = len(tofe)
+    assert (nofe == 3), 'Error: ofe triad must have three elements (n, llimit, step)'
+    ofes = np.arange(tofe[0])*tofe[2] + tofe[1]
+    if len(ofes) > 1: 
+      pars.append('ofe') 
+      n_p.append(len(ofes))      
+      steps.append(tofe[2])
+      llimits.append(tofe[1])      
+  except TypeError:
+    print('Error: ofe triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nrfe = len(trfe)
+    assert (nrfe == 3), 'Error: rfe triad must have three elements (n, llimit, step)'
+    rfes = np.arange(trfe[0])*trfe[2] + trfe[1]
+    if len(rfes) > 1: 
+      pars.append('rfe')
+      n_p.append(len(rfes))      
+      steps.append(trfe[2])
+      llimits.append(trfe[1])      
+  except TypeError:
+    print('Error: rfe triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nsfe = len(tsfe)
+    assert (nsfe == 3), 'Error: sfe triad must have three elements (n, llimit, step)'
+    sfes = np.arange(tsfe[0])*tsfe[2] + tsfe[1]
+    if len(sfes) > 1: 
+      pars.append('sfe')  
+      n_p.append(len(sfes))      
+      steps.append(tsfe[2])
+      llimits.append(tsfe[1])       
+  except TypeError:
+    print('Error: sfe triad must have three elements (n, llimit, step)')
+    return ()
+
+  try: 
+    nvmicro = len(vmicro)
+    vmicros = vmicro
+    pars.append('vmicro')
+    n_p.append(len(vmicros))    
+    steps.append(vmicros[1]-vmicros[0])
+    llimits.append(vmicros[0])
+  except TypeError:
+    nvmicro = 1
+    vmicros = [ vmicro ] 
+  try: 
+    nnfe1 = len(nfe)
+    nfes1 = nfe
+    pars.append('nfe')
+    n_p.append(len(nfes1))
+    steps.append(nfes1[1]-nfes1[0])
+    llimits.append(nfes1[0])    
+  except TypeError:
+    nnfe1 = 1
+    nfes1 = [ nfe ] 
+  try: 
+    nvrot = len(vrot)
+    vrots = vrot
+  except TypeError:
+    nvrot = 1
+    vrots = [ vrot ]   
+  try: 
+    nfwhm = len(fwhm)
+    fwhms = fwhm
+  except TypeError:
+    nfwhm = 1
+    fwhms = [ fwhm ]   
+  try:
+    nvmacro = len(vmacro)
+    vmacros = vmacro
+  except TypeError:
+    nvmacro = 1
+    vmacros = [ vmacro ]
+
+  for entry in elements.keys():
+    triad = elements[entry]
+    nentry = len(triad)
+    assert (nentry == 3), 'Error: element '+entry+' triad must have three elements (n, llimit, step)'
+    vals = np.arange(triad[0])*triad[2] + triad[1]
+    if len(vals) > 1: 
+      pars.append(entry)
+      n_p.append(len(vals))
+      steps.append(triad[2])
+      llimits.append(triad[1])       
+    
+    
+  
+  #define indices for grid loops
+  ll = []
+  ind_n_p = []
+  i = 0
+  print('pars=',pars)
+  for entry in pars:
+    ind_n_p.append(i)
+    ll.append(np.arange(n_p[i]))
+    i = i + 1
+  ind = np.array(list(product(*ll)))
+  
+  print
+
+
+  hdr = mkhdr(tteff=tteff, tlogg=tlogg, tfeh=tfeh, tafe=tafe, 
+              tcfe=tcfe, tnfe=tnfe, tofe=tofe, trfe=trfe, tsfe=tsfe,
+              vmicro=vmicro, nfe=nfe, vrot=vrot, fwhm=fwhm, vmacro=vmacro, **elements)
+
+  if os.path.isfile(synthfile): 
+    print('Warning -- the output file ',synthfile,' exists and will be overwritten')
+    f = open(synthfile,'w')
+    f.close()
+
+  f = open(synthfile,'a')
+
+  #look for the first sucessful calculation and define the wavelength for the grid  and write the header
+  nfreq = 0
+  break_out = False
+  idir = 0
+
+  j = 0
+  for i in ind:
+                        j = j + 1
+                        print('line ',j)
+                        print(i,steps,llimits)
+                        par = i*steps+llimits
+                        print(par)
+                    
+                        dir = ( "hyd%07d" % (j) )
+
+                        iconv = 1
+                        outconv = ("%07dfort.7" % (iconv) )
+                        file = os.path.join(dir,outconv)
+ 
+                        if os.path.isfile(file):
+                              print('first successful calculation is for idir=',idir)
+                              assert os.path.isfile(file), 'Cannot find model '+file 
+                              wave, flux = np.loadtxt(file, unpack=True)
+                              if wrange is None: 
+                                minwave = np.min(wave)
+                                maxwave = np.max(wave)
+                              else:
+                                minwave = wrange[0]
+                                maxwave = wrange[1]
+
+                              if dw is None:
+                                dw = np.median(np.diff(wave))
+                        
+                              nfreq = np.floor((maxwave - minwave)/dw + 1)
+ 
+                              if logw == 0:
+                                x = minwave + np.arange(nfreq)*dw
+                              elif logw == 1:
+                                minwave = np.log10(minwave)
+                                dw = dw/(np.max(wave)+np.min(wave))*2./np.log(10.)
+                                x = minwave + np.arange(nfreq)*dw
+                                x = 10.**x
+                              elif logw == 2:
+                                minwave = np.log(minwave)
+                                dw = dw/(np.max(wave)+np.min(wave))*2.
+                                x = minwave + np.arange(nfreq)*dw
+                                x = np.exp(x)
+                              else:
+                                print('Error: logw can only be 0, 1 or 2')
+                                sys.exit()
+
+                              hdr['SYNTHFILE_INTERNAL'] = "'"+synthfile+"'"
+                              hdr['ID'] = "'"+synthfile[2:]+"'"
+                              hdr['NPIX'] = str(int(nfreq))
+                              hdr['WAVE'] = str(minwave) + ' ' + str(dw)
+                              hdr['LOGW'] = str(int(logw))
+                              if fwhm > 0.0:
+                                hdr['RESOLUTION'] = str(np.min(x)/np.max(fwhm))
+                              f.write(' &SYNTH\n')
+                              for entry in hdr: f.write(' '+entry + ' = ' + hdr[entry] + '\n')
+                              f.write(' /\n')
+                              break_out = True
+                              break
+  
+                              
+  assert nfreq > 0, 'could not find a single successful calculation in this grid'
+  
+  #now read, interpolate and write out the calculations
+  j = 0
+
+  for i in ind:
+                        j = j + 1
+                        print('line ',j)
+                        print(i,steps,llimits)
+                        par = i*steps+llimits
+                        print(par)
+                    
+                        dir = ( "hyd%07d" % (j) )
+
+                        iconv = 0
+                        for vrot1 in vrots:
+                          for fwhm1 in fwhms:
+                            for vmacro1 in vmacros:
+								
+                              iconv = iconv + 1
+                              outconv = ("%07dfort.7" % (iconv) )
+                              file = os.path.join(dir,outconv)
+ 
+                              if os.path.isfile(file):
+                                wave, flux = np.loadtxt(file, unpack=True)
+                              else:
+                                if ignore_missing_models == False:
+                                  assert os.path.isfile(file), 'Cannot find model '+file                  
+                                else:
+                                  wave, flux = (np.array([np.min(x),np.max(x)]), np.array([0.0, 0.0]))
+                    
+                              print('idir,iconv, dw=',idir,iconv,dw)
+                              print(wave.shape,flux.shape)
+                              y = np.interp(x, wave, flux)
+                              print(x.shape,y.shape)
+                              #plt.plot(wave,flux,'b',x,y,'.')
+                              #plt.show()
+                              np.savetxt(f,[y], fmt='%12.5e')
+
+  f.close()
+
+  return(None)
+
+
+def mkgrid_old(synthfile=None, tteff=None, tlogg=None, 
            tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0),  
            tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0), 
            trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), 
@@ -2757,6 +3140,74 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
               tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0),   \
               trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), \
               vmicro=1.0, nfe=0.0, vrot=0.0, fwhm=0.0, vmacro=0.0, **elements):	  
+
+  """Returns a dictionary for a FERRE regular grid defined by triads in 
+  various parameters. Each triad has three values (n, llimit, step)
+  that define an array x = np.range(n)*step + llimit. Triads in teff 
+  (tteff) and logg (tlogg) are mandatory. Triads in [Fe/H] (tfeh), 
+  [alpha/Fe] (tafe), [C/Fe] (tcfe), [N/Fe] (tnfe), [O/Fe] (tofe), 
+  [r/Fe] (rfe), and [s/Fe] (sfe) are meant to be associated to changes 
+  in the model atmospheres and are optional since  arrays with 
+  just one 0.0 are included by default. The keyword arguments 'elements'
+  can accommodate any other variations in chemistry, even those in the
+  elements already included in the previous parameters, and in any
+  arbitrary order.
+
+  Parameters
+  ----------
+  synthfile: str
+    Name of the output FERRE synth file
+  tteff: tuple
+    Teff triad (n, llimit, step)
+  tlogg: tuple
+    logg triad (n, llimit, step)
+  tfeh: tuple
+    [Fe/H] triad
+  tafe: tuple
+    [alpha/Fe] triad  
+  tcfe: tuple
+    [C/Fe] triad
+  tnfe: tuple
+    [N/Fe] triad
+  tofe: tuple
+    [O/Fe] triad
+  rfeh: tuple
+    [r/Fe] triad (r-elements abundance ratio)
+  sfeh: tuple
+    [s.Fe] triad (s-elements abundance ratio)
+  vmicro: float, optional, can be an iterable
+      microturbulence (km/s) 
+      (default is taken from the model atmosphere)
+  nfe: float, can be an iterable
+      [N/Fe] nitrogen abundance change from the one specified in the array     
+      'abu' (dex)
+      (default 0.)
+  vrot: float, can be an iterable
+      projected rotational velocity (km/s)
+      (default 0.)
+  fwhm: float, can be an iterable
+      Gaussian broadening: macroturbulence, instrumental, etc. (angstroms)
+      (default 0.0)
+  vmacro: float, can be an iterable
+      Radial-tangential macroturbulence (km/s)
+      (default 0.)
+  wrange: tuple or list of two floats, optional
+      initial and ending wavelengths (angstroms)
+      (default None -- chosen by the code from the first input spectrum)
+  dw: float, optional
+      wavelength step for the output fluxes
+      (default is None for automatic frequency selection)
+  logw: int
+      parameter that indicates whether the wavelength scale should be 
+      linear (0), log10 (1), or log (2)
+      (default 0)
+  ignore_missing_models: bool
+    set to True to avoid stopping when a model is missing,
+    in which case a None is entered in the returning list    
+  elements:  tuples
+    as many triads as necessary, for other elemental variations [X/Fe]
+    e.g. Na=(3,-0.2,0.2), Al=(9, -0.5, 0.1), ...
+  """    
   
   ndim = 0
   n_p = []
@@ -5856,6 +6307,7 @@ def smooth(x,n):
   x2 = savgol_filter(x, n, 3)
 
   return(x2)
+
 
 
 def gsynth(synthfile,fwhm=0.0,units='km/s',outsynthfile=None,ppr=5,wrange=None,freeze=None):
