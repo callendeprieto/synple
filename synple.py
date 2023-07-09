@@ -6500,9 +6500,9 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
     section2 = np.where( (xx >= wrange[0]) & (xx <= wrange[1]) ) 
     xx = xx [section2]
     
-  print(x,xx)
-  print(len(x),len(xx))
-  print(len(section1),len(section2))
+  #print(x,xx)
+  #print(len(x),len(xx))
+  #print(len(section1),len(section2))
   
   jlabel = 0
   for line in hd:
