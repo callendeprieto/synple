@@ -4017,6 +4017,7 @@ def write_synth(synthfile,d,hdr=None):
         fout.write("\n")
 
     return(None)			
+
 			
 def fill_synth(d,function='cubic'):
     """
@@ -4081,6 +4082,82 @@ def getaa(n_p, dtype=int):
     aa = np.array(list(product(*ll)))
   
     return(aa)
+
+def rbf_get(synthfile):
+  """Computes RBF coefficients for interpolation in an input FERRE grid
+  Parameters
+  ----------
+  synthfile: string
+   Name of the FERRE synthfile to interpolate in
+
+  Returns
+  -------
+  c: - array of RBFInterpolator objects to interpolate in the grid
+
+  """
+
+  from scipy.interpolate import RBFInterpolator
+
+
+  print('reading grid ...')
+  h, d = read_synth(synthfile)
+  ndim = d.ndim-1
+  n_p = d.shape[:-1]
+  nfreq = d.shape[-1]
+
+  dd = np.reshape(d.copy(), (np.product(n_p),nfreq) )
+  iarr = getaa(n_p)
+
+  print('deriving interpolation coefficients...')
+  c = []
+  for i in np.arange(nfreq):
+    c.append(RBFInterpolator(iarr, dd [:, i] ))
+
+  return(c)
+
+def rbf_apply(synthfile,c,par):
+  """Interpolates in the FERRE grid in the input file
+   using the RBFInterpolate objects in the array c to derive
+   fluxes for the parameters in the array par
+
+  Parameters
+  ----------
+  synthfile: string
+   Name of the FERRE synthfile to interpolate in
+  c: array of RBFInterpolate objects 
+   previously
+   derived from calling rbf_get
+  par: array of floats
+   array of parameters for interpolation
+   rows correspond to different interpolations and columns
+   should correspond to the parameters of the FERRE grid 
+  """
+
+  from scipy.interpolate import RBFInterpolator
+	
+  #grid parameters from header
+  h = head_synth(synthfile)
+  ndim = int(h['N_OF_DIM'])
+  n_p = np.array(h['N_P'].split(),dtype=int)
+  nfreq = int(h['NPIX'])
+  steps = np.array(h['STEPS'].split(),dtype=float)
+  llimits = np.array(h['LLIMITS'].split(),dtype=float)
+  
+  
+  #map the parameters from physical to indices
+  for i in range(ndim):
+    par[:,i] = (par[:,i] - llimits[i] ) / steps[i] 
+
+  print('applying coefficients ..')
+  for i in np.arange(nfreq):
+    if i == 0:
+      res = c[i](par)
+    else:
+      res = np.vstack((res,c[i](par)))
+
+  return(res)
+  
+
   
 def getallt(modelfiles):
 
