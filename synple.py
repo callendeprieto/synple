@@ -4089,6 +4089,8 @@ def rbf_get(synthfile,kernel='thin_plate_spline'):
   ----------
   synthfile: string
    Name of the FERRE synthfile to interpolate in
+  kernel: string
+   Type of RBF function (linear, thin_plate_spline, cubic, gaussian ...)
 
   Returns
   -------
