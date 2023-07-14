@@ -4083,7 +4083,7 @@ def getaa(n_p, dtype=int):
   
     return(aa)
 
-def rbf_get(synthfile):
+def rbf_get(synthfile,kernel='thin_plate_spline'):
   """Computes RBF coefficients for interpolation in an input FERRE grid
   Parameters
   ----------
@@ -4111,7 +4111,7 @@ def rbf_get(synthfile):
   print('deriving interpolation coefficients...')
   c = []
   for i in np.arange(nfreq):
-    c.append(RBFInterpolator(iarr, dd [:, i] ))
+    c.append(RBFInterpolator(iarr, dd [:, i], kernel=kernel ))
 
   return(c)
 
