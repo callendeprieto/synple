@@ -3946,7 +3946,9 @@ def read_synth(synthfile,nd=False):
   -------
   header: dict
    Dictionary containing the header of the grid
-  data: numpy array
+  pars: numpy float array
+   2D array with the parameters corresponding to the data in the grid
+  data: numpy float array
    2D array with the grid data and dimentions product(N_P) x NPIX
    (multidimensional if the grid has more than 1 parameters and 
     the boolean ND is set to True)
@@ -3954,7 +3956,8 @@ def read_synth(synthfile,nd=False):
 
     """
 
-	
+
+    #header	
     meta=0
     multi=0
     file=open(synthfile,'r')
@@ -3990,12 +3993,24 @@ def read_synth(synthfile,nd=False):
     else: 
       snp=header['N_P']
 
+    #data
     n_p = tuple(np.array(snp.split(),dtype=int)) + (-1,)
     data=np.loadtxt(synthfile, skiprows=nlines, dtype=float)
-
     if nd:  data = np.reshape( data, n_p)
+    n_p = n_p[:-1]
 
-    return header,data
+    #parameters
+    ndim = len(n_p) - 1
+    if 'irregular' in header:
+        pars = d[:,0:ndim]
+        d = d[:,ndim:]
+    else:
+        llimits = np.array(header['LLIMITS'].split(),dtype=float)
+        steps = np.array(header['STEPS'].split(),dtype=float)
+        pars = getaa(n_p, dtype=float)*steps + llimits
+
+
+    return header,pars,data
     
 def write_synth(synthfile,d,hdr=None):
     """
@@ -4122,7 +4137,7 @@ def rbf_get(synthfile, kernel='thin_plate_spline'):
 
 
   print('reading grid ...')
-  h, d = read_synth(synthfile)
+  h, p, d = read_synth(synthfile)
   n_p = np.array(h['N_P'].split(),dtype=int)
   nfreq = int(h['NPIX'])
 
