@@ -3930,10 +3930,30 @@ def lambda_synth(synthfile):
     return x
 
 #read a synthfile
-def read_synth(synthfile):
+def read_synth(synthfile,nd=False):
     """
-    Reads a FERRE spectral grid from disk
+  Reads a FERRE spectral grid from disk
+
+  Parameters
+  ----------
+  synthfile: string
+   Name of the FERRE synthfile to read
+  nd: boolean
+   Keyword to reshape the data array from 2D to the actual
+   grid dimensions, given in the array N_P, included in the header
+
+  Returns
+  -------
+  header: dict
+   Dictionary containing the header of the grid
+  data: numpy array
+   2D array with the grid data and dimentions product(N_P) x NPIX
+   (multidimensional if the grid has more than 1 parameters and 
+    the boolean ND is set to True)
+  
+
     """
+
 	
     meta=0
     multi=0
@@ -3972,8 +3992,8 @@ def read_synth(synthfile):
 
     n_p = tuple(np.array(snp.split(),dtype=int)) + (-1,)
     data=np.loadtxt(synthfile, skiprows=nlines, dtype=float)
-    data = np.reshape( data, n_p)
-    
+
+    if nd:  data = np.reshape( data, n_p)
 
     return header,data
     
@@ -4083,7 +4103,7 @@ def getaa(n_p, dtype=int):
   
     return(aa)
 
-def rbf_get(synthfile,kernel='thin_plate_spline'):
+def rbf_get(synthfile, kernel='thin_plate_spline'):
   """Computes RBF coefficients for interpolation in an input FERRE grid
   Parameters
   ----------
@@ -4103,17 +4123,15 @@ def rbf_get(synthfile,kernel='thin_plate_spline'):
 
   print('reading grid ...')
   h, d = read_synth(synthfile)
-  ndim = d.ndim-1
-  n_p = d.shape[:-1]
-  nfreq = d.shape[-1]
+  n_p = np.array(h['N_P'].split(),dtype=int)
+  nfreq = int(h['NPIX'])
 
-  dd = np.reshape(d.copy(), (np.product(n_p),nfreq) )
   iarr = getaa(n_p)
 
   print('deriving interpolation coefficients...')
   c = []
   for i in np.arange(nfreq):
-    c.append(RBFInterpolator(iarr, dd [:, i], kernel=kernel ))
+    c.append(RBFInterpolator(iarr, d [:, i], kernel=kernel ))
 
   return(c)
 
