@@ -4000,10 +4000,10 @@ def read_synth(synthfile,nd=False):
     n_p = n_p[:-1]
 
     #parameters
-    ndim = len(n_p) - 1
-    if 'irregular' in header:
-        pars = d[:,0:ndim]
-        d = d[:,ndim:]
+    ndim = len(n_p) 
+    if 'IRREGULAR' in header:
+        pars = data[:,0:ndim]
+        data = data[:,ndim:]
     else:
         llimits = np.array(header['LLIMITS'].split(),dtype=float)
         steps = np.array(header['STEPS'].split(),dtype=float)
@@ -4180,15 +4180,16 @@ def rbf_apply(synthfile,c,par):
   
   
   #map the parameters from physical to indices
+  par2 = par.copy()
   for i in range(ndim):
-    par[:,i] = (par[:,i] - llimits[i] ) / steps[i] 
+    par2[:,i] = (par[:,i] - llimits[i] ) / steps[i] 
 
   print('applying coefficients ..')
   for i in np.arange(nfreq):
     if i == 0:
-      res = c[i](par)
+      res = c[i](par2)
     else:
-      res = np.vstack((res,c[i](par)))
+      res = np.vstack((res,c[i](par2)))
 
   return(res)
   
