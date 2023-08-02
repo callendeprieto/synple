@@ -50,7 +50,7 @@ H_{\nu} = \int_0^{\pi} I_{\nu} (\theta) \cos \theta \sin \theta d\theta
 
 Prior to solving the equation of radiative transfer, one requires a physical model of the stellar atmosphere in order to compute $\eta$, $\kappa$ and $\phi$. This is the running of the thermodynamical quantities (e.g temperature and density) with height, as well as the chemical composition. This input {\it model atmosphere} is the sole required input to Synple.  Of course, computing a detailed spectrum requires fundamental physical data on the interaction of matter and radiation (photoionization cross-sections, atomic and molecular transition probabilities and damping constants, etc), but a generic collection of such data is bundled with Synspec.
 
-Multiple codes for radiative transfer exist and are publicly available. However, most require deep knowledge of the related physics and are cumbersome to use. Synple provides an easy-to-use Python interface for the fast computation of model stellar spectra with accuracy and flexibility.
+Multiple codes for radiative transfer exist and are publicly available. However, most require deep knowledge of the related physics and are cumbersome to use. Synple provides an easy-to-use Python interface to Synspec (Hubeny \& Lanz 2017; Hubeny et al. 2021) for the fast computation of model stellar spectra with accuracy and flexibility.
 
 
 
@@ -81,7 +81,7 @@ csh:  & setenv PYTHONPATH = "\$PYTHONPATH:\$HOME/synple" .
 
 \section{Examples}
 
-Once synple is installed, all you need is a model atmosphere to being using it. In this section we'll include a set of simple practical examples, mainly based on the three model atmospheres included in the synple/models directory: one is a solar Kurucz model ('ksun.mod'), one is a solar MARCS model ('msun.mod'), and the third is a Phoenix model for Vega-like A-type star ('lte09600-4.00-0.0.PHOENIX-ACES-AGSS-COND-2011.ATMOS.fits') from Huser et al. (20xx).
+Once synple is installed, all you need is a model atmosphere to being using it. In this section we'll include a set of simple practical examples, mainly based on the three model atmospheres included in the synple/models directory: one is a solar Kurucz model ('ksun.mod'; Kurucz 1979 and later updates), one is a solar MARCS model ('msun.mod'; Gustafsson et al. 2008), and the third is a Phoenix model for Vega-like A-type star ('lte09600-4.00-0.0.PHOENIX-ACES-AGSS-COND-2011.ATMOS.fits') from Husser et al. (2013).
 
 
 \subsection{Computing your first solar spectrum}
@@ -246,9 +246,9 @@ In [21]: plot(wave, flux/cont, wave2, flux2/cont2, wave4, flux4)
 
 \subsection{Multiple models}
 
-One often fases the need to compute the spectra for multiple models. Since the sampling of frequencies is internally control within synspec, it become desirable to force the output fluxes to be on the same wavelength grid, and this can be controlled with the parameter {\it dw} in the routine {\tt syn}.
+One often faces the need to compute the spectra for multiple models. Since the sampling of frequencies is internally controlled within synspec, it becomes desirable to force the output fluxes to be on the same wavelength grid, and this can be done using the parameter {\it dw} in the routine {\tt syn}.
 
-When using synple, by default value for the variable {\tt modeldir} points to the folder {\tt models} inside you {\tt synple} parent directory. If the model atmospheres are in your working directory, or as in the first examples below, the models are in the {\tt models} folder, that's ok, but if you want to use models elsewhere you will need to change {\tt modeldir} to point to the right path (changing the source code in synple.py) or simply passing the complete filenames, including an absolute path.
+When using synple, the default value for the variable {\tt modeldir} points to the folder {\tt models} inside you {\tt synple} parent directory. If the model atmospheres are in your working directory, or as in the first examples below, the models are in the  {\tt models} folder, that's ok, but if you want to use models elsewhere you will need to change {\tt modeldir} to point to the right path (changing the source code in synple.py) or simply passing the complete filenames, including an absolute path.
 
 
 \begin{figure}[t!]
@@ -278,10 +278,132 @@ In [29]: for i in range(len(models)): plot(wave5, flux5[i,:]/cont5[i,:])\\
 
 \noindent and the wavelength array will now be common to all spectra, and the flux and cont arrays returned will be two-dimensional, with the first dimention running along the models in the input list.
 
+\section{Identification of spectral features}
+\label{tag}
+
+Synple can be used to identify which transitions are causing any given spectral feature. Of course, to succeed you need to use a line list including the relevant transitions, with data of sufficient accuracy.
+
+As we have seen, the usual output from the routine {\tt syn} is a tuple with three arrays: wavelengths, fluxes and continuum fluxes. When the parameter {\tt tag} is set to {\bf True} in {\tt syn}, the output changes including a 4-th element, a list with three additional arrays that give 
+\begin{enumerate}
+\item the wavelengths of the most relevant transitions, 
+\item the ions or molecules responsible for those transitions, and
+\item the estimated equivalent widths associated with them (in milliangstroms).
+\end{enumerate}
+
+
+\begin{figure}[t!]
+\centering
+\includegraphics[width=14cm]{Figure_6.ps}
+\caption{The main transitions in the spectrum can be labeled activating the {\tt tag} keyword in {\tt syn}.
+\label{tagging}
+}
+\end{figure}
+
+For example, for the very first spectrum computed in section \ref{6162}, we could have used this feature
+
+\noindent {\tt \\
+In [1]: from synple import syn, tags\\
+\\
+In [2]: d = syn('ksun.mod', (6160,6164) , tag = True)\\
+}
+\\
+
+
+\noindent to produce the output graphics shown in Figure \ref{tagging}. The routine {\tt tags} can be used to plot the output from syn for transitions expected to be stronger than an specified threshold in equivalent width, e.g.
+
+\noindent {\tt \\
+In [3]: tags(d, 1.)
+}
+\\
+
+\noindent will tag several several additional features estimated to produce absorptions stronger than 1 
+m\AA, and not included when the default minimum of 10 m\AA\ is used.
+
+\section{Grid handling}
+
+Synple includes a number of tools for creating grids of synthetic spectra. The format adopted is the same used for the FERRE grids, described in Section 4 of the FERRE manual available from
+
+{\tt https://github.com/callendeprieto/ferre/blob/master/docs/ferre.pdf}
+\\
+
+Here is a quick overview of the various tools.
+
+\begin{itemize}
+\item head\_synth(synthfile): extracts the header of a grid
+\item lambda\_synth(synthfile): extracts the wavelength array
+\item read\_synth(synthfile,nd=False): reads the header, parameters and fluxes from a file
+\item write\_synth(synthfile,d,hdr=None): writes a grid to file
+\item fill\_synth(d,function='cubic'): fills-in missing data using Radial Basis Functions (RBF) interpolation
+\item rbf\_get(synthfile, kernel='thin\_plate\_spline'): finds the coefficients for RBF interpolation
+\item rbf\_apply(synthfile,c,par): applies the RBF coefficients to interpolate
+\item gsynth(synthfile,...): applies smoothing and reddening to an existing grid
+\item polysyn(modelfiles, wrange, ...): sets up a directory tree for computing spectra for a grid using a job scheduler such as slurm
+\item collect\_marcs(modeldir=modeldir, tteff=None, ...): collects MARCS model atmospheres for grid computation
+\item collect\_kurucz(modeldir=modeldir, tteff=None, ...): collects Kurucz model atmospheres for grid computation
+\item collect\_k2odfnew(modeldir=modeldir, ...): collects Kurucz ODFNEW model atmospheres for grid computation
+\item mkgrid(synthfile=None, tteff=None, ...): collects the results from a calculation prepared using polysyn for a regular grid and stores the spectra in FERRE format
+\item mkgrid\_irregular(synthfile=None, tteff=None, ...): collects the results from a calculation prepared using polysyn for an irregular grid and stores the spectra in FERRE format.
+\end{itemize}
+
+\section{Computing opacity tables}
+
+
+\begin{figure}[t!]
+\centering
+\includegraphics[width=14cm]{Figure_7.ps}
+\caption{Opacity in the range 6100--6110. \AA\ for four combinations of a pair of densities ($\log_{10} \rho = -32.236191, -29.933606$) and temperatures ($\log_{10} = 8.059055, 8.51957$) and solar abundances.
+\label{opacity-fig}
+}
+\end{figure}
+
+Synple provides simplified access to the most basic features for opacity table calculations available with synspec. The main subroutines are
+
+\begin{itemize}
+\item polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, ...): sets up an opacity grid calculation
+\item read\_opt(filename): reads an opacity table 
+\item read\_copt(filename,nrho,nt): reads the continuum opacities from an opacity grid calculation.
+\end{itemize}
+
+For example, to compute a minimalist table covering 10 \AA\ (6100. -6110. \AA), 2 temperatures (3163 and 5012 K), and 2 densities (1e-14, 1e-13 gr cm$^{-3}$):
+
+\noindent {\tt
+In [1]: from synple import polyopt \\
+In [2]: polyopt(wrange=(6100.,6110.),tlt=(2,3.5,0.2),tlrho=(2,-14.,1.0)) \\
+}
+\\
+
+The code creates 1 folder named {\tt hyd0000001} (you would get more folders by 
+including more chemical mixtures, but the default is to assume solar abundances) 
+with a script {\it hyd0000001.job}. Executing the script should produce an output text file {\bf opt.data} with the opacity table.
+
+To read and plot the table
+
+\noindent {\tt
+In [1]: from synple import read\_opt \\
+In [2]: import matplotlib.pyplot as plt \\
+In [3]: lrho,lt,lambda0,lopa,abu\_eos,abu\_opa = read\_opt('opt.data')\\
+In [4]: plt.plot(lambda0,lopa[:,0,0]) \\
+In [5]: plt.plot(lambda0,lopa[:,0,1]) \\
+In [6]: plt.plot(lambda0,lopa[:,1,0]) \\
+In [7]: plt.plot(lambda0,lopa[:,1,1]) \\
+In [8]: plt.xlabel('wavelength (A)') \\
+In [9]: plt.ylabel('log10 specific opacity (cm2/gr)') \\
+In [10]: plt.show().
+}
+\\
+
+\noindent which will produce the output shown in Figure \ref{opacity-fig}.
+
 \section{References}
 
 \begin{itemize}
 \item Allende Prieto, C., Fern{\'a}ndez-Alvar, E., Schlesinger, K.~J., et al.\ 2014, A\&A, 568, A7 
+\item Gustafsson, B., Edvardsson, B., Eriksson, K., et al.\ 2008, A\&A, 486, 951
+\item Hubeny, I. \& Lanz, T.\ 2017, arXiv:1706.01859
+\item Hubeny, I., Allende Prieto, C., Osorio, Y., et al.\ 2021, arXiv:2104.02829
+\item Husser, T.-O., Wende-von Berg, S., Dreizler, S., et al.\ 2013, A\&A, 553, A6
+\item Kurucz, R.~L.\ 1979, ApJS, 40, 1
+
 \end{itemize}
 
 \end{document}

@@ -1,77 +1,73 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=latex 2019.11.14)  10 NOV 2022 13:59
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=latex 2023.6.2)  2 AUG 2023 19:54
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
 **synple.tex
 (./synple.tex
-LaTeX2e <2017-04-15>
-Babel <3.18> and hyphenation patterns for 84 language(s) loaded.
+LaTeX2e <2021-11-15> patch level 1
+L3 programming layer <2022-01-21>
 (/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
-Document Class: article 2014/09/29 v1.4h Standard LaTeX document class
+Document Class: article 2021/10/04 v1.4n Standard LaTeX document class
 (/usr/share/texlive/texmf-dist/tex/latex/base/size10.clo
-File: size10.clo 2014/09/29 v1.4h Standard LaTeX file (size option)
+File: size10.clo 2021/10/04 v1.4n Standard LaTeX file (size option)
 )
-\c@part=\count79
-\c@section=\count80
-\c@subsection=\count81
-\c@subsubsection=\count82
-\c@paragraph=\count83
-\c@subparagraph=\count84
-\c@figure=\count85
-\c@table=\count86
-\abovecaptionskip=\skip41
-\belowcaptionskip=\skip42
-\bibindent=\dimen102
+\c@part=\count185
+\c@section=\count186
+\c@subsection=\count187
+\c@subsubsection=\count188
+\c@paragraph=\count189
+\c@subparagraph=\count190
+\c@figure=\count191
+\c@table=\count192
+\abovecaptionskip=\skip47
+\belowcaptionskip=\skip48
+\bibindent=\dimen138
 )
 (/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
-Package: graphicx 2017/06/01 v1.1a Enhanced LaTeX Graphics (DPC,SPQR)
+Package: graphicx 2021/09/16 v1.2d Enhanced LaTeX Graphics (DPC,SPQR)
 
 (/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty
 Package: keyval 2014/10/28 v1.15 key=value parser (DPC)
-\KV@toks@=\toks14
+\KV@toks@=\toks16
 )
 (/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
-Package: graphics 2017/06/25 v1.2c Standard LaTeX Graphics (DPC,SPQR)
+Package: graphics 2021/03/04 v1.4d Standard LaTeX Graphics (DPC,SPQR)
 
 (/usr/share/texlive/texmf-dist/tex/latex/graphics/trig.sty
-Package: trig 2016/01/03 v1.10 sin cos tan (DPC)
+Package: trig 2021/08/11 v1.11 sin cos tan (DPC)
 )
 (/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/graphics.cfg
 File: graphics.cfg 2016/06/04 v1.11 sample graphics configuration
 )
-Package graphics Info: Driver file: dvips.def on input line 99.
+Package graphics Info: Driver file: dvips.def on input line 107.
 
 (/usr/share/texlive/texmf-dist/tex/latex/graphics-def/dvips.def
 File: dvips.def 2017/06/20 v3.1d Graphics/color driver for dvips
 ))
-\Gin@req@height=\dimen103
-\Gin@req@width=\dimen104
+\Gin@req@height=\dimen139
+\Gin@req@width=\dimen140
 )
 (/usr/share/texlive/texmf-dist/tex/latex/geometry/geometry.sty
-Package: geometry 2010/09/12 v5.6 Page Geometry
+Package: geometry 2020/01/02 v5.9 Page Geometry
 
-(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ifpdf.sty
-Package: ifpdf 2017/03/15 v3.2 Provides the ifpdf switch
-)
-(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ifvtex.sty
-Package: ifvtex 2016/05/16 v1.6 Detect VTeX and its facilities (HO)
-Package ifvtex Info: VTeX not detected.
-)
-(/usr/share/texlive/texmf-dist/tex/generic/ifxetex/ifxetex.sty
-Package: ifxetex 2010/09/12 v0.6 Provides ifxetex conditional
-)
-\Gm@cnth=\count87
-\Gm@cntv=\count88
-\c@Gm@tempcnt=\count89
-\Gm@bindingoffset=\dimen105
-\Gm@wd@mp=\dimen106
-\Gm@odd@mp=\dimen107
-\Gm@even@mp=\dimen108
-\Gm@layoutwidth=\dimen109
-\Gm@layoutheight=\dimen110
-\Gm@layouthoffset=\dimen111
-\Gm@layoutvoffset=\dimen112
-\Gm@dimlist=\toks15
+(/usr/share/texlive/texmf-dist/tex/generic/iftex/ifvtex.sty
+Package: ifvtex 2019/10/25 v1.7 ifvtex legacy package. Use iftex instead.
+
+(/usr/share/texlive/texmf-dist/tex/generic/iftex/iftex.sty
+Package: iftex 2020/03/06 v1.0d TeX engine tests
+))
+\Gm@cnth=\count193
+\Gm@cntv=\count194
+\c@Gm@tempcnt=\count195
+\Gm@bindingoffset=\dimen141
+\Gm@wd@mp=\dimen142
+\Gm@odd@mp=\dimen143
+\Gm@even@mp=\dimen144
+\Gm@layoutwidth=\dimen145
+\Gm@layoutheight=\dimen146
+\Gm@layouthoffset=\dimen147
+\Gm@layoutvoffset=\dimen148
+\Gm@dimlist=\toks17
 )
 
 Package geometry Warning: Over-specification in `h'-direction.
@@ -81,6 +77,16 @@ Package geometry Warning: Over-specification in `h'-direction.
 Package geometry Warning: Over-specification in `v'-direction.
     `height' (845.04684pt) is ignored.
 
+(/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-dvips.def
+File: l3backend-dvips.def 2022-01-12 L3 backend support: dvips
+\l__pdf_internal_box=\box50
+\g__pdf_backend_object_int=\count196
+\l__pdf_backend_content_box=\box51
+\l__pdf_backend_model_box=\box52
+\g__pdf_backend_annotation_int=\count197
+\g__pdf_backend_link_int=\count198
+\g__pdf_backend_link_sf_int=\count199
+)
 (./synple.aux
 
 LaTeX Warning: Label `rotin' multiply defined.
@@ -90,11 +96,13 @@ LaTeX Warning: Label `rotin' multiply defined.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 15.
 LaTeX Font Info:    ... okay on input line 15.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 15.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 15.
 LaTeX Font Info:    ... okay on input line 15.
 LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 15.
 LaTeX Font Info:    ... okay on input line 15.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 15.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 15.
+LaTeX Font Info:    ... okay on input line 15.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 15.
 LaTeX Font Info:    ... okay on input line 15.
 LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 15.
 LaTeX Font Info:    ... okay on input line 15.
@@ -152,9 +160,15 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 
  [1
 
-]
+] [2]
 File: Figure_1.ps Graphic file (type eps)
- <Figure_1.ps> [2]
+ <Figure_1.ps>
+LaTeX Font Info:    Trying to load font information for TS1+cmtt on input line 
+104.
+
+(/usr/share/texlive/texmf-dist/tex/latex/base/ts1cmtt.fd
+File: ts1cmtt.fd 2019/12/16 v2.5j Standard LaTeX font definitions
+)
 Underfull \hbox (badness 10000) in paragraph at lines 100--111
 
  []
@@ -199,15 +213,6 @@ File: Figure_2a.ps Graphic file (type eps)
  <Figure_2a.ps>
 File: Figure_2b.ps Graphic file (type eps)
  <Figure_2b.ps>
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 151.
-
-
-(/usr/share/texlive/texmf-dist/tex/latex/base/omscmr.fd
-File: omscmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
-)
-LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 151.
-
 Underfull \hbox (badness 10000) in paragraph at lines 151--158
 
  []
@@ -224,22 +229,21 @@ Underfull \hbox (badness 10000) in paragraph at lines 159--165
 
 
 Underfull \hbox (badness 10000) in paragraph at lines 159--165
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 175--190
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 175--190
 
  []
 
 [4]
+Underfull \hbox (badness 10000) in paragraph at lines 175--190
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 175--190
+
+ []
+
 File: Figure_3.ps Graphic file (type eps)
- <Figure_3.ps> [5]
+<Figure_3.ps> [5]
 File: Figure_4.ps Graphic file (type eps)
  <Figure_4.ps>
 Underfull \hbox (badness 10000) in paragraph at lines 220--233
@@ -273,18 +277,61 @@ Underfull \hbox (badness 10000) in paragraph at lines 266--278
 
  []
 
-[7] [8] (./synple.aux)
+[7]
+File: Figure_6.ps Graphic file (type eps)
+ <Figure_6.ps>
+Underfull \hbox (badness 10000) in paragraph at lines 304--310
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 304--310
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 304--310
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 314--318
+
+ []
+
+[8]
+Underfull \hbox (badness 10000) in paragraph at lines 326--328
+
+ []
+
+File: Figure_7.ps Graphic file (type eps)
+<Figure_7.ps>
+Underfull \hbox (badness 10000) in paragraph at lines 369--374
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 369--374
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 381--394
+
+ []
+
+[9] [10] (./synple.aux)
 
 LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 1129 strings out of 492983
- 15157 string characters out of 6134921
- 79765 words of memory out of 5000000
- 4721 multiletter control sequences out of 15000+600000
- 8409 words of font info for 30 fonts, out of 8000000 for 9000
- 1141 hyphenation exceptions out of 8191
- 25i,8n,28p,684b,250s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 1503 strings out of 480172
+ 24912 string characters out of 5894516
+ 326260 words of memory out of 5000000
+ 19478 multiletter control sequences out of 15000+600000
+ 474660 words of font info for 46 fonts, out of 8000000 for 9000
+ 59 hyphenation exceptions out of 8191
+ 55i,9n,62p,703b,265s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on synple.dvi (8 pages, 24060 bytes).
+Output written on synple.dvi (10 pages, 32044 bytes).
