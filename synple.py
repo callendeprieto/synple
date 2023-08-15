@@ -3518,12 +3518,12 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
                     else:
                       if not os.path.isfile(madaffile): continue
 
-                    teff,logg,vmicro2,abu = read_madaf(madaffile,startdir=entry)
+                    teff2,logg2,vmicro2,abu = read_madaf(madaffile,startdir=entry)
                     imode, iprin, inmod, inlte, hydprf, wrange, cutoff,  \
                          strength, dw, molls, vmicro1 = read55(os.path.join(entry,'fort.55'))
-                    feh = np.log10(abu[25])+12-7.50
+                    feh2 = np.log10(abu[25])+12-7.50
 	                                
-                    print(teff,logg,feh,vmicro1)
+                    print(teff2,logg2,feh2,vmicro1,vmicro2)
                     
                     ntot = ntot + 1
 
@@ -3598,17 +3598,17 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
                       if not os.path.isfile(madaffile): continue
 
 
-                    teff,logg,vmicro2,abu = read_madaf(madaffile,startdir=entry)
+                    teff2,logg2,vmicro2,abu = read_madaf(madaffile,startdir=entry)
                     imode, iprin, inmod, inlte, hydprf, wrange, cutoff, \
                          strength, dw, molls, vmicro1 = read55(os.path.join(entry,'fort.55'))
-                    feh = np.log10(abu[25])+12-7.50
+                    feh2 = np.log10(abu[25])+12-7.50
 	                  
-                    print(teff,logg,feh,vmicro1)
+                    print(teff2,logg2,feh2,vmicro1,vmicro2)
 
                     pars = []
-                    if teff: pars.append(teff)
-                    if logg: pars.append(logg)
-                    if feh: pars.append(feh)
+                    if teff: pars.append(teff2)
+                    if logg: pars.append(logg2)
+                    if feh: pars.append(feh2)
                     if nvmicro > 1: pars.append(vmicro1)
                     for el in elements.keys():
                       pars.append(el)
@@ -3981,33 +3981,37 @@ def read_synth(synthfile,nd=False):
         else:
           k=part[0].strip()
           v=part[1].strip()
-          header[k]=v
+          header[k]=v.strip("'")
           if k == 'MULTI': 
             multi=int(v)
             multi_header=[]
-    if (multi > 1): header=multi_header
+    if (multi > 1): 
+      
+      header=multi_header
     file.close()
 
-    if np.ndim(header) > 0: 
-      snp=header[0]['N_P'] 
-    else: 
-      snp=header['N_P']
+    if type(header) is list:
+        header0 = header[0]
+    else:
+        header0 = header
 
     #data
-    n_p = tuple(np.array(snp.split(),dtype=int)) + (-1,)
     data=np.loadtxt(synthfile, skiprows=nlines, dtype=float)
-    if nd:  data = np.reshape( data, n_p)
-    n_p = n_p[:-1]
 
     #parameters
-    ndim = len(n_p) 
-    if 'IRREGULAR' in header:
+    ndim = int(header0['N_OF_DIM']) 
+    if ('TYPE' in header0 and header0['TYPE'] == 'irregular'):
         pars = data[:,0:ndim]
         data = data[:,ndim:]
     else:
-        llimits = np.array(header['LLIMITS'].split(),dtype=float)
-        steps = np.array(header['STEPS'].split(),dtype=float)
+        llimits = np.array(header0['LLIMITS'].split(),dtype=float)
+        steps = np.array(header0['STEPS'].split(),dtype=float)
+        snp=header0['N_P']
+        n_p = tuple(np.array(snp.split(),dtype=int)) + (-1,)
+        if nd:  data = np.reshape( data, n_p)
+        n_p = n_p[:-1]
         pars = getaa(n_p, dtype=float)*steps + llimits
+
 
 
     return header,pars,data
