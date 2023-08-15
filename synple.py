@@ -3641,6 +3641,7 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
                           #plt.plot(wave,flux,'b',x,y,'.')
                           #plt.show()
                           np.savetxt(f,[pars+list(y)], fmt='%12.5e')
+                          stop
 
   f.close()
 
