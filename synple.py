@@ -3599,6 +3599,7 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
 
 
                     teff2,logg2,vmicro2,abu = read_madaf(madaffile,startdir=entry)
+
                     imode, iprin, inmod, inlte, hydprf, wrange, cutoff, \
                          strength, dw, molls, vmicro1 = read55(os.path.join(entry,'fort.55'))
                     feh2 = np.log10(abu[25])+12-7.50
@@ -3611,7 +3612,7 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
                     if feh: pars.append(feh2)
                     if nvmicro > 1: pars.append(vmicro1)
                     for el in elements.keys():
-                      pars.append(el)
+                      pars.append(abu[el])
 
                     iconv = 0
                     for vrot1 in vrots:
@@ -5413,7 +5414,7 @@ def read_tlusty_model(modelfile,startdir=None):
     else:
       atmos['dep'] = atm [:,4:]
 
-  return (teff,logg,vmicro,abu,nd,atmos)
+  return (teff,logg,vmicro,list(abu.values),nd,atmos)
 
 def read_madaf(madaffile,startdir=None):
   
@@ -5441,9 +5442,9 @@ def read_madaf(madaffile,startdir=None):
   vmicro : float
       microturbulence velocity (km/s), by default 1.0 unless set with the parameter
       VTB in the non-std. parameter file specified in the .5 file
-  abu : list
+  abu : dictionary 
       abundances, number densities of nuclei relative to hydrogen N(X)/N(H)
-      for elements Z=1,99 (H to Es)
+      for elements Z=1,99 (H to Es) -- the keys are the elemental symbols
 
   """  
 
@@ -5499,16 +5500,19 @@ def read_madaf(madaffile,startdir=None):
   line = f.readline()
   entries = line.split()
   natoms = int(entries[0])
-  
-  abu = []
+
+  symbol, mass, sol = elements() 
+  abu = dict()
   for i in range(natoms):
     line = f.readline()
     entries = line.split()
-    abu.append( float(entries[1]) )
+    #abu.append( float(entries[1]) )
+    abu[symbol[i]] = float(entries[1])
 
   if i < 98: 
     for j in range(98-i):
-      abu.append(1e-111)
+      #abu.append(1e-111)
+      abu[symbol[i+1]] = 1e-111
       i = i + 1
 
   f.close()
