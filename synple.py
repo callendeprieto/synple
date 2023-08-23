@@ -86,7 +86,7 @@ two =  " 2 "
 
 
 
-def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
+def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro='model', abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
     steprot=0.0, stepfwhm=0.0,  lineid=False, tag=False,  \
     clean=True, save=False, synfile=None, \
@@ -118,9 +118,9 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   strength: float, optional
       threshold in the line-to-continuum opacity ratio for 
       selecting lines (default is 1e-4)
-  vmicro: float, optional
-      microturbulence (km/s) 
-      (default is None, which is overriden by the value from the model atmosphere)
+  vmicro: float, or string ('model', 'df16') 
+      microturbulence (km/s)        
+      (default is 'model' meaning taken from the model atmosphere)  
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
       (default taken from input model atmosphere)
@@ -209,7 +209,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   #read model atmosphere
   atmostype, teff, logg, vmicro2, abu2, nd, atmos = read_model(modelfile)
 
-  if vmicro == None: vmicro = vmicro2
+  if vmicro == 'model': vmicro = vmicro2
   if abu == None: abu = abu2
   #we take a step of 1/3 of the Gaussian (thermal + micro) FWHM at the lowest T and for an atomic mass of 100
   space = np.mean(wrange) / clight * 2.355 / 3. * np.sqrt(0.1289**2 * np.min(atmos['t']) / 100. + vmicro** 2 / 2.) 
@@ -435,7 +435,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   return(s)
 
 
-def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
+def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro='model', abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
     steprot=0.0, stepfwhm=0.0, lineid=False, tag=False,  \
     clean=True, save=False, synfile=None, \
@@ -459,9 +459,9 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   strength: float, optional
       threshold in the line-to-continuum opacity ratio for 
       selecting lines (default is 1e-4)
-  vmicro: float, optional
-      microturbulence (km/s) 
-      (default is taken from the model atmosphere)
+  vmicro: float, or string ('model', 'df16') 
+      microturbulence (km/s)        
+      (default is 'model' meaning taken from the model atmosphere)  
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
       (default taken from input model atmosphere)
@@ -550,7 +550,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   #read model atmosphere
   atmostype, teff, logg, vmicro2, abu2, nd, atmos = read_model(modelfile)
 
-  if vmicro == None: vmicro = vmicro2
+  if vmicro == 'model': vmicro = vmicro2
   if abu == None: abu = abu2
 
 
@@ -636,7 +636,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   return(s)
 
 
-def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
+def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro='model', abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
     steprot=0.0, stepfwhm=0.0,  lineid=False, tag=False, \
     clean=True, save=False, synfile=None, \
@@ -660,9 +660,9 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   strength: float, optional
       threshold in the line-to-continuum opacity ratio for 
       selecting lines (default is 1e-4)
-  vmicro: float, optional
-      microturbulence (km/s) 
-      (default is taken from the model atmosphere)
+  vmicro: float, or string ('model', 'df16') 
+      microturbulence (km/s)        
+      (default is 'model' meaning taken from the model atmosphere)  
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
       (default taken from input model atmosphere)
@@ -767,7 +767,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   #read model atmosphere
   atmostype, teff, logg, vmicro2, abu2, nd, atmos = read_model(modelfile)
 
-  if vmicro == None: vmicro = vmicro2
+  if vmicro == 'model': vmicro = vmicro2
   if abu == None: abu = abu2
 
   if nthreads == 0: 
@@ -857,7 +857,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
 
 def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
-    vmicro=None, vrot=0.0, fwhm=0.0, vmacro=0.0, nfe=0.0, \
+    vmicro='model', vrot=0.0, fwhm=0.0, vmacro=0.0, nfe=0.0, \
     linelist=linelist0, atom='ap18', \
     steprot=0.0, stepfwhm=0.0, clean=True, save=None, lte=False, nthreads=0):
 
@@ -884,9 +884,9 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
       (default taken from input model atmosphere)
-  vmicro: float, optional, can be an iterable
-      microturbulence (km/s) 
-      (default is taken from the model atmosphere)
+  vmicro: float, or string ('model', 'df16') 
+      microturbulence (km/s)        
+      (default is 'model' meaning taken from the model atmosphere)  
   vrot: float, can be an iterable
       projected rotational velocity (km/s)
       (default 0.)
@@ -1043,7 +1043,7 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
   return(wave, flux, cont)
 
 
-def polydelta(modelfile, wrange, elem, enhance=0.2, strength=1e-4, vmicro=None, abu=None, \
+def polydelta(modelfile, wrange, elem, enhance=0.2, strength=1e-4, vmicro='model', abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
     steprot=0.0, stepfwhm=0.0,  lte=False):
 
@@ -1065,9 +1065,9 @@ abundances for one at a time.
   strength: float, optional
       threshold in the line-to-continuum opacity ratio for 
       selecting lines (default is 1e-4)
-  vmicro: float, optional
-      microturbulence (km/s) 
-      (default is taken from the model atmosphere)
+  vmicro: float, or string ('model', 'df16') 
+      microturbulence (km/s)        
+      (default is 'model' meaning taken from the model atmosphere)  
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
       (default taken from input model atmosphere)
@@ -1115,7 +1115,7 @@ abundances for one at a time.
 
   atmostype, teff, logg, vmicro2, abu2, nd, atmos = read_model(modelfile)
 
-  if vmicro == None: vmicro = vmicro2
+  if vmicro == 'model': vmicro = vmicro2
   if abu == None: abu = abu2
 
 
@@ -1201,7 +1201,7 @@ abundances for one at a time.
   return(None,None,None)
 
 def collectdelta(modelfile, wrange, elem, enhance=0.2, 
-    strength=1e-4, vmicro=None, abu=None, \
+    strength=1e-4, vmicro='model', abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
     steprot=0.0, stepfwhm=0.0,  lte=False):
 
@@ -1221,9 +1221,9 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
   strength: float, optional
       threshold in the line-to-continuum opacity ratio for 
       selecting lines (default is 1e-4)
-  vmicro: float, optional
-      microturbulence (km/s) 
-      (default is taken from the model atmosphere)
+  vmicro: float, or string ('model', 'df16') 
+      microturbulence (km/s)        
+      (default is 'model' meaning taken from the model atmosphere)  
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
       (default taken from input model atmosphere)
@@ -1269,7 +1269,7 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
 
   atmostype, teff, logg, vmicro2, abu2, nd, atmos = read_model(modelfile)
 
-  if vmicro == None: vmicro = vmicro2
+  if vmicro == 'model': vmicro = vmicro2
   if abu == None: abu = abu2
 
   if save:
@@ -1441,7 +1441,7 @@ def mkflt(dltfile,wavelengths,blocks=[],fwhm=0.0,unit='km/s',outdir='.'):
 
 
 def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
-    vmicro=None, vrot=0.0, fwhm=0.0, vmacro=0.0, nfe=0.0, \
+    vmicro='model', vrot=0.0, fwhm=0.0, vmacro=0.0, nfe=0.0, \
     linelist=linelist0, atom='ap18', \
     steprot=0.0, stepfwhm=0.0,  clean=True, save=None, lte=True):
 
@@ -1461,9 +1461,9 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
       (default taken from input model atmosphere)
-  vmicro: float, optional, can be an iterable
-      microturbulence (km/s) 
-      (default is taken from the model atmosphere)
+  vmicro: float, can be an iterable, or a string ('model', 'df16') 
+      microturbulence (km/s)        
+      (default is 'model' meaning taken from the model atmosphere)
   vrot: float, can be an iterable
       projected rotational velocity (km/s)
       (default 0.)
