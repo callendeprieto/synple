@@ -1,0 +1,10 @@
+wrange: 2000. 30000.
+vmidro: 'df16'
+grids: ['f_dr16-apo1']
+f_dr16-apo1:
+       type: 'marcs'
+       tteff: 11, 3500.    250.
+       tlogg: 10    0.0     0.5
+       tfeh:  15   -2.5     0.25
+       tafe:   8   -0.75    0.25
+       tcfe:  11   -1.50    0.25
