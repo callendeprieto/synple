@@ -87,7 +87,7 @@ two =  " 2 "
 
 
 
-def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro='model', abu=None, \
+def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
     steprot=0.0, stepfwhm=0.0,  lineid=False, tag=False,  \
     clean=True, save=False, synfile=None, \
@@ -119,11 +119,10 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro='model', abu=None, \
   strength: float, optional
       threshold in the line-to-continuum opacity ratio for 
       selecting lines (default is 1e-4)
-  vmicro: float, or string ('model', 'df16') 
-      'model' adopts the same value given in the model atmosphere
-      'df16' adopts the equation proposed by Dutra-Ferreira et al. 2016
-      microturbulence (km/s)        
-      (default is 'model')  
+  vmicro: float
+      microturbulence (km/s)  
+      a negative value triggers the use of the DF16 equation      
+      (default is None to adopt the value in the model atmosphere)  
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
       (default taken from input model atmosphere)
@@ -211,16 +210,14 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro='model', abu=None, \
 
   #read model atmosphere
   atmostype, teff, logg, vmicro2, abu2, nd, atmos = read_model(modelfile)
-  
-  print('vmicro=',vmicro)
-
-  if vmicro == 'model': 
+ 
+  if vmicro is None:
       vmicro = vmicro2
-  elif vmicro == 'df16':
-      vmicro = 0.998 + 3.16e-4*(teff-5500.) -0.253*(logg-4.0) 
-      -2.86e-4*(teff-5500.)*(logg-4.0) +0.165*(logg-4.0) 
-  
-  if abu == None: abu = abu2
+  elif vmicro < 0.0:
+      vmicro = 0.998 + 3.16e-4*(teff-5500.) -0.253*(logg-4.0)
+      -2.86e-4*(teff-5500.)*(logg-4.0) +0.165*(logg-4.0)
+
+  if abu is None: abu = abu2
   #we take a step of 1/3 of the Gaussian (thermal + micro) FWHM at the lowest T and for an atomic mass of 100
   space = np.mean(wrange) / clight * 2.355 / 3. * np.sqrt(0.1289**2 * np.min(atmos['t']) / 100. + vmicro** 2 / 2.) 
 
@@ -445,7 +442,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro='model', abu=None, \
   return(s)
 
 
-def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro='model', abu=None, \
+def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
     steprot=0.0, stepfwhm=0.0, lineid=False, tag=False,  \
     clean=True, save=False, synfile=None, \
@@ -469,8 +466,9 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro='model', abu=None, \
   strength: float, optional
       threshold in the line-to-continuum opacity ratio for 
       selecting lines (default is 1e-4)
-  vmicro: float, or string ('model', 'df16') 
-      microturbulence (km/s)        
+  vmicro: float
+      microturbulence (km/s)
+      a negative value triggers the use from the DF16 equation        
       (default is 'model' meaning taken from the model atmosphere)  
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
@@ -560,13 +558,13 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro='model', abu=None, \
   #read model atmosphere
   atmostype, teff, logg, vmicro2, abu2, nd, atmos = read_model(modelfile)
 
-  if vmicro == 'model': 
+  if vmicro is None: 
       vmicro = vmicro2
-  elif vmicro == 'df16':
+  elif vmicro < 0.0:
       vmicro = 0.998 + 3.16e-4*(teff-5500.) -0.253*(logg-4.0) 
       -2.86e-4*(teff-5500.)*(logg-4.0) +0.165*(logg-4.0) 
 
-  if abu == None: abu = abu2
+  if abu is None: abu = abu2
 
   if nthreads == 0: 
     nthreads = int(cpu_count() - 1)
@@ -650,7 +648,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro='model', abu=None, \
   return(s)
 
 
-def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro='model', abu=None, \
+def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
     steprot=0.0, stepfwhm=0.0,  lineid=False, tag=False, \
     clean=True, save=False, synfile=None, \
@@ -674,8 +672,9 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro='model', abu=None, 
   strength: float, optional
       threshold in the line-to-continuum opacity ratio for 
       selecting lines (default is 1e-4)
-  vmicro: float, or string ('model', 'df16') 
+  vmicro: float
       microturbulence (km/s)        
+      a negative value triggers the use of the DF16 equation
       (default is 'model' meaning taken from the model atmosphere)  
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
@@ -781,13 +780,13 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro='model', abu=None, 
   #read model atmosphere
   atmostype, teff, logg, vmicro2, abu2, nd, atmos = read_model(modelfile)
 
-  if vmicro == 'model': 
+  if vmicro is None: 
       vmicro = vmicro2
-  elif vmicro == 'df16':
+  elif vmicro < 0.0:
       vmicro = 0.998 + 3.16e-4*(teff-5500.) -0.253*(logg-4.0) 
       -2.86e-4*(teff-5500.)*(logg-4.0) +0.165*(logg-4.0) 
 
-  if abu == None: abu = abu2
+  if abu is None: abu = abu2
 
   if nthreads == 0: 
     nthreads = int(psutil.cpu_count(logical=False) - 1)
@@ -876,7 +875,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro='model', abu=None, 
 
 
 def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
-    vmicro='model', vrot=0.0, fwhm=0.0, vmacro=0.0, nfe=0.0, \
+    vmicro=None, vrot=0.0, fwhm=0.0, vmacro=0.0, nfe=0.0, \
     linelist=linelist0, atom='ap18', \
     steprot=0.0, stepfwhm=0.0, clean=True, save=None, lte=False, nthreads=0):
 
@@ -903,9 +902,10 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
       (default taken from input model atmosphere)
-  vmicro: float, or string ('model', 'df16') 
+  vmicro: float
       microturbulence (km/s)        
-      (default is 'model' meaning taken from the model atmosphere)  
+      a negative value triggers the use of the DF16 equation
+      (default is None to take the value from the model atmosphere)  
   vrot: float, can be an iterable
       projected rotational velocity (km/s)
       (default 0.)
@@ -969,16 +969,12 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
 
 
   #when vmicro, vrot, fwhm or nitrogen are not iterables, we create ones, otherwise we copy them
-  if vmicro == 'model' or vmicro == 'df16':
+  try: 
+    nvmicro = len(vmicro)
+    vmicros = vmicro
+  except TypeError:
     nvmicro = 1
-    vmicros = [ vmicro ]
-  else:
-    try: 
-      nvmicro = len(vmicro)
-      vmicros = vmicro
-    except TypeError:
-      nvmicro = 1
-      vmicros = [ vmicro ] 
+    vmicros = [ vmicro ] 
   try: 
     nvrot = len(vrot)
     vrots = vrots
@@ -1066,7 +1062,7 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
   return(wave, flux, cont)
 
 
-def polydelta(modelfile, wrange, elem, enhance=0.2, strength=1e-4, vmicro='model', abu=None, \
+def polydelta(modelfile, wrange, elem, enhance=0.2, strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
     steprot=0.0, stepfwhm=0.0,  lte=False):
 
@@ -1088,9 +1084,10 @@ abundances for one at a time.
   strength: float, optional
       threshold in the line-to-continuum opacity ratio for 
       selecting lines (default is 1e-4)
-  vmicro: float, or string ('model', 'df16') 
+  vmicro: float
       microturbulence (km/s)        
-      (default is 'model' meaning taken from the model atmosphere)  
+      a negative value triggers the use of the DF16 equation
+      (default is None to take it from the model atmosphere)  
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
       (default taken from input model atmosphere)
@@ -1138,13 +1135,13 @@ abundances for one at a time.
 
   atmostype, teff, logg, vmicro2, abu2, nd, atmos = read_model(modelfile)
 
-  if vmicro == 'model': 
+  if vmicro is None: 
       vmicro = vmicro2
-  elif vmicro == 'df16':
+  elif vmicro < 0.0:
       vmicro = 0.998 + 3.16e-4*(teff-5500.) -0.253*(logg-4.0) 
       -2.86e-4*(teff-5500.)*(logg-4.0) +0.165*(logg-4.0) 
 
-  if abu == None: abu = abu2
+  if abu is None: abu = abu2
 
 
   #change chemical symbols into indices
@@ -1229,7 +1226,7 @@ abundances for one at a time.
   return(None,None,None)
 
 def collectdelta(modelfile, wrange, elem, enhance=0.2, 
-    strength=1e-4, vmicro='model', abu=None, \
+    strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
     steprot=0.0, stepfwhm=0.0,  lte=False):
 
@@ -1249,9 +1246,10 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
   strength: float, optional
       threshold in the line-to-continuum opacity ratio for 
       selecting lines (default is 1e-4)
-  vmicro: float, or string ('model', 'df16') 
+  vmicro: float
       microturbulence (km/s)        
-      (default is 'model' meaning taken from the model atmosphere)  
+      a negative value triggers the use of the DF16 equation
+      (default is None to take it from the model atmosphere)  
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
       (default taken from input model atmosphere)
@@ -1297,13 +1295,13 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
 
   atmostype, teff, logg, vmicro2, abu2, nd, atmos = read_model(modelfile)
 
-  if vmicro == 'model': 
+  if vmicro is None: 
       vmicro = vmicro2
-  elif vmicro == 'df16':
+  elif vmicro < 0.0:
       vmicro = 0.998 + 3.16e-4*(teff-5500.) -0.253*(logg-4.0) 
       -2.86e-4*(teff-5500.)*(logg-4.0) +0.165*(logg-4.0) 
 
-  if abu == None: abu = abu2
+  if abu is None: abu = abu2
 
   if save:
       out = open(modelfile+'.dlt','w')
@@ -1474,7 +1472,7 @@ def mkflt(dltfile,wavelengths,blocks=[],fwhm=0.0,unit='km/s',outdir='.'):
 
 
 def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
-    vmicro='model', vrot=0.0, fwhm=0.0, vmacro=0.0, nfe=0.0, \
+    vmicro=None, vrot=0.0, fwhm=0.0, vmacro=0.0, nfe=0.0, \
     linelist=linelist0, atom='ap18', \
     steprot=0.0, stepfwhm=0.0,  clean=True, save=None, lte=True):
 
@@ -1494,9 +1492,10 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
       (default taken from input model atmosphere)
-  vmicro: float, can be an iterable, or a string ('model', 'df16') 
-      microturbulence (km/s)        
-      (default is 'model' meaning taken from the model atmosphere)
+  vmicro: float, can be an iterable 
+      microturbulence (km/s)       
+      a negative value triggers the use of the DF16 equation 
+      (default is None to take it from the model atmosphere)
   vrot: float, can be an iterable
       projected rotational velocity (km/s)
       (default 0.)
@@ -1557,16 +1556,12 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
 
 
   #when vmicro, vrot, fwhm or nitrogen are not iterables, we create ones, otherwise we copy them
-  if vmicro == 'model' or vmicro == 'df16':
+  try: 
+    nvmicro = len(vmicro)
+    vmicros = vmicro
+  except TypeError:
     nvmicro = 1
-    vmicros = [ vmicro ]
-  else:
-    try: 
-      nvmicro = len(vmicro)
-      vmicros = vmicro
-    except TypeError:
-      nvmicro = 1
-      vmicros = [ vmicro ] 
+    vmicros = [ vmicro ] 
   try: 
     nvrot = len(vrot)
     vrots = vrot
@@ -1640,6 +1635,7 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
               linelist, entry = checksynspec(linelist,entry)
               atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
             abu1[6] = abu1[6] * 10.**nfe1
+
 
           x, y, z = syn(entry, wrange, dw=None, strength=strength, vmicro=vmicro1, \
           abu=abu1, linelist=linelist, atom=atom, lte=lte, clean=False, compute=False, tmpdir=".")
@@ -2004,11 +2000,15 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
 def grid_builder(config,  modeldir=modeldir):
 
     conf = load_conf(config)
+
+    wrange = tuple(map(float,conf['wrange'].split()))
+    if 'vmicro' in conf: vmicro = float(conf['vmicro'])
     
     for entry in conf['grids']:
-
+       print('grid=',entry)
        os.mkdir(entry)
        os.chdir(entry)
+       if 'vmicro' in conf[entry]:  vmicro = float(conf[entry]['vmicro']) 
        if conf[entry]['type'] == 'marcs':
           files = collect_marcs(modeldir=modeldir, 
                    tteff = tuple(map(float,conf[entry]['tteff'].split())),
@@ -2017,9 +2017,8 @@ def grid_builder(config,  modeldir=modeldir):
                    tafe  = tuple(map(float,conf[entry]['tafe'].split())),
                    tcfe  = tuple(map(float,conf[entry]['tcfe'].split())),
                    ignore_missing_models = True,
-                   ext = 'mod')
-                   
-        elif conf[entry]['type'] == 'kurucz':
+                   ext = 'mod')                   
+       elif conf[entry]['type'] == 'kurucz':
           files = collect_kurucz(modeldir=modeldir, 
                    tteff = tuple(map(float,conf[entry]['tteff'].split())),
                    tlogg = tuple(map(float,conf[entry]['tlogg'].split())), 
@@ -2028,12 +2027,11 @@ def grid_builder(config,  modeldir=modeldir):
                    tcfe  = tuple(map(float,conf[entry]['tcfe'].split())),
                    ignore_missing_models = True,
                    ext = 'mod')
-        else:
-          print('only APOGEE marcs or kurucz models are accepted'
+       else:
+          print('only APOGEE marcs or kurucz models are accepted')
           continue
                              
-       polysyn(files, wrange= conf['wrange'], 
-                   vmicro = conf['vmicro'])
+       polysyn(files, wrange = wrange, vmicro = vmicro )
                    
        os.chdir('..')
        
@@ -2359,7 +2357,7 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
                     filename = (sformat % (teff,logg,mcode,ceil(abs(feh)*10.),ccode,cfe*10.,acode,ceil(abs(afe)*10.)))
 
                     file = glob.glob(os.path.join(modeldir,filename))
-                    print(file)
+                    print(filename,file)
                     assert len(file) < 2, 'Multiple files matching the pattern'
                     if len(file) < 1: 
                       file = 'missing'
@@ -2523,7 +2521,7 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
            tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0),  
            tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0), 
            trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), 
-           vmicro='adopted', nfe=0.0, vrot=0.0, fwhm=0.0, vmacro=0.0, 
+           vmicro=None, nfe=0.0, vrot=0.0, fwhm=0.0, vmacro=0.0, 
            wrange=None, dw=None, logw=0, ignore_missing_models=False, **elements):
 
 
@@ -2560,9 +2558,9 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
     [r/Fe] triad (r-elements abundance ratio)
   sfeh: tuple
     [s.Fe] triad (s-elements abundance ratio)
-  vmicro: float, optional, can be an iterable, or string ('adopted')
+  vmicro: float, optional, can be an iterable
       microturbulence (km/s) 
-      (default is to adopt whatever was used in the calculation)
+      (default is None to adopt whatever was used in the calculation)
   nfe: float, can be an iterable
       [N/Fe] nitrogen abundance change from the one specified in the array     
       'abu' (dex)
@@ -2722,20 +2720,16 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
     print('Error: sfe triad must have three elements (n, llimit, step)')
     return ()
 
-  if vmicro == 'adopted':
+  try: 
+    nvmicro = len(vmicro)
+    vmicros = vmicro
+    pars.append('vmicro')
+    n_p.append(len(vmicros))    
+    steps.append(vmicros[1]-vmicros[0])
+    llimits.append(vmicros[0])
+  except TypeError:
     nvmicro = 1
-    vmicros = [ vmicro ]
-  else:
-    try: 
-      nvmicro = len(vmicro)
-      vmicros = vmicro
-      pars.append('vmicro')
-      n_p.append(len(vmicros))    
-      steps.append(vmicros[1]-vmicros[0])
-      llimits.append(vmicros[0])
-    except TypeError:
-      nvmicro = 1
-      vmicros = [ vmicro ] 
+    vmicros = [ vmicro ] 
   try: 
     nnfe1 = len(nfe)
     nfes1 = nfe
@@ -2916,7 +2910,7 @@ def mkgrid_old(synthfile=None, tteff=None, tlogg=None,
            tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0),  
            tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0), 
            trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), 
-           vmicro='adopted', nfe=0.0, vrot=0.0, fwhm=0.0, vmacro=0.0, 
+           vmicro=None, nfe=0.0, vrot=0.0, fwhm=0.0, vmacro=0.0, 
            wrange=None, dw=None, logw=0, ignore_missing_models=False):
 
 
@@ -2947,7 +2941,7 @@ def mkgrid_old(synthfile=None, tteff=None, tlogg=None,
     [r/Fe] triad (r-elements abundance ratio)
   sfeh: tuple
     [s.Fe] triad (s-elements abundance ratio)
-  vmicro: float, optional, can be an iterable, or string ('adopted')
+  vmicro: float, optional, can be an iterable
       microturbulence (km/s) 
       (default is taken from the model atmosphere)
   nfe: float, can be an iterable
@@ -3056,16 +3050,12 @@ def mkgrid_old(synthfile=None, tteff=None, tlogg=None,
     print('Error: sfe triad must have three elements (n, llimit, step)')
     return ()
 
-  if vmicro == 'adopted':
+  try: 
+    nvmicro = len(vmicro)
+    vmicros = vmicro
+  except TypeError:
     nvmicro = 1
-    vmicros = [ vmicro ]
-  else:
-    try: 
-      nvmicro = len(vmicro)
-      vmicros = vmicro
-    except TypeError:
-      nvmicro = 1
-      vmicros = [ vmicro ] 
+    vmicros = [ vmicro ] 
   try: 
     nnfe1 = len(nfe)
     nfes1 = nfe
@@ -3241,7 +3231,7 @@ def mkgrid_old(synthfile=None, tteff=None, tlogg=None,
 def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
               tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0),   \
               trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), \
-              vmicro='adopted', nfe=0.0, vrot=0.0, fwhm=0.0, vmacro=0.0, **elements):	  
+              vmicro=None, nfe=0.0, vrot=0.0, fwhm=0.0, vmacro=0.0, **elements):	  
 
   """Returns a dictionary for a FERRE regular grid defined by triads in 
   various parameters. Each triad has three values (n, llimit, step)
@@ -3277,7 +3267,7 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
     [r/Fe] triad (r-elements abundance ratio)
   sfeh: tuple
     [s.Fe] triad (s-elements abundance ratio)
-  vmicro: float, optional, can be an iterable, or a string ('adopted')
+  vmicro: float, optional, can be an iterable
       microturbulence (km/s) 
       (default is taken from the model atmosphere)
   nfe: float, can be an iterable
@@ -3370,7 +3360,7 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
     labels.append('[s/Fe]')
     llimits.append(tsfe[1])
     steps.append(tsfe[2])
-  if vmicro != 'adopted' and  np.abs(np.max(vmicro)) > 1e-7 and not np.isscalar(vmicro):
+  if np.abs(np.max(vmicro)) > 1e-7 and not np.isscalar(vmicro):
     ndim = ndim + 1    
     n_p.append(len(vmicro))
     labels.append('vmicro')
@@ -3497,7 +3487,7 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
 
   
 def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,   
-           vmicro='adopted', vrot=0.0, fwhm=0.0, vmacro=0.0, 
+           vmicro=None, vrot=0.0, fwhm=0.0, vmacro=0.0, 
            wrange=None, dw=None, logw=0, ignore_missing_models=False,**elements):
 
 
@@ -3519,7 +3509,7 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
     Activate to track this parameter
   feh: tuple
     Activate to track this parameter
-  vmicro: float, optional, can be an iterable, or a string ('adopted')
+  vmicro: float, optional, can be an iterable
       microturbulence (km/s) 
       (default is taken from the model atmosphere: 'model')
   vrot: float, can be an iterable
@@ -3555,16 +3545,12 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
 
   """
 
-  if vmicro == 'adopted':
+  try: 
+    nvmicro = len(vmicro)
+    vmicros = vmicro
+  except TypeError:
     nvmicro = 1
-    vmicros = [ vmicro ]
-  else:
-    try: 
-      nvmicro = len(vmicro)
-      vmicros = vmicro
-    except TypeError:
-      nvmicro = 1
-      vmicros = [ vmicro ]  
+    vmicros = [ vmicro ]  
   try: 
     nvrot = len(vrot)
     vrots = vrot
