@@ -2058,7 +2058,7 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, \
                   tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), \
                   tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), \
                   files_in_folders = True, \
-                  tie_afe=False, ignore_missing_models=False, ext='mod'):
+                  tie_afe=False, ignore_missing_models=False, ext='mod.gz'):
 
   """Collects all the MARCS models in modeldir that are part of a regular grid defined
   by triads in various parameters. Each triad has three values (n, llimit, step)
