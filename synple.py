@@ -2017,7 +2017,7 @@ def grid_builder(config,  modeldir=modeldir):
                    tafe  = tuple(map(float,conf[entry]['tafe'].split())),
                    tcfe  = tuple(map(float,conf[entry]['tcfe'].split())),
                    ignore_missing_models = True,
-                   ext = 'mod')                   
+                   ext = 'mod.gz')                   
        elif conf[entry]['type'] == 'kurucz':
           files = collect_kurucz(modeldir=modeldir, 
                    tteff = tuple(map(float,conf[entry]['tteff'].split())),
@@ -2057,6 +2057,7 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, \
                   tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
                   tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), \
                   tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), \
+                  files_in_folders = True, \
                   tie_afe=False, ignore_missing_models=False, ext='mod'):
 
   """Collects all the MARCS models in modeldir that are part of a regular grid defined
@@ -2088,6 +2089,9 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, \
     [r/Fe] triad (r-elements abundance ratio)
   sfeh: tuple
     [s.Fe] triad (s-elements abundance ratio)
+  files_in_folders: bool
+    True when model files are organized in subfolders by metallicity 
+    (e.g. mod_z+0.00 for solar-metallicity models)
   tie_afe: boolean
     if active, when there is no loop in [alpha/Fe] (n in tafe is 1),
     [alpha/Fe] is tied to [Fe/H]:
@@ -2219,7 +2223,14 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, \
                     sformat = "%s%4i_g%+.1f_%s_z%+.2f_a%+.2f_c%+.2f_n%+.2f_o%+.2f_r%+.2f_s%+.2f."+ext
                     filename = (sformat % (a1,teff,logg,code,feh,afe,cfe,nfe,ofe,rfe,sfe) )
 
-                    file = glob.glob(os.path.join(modeldir,filename))
+                    if files_in_folders:
+                      folder = ("mod_z%+.2f" % (feh) )
+                    else:
+                      folder = ''
+
+                    file = glob.glob(os.path.join(modeldir,folder,filename))
+                    print(filename,file)
+
                     assert len(file) < 2, 'Multiple files matching the pattern'
                     if len(file) < 1: 
                       file = 'missing'
