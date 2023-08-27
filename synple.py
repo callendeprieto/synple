@@ -121,7 +121,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       selecting lines (default is 1e-4)
   vmicro: float
       microturbulence (km/s)  
-      a negative value triggers the use of the DF16 equation      
+      a negative value triggers the use of the APOGEE DR14 equation      
       (default is None to adopt the value in the model atmosphere)  
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
@@ -214,8 +214,10 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   if vmicro is None:
       vmicro = vmicro2
   elif vmicro < 0.0:
-      vmicro = 0.998 + 3.16e-4*(teff-5500.) -0.253*(logg-4.0)
-      -2.86e-4*(teff-5500.)*(logg-4.0) +0.165*(logg-4.0)
+      #Holtzman et al. 2015, AJ 150, 148
+      vmicro = 2.478 - 0.325 * logg
+
+  print('teff,logg,vmicro=',teff,logg,vmicro)
 
   if abu is None: abu = abu2
   #we take a step of 1/3 of the Gaussian (thermal + micro) FWHM at the lowest T and for an atomic mass of 100
@@ -468,7 +470,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       selecting lines (default is 1e-4)
   vmicro: float
       microturbulence (km/s)
-      a negative value triggers the use from the DF16 equation        
+      a negative value triggers the use from the APOGEE DR14 equation        
       (default is 'model' meaning taken from the model atmosphere)  
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
@@ -561,8 +563,9 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   if vmicro is None: 
       vmicro = vmicro2
   elif vmicro < 0.0:
-      vmicro = 0.998 + 3.16e-4*(teff-5500.) -0.253*(logg-4.0) 
-      -2.86e-4*(teff-5500.)*(logg-4.0) +0.165*(logg-4.0) 
+      #Holtzman et al. 2015, AJ 150, 148
+      vmicro = 2.478 - 0.325 * logg
+
 
   if abu is None: abu = abu2
 
@@ -674,7 +677,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       selecting lines (default is 1e-4)
   vmicro: float
       microturbulence (km/s)        
-      a negative value triggers the use of the DF16 equation
+      a negative value triggers the use of the APOGEE DR14 equation
       (default is 'model' meaning taken from the model atmosphere)  
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
@@ -783,8 +786,9 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   if vmicro is None: 
       vmicro = vmicro2
   elif vmicro < 0.0:
-      vmicro = 0.998 + 3.16e-4*(teff-5500.) -0.253*(logg-4.0) 
-      -2.86e-4*(teff-5500.)*(logg-4.0) +0.165*(logg-4.0) 
+      #Holtzman et al. 2015, AJ 150, 148
+      vmicro = 2.478 - 0.325 * logg
+
 
   if abu is None: abu = abu2
 
@@ -904,7 +908,7 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
       (default taken from input model atmosphere)
   vmicro: float
       microturbulence (km/s)        
-      a negative value triggers the use of the DF16 equation
+      a negative value triggers the use of the APOGEE DR14 equation
       (default is None to take the value from the model atmosphere)  
   vrot: float, can be an iterable
       projected rotational velocity (km/s)
@@ -1086,7 +1090,7 @@ abundances for one at a time.
       selecting lines (default is 1e-4)
   vmicro: float
       microturbulence (km/s)        
-      a negative value triggers the use of the DF16 equation
+      a negative value triggers the use of the APOGEE DR14 equation
       (default is None to take it from the model atmosphere)  
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
@@ -1138,8 +1142,9 @@ abundances for one at a time.
   if vmicro is None: 
       vmicro = vmicro2
   elif vmicro < 0.0:
-      vmicro = 0.998 + 3.16e-4*(teff-5500.) -0.253*(logg-4.0) 
-      -2.86e-4*(teff-5500.)*(logg-4.0) +0.165*(logg-4.0) 
+      #Holtzman et al. 2015, AJ 150, 148
+      vmicro = 2.478 - 0.325 * logg
+
 
   if abu is None: abu = abu2
 
@@ -1248,7 +1253,7 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
       selecting lines (default is 1e-4)
   vmicro: float
       microturbulence (km/s)        
-      a negative value triggers the use of the DF16 equation
+      a negative value triggers the use of the APOGEE DR14 equation
       (default is None to take it from the model atmosphere)  
   abu: array of floats (99 elements), optional
       chemical abundances relative to hydrogen (N(X)/N(H))
@@ -1298,8 +1303,9 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
   if vmicro is None: 
       vmicro = vmicro2
   elif vmicro < 0.0:
-      vmicro = 0.998 + 3.16e-4*(teff-5500.) -0.253*(logg-4.0) 
-      -2.86e-4*(teff-5500.)*(logg-4.0) +0.165*(logg-4.0) 
+      #Holtzman et al. 2015, AJ 150, 148
+      vmicro = 2.478 - 0.325 * logg
+
 
   if abu is None: abu = abu2
 
@@ -1494,7 +1500,7 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
       (default taken from input model atmosphere)
   vmicro: float, can be an iterable 
       microturbulence (km/s)       
-      a negative value triggers the use of the DF16 equation 
+      a negative value triggers the use of the APOGEE DR14 equation 
       (default is None to take it from the model atmosphere)
   vrot: float, can be an iterable
       projected rotational velocity (km/s)
