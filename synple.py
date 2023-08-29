@@ -2002,6 +2002,92 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
                     print( "cannot exit dir hyd%07d" % (idir) )		  
 
   return()
+  
+def mergeslurm(path='./',ext='slurm',nmerge=2,concurrent=False):
+  """identifies all the *.slurm files in the path and merge them 
+     in groups of nmerge so that there are fewer/longer jobs. 
+     The scripts are named job-*.slurm and written to the current folder
+
+  Parameters
+  ----------
+  path: str
+     path under which the slurm jobs are to be found
+     (default is './')
+  ext: str
+     extension of the slurm jobs to be found
+     (default is 'slurm')
+  nmerge: int
+     size of the groups to be created
+     (default is 2)
+  concurrent: bool
+     whether or not the grouped jobs are to be executed concurrently
+     (default is False, so the jobs in a group are to be executed serially)
+     
+  Returns
+  -------
+  None
+  
+  """
+
+  slurms = glob.glob(os.path.join(path,'**','*'+ext), recursive=True)
+
+  nfiles = len(slurms)
+
+  assert nfiles > 0, 'There are no input files ending in '+ext
+
+  k = 0 
+  wtime = -1
+  print('nfiles=',nfiles)
+  for i in range(nfiles):
+    f1 = open(slurms[i],'r')
+    j = i % nmerge
+    if j == 0:
+      k = k + 1
+      if k > 1: 
+        if wtime > -1:
+          if concurrent: time = int(time*3.) #factor 3 is a safety margin
+          entries = header[wtime].split('=')
+          header[wtime] = entries[0]+'='+str(time)+'\n'
+        f2.writelines(header)
+        if concurrent: body.append("wait\n")
+        f2.writelines(body)
+        f2.close()
+      f2 = open('job-'+"{:04d}".format(k)+'.slurm','w')
+      time = 0
+      header = []
+      body = []
+    if concurrent: 
+      body.append("(\n")
+    for line in f1: 
+      if line[0] == "#":
+        if j == 0: header.append(line)
+        if '--time' in line:
+          entries = line.split('=') 
+          newtime = int(entries[1])
+          if concurrent: 
+            if newtime > time: time = newtime
+          else:
+            time = time + newtime
+          if j == 0: wtime = len(header)-1
+      else:
+        body.append(line)
+    if concurrent:
+      body.append(") & \n")
+
+  if wtime > -1: 
+    if concurrent: time = int(time*3.) #factor 3 is a safety margin
+    entries = header[wtime].split('=')
+    header[wtime] = entries[0]+'='+str(time)+'\n' 
+  f2.writelines(header)
+  if concurrent: body.append("wait\n")
+  f2.writelines(body)
+  f2.close()
+    
+
+  print(slurms)
+
+  return None
+  
 
 def grid_builder(config,  modeldir=modeldir):
 
