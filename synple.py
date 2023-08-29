@@ -2003,7 +2003,7 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
 
   return()
   
-def mergeslurm(path='./',ext='slurm',nmerge=2,concurrent=False):
+def merge_slurm(path='./',ext='slurm',nmerge=2,concurrent=False):
   """identifies all the *.slurm files in the path and merge them 
      in groups of nmerge so that there are fewer/longer jobs. 
      The scripts are named job-*.slurm and written to the current folder
