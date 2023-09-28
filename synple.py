@@ -2139,7 +2139,7 @@ def merge_slurm_parallel(path='./',ext='slurm',nmerge=2,ncpu=2):
           header[wtime] = entries[0]+'='+str(time)+'\n'
         f2.writelines(header)
         f2.write('module load gnuparallel\n')
-        f2.writelines('parallel -j'+str(ncpu)+" :::: "+"input-"+"{:04d}".format(k)+".txt\n")
+        f2.writelines('parallel -j'+str(ncpu)+" :::: "+"input-"+"{:04d}".format(k-1)+".txt\n")
         for entry in infiles: f3.write(entry+'\n')
         f2.close()
         f3.close()
@@ -2149,24 +2149,25 @@ def merge_slurm_parallel(path='./',ext='slurm',nmerge=2,ncpu=2):
       header = []
       infiles = []
 
+    infiles.append(slurms[i])
+
     for line in f1: 
       if line[0] == "#":
         if j == 0: header.append(line)
         if '--time' in line:
           entries = line.split('=') 
           newtime = int(entries[1])
-          if newtime > time: time = newtime
+          time = time + newtime
           if j == 0: wtime = len(header)-1
-      else:
-        infiles.append(slurms[i])
 
   if wtime > -1: 
-    if concurrent: time = int(time*3.) #factor 3 is a safety margin
+    time = int(time/ncpu*1.3) #factor 1.3 is a safety margin
     entries = header[wtime].split('=')
     header[wtime] = entries[0]+'='+str(time)+'\n' 
 
   f2.writelines(header)
   f2.write('module load gnuparallel\n')
+  f2.write('module load gnu\n')
   f2.write('parallel -j'+str(ncpu)+" :::: "+"input-"+"{:04d}".format(k)+".txt\n")
   for entry in infiles: f3.write(entry+'\n')
   f2.close()
