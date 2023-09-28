@@ -2088,6 +2088,97 @@ def merge_slurm(path='./',ext='slurm',nmerge=2,concurrent=False):
 
   return None
   
+  
+def merge_slurm_parallel(path='./',ext='slurm',nmerge=2,ncpu=2):
+  """identifies all the *.slurm files in the path and merge them 
+     in groups of nmerge so that there are fewer/longer jobs. 
+     Inside of the new jobs, gnu parallel will be used to have ncpu
+     of the input jobs run simultaneously.
+     The new scripts are named job-*.slurm and written to the current 
+     folder
+
+  Parameters
+  ----------
+  path: str
+     path under which the slurm jobs are to be found
+     (default is './')
+  ext: str     extension of the slurm jobs to be found
+     (default is 'slurm')
+  nmerge: int
+     size of the groups to be created
+     (default is 2)
+     
+  ncpu: int
+     number of the input jobs to be run simultaneously 
+     as part of the output jobs
+     
+  Returns
+  -------
+  None
+  
+  """
+
+  slurms = glob.glob(os.path.join(path,'**','*'+ext), recursive=True)
+
+  nfiles = len(slurms)
+
+  assert nfiles > 0, 'There are no input files ending in '+ext
+
+  k = 0 
+  wtime = -1
+  print('nfiles=',nfiles)
+  for i in range(nfiles):
+    f1 = open(slurms[i],'r')
+    j = i % nmerge
+    if j == 0:
+      k = k + 1
+      if k > 1: 
+        if wtime > -1:
+          if concurrent: time = int(time*3.) #factor 3 is a safety margin
+          entries = header[wtime].split('=')
+          header[wtime] = entries[0]+'='+str(time)+'\n'
+        f2.writelines(header)
+        f2.write('module load gnuparallel\n')
+        f2.writelines('parallel -j'+str(ncpu)+" :::: "+"input-"+"{:04d}".format(k)+".txt\n")
+        for entry in infiles: f3.write(entry+'\n')
+        f2.close()
+        f3.close()
+      f2 = open('job-'+"{:04d}".format(k)+'.slurm','w')
+      f3 = open('input-'+"{:04d}".format(k)+'.txt','w')
+      time = 0
+      header = []
+      infiles = []
+
+    for line in f1: 
+      if line[0] == "#":
+        if j == 0: header.append(line)
+        if '--time' in line:
+          entries = line.split('=') 
+          newtime = int(entries[1])
+          if newtime > time: time = newtime
+          if j == 0: wtime = len(header)-1
+      else:
+        infiles.append(slurms[i])
+
+  if wtime > -1: 
+    if concurrent: time = int(time*3.) #factor 3 is a safety margin
+    entries = header[wtime].split('=')
+    header[wtime] = entries[0]+'='+str(time)+'\n' 
+
+  f2.writelines(header)
+  f2.write('module load gnuparallel\n')
+  f2.write('parallel -j'+str(ncpu)+" :::: "+"input-"+"{:04d}".format(k)+".txt\n")
+  for entry in infiles: f3.write(entry+'\n')
+  f2.close()
+  f3.close()
+  
+    
+
+  print(slurms)
+
+  return None
+  
+  
 
 def grid_builder(config,  modeldir=modeldir):
 
