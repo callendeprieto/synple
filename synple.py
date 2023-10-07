@@ -4478,6 +4478,7 @@ def rbf_apply(synthfile,c,par):
 
   print('applying coefficients ..')
   for i in np.arange(nfreq):
+    print('freq i / nfreq=',i,nfreq)
     if i == 0:
       res = c[i](par2)
     else:
