@@ -4438,7 +4438,7 @@ def rbf_get(synthfile, kernel='thin_plate_spline'):
   c = []
   for i in np.arange(nfreq):
     print('freq i / nfreq=',i,nfreq)
-    c.append(RBFInterpolator(iarr, d [:, i], kernel=kernel, neighbors = 200 ))
+    c.append(RBFInterpolator(iarr, d [:, i], kernel=kernel, neighbors = 300 ))
 
   return(c)
 
