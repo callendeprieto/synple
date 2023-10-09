@@ -6995,6 +6995,8 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
           xx,yy = lgconv(x,y,fwhmval,ppr=ppr)
       else:
         xx,yy = x, y          
+    else: 
+      xx,yy = x,y
       
     #apply extinction
     if 'E(B-V)' in labels:
