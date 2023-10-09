@@ -4420,7 +4420,7 @@ def rbf_get(synthfile, kernel='thin_plate_spline'):
 
   Returns
   -------
-  c: - array of RBFInterpolator objects to interpolate in the grid
+  c: - RBFInterpolator object to interpolate in the grid
 
   """
 
@@ -4435,10 +4435,7 @@ def rbf_get(synthfile, kernel='thin_plate_spline'):
   iarr = getaa(n_p)
 
   print('deriving interpolation coefficients...')
-  c = []
-  for i in np.arange(nfreq):
-    print('freq i / nfreq=',i,nfreq)
-    c.append(RBFInterpolator(iarr, d [:, i], kernel=kernel, neighbors = 300 ))
+  c= RBFInterpolator(iarr, d, kernel=kernel, neighbors = 100 )
 
   return(c)
 
@@ -4451,7 +4448,7 @@ def rbf_apply(synthfile,c,par):
   ----------
   synthfile: string
    Name of the FERRE synthfile to interpolate in
-  c: array of RBFInterpolate objects 
+  c: RBFInterpolate object 
    previously
    derived from calling rbf_get
   par: array of floats
@@ -4477,12 +4474,7 @@ def rbf_apply(synthfile,c,par):
     par2[:,i] = (par[:,i] - llimits[i] ) / steps[i] 
 
   print('applying coefficients ..')
-  for i in np.arange(nfreq):
-    print('freq i / nfreq=',i,nfreq)
-    if i == 0:
-      res = c[i](par2)
-    else:
-      res = np.vstack((res,c[i](par2)))
+  res = c(par2)
 
   return(res)
   
