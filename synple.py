@@ -4409,7 +4409,7 @@ def getaa(n_p, dtype=int):
   
     return(aa)
 
-def rbf_get(synthfile, kernel='thin_plate_spline'):
+def rbf_get(synthfile, kernel='thin_plate_spline', neighbors=100):
   """Computes RBF coefficients for interpolation in an input FERRE grid
   Parameters
   ----------
@@ -4417,6 +4417,9 @@ def rbf_get(synthfile, kernel='thin_plate_spline'):
    Name of the FERRE synthfile to interpolate in
   kernel: string
    Type of RBF function (linear, thin_plate_spline, cubic, gaussian ...)
+  neighbors: int
+   Number of nearest neighbors used to compute the interpolation coefficients 
+   for each grid point
 
   Returns
   -------
@@ -4435,7 +4438,7 @@ def rbf_get(synthfile, kernel='thin_plate_spline'):
   iarr = getaa(n_p)
 
   print('deriving interpolation coefficients...')
-  c= RBFInterpolator(iarr, d, kernel=kernel, neighbors = 100 )
+  c= RBFInterpolator(iarr, d, kernel=kernel, neighbors = neighbors )
 
   return(c)
 
