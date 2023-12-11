@@ -4344,46 +4344,46 @@ def write_synth(synthfile,d,hdr=None):
 
     return(None)			
 
-			
-def fill_synth(d,function='cubic'):
+def fill_synth(d,kernel='thin_plate_spline', neighbors=100):
     """
-    Completes data rows with zeros interpolating using Rbf from 
+    Completes data rows with zeros interpolating using RBF from 
     non-zero rows 
+    ----------
+    d: float
+      2D array with data (first dim is number of spectra, 2nd number of frequencies)
+    kernel: string
+      Type of RBF function (linear, thin_plate_spline, cubic, gaussian ...)
+    neighbors: int
+      Number of nearest neighbors used to compute the interpolation coefficients
+      for each grid point
+
+    Returns
+    -------
+    a new version of the array d with the rows with zeros replaced by interpolated data
+
     """
     
-    from scipy.interpolate import Rbf
+    from scipy.interpolate import RBFInterpolator
     
     ndim = d.ndim-1
     n_p = d.shape[:-1]
     nfreq = d.shape[-1]	
     
-    dd = np.reshape(d.copy(), (np.product(n_p),nfreq) )
-    dd2 = np.sum(dd, dd.ndim-1)
-    wi = np.where(dd2 + 1e-31 > 1e-30)[0]
-    wo = np.where(dd2 + 1e-31 < 1e-30)[0]
-
-    print(wi)
-    print(wo)
+    ds = np.sum(d, 1)
+    wi = np.where(ds + 1e-31 > 1e-30)[0]
+    wo = np.where(ds + 1e-31 < 1e-30)[0]
 
     print('ndim=',ndim)
     print('n_p=',n_p)
 
     #get loop indices for entries in grid
     iarr = getaa(n_p)
-    
-    for i in np.arange(nfreq):
-      print('freq i=',i)
-      print('coeff. calculation ...')
-      
-      rbfi  = Rbf(*np.transpose(iarr[wi]), dd [ wi, i ], 
-                  function=function )
-      print('interpolation...')
-      dd [ wo , i ] = rbfi (*np.transpose(iarr[wo]))
-    
-    d2 = np.reshape(dd, tuple(n_p)+(nfreq,) ) 
+    c = RBFInterpolator(iarr[wi,:], d[wi,:], kernel=kernel, neighbors = neighbors )
+    d2 = d.copy()
+    d2[wo,:] = c(iarr[wo])
     
     return(d2)
-    
+        
 
 def getaa(n_p, dtype=int):
     """
@@ -6982,16 +6982,16 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
     if 'FWHM' in labels:
       w = np.where(np.array(labels) == 'FWHM')
       fwhmval = par[w[0][0]]
-      print(fwhmval)
-      if fwhmval > 1.e-7:
-        if units == 'km/s':
-          xx,yy = vgconv(x,y,fwhmval,ppr=ppr)
-        else:
-          xx,yy = lgconv(x,y,fwhmval,ppr=ppr)
+    else:
+      fwhmval = fwhm
+    print('fwhmval=',fwhmval)
+    if fwhmval > 1.e-7:
+      if units == 'km/s':
+        xx,yy = vgconv(x,y,fwhmval,ppr=ppr)
       else:
-        xx,yy = x, y          
-    else: 
-      xx,yy = x,y
+        xx,yy = lgconv(x,y,fwhmval,ppr=ppr)
+    else:
+      xx,yy = x, y          
       
     #apply extinction
     if 'E(B-V)' in labels:
