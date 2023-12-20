@@ -78,7 +78,7 @@ isdf = ['CIA_H2H2.dat',  'CIA_H2H.dat', 'CIA_H2He.dat', 'CIA_HHe.dat', \
         'tsuji.molec_bc2']
 
 #other stuff
-clight = 299792.458
+clight = 299792.458 # km/s
 epsilon = 0.6 #clv coeff.
 bolk = 1.38054e-16  # erg/ K
 zero = " 0 "
@@ -89,7 +89,7 @@ two =  " 2 "
 
 def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
-    steprot=0.0, stepfwhm=0.0,  lineid=False, tag=False,  \
+    steprot=0.0, stepfwhm=0.0,  intensity=False, lineid=False, tag=False,  \
     clean=True, save=False, synfile=None, \
     lte=None, compute=True, tmpdir=None):
 
@@ -151,6 +151,10 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   stepfwhm: float
       wavelength step for Gaussian convolution (angstroms)
       set to 0. for automatic adjustment (default 0.)
+  intensity: bool
+      set to True to include an array with intensities  at mu=0.1,0.2,...,1.0 in the output
+      -- no broadening due to macro, rotation or instrumental/fwhm effects are considered
+      (default False)
   lineid: bool
       set to True to add line identifications to the ouput. They will take the form
       of a list with three arrays (wavelengths, lineids and predicted EWs) 
@@ -194,6 +198,11 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   cont: numpy array of floats
       continuum flux (same units as flux)
 
+  ---- if intensity is True
+  inte: 2D numpy array of floats
+      intensity (I_nu in ergs/s/cm2/Hz/strad) for mu=0.1,0.2,...,1.0
+
+
   ---- if lineid (or tag) is True
   lalilo: list with three arrays
         la: numpy array of floats
@@ -217,7 +226,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       #Holtzman et al. 2015, AJ 150, 148
       vmicro = 2.478 - 0.325 * logg
 
-  print('teff,logg,vmicro=',teff,logg,vmicro)
+  #print('teff,logg,vmicro=',teff,logg,vmicro)
 
   if abu is None: abu = abu2
   #we take a step of 1/3 of the Gaussian (thermal + micro) FWHM at the lowest T and for an atomic mass of 100
@@ -239,7 +248,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
 
   print(modelfile,'is a',atmostype,' model')
-  print ('teff,logg,vmicro=',teff,logg,vmicro)
+  print('teff,logg,vmicro=',teff,logg,vmicro)
   #print ('abu=',abu)
   #print (len(abu))
   #print ('nd=',nd)
@@ -296,7 +305,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     if teff < 3000.: cutoff0=1500. 
   write55(wrange,dw=space,imode=imode,iprin=iprin, inlte=inlte, hydprf=2, \
           cutoff0=cutoff0,strength=strength,vmicro=vmicro,   \
-          linelist=linelist,atmostype=atmostype)
+          linelist=linelist,atmostype=atmostype,intensity=intensity)
   #synspec control file
   writetas('tas',nd,linelist,nonstd=nonstd)               #non-std param. file
   create_links(linelist)                                  #auxiliary data
@@ -306,6 +315,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     wave = None
     flux = None  
     cont = None
+    if intensity: inte = None
 
   else:
 
@@ -333,6 +343,17 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     if np.any(np.diff(wave2) <= 0.0):
       wave2,win = np.unique(wave2,return_index=True)
       flux2 = flux2[win]
+    if intensity:
+      assert (os.path.isfile('fort.10')), 'Error: I cannot read the file *fort.10* in '+tmpdir
+      iwave, inte = read10('fort.10')
+      if np.any(np.diff(iwave) <= 0.0):
+        iwave, win = np.unique(iwave,return_index=True)
+        inte = inte[win,:]
+      assert (np.max(iwave-wave) < 1e-7), 'Error: the wavelengths of the intensity (fort.10) and flux arrays  (fort.7) are not the same'
+      assert (fwhm < 1e-7), 'Error: computing the intensity at various angles is not compatible with the fwhm keyword'
+      assert (vmacro < 1e-7), 'Error: computing the intensity at various angles is not compatible with the vmacro keyword'
+      assert (vrot < 1e-7), 'Error: computing the intensity at various angles is not compatible with the vrot keyword'
+
     if dw == None and fwhm <= 0. and vrot <= 0.: cont = np.interp(wave, wave2, flux2)
     end = time.time()
     print('syn ellapsed time ',end - start, 'seconds')
@@ -357,6 +378,12 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
         wave3 = np.arange(nsamples)*dw + wrange[0]
       cont = np.interp(wave3, wave2, flux2)
       flux = np.interp(wave3, wave, flux)
+      if intensity:
+        nmu = 10
+        inte2 = np.zeros((nsamples,nmu))
+        for entry in range(nmu): 
+          inte2[:,entry] = np.interp(wave3, wave, inte[:,entry])
+        inte = inte2
       #flux = interp_spl(wave3, wave, flux)      
       wave = wave3
 
@@ -435,9 +462,15 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       np.savetxt(synfile,(wave,flux,cont),header=header)
 
   if lineid: 
-    s = wave, flux, cont, [la,li,lo]
+    if intensity:
+      s = wave, flux, cont, inte, [la,li,lo]
+    else:
+      s = wave, flux, cont, [la,li,lo]
   else:
-    s = wave, flux, cont
+    if intensity:
+      s = wave, flux, cont, inte
+    else:
+      s = wave, flux, cont
 
   if tag: tags(s)
 
@@ -446,7 +479,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
 def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
-    steprot=0.0, stepfwhm=0.0, lineid=False, tag=False,  \
+    steprot=0.0, stepfwhm=0.0, intensity=False, lineid=False, tag=False,  \
     clean=True, save=False, synfile=None, \
     lte=False, compute=True, nthreads=0):
 
@@ -500,6 +533,10 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   stepfwhm: float
       wavelength step for Gaussian convolution (angstroms)
       set to 0. for automatic adjustment (default 0.)
+  intensity: bool
+      set to True to include an array with intensities  at mu=0.1,0.2,...,1.0 in the output
+      -- no broadening due to macro, rotation or instrumental/fwhm effects are considered      
+      (default False)
   lineid: bool
       set to True to add line identifications to the ouput. They will take the form
       of a list with three arrays (wavelengths, lineids and predicted EWs) 
@@ -540,8 +577,12 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   cont: numpy array of floats
       continuum flux (same units as flux)
 
+  ---- if intensity is True
+  inte: 2D numpy array of floats
+      intensity (I_nu in ergs/s/cm2/Hz/strad) for mu=0.1,0.2,...,1.0
 
----- if lineid (or tag) is True 
+
+  ---- if lineid (or tag) is True 
   lalilo: list with three arrays
         la: numpy array of floats
             wavelenghts of lines (angstroms)
@@ -589,7 +630,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
     pararr = [modelfile, wrange1, dw, strength, vmicro, abu, \
       linelist, atom, vrot, fwhm, vmacro, \
-      steprot, stepfwhm,  lineid, tag, clean, False, None, lte, \
+      steprot, stepfwhm,  lineid, intensity, tag, clean, False, None, lte, \
       compute, tmpdir+'-'+str(i) ]
     pars.append(pararr)
 
@@ -653,7 +694,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
 def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
-    steprot=0.0, stepfwhm=0.0,  lineid=False, tag=False, \
+    steprot=0.0, stepfwhm=0.0,  intensity=False, lineid=False, tag=False, \
     clean=True, save=False, synfile=None, \
     lte=False, compute=True, nthreads=0):
 
@@ -707,6 +748,10 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   stepfwhm: float
       wavelength step for Gaussian convolution (angstroms)
       set to 0. for automatic adjustment (default 0.)
+  intensity: bool
+      set to True to include an array with intensities  at mu=0.1,0.2,...,1.0 in the output
+      -- no broadening due to macro, rotation or instrumental/fwhm effects are considered      
+      (default False)
   lineid: bool
       set to True to add line identifications to the ouput. They will take the form
       of a list with three arrays (wavelengths, lineids and predicted EWs) 
@@ -747,6 +792,10 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   cont: numpy array of floats
       continuum flux (same units as flux)
 
+ ---- if intensity is True
+  inte: 2D numpy array of floats
+      intensity (I_nu in ergs/s/cm2/Hz/strad) for mu=0.1,0.2,...,1.0
+
  ---- if lineid (or tag) is True
   lalilo: list with three arrays
         la: numpy array of floats
@@ -767,11 +816,13 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     wrange,tmpdir = vari
 
     modelfile,dw,strength,vmicro,abu,linelist, \
-    atom,vrot,fwhm,vmacro,steprot,stepfwhm,lineid,tag,clean,save,synfile,compute = cons
+    atom,vrot,fwhm,vmacro,steprot,stepfwhm,intensity, \
+    lineid,tag,clean,save,synfile,compute = cons
 
     s = syn(modelfile, wrange, dw, strength, vmicro, abu, \
               linelist, atom, vrot, fwhm, vmacro, \
-              steprot, stepfwhm,  lineid, tag, clean, save, synfile, \
+              steprot, stepfwhm,  intensity,  \
+              lineid, tag, clean, save, synfile, \
               lte, compute, tmpdir)
 
     return(s)
@@ -804,7 +855,8 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   ray.init(num_cpus=nthreads)
 
   rest = [ modelfile,dw,strength,vmicro,abu,linelist, \
-    atom,vrot,fwhm,vmacro,steprot,stepfwhm,lineid,tag,clean,False,None,compute ]
+    atom,vrot,fwhm,vmacro,steprot,stepfwhm,intensity, \
+    lineid,tag,clean,False,None,compute ]
 
   constants = ray.put(rest)
 
@@ -1971,7 +2023,7 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
 
                   write55(wrange,dw=space,imode=imode,iprin=0,inlte=0,hydprf=0,      \
                           cutoff0=cutoff0, strength=strength, vmicro=vmicro, \
-                          linelist=linelist)
+                          linelist=linelist, intensity=intensity)
 
                   write5(9999.,9.9,abu2,atom)
                   
@@ -5003,7 +5055,7 @@ def read55(filename='fort.55'):
 
 def write55(wrange,dw=1e-2,imode=0,iprin=0,inlte=0,hydprf=2,cutoff0=200., \
   strength=1e-4,vmicro=1.0, \
-  linelist=linelist0, atmostype='kurucz'):
+  linelist=linelist0, atmostype='kurucz',intensity=False):
 
 
   #imode,idst,iprin
@@ -5039,6 +5091,7 @@ def write55(wrange,dw=1e-2,imode=0,iprin=0,inlte=0,hydprf=2,cutoff0=200., \
   else: f.write(str(ll-1) + ' ' + ' '.join(map(str,np.arange(ll-1)+20)))
   f.write("\n")
   f.write( ' %f  \n' % (vmicro) )
+  if intensity: f.write( ' %i  %f %i \n' % (10, 0.1, 1) )
   f.close()
 
 def write5(teff,logg,abu, atom='ap18', ofile='fort.5', inlte=0, atommode=None, atominfo=None):
@@ -5248,6 +5301,28 @@ def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8'):
   f.close()
 
   return()
+
+
+def read10(file='fort.10'):
+#read output synspec file with specific intensities
+#returning wavelengths and intensities in the file
+
+  f = open(file,'r')
+  x =  []
+  y = [] 
+  for line in f:
+    entries = line.split()
+    if len(entries) == 2: 
+     x.append(entries[0]) 
+    else:
+     y.extend(entries)
+ 
+
+  iwave = np.array(x,dtype=float)
+  inte = np.array(y,dtype=float).reshape(len(x),int(len(y)/len(x)))
+
+  return(iwave,inte)
+  
   
 
 def create_links(linelist):
@@ -7289,7 +7364,8 @@ def fun(parvalues, *args ):
   out = syn( modelfile, wrange , dw=dw, strength=strength , \
     vmicro=vmicro, abu=abu, \
     linelist=linelist, atom=atom, vrot=vrot, fwhm=fwhm, vmacro=vmacro, \
-    steprot=steprot, stepfwhm=stepfwhm,  lineid=False, tag=False,  \
+    steprot=steprot, stepfwhm=stepfwhm,  intensity=False, \
+    lineid=False, tag=False,  \
     clean=True, save=False, synfile=None, lte=None, compute=True, tmpdir=None)
 
   chi = np.sum( (ydata - np.interp(xdata, out[0], out[1]/out[2]) )**2)

@@ -3329,7 +3329,7 @@ c
          end do
        endif
       endif
-  641 FORMAT(1H ,f10.3,1pe15.5/(1P5E15.5))
+  641 FORMAT(1H ,F15.5,1PE15.5/(1P5E15.5))
 c
 c     end of the global loop over frequencies
 c
@@ -3451,8 +3451,8 @@ C
   602 FORMAT(3(2X,F9.3,F8.4,F7.3))
   603 FORMAT(/,'  EQUIVALENT WIDTH THIS SET  =',2F8.1,' mA'/
      *            '  EQUIVALENT WIDTH TOTAL     =',2F8.1,' mA'//)
-  616 FORMAT(2F12.3,4F12.1)
-  701 FORMAT(F12.5,1PE15.5)
+  616 FORMAT(2F13.3,4F12.1)
+  701 FORMAT(F15.5,1PE15.5)
       RETURN
       END
 C
@@ -9836,7 +9836,7 @@ c    *                      STR0,EQW,APR,i,j
          END DO
       END DO
 C
-  601 FORMAT(F10.3,2X,2A4,F7.2,F12.3,1PE11.2,0PF8.1,1X,A4,2i3)
+  601 FORMAT(F13.3,2X,2A4,F7.2,F12.3,1PE11.2,0PF8.1,1X,A4,2i3)
 C
       RETURN
       END
@@ -13346,7 +13346,7 @@ C
       WRITE(18,641) WLAM(IJ),FLX,(RINT(1,IMU),IMU=1,NMU0)
       end if
   100 CONTINUE
-  641 FORMAT(1H ,f10.3,1pe15.5/(1P5E15.5))
+  641 FORMAT(1H ,F15.5,1PE15.5/(1P5E15.5))
 c  
 c     call rtedfe for the internal points
 c
@@ -13504,7 +13504,7 @@ C
          WRITE(18,618) WLAM(IJ),FLUX(IJ),(RINT1(IMU),IMU=1,NMUS)
       END IF
       end if
-  618 FORMAT(1H ,f10.3,1pe15.5/(1P5E15.5))
+  618 FORMAT(1H ,F15.5,1PE15.5/(1P5E15.5))
 C
 C     if needed (if iprin.ge.3), output of interesting physical
 C     quantities at the monochromatic optical depth  tau(nu)=2/3
@@ -18552,7 +18552,7 @@ C
   602 FORMAT(/1H ,13X,
      * 'LAMBDA  MOLECULE  LOG GF       ELO    LINE/CONT',2X,
      * 'EQ.WIDTH',8x,'AGAM'/)
-  603 FORMAT(F11.3,2X,A4,4X,F7.2,F12.3,1PE11.2,0PF8.1,1X,A4,
+  603 FORMAT(F13.3,2X,A4,4X,F7.2,F12.3,1PE11.2,0PF8.1,1X,A4,
      *       i4,1PE10.2)
 C
   100 CONTINUE
