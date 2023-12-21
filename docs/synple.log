@@ -1,8 +1,8 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=latex 2023.6.1)  21 DEC 2023 13:46
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=latex 2023.6.2)  21 DEC 2023 13:50
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**synple
+**synple.tex
 (./synple.tex
 LaTeX2e <2021-11-15> patch level 1
 L3 programming layer <2022-01-21>
@@ -333,11 +333,13 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <14.4> on input line 407.
 LaTeX Font Info:    Trying to load font information for OMS+cmtt on input line 
 427.
- (/usr/share/texmf/tex/latex/R/tex/latex/omscmtt.fd
-File: omscmtt.fd 
-)
-LaTeX Font Info:    Font shape `OMS/cmtt/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 427.
+LaTeX Font Info:    No file OMScmtt.fd. on input line 427.
+
+
+LaTeX Font Warning: Font shape `OMS/cmtt/m/n' undefined
+(Font)              using `OMS/cmsy/m/n' instead
+(Font)              for symbol `textbraceleft' on input line 427.
+
 
 Underfull \hbox (badness 10000) in paragraph at lines 409--434
 
@@ -355,16 +357,19 @@ Underfull \hbox (badness 10000) in paragraph at lines 409--434
 
 [10] [11] (./synple.aux)
 
+LaTeX Font Warning: Some font shapes were not available, defaults substituted.
+
+
 LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 1533 strings out of 478288
- 25445 string characters out of 5849316
- 331070 words of memory out of 5000000
- 19747 multiletter control sequences out of 15000+600000
+ 1523 strings out of 480172
+ 25207 string characters out of 5894516
+ 326269 words of memory out of 5000000
+ 19495 multiletter control sequences out of 15000+600000
  475275 words of font info for 48 fonts, out of 8000000 for 9000
- 1141 hyphenation exceptions out of 8191
- 55i,9n,62p,699b,265s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 59 hyphenation exceptions out of 8191
+ 55i,9n,62p,703b,265s stack positions out of 5000i,500n,10000p,200000b,80000s
 
 Output written on synple.dvi (11 pages, 34388 bytes).
