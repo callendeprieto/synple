@@ -398,7 +398,7 @@ In [10]: plt.show().
 \begin{figure}[t!]
 \centering
 \includegraphics[width=14cm]{Figure_8.ps}
-\caption{.
+\caption{Example of the computation of emergent specific intensities I$_{\nu}$ for various directions.
 \label{intensity-fig}
 }
 \end{figure}
@@ -424,14 +424,15 @@ In [4]: for angle in range(10): plt.plot(wave,inte[:,angle])
 \\
 In [5]: for angle in range(10): plt.text(6160.2,max(inte[:,angle]),'$\mu=$'+"0.%d" % angle )}
 \\
-In [6]: plt.ylabel('I\$\_{nu}\$ (erg/s/cm2/Hz)')
+In [6]: plt.ylabel('I\$\_\{nu\}\$ (erg/s/cm2/Hz)')
 \\
 In [7]: plt.xlabel('Wavelength (angstroms)')
 \\
 In [8]: plt.show()
 \\
+}
 
-\noindent which will produce the graph shown in Fig. \ref{intensity}. Note that this option is not compatible with the broadening parameters {\tt fwhm}, {\tt vrot} or {\tt vmacro}.
+\noindent which will produce the graph shown in Fig. \ref{intensity-fig}. Note that this option is not compatible with the broadening parameters {\tt fwhm}, {\tt vrot} or {\tt vmacro}.
 
 
 \section{References}
