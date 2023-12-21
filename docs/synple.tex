@@ -333,7 +333,7 @@ Here is a quick overview of the various tools.
 \item lambda\_synth(synthfile): extracts the wavelength array
 \item read\_synth(synthfile,nd=False): reads the header, parameters and fluxes from a file
 \item write\_synth(synthfile,d,hdr=None): writes a grid to file
-\item fill\_synth(d,function='cubic'): fills-in missing data using Radial Basis Functions (RBF) interpolation
+\item fill\_synth(d,kernel='thin\_plate\_spline',neighbors=100): fills-in missing data using Radial Basis Functions (RBF) interpolation
 \item rbf\_get(synthfile, kernel='thin\_plate\_spline'): finds the coefficients for RBF interpolation
 \item rbf\_apply(synthfile,c,par): applies the RBF coefficients to interpolate
 \item gsynth(synthfile,...): applies smoothing and reddening to an existing grid
@@ -393,6 +393,46 @@ In [10]: plt.show().
 \\
 
 \noindent which will produce the output shown in Figure \ref{opacity-fig}.
+
+
+\begin{figure}[t!]
+\centering
+\includegraphics[width=14cm]{Figure_8.ps}
+\caption{.
+\label{intensity-fig}
+}
+\end{figure}
+
+
+\section{Computing emergent intensities $I_{\nu}$}
+
+It is very easy to tweak the basic routine {\it syn} (see Sect. \ref{6162}), or the parallel versions {\it polysyn} or {\it raysyn}, to output the specific intensity as a function of the angle from the vertical ($\theta$). One simply needs to set the keyword {\tt intensity} to true, as in the following example. When this is activated the output from {\tt syn} will change from a tuple with 3 arrays (4 if {\tt tag} is set, as explained in Sect. \ref{tag}) to a tuple with 4 arrays (5 if {\tt tag} is set), and the 4th array will be a 2D matrix with the emergent intensity for 10 inclinations corresponding to $\mu \equiv = \cos \theta = 0.1, 0.2, \dots, 1.0$.
+\\
+\\
+\noindent {\tt 
+In [1]: from synple import syn
+\\
+In [2]: import matplotlib.pyplot as plt
+\\
+In [3]: wave, flux, con, inte = syn('ksun.mod', (6160,6164), intensity=True )                     \\    
+/home/callende/synple/models/ksun.mod is a kurucz  model
+\\
+teff,logg,vmicro= 5777.0 4.437 2.0 \\
+syn ellapsed time   16.27164101600647 seconds \\
+\\
+In [4]: for angle in range(10): plt.plot(wave,inte[:,angle])
+\\
+In [5]: for angle in range(10): plt.text(6160.2,max(inte[:,angle]),'$\mu=$'+"0.%d" % angle )}
+\\
+In [6]: plt.ylabel('I\$\_{nu}\$ (erg/s/cm2/Hz)')
+\\
+In [7]: plt.xlabel('Wavelength (angstroms)')
+\\
+In [8]: plt.show()
+\\
+
+\noindent which will produce the graph shown in Fig. \ref{intensity}. Note that this option is not compatible with the broadening parameters {\tt fwhm}, {\tt vrot} or {\tt vmacro}.
+
 
 \section{References}
 

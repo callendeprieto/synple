@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=latex 2023.6.2)  2 AUG 2023 20:06
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=latex 2023.6.2)  21 DEC 2023 12:57
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -304,6 +304,12 @@ Underfull \hbox (badness 10000) in paragraph at lines 326--328
 
  []
 
+
+Overfull \hbox (0.14017pt too wide) in paragraph at lines 336--337
+[]\OT1/cmr/m/n/10 fill[]synth(d,kernel='thin[]plate[]spline',neighbors=100): fi
+lls-in miss-ing data us-ing Ra-dial Ba-sis Func-
+ []
+
 File: Figure_7.ps Graphic file (type eps)
 <Figure_7.ps>
 Underfull \hbox (badness 10000) in paragraph at lines 369--374
@@ -320,18 +326,61 @@ Underfull \hbox (badness 10000) in paragraph at lines 381--394
 
  []
 
-[9] [10] (./synple.aux)
+[9]
+File: Figure_8.ps Graphic file (type eps)
+ <Figure_8.ps>
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <14.4> on input line 407.
+
+Underfull \hbox (badness 10000) in paragraph at lines 409--433
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 409--433
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 409--433
+
+ []
+
+[10]
+
+LaTeX Warning: Reference `intensity' on page 11 undefined on input line 434.
+
+
+Overfull \hbox (7.113pt too wide) in paragraph at lines 434--435
+\OT1/cmtt/m/n/10 which will produce the graph shown in Fig. []. Note that this 
+option is not compatible
+ []
+
+
+Overfull \hbox (5.50212pt too wide) in paragraph at lines 440--441
+[]\OT1/cmtt/m/n/10 Allende Prieto, C., Fern^^Sandez-Alvar, E., Schlesinger, K. 
+J., et al. 2014, A&A, 568,
+ []
+
+[11] (./synple.aux)
+
+LaTeX Warning: There were undefined references.
+
 
 LaTeX Warning: There were multiply-defined labels.
 
- ) 
+ )
+(\end occurred inside a group at level 1)
+
+### simple group (level 1) entered at line 412 ({)
+### bottom level 
 Here is how much of TeX's memory you used:
- 1503 strings out of 480172
- 24912 string characters out of 5894516
- 326260 words of memory out of 5000000
- 19478 multiletter control sequences out of 15000+600000
- 474660 words of font info for 46 fonts, out of 8000000 for 9000
+ 1513 strings out of 480172
+ 25070 string characters out of 5894516
+ 326269 words of memory out of 5000000
+ 19487 multiletter control sequences out of 15000+600000
+ 475275 words of font info for 48 fonts, out of 8000000 for 9000
  59 hyphenation exceptions out of 8191
  55i,9n,62p,703b,265s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on synple.dvi (10 pages, 32048 bytes).
+Output written on synple.dvi (11 pages, 34124 bytes).
