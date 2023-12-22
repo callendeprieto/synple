@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=latex 2023.6.2)  21 DEC 2023 13:50
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=latex 2023.6.2)  22 DEC 2023 00:47
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -332,26 +332,26 @@ File: Figure_8.ps Graphic file (type eps)
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <14.4> on input line 407.
 LaTeX Font Info:    Trying to load font information for OMS+cmtt on input line 
-427.
-LaTeX Font Info:    No file OMScmtt.fd. on input line 427.
+425.
+LaTeX Font Info:    No file OMScmtt.fd. on input line 425.
 
 
 LaTeX Font Warning: Font shape `OMS/cmtt/m/n' undefined
 (Font)              using `OMS/cmsy/m/n' instead
-(Font)              for symbol `textbraceleft' on input line 427.
+(Font)              for symbol `textbraceleft' on input line 425.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 409--434
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 409--434
+Underfull \hbox (badness 10000) in paragraph at lines 409--432
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 409--434
+Underfull \hbox (badness 10000) in paragraph at lines 409--432
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 409--432
 
  []
 
@@ -372,4 +372,4 @@ Here is how much of TeX's memory you used:
  59 hyphenation exceptions out of 8191
  55i,9n,62p,703b,265s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on synple.dvi (11 pages, 34388 bytes).
+Output written on synple.dvi (11 pages, 34400 bytes).

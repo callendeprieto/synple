@@ -398,7 +398,7 @@ In [10]: plt.show().
 \begin{figure}[t!]
 \centering
 \includegraphics[width=14cm]{Figure_8.ps}
-\caption{Example of the computation of emergent specific intensities I$_{\nu}$ for various directions. The units are in erg cm$^2$ s$^2$ Hz$^{-1}$ steradian$^{-1}$.
+\caption{Example of the computation of emergent specific intensities I$_{\nu}$ for various directions ($\mu = \cos \theta = 1$ the highest and $\mu = \cos \theta = 0.1$ the lowest). The units are in erg cm$^{-2}$ s$^{-1}$ Hz$^{-1}$ steradian$^{-1}$.
 \label{intensity-fig}
 }
 \end{figure}
@@ -422,13 +422,11 @@ syn ellapsed time   16.27164101600647 seconds \\
 \\
 In [4]: for angle in range(10): plt.plot(wave,inte[:,angle])
 \\
-In [5]: for angle in range(10): plt.text(6160.2,max(inte[:,angle]),'$\mu=$'+"0.%d" % angle )}
+In [5]: plt.ylabel('I\$\_\{nu\}\$ (erg/s/cm2/Hz)')
 \\
-In [6]: plt.ylabel('I\$\_\{nu\}\$ (erg/s/cm2/Hz)')
+In [6]: plt.xlabel('Wavelength (angstroms)')
 \\
-In [7]: plt.xlabel('Wavelength (angstroms)')
-\\
-In [8]: plt.show()
+In [7]: plt.show()
 \\
 }
 
