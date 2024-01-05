@@ -4271,7 +4271,7 @@ def lambda_synth(synthfile):
 #read a synthfile
 def read_synth(synthfile,nd=False):
     """
-  Reads a FERRE spectral grid from disk
+  Reads a FERRE spectral grid from disk. It can be in picked.
 
   Parameters
   ----------
@@ -4295,65 +4295,85 @@ def read_synth(synthfile,nd=False):
 
     """
 
-
-    #header	
-    meta=0
-    multi=0
-    file=open(synthfile,'r')
-    line=file.readline()
-    header={}
-    nlines=1
-    while (1):
+    if synthfile[-6:] == "pickle":
+        import pickle 
+        file=open(synthfile,'rb')
+        header, pars, data = pickle.load(file)
+        file.close()
+    else:
+        #header	
+        meta=0
+        multi=0
+        file=open(synthfile,'r')
         line=file.readline()
-        nlines+=1
-        part=line.split('=')
-        if (len(part) < 2): 
-          meta=meta+1
-          if (meta>multi): 
-            if multi>0: multi_header.append(header)
-            break
-          else:
-            if (meta > 1): multi_header.append(header)
-            header={}
+        header={}
+        nlines=1
+        while (1):
             line=file.readline()
             nlines+=1
-        else:
-          k=part[0].strip()
-          v=part[1].strip()
-          header[k]=v.strip("'")
-          if k == 'MULTI': 
-            multi=int(v)
-            multi_header=[]
-    if (multi > 1): 
+            part=line.split('=')
+            if (len(part) < 2): 
+              meta=meta+1
+              if (meta>multi): 
+                if multi>0: multi_header.append(header)
+                break
+              else:
+                if (meta > 1): multi_header.append(header)
+                header={}
+                line=file.readline()
+                nlines+=1
+            else:
+              k=part[0].strip()
+              v=part[1].strip()
+              header[k]=v.strip("'")
+              if k == 'MULTI': 
+                multi=int(v)
+                multi_header=[]
+        if (multi > 1): 
       
-      header=multi_header
-    file.close()
+          header=multi_header
+        file.close()
 
-    if type(header) is list:
-        header0 = header[0]
-    else:
-        header0 = header
+        if type(header) is list:
+            header0 = header[0]
+        else:
+            header0 = header
 
-    #data
-    data=np.loadtxt(synthfile, skiprows=nlines, dtype=float)
+        #data
+        data=np.loadtxt(synthfile, skiprows=nlines, dtype=float)
 
-    #parameters
-    ndim = int(header0['N_OF_DIM']) 
-    if ('TYPE' in header0 and header0['TYPE'] == 'irregular'):
-        pars = data[:,0:ndim]
-        data = data[:,ndim:]
-    else:
-        llimits = np.array(header0['LLIMITS'].split(),dtype=float)
-        steps = np.array(header0['STEPS'].split(),dtype=float)
-        snp=header0['N_P']
-        n_p = tuple(np.array(snp.split(),dtype=int)) + (-1,)
-        if nd:  data = np.reshape( data, n_p)
-        n_p = n_p[:-1]
-        pars = getaa(n_p, dtype=float)*steps + llimits
+        #parameters
+        ndim = int(header0['N_OF_DIM']) 
+        if ('TYPE' in header0 and header0['TYPE'] == 'irregular'):
+            pars = data[:,0:ndim]
+            data = data[:,ndim:]
+        else:
+            llimits = np.array(header0['LLIMITS'].split(),dtype=float)
+            steps = np.array(header0['STEPS'].split(),dtype=float)
+            snp=header0['N_P']
+            n_p = tuple(np.array(snp.split(),dtype=int)) + (-1,)
+            if nd:  data = np.reshape( data, n_p)
+            n_p = n_p[:-1]
+            pars = getaa(n_p, dtype=float)*steps + llimits
 
 
 
     return header,pars,data
+    
+def pickle_synth(synthfile):
+	"""
+	Reads a (text) FERRE grid and rewrites it to disk in pickle
+	(binary) format with the extension .pickle
+	"""
+	
+	import pickle
+	
+	h, p, d = read_synth(synthfile)
+	file = open(synthfile[:-3]+'pickle', 'wb')
+	pickle.dump( (h, p, d), file)
+	file.close()
+	
+	return()
     
 def write_synth(synthfile,d,hdr=None):
     """
