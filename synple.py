@@ -4219,31 +4219,38 @@ def create_irregular_kurucz(n,pteff=None, plogg =None, \
   
 #extract the header of a synthfile
 def head_synth(synthfile):
-    meta=0
-    multi=0
-    file=open(synthfile,'r')
-    line=file.readline()
-    header={}
-    while (1):
+    if synthfile[-6:] == "pickle":
+        import pickle
+        file=open(synthfile,'rb')
+        header, pars, data = pickle.load(file)
+        file.close()
+    else:
+        meta=0
+        multi=0
+        file=open(synthfile,'r')
         line=file.readline()
-        part=line.split('=')
-        if (len(part) < 2): 
-          meta=meta+1
-          if (meta>multi): 
-            if multi>0: multi_header.append(header)
-            break
-          else:
-            if (meta > 1): multi_header.append(header)
-            header={}
+        header={}
+        while (1):
             line=file.readline()
-        else:
-          k=part[0].strip()
-          v=part[1].strip()
-          header[k]=v
-          if k == 'MULTI': 
-            multi=int(v)
-            multi_header=[]
-    if (multi > 1): header=multi_header
+            part=line.split('=')
+            if (len(part) < 2): 
+              meta=meta+1
+              if (meta>multi): 
+                if multi>0: multi_header.append(header)
+                break
+              else:
+                if (meta > 1): multi_header.append(header)
+                header={}
+                line=file.readline()
+            else:
+              k=part[0].strip()
+              v=part[1].strip()
+              header[k]=v
+              if k == 'MULTI': 
+                multi=int(v)
+                multi_header=[]
+        if (multi > 1): header=multi_header
+
     return header
 
 #extract the wavelength array for a FERRE synth file
@@ -4271,7 +4278,7 @@ def lambda_synth(synthfile):
 #read a synthfile
 def read_synth(synthfile,nd=False):
     """
-  Reads a FERRE spectral grid from disk. It can be in picked.
+  Reads a FERRE spectral grid from disk. It can be pickled.
 
   Parameters
   ----------
