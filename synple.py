@@ -4409,6 +4409,10 @@ def write_synth(synthfile,d,hdr=None):
         hdr['COMMENTS2'] = "'"+osinfo[0]+' '+osinfo[2]+'.'+osinfo[4]+' running on '+osinfo[1]+"'"
         hdr['COMMENTS3'] = "'pwd is "+pwd+"'"
 
+    else:
+        ndim = int(hdr['N_OF_DIM']) 
+        n_p = list(map(int,hdr['N_P'].split()))
+
     fout = open(synthfile,'w')
     fout.write(' &SYNTH\n')
     for entry in hdr: fout.write(' '+entry + ' = ' + hdr[entry] + '\n')
