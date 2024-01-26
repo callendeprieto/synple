@@ -56,8 +56,9 @@ import yaml
 from math import ceil
 from scipy import interpolate
 from scipy.signal import savgol_filter
-import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
 from itertools import product
+import matplotlib.pyplot as plt
 
 #configuration
 #synpledir = /home/callende/synple
@@ -2844,6 +2845,7 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
   None
 
   """
+
 
   pars = []
   n_p = []
@@ -6887,7 +6889,6 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
   from extinction import apply,ccm89
   from synple import vgconv
   import numpy as np
-  from itertools import product
   clight = 299792.458
 
   if outsynthfile is None: 
@@ -7407,7 +7408,241 @@ def fun(parvalues, *args ):
   print('chi=',chi)
   
   return(chi)
-  
+
+def clchi(d,ff,ee):
+    #chi = np.sum((d-ff)**2/ee**2,-1) #slow and serial
+    #chi = np.matmul((d-ff)**2,1./ee**2)   #faster and can be parallel 
+    chi = np.sum((d-ff)**2,-1)   #a bit faster 
+    #chi = np.sum(ne.evaluate('(d-ff)**2/ee**2'),-1)
+    #chi = mat_mul((d-ff)**2,1./ee**2)  
+    chi = chi/np.min(chi)
+
+    return(np.exp(-chi*100.))
+
+
+def ce(p,d,y,yerr):
+
+    """Contrast-Enhanced
+    """
+		
+    likeli = clchi( d, y, yerr)
+
+    #parameters
+    ndim = len(p[0,:])
+    res = np.zeros(ndim)
+    eres = np.zeros(ndim)
+    cov = np.zeros(ndim*(ndim+1)//2)
+    den = np.sum(likeli)
+    k = 0
+    for i in range(ndim):
+        #parameters
+        res[i] = np.sum(likeli * p[:,i])/den
+        
+        #uncertainties
+        for j in range(ndim-i):
+          cov[k] = np.sum(likeli * (p[:,i] - res[i]) * (p[:,j+i] - res[j+i]) )/den 
+          if j == 0: eres[i] = np.sqrt(cov[k])
+          k = k + 1
+      
+        #best-fitting model
+        bflx = np.matmul(likeli,d)/den
+        #bflx = [0.0,0.0]
+        
+    print('res=',res,'eres=',eres)
+      
+    return(res,eres,cov,bflx)
+
+def bas_lamost(specfile,synthfile='l_lasc1.pickle'):
+
+    """Bayesian-Algorithm Search
+    
+    Parameters
+    ----------
+    synthfile: str
+      name of the model grid
+    opffile: str
+     ...
+    
+    """
+
+    from astropy.io import fits
+    
+    #reading spec file
+    fi = fits.open(specfile)
+    s = fi[1].data
+    wave = np.transpose(s['WAVELENGTH'])[:,0]
+    flux = np.transpose(s['FLUX'])[:,0]
+    ivar = np.transpose(s['IVAR'])[:,0]
+    head = fi[0].header
+    rv = head['HELIO_RV']
+    
+    #read FERRE grid    
+    x = lambda_synth(synthfile)
+    hd, p, d = read_synth(synthfile)   
+    
+    #normalize
+    mf = np.mean(flux)
+    #mf = continuum(flux)
+    flux = flux / mf
+    ivar = ivar * mf**2
+    for entry in range(len(p[:,0])):
+        d[entry,:] = d[entry,:] / np.mean(d[entry,:])
+        #d[entry,:] = d[entry,:] / continuum(d[entry,:])
+    
+    #interpolate data (change to interpolate models)
+    frd = np.interp(x, wave*(1.-rv/clight), flux)
+    ivr = np.interp(x, wave*(1.-rv/clight), ivar)
+    
+    res, eres, cov, mdl = ce( p, d, frd, ivr )
+    delta, edelta = xc(mdl,frd)
+    px = np.arange(len(frd), dtype=float)
+    frd = np.interp(px, px + delta, frd)
+    ivr = np.interp(px, px + delta, ivr)
+    lchi = np.log10( np.sum((mdl-frd)**2*ivr,-1) / (len(mdl) - len(res)) )
+
+    return(res,eres,cov,x,frd,mdl,lchi)
+
+def xc(y1,y2, npoints=None, gaus=False, plot=False):
+    """Determines a pixel offset between two arrays by 
+    cross correlation.
+    
+    Parameters
+    ----------
+    y1 float array
+       Array 1
+
+    y2 float array
+       Array 2    
+       
+    npoints int
+       Number of points to use in fitting a model to the peak
+       of the cross-correlation function
+    
+    gaus bool
+       When True a Gaussian model is used instead of the default
+       parabola
+    
+    plot bool
+       When True the program plots the model fit to the peak of
+       the cross-correlation function
+    
+    Returns
+    -------
+    delta float
+       Shift to apply to y2 to match y1 (max of the cross-correlation
+       function)
+       (units are in pixels)
+       
+    edelta float
+       Uncertainty in delta (pixels)
+    
+    """
+    
+    #set failure values for delta/edetla
+    delta = None
+    e_delta = None
+    
+    nel = len(y1)
+    
+    #basic checks
+    assert nel == len(y2), 'error: the two vectors have different dimensions'
+	
+	#compute the cross-correlation
+	
+    #xlen = len(y1) + len(y2) - 1
+    #x = np.arange(xlen)
+    #ccf = np.correlate(y1,y2,mode='full')
+    #w = np.where(ccf == np.max(ccf))[0]
+        
+    nrange = nel // 2 - 1
+    ccf = np.zeros(2*nrange + 1)
+    for i in np.arange(2*nrange + 1):
+        yy = np.roll(y2,i-nrange)
+        ccf[i] = np.sum(y1*yy)
+                	
+    x = np.arange(len(ccf),dtype=float)-nrange
+    w = np.where(ccf == np.max(ccf))[0]
+    w0 = w[0]
+    
+    if (gaus): 
+        if npoints is None: npoints = 39
+    else:
+        if npoints is None: npoints = 7
+
+    assert npoints <= nel, 'error: npoints > number of elements of the input array'
+    
+    #finding the central pixel from weighted average in a symmetric window
+    nhalf = (npoints - 1) // 2
+    w2 =  np.sum( ccf[w0-nhalf:w0+nhalf+1] * x[w0-nhalf:w0+nhalf+1] ) / np.sum( ccf[w0-nhalf:w0+nhalf+1] ) + nrange
+    w = int(np.rint(w2))  
+
+
+    #dealing with even values of npoints
+    nhalf1 = nhalf
+    nhalf2 = nhalf
+    if (npoints // 2 == int(np.rint(npoints / 2))):
+        if w2 > w:
+            nhalf2 = nhalf2 + 1
+        else:
+            nhalf1 = nhalf1 + 1
+
+    assert nhalf1 + nhalf2 + 1 == npoints, 'error: something is wrong!' 
+    assert ((w-nhalf1 >= 0) and (w+nhalf2 <= len(x)-1)),'error: not enough points to fit'
+    
+    xx = x[w-nhalf1:w+nhalf2+1]
+    yy = ccf[w-nhalf1:w+nhalf2+1]		
+
+    if (gaus):
+        p0 = [np.mean(yy)*2., x[w0], 2.0, np.min(yy)]
+        coef, covar = curve_fit(gauss, xx, yy, p0=p0)
+        delta = coef[1]
+        edelta = covar[1,1]
+        edelta = np.sqrt(edelta)
+        model = gauss(xx,coef[0],coef[1],coef[2],coef[3])
+    else:
+        coef, covar = np.polyfit(xx, yy, 2, cov=True)
+        delta = -coef[1]/2./coef[0]
+        edelta = 1./4./coef[0]**2*(covar[1,1] + coef[1]**2/coef[0]**2*covar[0,0]) - coef[1]/2./coef[0]**3*covar[1,0]		
+        edelta = np.sqrt(edelta)
+        model = coef[0]*xx**2+coef[1]*xx+coef[2]
+
+    if plot:
+        plt.plot(xx,yy,'.')
+        plt.plot(xx,model)
+        plt.show()
+
+
+    return (delta,edelta)
+    
+def gauss(x, *p):
+    A, mu, sigma, base = p
+    return A*np.exp(-(x-mu)**2/(2.*sigma**2)) + base
+    
+def continuum(x, window_length = 500, polyorder = 3):
+	
+    """Smoothing the data in the 1D array x using a 
+    Saviztky-Golay filter
+
+    parameters
+    ----------
+    
+x : 1D array
+    The data to be filtered. If `x` is not a single or double precision
+    floating point array, it will be converted to type ``numpy.float64``
+    before filtering.
+window_length : int
+    The length of the filter window (i.e., the number of coefficients).
+    If `mode` is 'interp', `window_length` must be less than or equal
+    to the size of `x`.
+    (default 50)
+polyorder : int
+    The order of the polynomial used to fit the samples.
+    `polyorder` must be less than `window_length`.
+    (default 3)
+    """    
+    
+    return(savgol_filter(x, window_length, polyorder))	
+
   
 
 if __name__ == "__main__":
