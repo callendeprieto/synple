@@ -6914,9 +6914,13 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
     if "WAVE" in line: wave = np.array(line.split()[2:],dtype=float)
     if "LOGW" in line: logw = int(line.split()[2]) 
     if "RESOLUTION" in line: resolution = float(line.split()[2])
+    if "TYPE" in line: type = str(line.split()[2:])
     hd.append(line)
 
-  assert (len(n_p) == len(steps) & len(n_p) == len(llimits) & len(n_p) == len(labels) & len(n_p) == ndim), 'The dimension of the parameters from the header are inconsistent'
+  if type == 'irregular':
+    assert (len(labels) == ndim), 'The number of LABELS in the header does not agree with the dimension of the grid'
+  else:
+    assert (len(n_p) == len(steps) & len(n_p) == len(llimits) & len(n_p) == len(labels) & len(n_p) == ndim), 'The dimension of the parameters from the header are inconsistent'
 
   assert (units == 'km/s' or units == 'A'), 'units must be either km/s or A'
 
