@@ -7082,14 +7082,6 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
     j = j + 1
     print('line ',j,' of ',ntot)
     print(k,ntot,i)
-    #print(i,steps,llimits)
-    if type == "'irregular'":
-      par = 0
-    else:
-      par = i*steps+llimits
-    #print('par=',par)
-    #print('newcol=',newcol)
-    #print('i[newcol]=',i[newcol])
     if len(newcol) == 0 or all(i[newcol] == 0):
       print('reading!')
       line = fin.readline()
@@ -7099,6 +7091,16 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
         if (abs(freeze[entry] - par[labels.index(entry)]) < 1e-6): skip = False
       if skip: continue
     y = np.array(line.split(),dtype=float)
+    if type == "'irregular'":
+      par = y[:ndim]
+      y = y[ndim:]
+    else:
+      #print(i,steps,llimits)
+      par = i*steps+llimits
+    #print('par=',par)
+    #print('newcol=',newcol)
+    #print('i[newcol]=',i[newcol])
+    
     print('len(y)=',len(y))
     if wrange is not None: y = y [section1]
       
