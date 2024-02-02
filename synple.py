@@ -7073,7 +7073,10 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
   #smooth and write data
   k = 0 #increases only when a line from the original file is used
   j = 0 #increases as we advance through the array ind
-  ntot = np.prod(n_p)
+  if type == "'irregular'": 
+    pass
+  else:
+    ntot = np.prod(n_p)
   for i in ind:
     j = j + 1
     print('line ',j,' of ',ntot)
