@@ -7128,6 +7128,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
 		
     if wrange is not None: yy = yy[section2]
     
+    if type == "'irregular'": np.insert(yy,0,par)
     yy.tofile(fout,sep=" ",format="%0.4e")
     fout.write("\n")
     k = k + 1
