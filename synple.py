@@ -7081,8 +7081,11 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
     j = j + 1
     print('line ',j,' of ',ntot)
     print(k,ntot,i)
-    print(i,steps,llimits)
-    par = i*steps+llimits
+    #print(i,steps,llimits)
+    if type == "'irregular'":
+      par = 0
+    else:
+      par = i*steps+llimits
     #print('par=',par)
     #print('newcol=',newcol)
     #print('i[newcol]=',i[newcol])
