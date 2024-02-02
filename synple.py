@@ -7097,7 +7097,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
     else:
       #print(i,steps,llimits)
       par = i*steps+llimits
-    #print('par=',par)
+    print('par=',par)
     #print('newcol=',newcol)
     #print('i[newcol]=',i[newcol])
     
