@@ -6901,6 +6901,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
   fout = open(outsynthfile,'w')
   hd = []
   labels = []
+  type = "'regular'"
   line = fin.readline()
   hd.append(line)
   while line[1] != "/":
