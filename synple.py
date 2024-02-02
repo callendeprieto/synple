@@ -6979,6 +6979,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
   if type == "'irregular'":
     ind = range(ntot)
     ind_n_p =  list(range(ndim))
+    labels2 = list(labels)
   else:
     ll = []
     ind_n_p = []
