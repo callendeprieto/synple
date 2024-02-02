@@ -6915,6 +6915,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
     if "LOGW" in line: logw = int(line.split()[2]) 
     if "RESOLUTION" in line: resolution = float(line.split()[2])
     if "TYPE" in line: type = str(line.split()[2])
+    if "NTOT" in line: ntot = int(line.split()[2])
     hd.append(line)
 
   if type == "'irregular'":
@@ -6975,23 +6976,27 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
 
   
   #define indices for grid loops
-  ll = []
-  ind_n_p = []
-  i = 0
-  print('labels=',labels)
-  labels2 = []
-  for entry in labels:
-    if freeze is not None:   
-      lfkeys = list(freeze.keys())
-      if entry not in lfkeys: 
-          ind_n_p.append(i)
-          labels2.append(entry)
-    else:
-      ind_n_p.append(i)
-      labels2.append(entry)
-    ll.append(np.arange(n_p[i]))
-    i = i + 1
-  ind = np.array(list(product(*ll)))
+  if type == "'irregular'":
+    ind = range(ntot)
+    ind_n_p =  list(range(ndim))
+  else:
+    ll = []
+    ind_n_p = []
+    i = 0
+    print('labels=',labels)
+    labels2 = []
+    for entry in labels:
+      if freeze is not None:   
+        lfkeys = list(freeze.keys())
+        if entry not in lfkeys: 
+            ind_n_p.append(i)
+            labels2.append(entry)
+      else:
+        ind_n_p.append(i)
+        labels2.append(entry)
+      ll.append(np.arange(n_p[i]))
+      i = i + 1
+    ind = np.array(list(product(*ll)))
   
   if wrange is not None:
     assert (len(wrange) == 2), 'Error: wrange must have two elements'
