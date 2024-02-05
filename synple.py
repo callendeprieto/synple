@@ -4509,12 +4509,6 @@ def rbf_get(synthfile, kernel='thin_plate_spline', neighbors=100):
   Returns
   -------
   c: - RBFInterpolator object to interpolate in the grid
-  
-  pmin: numpy array
-   Array with the minimum values for each of the parameters (columns) in the grid
-   
-  pmax: numpy array
-   Array with the maximum values for each of the parameters (columns) in the grid
 
   """
 
@@ -4523,22 +4517,17 @@ def rbf_get(synthfile, kernel='thin_plate_spline', neighbors=100):
 
   print('reading grid ...')
   h, p, d = read_synth(synthfile)
-  #n_p = np.array(h['N_P'].split(),dtype=int)
-  #nfreq = int(h['NPIX'])
+  n_p = np.array(h['N_P'].split(),dtype=int)
+  nfreq = int(h['NPIX'])
 
-  #iarr = getaa(n_p)
-  pmin = p.min(0)
-  pmax = p.max(0)
-  p = (p - pmin) / (pmax - pmin)
-
+  iarr = getaa(n_p)
 
   print('deriving interpolation coefficients...')
-  #c= RBFInterpolator(iarr, d, kernel=kernel, neighbors = neighbors )
-  c= RBFInterpolator(p, d, kernel=kernel, neighbors = neighbors )
+  c= RBFInterpolator(iarr, d, kernel=kernel, neighbors = neighbors )
 
-  return(c,pmin,pmax)
+  return(c)
 
-def rbf_apply(synthfile,c,pmin,pmax,par):
+def rbf_apply(synthfile,c,par):
   """Interpolates in the FERRE grid in the input file
    using the RBFInterpolate objects in the array c to derive
    fluxes for the parameters in the array par
@@ -4550,12 +4539,6 @@ def rbf_apply(synthfile,c,pmin,pmax,par):
   c: RBFInterpolate object 
    previously
    derived from calling rbf_get
-  pmin: numpy array
-   Array with the minimum values for each of the parameters (columns) in the grid
-   derived from calling rbf_get
-  pmax: numpy array
-   Array with the maximum values for each of the parameters (columns) in the grid
-   derived from calling rbf_get 
   par: array of floats
    array of parameters for interpolation
    rows correspond to different interpolations and columns
@@ -4567,18 +4550,16 @@ def rbf_apply(synthfile,c,pmin,pmax,par):
   #grid parameters from header
   h = head_synth(synthfile)
   ndim = int(h['N_OF_DIM'])
-  #n_p = np.array(h['N_P'].split(),dtype=int)
-  #nfreq = int(h['NPIX'])
-  #steps = np.array(h['STEPS'].split(),dtype=float)
-  #llimits = np.array(h['LLIMITS'].split(),dtype=float)
+  n_p = np.array(h['N_P'].split(),dtype=int)
+  nfreq = int(h['NPIX'])
+  steps = np.array(h['STEPS'].split(),dtype=float)
+  llimits = np.array(h['LLIMITS'].split(),dtype=float)
   
   
-  #map the parameters from physical to [0,1]
+  #map the parameters from physical to indices
   par2 = par.copy()
   for i in range(ndim):
-    #par2[:,i] = (par[:,i] - llimits[i] ) / steps[i] 
-    par2[:,i] = (par[:,i] - pmin[i] ) / (pmax[i] - pmin[i]) 
-    
+    par2[:,i] = (par[:,i] - llimits[i] ) / steps[i] 
 
   print('applying coefficients ..')
   res = c(par2)
