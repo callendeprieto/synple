@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+#-*- coding: utf-8 -*-
 
 """Python wrapper for synspec 
 
@@ -4517,17 +4517,23 @@ def rbf_get(synthfile, kernel='thin_plate_spline', neighbors=100):
 
   print('reading grid ...')
   h, p, d = read_synth(synthfile)
-  n_p = np.array(h['N_P'].split(),dtype=int)
-  nfreq = int(h['NPIX'])
 
-  iarr = getaa(n_p)
+  #n_p = np.array(h['N_P'].split(),dtype=int)
+  #nfreq = int(h['NPIX'])
+  #iarr = getaa(n_p)
 
+  pmin = p.min(0)
+  ptp  = p.ptp(0)
+
+  p2 = (p - pmin) / ptp
+  
   print('deriving interpolation coefficients...')
-  c= RBFInterpolator(iarr, d, kernel=kernel, neighbors = neighbors )
+  #c= RBFInterpolator(iarr, d, kernel=kernel, neighbors = neighbors )
+  c= RBFInterpolator(p2, d, kernel=kernel, neighbors = neighbors )
 
-  return(c)
+  return(c, pmin, ptp)
 
-def rbf_apply(synthfile,c,par):
+def rbf_apply(synthfile,c,pmin,ptp,par):
   """Interpolates in the FERRE grid in the input file
    using the RBFInterpolate objects in the array c to derive
    fluxes for the parameters in the array par
@@ -4550,16 +4556,17 @@ def rbf_apply(synthfile,c,par):
   #grid parameters from header
   h = head_synth(synthfile)
   ndim = int(h['N_OF_DIM'])
-  n_p = np.array(h['N_P'].split(),dtype=int)
-  nfreq = int(h['NPIX'])
-  steps = np.array(h['STEPS'].split(),dtype=float)
-  llimits = np.array(h['LLIMITS'].split(),dtype=float)
+  #n_p = np.array(h['N_P'].split(),dtype=int)
+  #nfreq = int(h['NPIX'])
+  #steps = np.array(h['STEPS'].split(),dtype=float)
+  #llimits = np.array(h['LLIMITS'].split(),dtype=float)
   
   
   #map the parameters from physical to indices
   par2 = par.copy()
   for i in range(ndim):
-    par2[:,i] = (par[:,i] - llimits[i] ) / steps[i] 
+    #par2[:,i] = (par[:,i] - llimits[i] ) / steps[i] 
+    par2[:,i] = (par[:,i] - pmin[i] ) / ptp[i]
 
   print('applying coefficients ..')
   res = c(par2)
