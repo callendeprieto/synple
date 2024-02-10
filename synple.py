@@ -3756,7 +3756,7 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
     Activate to track this parameter
   logg: boolean
     Activate to track this parameter
-  feh: tuple
+  feh: boolean
     Activate to track this parameter
   vmicro: float, optional, can be an iterable
       microturbulence (km/s) 
@@ -3825,10 +3825,17 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
   if feh: pars.append('feh')
   if nvmicro > 1: pars.append('vmicro')
   for entry in elements.keys():
-    pars.append(entry)
+    pars.append('['+entry+'/H]')
   if nvrot > 1: pars.append('vrot')
   if nfwhm > 1: pars.append('fwhm')
   if nvmacro > 1: pars.append('vmacro')
+
+  #track solar reference abundances to set the scale
+  if feh or elements:
+    symbol, mass, sol = elements()
+    solabu = dict()
+    for i in range(len(symbol)):
+      solabu[symbol[i]] = sol[i]
 
 
   hdr = mkhdr_irregular(pars)
@@ -3942,7 +3949,7 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
 
                     imode, iprin, inmod, inlte, hydprf, wrange, cutoff, \
                          strength, dw, molls, vmicro1 = read55(os.path.join(entry,'fort.55'))
-                    feh2 = np.log10(abu['Fe'])+12-7.50
+                    feh2 = np.log10(abu['Fe']) - np.log10(solabu['Fe'])
 	                  
                     print(teff2,logg2,feh2,vmicro1,vmicro2)
 
@@ -3952,8 +3959,7 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
                     if feh: pars.append(feh2)
                     if nvmicro > 1: pars.append(vmicro1)
                     for el in elements.keys():
-                      pars.append(abu[el])
-
+                      pars.append(np.log10(abu[el]) - np.log10(solabu[el]) )
                     iconv = 0
                     for vrot1 in vrots:
                       for fwhm1 in fwhms:
@@ -4567,6 +4573,7 @@ def rbf_apply(synthfile,c,pmin,ptp,par):
   for i in range(ndim):
     #par2[:,i] = (par[:,i] - llimits[i] ) / steps[i] 
     par2[:,i] = (par[:,i] - pmin[i] ) / ptp[i]
+
 
   print('applying coefficients ..')
   res = c(par2)
