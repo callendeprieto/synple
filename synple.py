@@ -3737,7 +3737,7 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
   
 def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,   
            vmicro=None, vrot=0.0, fwhm=0.0, vmacro=0.0, 
-           wrange=None, dw=None, logw=0, ignore_missing_models=False,**elements):
+           wrange=None, dw=None, logw=0, ignore_missing_models=False,**elem):
 
 
 
@@ -3784,7 +3784,7 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
     set to True to avoid stopping when a model is missing,
     in which case a None is entered in the returning list
     
-  **elements: booleans
+  **elem: booleans
     Activate to track additional chemical elements
     e.g. Na=True, Ca=True
  
@@ -3824,14 +3824,14 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
   if logg: pars.append('logg')
   if feh: pars.append('feh')
   if nvmicro > 1: pars.append('vmicro')
-  for entry in elements.keys():
+  for entry in elem.keys():
     pars.append('['+entry+'/H]')
   if nvrot > 1: pars.append('vrot')
   if nfwhm > 1: pars.append('fwhm')
   if nvmacro > 1: pars.append('vmacro')
 
   #track solar reference abundances to set the scale
-  if feh or elements:
+  if feh or elem:
     symbol, mass, sol = elements()
     solabu = dict()
     for i in range(len(symbol)):
@@ -3958,7 +3958,7 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
                     if logg: pars.append(logg2)
                     if feh: pars.append(feh2)
                     if nvmicro > 1: pars.append(vmicro1)
-                    for el in elements.keys():
+                    for el in elem.keys():
                       pars.append(np.log10(abu[el]) - np.log10(solabu[el]) )
                     iconv = 0
                     for vrot1 in vrots:
