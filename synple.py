@@ -4390,14 +4390,17 @@ def pickle_synth(synthfile):
 	
 	return()
     
-def write_synth(synthfile,d,hdr=None):
+def write_synth(synthfile,p,d,hdr=None):
     """
     Writes a FERRE spectral grid to disk
     """
 	
-    ndim = d.ndim-1
-    n_p = d.shape[:-1]
-    npix = d.shape[-1]
+    #ndim = d.ndim-1
+    #n_p = d.shape[:-1]
+    #npix = d.shape[-1]
+    
+    ndim = len(p[0,:])
+    npix = len(d[0,:])
     
     pwd=os.path.abspath(os.curdir)
     nowtime=time.ctime(time.time())
@@ -4409,7 +4412,7 @@ def write_synth(synthfile,d,hdr=None):
         hdr = {}
         hdr['DATE'] = "'"+nowtime+"'"
         hdr['N_OF_DIM'] = str(ndim)
-        hdr['N_P'] = '  '.join(map(str,n_p))
+        #hdr['N_P'] = '  '.join(map(str,n_p))
         for i in range(ndim): hdr['LABEL('+str(i+1)+")"] = "'"+"unknown"+"'"
         hdr['LLIMITS'] = '  '.join(map(str,np.zeros(ndim)))
         hdr['STEPS'] = '  '.join(map(str,np.ones(ndim)))
@@ -4419,7 +4422,7 @@ def write_synth(synthfile,d,hdr=None):
 
     else:
         ndim = int(hdr['N_OF_DIM']) 
-        n_p = list(map(int,hdr['N_P'].split()))
+        #n_p = list(map(int,hdr['N_P'].split()))
 
     fout = open(synthfile,'w')
     fout.write(' &SYNTH\n')
@@ -4427,10 +4430,10 @@ def write_synth(synthfile,d,hdr=None):
     fout.write(' /\n')
 
     #now the data	
-    if ndim > 1:
-        dd = np.reshape( d, (np.product(n_p), npix) )
-    for entry in range(np.product(n_p)):
-        dd[entry,:].tofile(fout,sep=" ",format="%0.4e")
+    #if ndim > 1:
+    #    dd = np.reshape( d, (np.product(n_p), npix) )
+    for entry in range(len(d[:,0])):
+        d[entry,:].tofile(fout,sep=" ",format="%0.4e")
         fout.write("\n")
 
     return(None)			
