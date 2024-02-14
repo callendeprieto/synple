@@ -4518,6 +4518,8 @@ def rbf_get(synthfile, kernel='thin_plate_spline', neighbors=100):
   Returns
   -------
   c: - RBFInterpolator object to interpolate in the grid
+  pmin: array with the minimum values for each parameter in the grid 
+  ptp: array with the peak-to-peak values for each parameter in the grid (max - min)
 
   """
 
