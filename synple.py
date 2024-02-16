@@ -7341,6 +7341,119 @@ def gsynth_old(synthfile,fwhm=0.0,units='km/s',outsynthfile=None,ppr=5,wrange=No
 
   fin.close()
   fout.close()
+
+def xplsf(synthfile,ppr=5):
+	
+  """Takes an input FERRE grid with sufficient resolution (R>1000)
+  and produces an output one with wavelength-dependent resolution
+  approximating the Gaia DR3 XP data
+  """
+
+  #Table describing the resolution R of the externally calibrated spectra (ECS) XP DR3 data in Montegriffo et al. 2023
+  x = np.array([350.,370.,390.,410,430.,450.,470.,490.,510.,530.,550.,570.,590.,610.,630.,640.,660.,680.,700.,720.,740.,760.,780.,800.,820.,840.,860.,880.,900.,920.,940.,960.,980.])
+  y = np.array([71.5,67.2,61.4,55.3,49.9,45.0,41.4,38.0,35.0,32.5,30.0,28.3,25.5,25.2,22.0,74.6,77.8,77.8,76.8,74.5,73.2,71.1,68.8,66.9,65.1,63.4,62.1,60.7,58.2,57.2,54.9,53.8,52.0])
+  y = x/y # FWHM = lambda/R
+  plt.plot(x,x/y,linewidth=3)
+  plt.xlabel('wavelength (nm)')
+  plt.ylabel('R')
+  plt.show()
+  
+  x = x*10.
+  y = y*10.
+
+  vgsynth(synthfile,x,y,wrange=(3600.,9900),ppr=ppr)
+
+def vgsynth(synthfile,wavelength,fwhm,out_synthfile=None,ppr=5,wrange=None,original=False):
+
+  """Variable-width Gaussian convolution
+  This is similar to vgsynth but the FWHM of the Gaussian kernel can change
+  with wavelength.
+  
+  Parameters
+  ----------
+  synthfile: str
+      name of the input FERRE synth file
+  wavelength: array of floats
+      Wavelength (angstroms)
+  fwhm: array of floats
+      FWHM of the Gaussian kernel (in A) for convolution
+  out_synthfile: str
+      name of the output FERRE synth file
+      (default is the same as synth file, but starting with 'n')
+  ppr: float, optional
+      Points per resolution element to sample the convolved spectrum
+      (default is 5, set to None to keep the original sampling)
+  wrange: tuple
+      Starting and ending wavelengths (if a smaller range that
+      the input's is desired)
+      (default None, to keep the original range of the wavelength/fwhm arrays)
+  original: bool
+      Switch to retain the wavelength sample of the original grid in the output one
+      (default False, and the FWHM is resampled with ppr points)
+
+  Returns
+  -------
+  writes out_synthfile with the smooth spectra
+  
+  """
+
+  h, p, d = read_synth(synthfile)
+  xx = lambda_synth(synthfile)
+  
+  ending = synthfile.find('.dat')
+  if ending < -1: 
+      ending = synthfile.find('.pickle')
+  if ending < -1:
+      ending = len(synthfile) + 1
+  root = synthfile[2:ending]
+  if out_synthfile is None: out_synthfile = 'v_'+root+'.dat'
+    
+  gg = np.zeros((len(xx),len(xx)))
+
+  for i in range(len(xx)):
+     sigma = np.interp(xx[i],wavelength,fwhm)/2.355
+     #sigma = xx[i]/50./2.355
+
+     print(xx[i],sigma)
+     gg[i,:] = gauss(xx,1./np.sqrt(2.*np.pi)/sigma,xx[i],sigma,0.0)
+
+  rr = np.matmul(gg,np.transpose(d))
+  d2 = np.transpose(rr)
+
+  if original:
+     xff = xx.copy()
+     d3 = d2.copy() 
+  else:
+    if wrange is None: wrange = (wavelength[0],wavelength[-1])
+    xf = wrange[0]
+    xff = [xf]
+    while xf <= wrange[1]:
+      xf = xf + np.interp(xf,wavelength,fwhm)/ppr
+      xff.append(xf)
+
+    xff = np.array(xff)    
+    d3 = np.zeros( (len(d[:,0]),len(xff)) )
+    for i in range(len(d[:,0])):
+      d3[i,:] = np.interp(xff,xx,d2[i,:])
+      
+
+  h3 = h.copy()
+  h3['NPIX'] = str(len(xff))
+  h3['RESOLUTION'] = str(np.mean(wavelength/fwhm))
+  h3['WAVELENGTHS'] = ' '.join(map(str,xff))
+  #h3['LOGW'] = str(1)
+  h3.pop('LOGW')
+  #h3['WAVE'] = str(np.log10(np.min(xff)))+' '+str( ( np.log10(np.max(xff)) - np.log10(np.min(xff)) ) / len(xff) )
+  h3.pop('WAVE')
+  h3['COMMENTS5'] = "'Data smoothed by Variable-FWHM Gausssian convolution (synple.vgsynth)'"
+  #h3['COMMENTS6'] = "'wavelenghts are NOT linear in loglambda'"
+  #h3['COMMENTS7'] = "'wavelenghts are as following:"+' '.join(map(str,xff))+"'"
+
+
+  write_synth(out_synthfile,p,d3,hdr=h3)
+  xff.tofile(out_synthfile+'.lambda',sep=" ",format="%s")
+
+  return()
   
   
 def fit(xdata, ydata, modelfile, params, bounds,  
