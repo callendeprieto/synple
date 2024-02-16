@@ -7077,7 +7077,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
         if units == 'km/s': 
             line = " RESOLUTION = "+str(clight/np.sqrt(clight**2/resolution**2 + np.min(fwhms)**2))+"\n"
         else:
-            line = " RESOLUTION = "+str(mean(wrange)/np.sqrt(mean(wrange)**2/resolution**2 + np.min(fwhms)**2))+"\n"
+            line = " RESOLUTION = "+str(np.mean(wrange)/np.sqrt(np.mean(wrange)**2/resolution**2 + np.min(fwhms)**2))+"\n"
     if line[1] != "/": fout.write(line)
 
   try: resolution
@@ -7085,7 +7085,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
         if units == 'km/s': 
              line = " RESOLUTION = "+str(clight/np.min(fwhms))+"\n"
         else:
-             line = " RESOLUTION = "+str(mean(wrange)/np.min(fwhms))+"\n"
+             line = " RESOLUTION = "+str(np.mean(wrange)/np.min(fwhms))+"\n"
         fout.write(line)
 
   fout.write(" /\n")
@@ -7296,7 +7296,7 @@ def gsynth_old(synthfile,fwhm=0.0,units='km/s',outsynthfile=None,ppr=5,wrange=No
         if units == 'km/s': 
             line = " RESOLUTION = "+str(clight/np.sqrt(clight**2/resolution**2 + fwhm**2))+"\n"
         else:
-            line = " RESOLUTION = "+str(mean(wrange)/np.sqrt(mean(wrange)**2/resolution**2 + fwhm**2))+"\n"
+            line = " RESOLUTION = "+str(np.mean(wrange)/np.sqrt(np.mean(wrange)**2/resolution**2 + fwhm**2))+"\n"
     if line[1] != "/": fout.write(line)
 
   try: resolution
@@ -7304,7 +7304,7 @@ def gsynth_old(synthfile,fwhm=0.0,units='km/s',outsynthfile=None,ppr=5,wrange=No
         if units == 'km/s': 
              line = " RESOLUTION = "+str(clight/fwhm)+"\n"
         else:
-             line = " RESOLUTION = "+str(mean(wrange)/fwhm)+"\n"
+             line = " RESOLUTION = "+str(np.mean(wrange)/fwhm)+"\n"
         fout.write(line)
 
   fout.write(" /\n")
