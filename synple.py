@@ -7077,7 +7077,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
         if units == 'km/s': 
             line = " RESOLUTION = "+str(clight/np.sqrt(clight**2/resolution**2 + np.min(fwhms)**2))+"\n"
         else:
-            line = " RESOLUTION = "+str(np.mean(wrange)/np.sqrt(np.mean(wrange)**2/resolution**2 + np.min(fwhms)**2))+"\n"
+            line = " RESOLUTION = "+str(np.mean(xx)/np.sqrt(np.mean(xx)**2/resolution**2 + np.min(fwhms)**2))+"\n"
     if line[1] != "/": fout.write(line)
 
   try: resolution
@@ -7411,11 +7411,11 @@ def vgsynth(synthfile,wavelength,fwhm,out_synthfile=None,ppr=5,wrange=None,origi
   gg = np.zeros((len(xx),len(xx)))
 
   for i in range(len(xx)):
-     sigma = np.interp(xx[i],wavelength,fwhm)/2.355
-     #sigma = xx[i]/50./2.355
-
-     print(xx[i],sigma)
-     gg[i,:] = gauss(xx,1./np.sqrt(2.*np.pi)/sigma,xx[i],sigma,0.0)
+     sigma=np.interp(xx[i],wavelength,fwhm)/2.0/np.sqrt(-2.0*np.log(0.5))
+     kernel = np.exp(-(xx-xx[i])**2/2./sigma**2)
+     kernel = kernel/np.sum(kernel)
+     #print(xx[i],sigma)
+     gg[i,:] = kernel/np.sum(kernel)
 
   rr = np.matmul(gg,np.transpose(d))
   d2 = np.transpose(rr)
