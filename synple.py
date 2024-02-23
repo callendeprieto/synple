@@ -7562,15 +7562,14 @@ def fun(parvalues, *args ):
   return(chi)
 
 def clchi(d,ff,ee):
-    #chi = np.sum((d-ff)**2/ee**2,-1) #slow and serial
-    #chi = np.matmul((d-ff)**2,1./ee**2)   #faster and can be parallel 
+    ##chi = np.sum((d-ff)**2/ee**2,-1) #slow and serial
+    ##chi = np.matmul((d-ff)**2,1./ee**2)   #faster and can be parallel 
     chi = np.sum((d-ff)**2,-1)   #a bit faster 
-    #chi = np.sum(ne.evaluate('(d-ff)**2/ee**2'),-1)
-    #chi = mat_mul((d-ff)**2,1./ee**2)  
+    ##chi = np.sum(ne.evaluate('(d-ff)**2/ee**2'),-1)
+    ##chi = mat_mul((d-ff)**2,1./ee**2)  
     chi = chi/np.min(chi)
 
     return(np.exp(-chi*100.))
-
 
 def ce(p,d,y,yerr):
 
