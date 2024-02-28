@@ -5823,7 +5823,7 @@ def read_tlusty_model(modelfile,startdir=None):
     else:
       atmos['dep'] = atm [:,4:]
 
-  return (teff,logg,vmicro,list(abu.values),nd,atmos)
+  return (teff,logg,vmicro,list(abu.values()),nd,atmos)
 
 def read_madaf(madaffile,startdir=None):
   
