@@ -5123,8 +5123,8 @@ def write55(wrange,dw=1e-2,imode=0,iprin=0,inlte=0,hydprf=2,cutoff0=200., \
   inlist = 0
   all_inlist = []
   for file in linelist:
-    inlist = 10
-    if file[-3:] == '.11' : inlist = 11
+    inlist = 0
+    if file[-3:] == '.11' : inlist = 1
     all_inlist.append(inlist)
     assert (inlist - all_inlist[0] == 0), 'The line list files must be all either text or binary!'
 
