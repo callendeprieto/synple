@@ -11074,6 +11074,8 @@ c           AN=TOTN(ID)
             POPUL(J,ID)=POPLTE(J)
          END DO
       END DO
+      WRITE(77,*) ND, 3
+      WRITE(77,504) DM(1:ND) 
       DO ID=1,ND
          WRITE(77,504) TEMP(ID),ELEC(ID),DENS(ID)
       END DO
