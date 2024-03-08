@@ -4268,16 +4268,17 @@ def lambda_synth(synthfile):
     xx=[]
     j=0
     for header in multi_header:
-      tmp=header['WAVE'].split()
-      npix=int(header['NPIX'])
-      step=float(tmp[1])
-      x0=float(tmp[0])
-      x=np.arange(npix)*step+x0
-      if header['LOGW']:
-        if int(header['LOGW']) == 1: x=10.**x
-        if int(header['LOGW']) == 2: x=np.exp(x)   
-      j=j+1
-      xx.append(x)
+      if 'WAVE' in header:
+        tmp=header['WAVE'].split()
+        npix=int(header['NPIX'])
+        step=float(tmp[1])
+        x0=float(tmp[0])
+        x=np.arange(npix)*step+x0
+        if header['LOGW']:
+          if int(header['LOGW']) == 1: x=10.**x
+          if int(header['LOGW']) == 2: x=np.exp(x)   
+        j=j+1
+        xx.append(x)
 
     if len(xx)>1: x=xx[:]
 
@@ -4350,7 +4351,7 @@ def read_synth(synthfile,nd=False):
         file.close()
 
         if type(header) is list:
-            header0 = header[0]
+            header0 = header[1]
         else:
             header0 = header
 
