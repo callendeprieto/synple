@@ -4280,7 +4280,7 @@ def lambda_synth(synthfile):
         j=j+1
         xx.append(x)
       if 'WAVELENGTHS' in header:
-        x = np.array(header['WAVELENGTHS'].split())
+        x = np.array(header['WAVELENGTHS'].split(),dtype=float)
         xx.append(x)
 
     if len(xx)>1: x=xx[:]
