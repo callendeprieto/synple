@@ -4279,6 +4279,8 @@ def lambda_synth(synthfile):
           if int(header['LOGW']) == 2: x=np.exp(x)   
         j=j+1
         xx.append(x)
+      if 'WAVELENGTHS' in header:
+        xx.append(np.array(header['WAVELENGHTS'].split()))  
 
     if len(xx)>1: x=xx[:]
 
