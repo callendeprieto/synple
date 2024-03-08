@@ -4566,12 +4566,8 @@ def rbf_apply(synthfile,c,pmin,ptp,par):
 	
   #grid parameters from header
   h = head_synth(synthfile)
+  if type(h) is list: h = h[0]
   ndim = int(h['N_OF_DIM'])
-  #n_p = np.array(h['N_P'].split(),dtype=int)
-  #nfreq = int(h['NPIX'])
-  #steps = np.array(h['STEPS'].split(),dtype=float)
-  #llimits = np.array(h['LLIMITS'].split(),dtype=float)
-  
   
   #map the parameters from physical to indices
   par2 = par.copy()
