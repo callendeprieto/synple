@@ -4247,7 +4247,7 @@ def head_synth(synthfile):
                 if multi>0: multi_header.append(header)
                 break
               else:
-                if (meta > 1): multi_header.append(header)
+                if (meta > 0): multi_header.append(header)
                 header={}
                 line=file.readline()
             else:
@@ -4333,7 +4333,7 @@ def read_synth(synthfile,nd=False):
                 if multi>0: multi_header.append(header)
                 break
               else:
-                if (meta > 1): multi_header.append(header)
+                if (meta > 0): multi_header.append(header)
                 header={}
                 line=file.readline()
                 nlines+=1
