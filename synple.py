@@ -4566,7 +4566,7 @@ def rbf_apply(synthfile,c,pmin,ptp,par):
 	
   #grid parameters from header
   h = head_synth(synthfile)
-  if type(h) is list: h = h[0]
+  if type(h) is list: h = h[1]
   ndim = int(h['N_OF_DIM'])
   
   #map the parameters from physical to indices
