@@ -6861,7 +6861,7 @@ def smooth(x,n):
   return(x2)
 
 
-def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
+def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
     outsynthfile=None,ppr=5,wrange=None,freeze=None):
 
   """Convolve and/or redden spectra in a FERRE grid
@@ -6882,6 +6882,10 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
       (default is 0.0)
   r_v: float or iterable with floats
       ratio of total to V-band extinction A_V/E(B-V)
+
+  rv: float or iterable with floats
+      Radial velocity to the applied to the model in the grid
+      (default is 0.0)
   outsynthfile: str
       name of the output FERRE synth file
       (default is the same as synth file, but starting with 'n')
@@ -6971,6 +6975,26 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
   except TypeError:
     nebv = 1
     ebvs = [ ebv ]
+
+  try:
+    nrv = len(rv)
+    rvs = rv 
+    print(rvs)
+    print(ndim,labels)
+    #check they are uniformly spaced
+    drv = np.diff(rvs)
+    print(np.max(drv),np.min(drv))
+    assert np.max(drv) - np.min(drv) < 1.e-7, 'rv values are not linearly spaced!'
+    n_p = np.append(n_p,nrv)
+    steps = np.append(steps,rvs[1]-rvs[0])
+    llimits = np.append(llimits,rvs[0])
+    labels.append('RV')
+    ndim = ndim + 1
+    newcol.append(ndim-1)
+    print(ndim,labels)
+  except TypeError:
+    nrv = 1
+    ervs = [ rv ]
 
   try: 
     nfwhm = len(fwhm)
@@ -7144,6 +7168,14 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,
       ebvval = par[w[0][0]]
       print(ebvval)
       yy = apply(ccm89(xx, ebvval* 3.1, 3.1), yy)
+
+    #apply RV  
+    if 'RV' in labels:
+      w = np.where(np.array(labels) == 'RV')
+      rvval = par[w[0][0]]
+      print(rvval)
+      yy = np.interp(xx, xx*(1.+rvval/clight), yy)
+
 		
     if wrange is not None: yy = yy[section2]
     
