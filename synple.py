@@ -3135,7 +3135,12 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
                             for vmacro1 in vmacros:
 								
                               iconv = iconv + 1
-                              outconv = ("%07dfort.7" % (iconv) )
+
+                              if vrot < 1e-7 and  fwhm < 1e-7 and vmacro < 1e-7:
+                                outconv = "fort.7"
+                              else:
+                                outconv = ("%07dfort.7" % (iconv) )
+
                               file = os.path.join(dir,outconv)
  
                               if os.path.isfile(file):
@@ -3879,7 +3884,11 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
                     ntot = ntot + 1
 
                     iconv = 1
-                    outconv = ("%07dfort.7" % (iconv) )
+                    if vrot < 1e-7 and  fwhm < 1e-7 and vmacro < 1e-7:
+                      outconv = "fort.7"
+                    else:
+                      outconv = ("%07dfort.7" % (iconv) )
+
                     file = os.path.join(dir,outconv)
                      
                     if break_out == False and os.path.isfile(file):
@@ -3970,7 +3979,11 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
                         for vmacro1 in vmacros:
 								
                           iconv = iconv + 1
-                          outconv = ("%07dfort.7" % (iconv) )
+                          if vrot < 1e-7 and  fwhm < 1e-7 and vmacro < 1e-7:
+                            outconv = "fort.7"
+                          else:
+                            outconv = ("%07dfort.7" % (iconv) )
+
                           file = os.path.join(dir,outconv)
  
                           if nvrot > 1: pars.append(vrot1)
