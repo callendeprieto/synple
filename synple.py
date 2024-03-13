@@ -3062,7 +3062,11 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
                         dir = ( "hyd%07d" % (j) )
 
                         iconv = 1
-                        outconv = ("%07dfort.7" % (iconv) )
+                        if vrot < 1e-7 and  fwhm < 1e-7 and vmacro < 1e-7:
+                          outconv = "fort.7" 
+                        else:
+                          outconv = ("%07dfort.7" % (iconv) )
+
                         file = os.path.join(dir,outconv)
  
                         if os.path.isfile(file):
