@@ -47,31 +47,35 @@ import stat
 import string
 import random
 import subprocess
-import numpy as np
 import glob
 import time
 import copy
 import gzip
 import yaml
+import numpy as np
+import matplotlib.pyplot as plt
 from math import ceil
 from scipy import interpolate
 from scipy.signal import savgol_filter
 from scipy.optimize import curve_fit
 from itertools import product
-import matplotlib.pyplot as plt
+from astropy.io import fits
+
 
 #configuration
 #synpledir = /home/callende/synple
 synpledir = os.path.dirname(os.path.realpath(__file__))
 
 #relative paths
-modeldir = synpledir + "/models"
-modelatomdir = synpledir + "/data"
-linelistdir = synpledir + "/linelists"
+modeldir = os.path.join(synpledir, "models")
+modelatomdir = os.path.join(synpledir , "data")
+confdir = os.path.join(synpledir, "config")
+griddir = os.path.join(synpledir, "grids")
+linelistdir = os.path.join(synpledir, "linelists")
 linelist0 = ['gfATO.19','gfMOLsun.20','gfTiO.20','H2O-8.20']
-bindir = synpledir + "/bin"
-synspec = bindir + "/synspec54"
-rotin = bindir + "/rotin"
+bindir = os.path.join(synpledir,"bin")
+synspec = os.path.join(bindir, "synspec54")
+rotin = os.path.join(bindir, "rotin")
 
 #internal synspec data files
 isdf = ['CIA_H2H2.dat',  'CIA_H2H.dat', 'CIA_H2He.dat', 'CIA_HHe.dat', \
@@ -7396,6 +7400,21 @@ def xplsf(synthfile,ppr=5):
   """Takes an input FERRE grid with sufficient resolution (R>1000)
   and produces an output one with wavelength-dependent resolution
   approximating the Gaia DR3 XP data
+  
+  Parameters
+  ----------
+  synthfile: str
+    Name of the Input FERRE synthfile 
+    Must have R>1000 and a minimum wavelength coverage between 360-990 nm
+    
+  ppr: float
+    Points per resolution element for the output grid
+    
+  
+  Returns
+  -------
+  Creates a synthfile with the nominal resolution of the Gaia XP (DR3) data
+  
   """
 
   #Table describing the resolution R of the externally calibrated spectra (ECS) XP DR3 data in Montegriffo et al. 2023
@@ -7412,7 +7431,7 @@ def xplsf(synthfile,ppr=5):
 
   vgsynth(synthfile,x,y,wrange=(3600.,9900),ppr=ppr)
 
-def vgsynth(synthfile,wavelength,fwhm,out_synthfile=None,ppr=5,wrange=None,original=False):
+def vgsynth(synthfile,wavelength,fwhm,outsynthfile=None,ppr=5,wrange=None,original=False):
 
   """Variable-width Gaussian convolution
   This is similar to vgsynth but the FWHM of the Gaussian kernel can change
@@ -7426,7 +7445,7 @@ def vgsynth(synthfile,wavelength,fwhm,out_synthfile=None,ppr=5,wrange=None,origi
       Wavelength (angstroms)
   fwhm: array of floats
       FWHM of the Gaussian kernel (in A) for convolution
-  out_synthfile: str
+  outsynthfile: str
       name of the output FERRE synth file
       (default is the same as synth file, but starting with 'n')
   ppr: float, optional
@@ -7442,7 +7461,7 @@ def vgsynth(synthfile,wavelength,fwhm,out_synthfile=None,ppr=5,wrange=None,origi
 
   Returns
   -------
-  writes out_synthfile with the smooth spectra
+  writes outsynthfile with the smooth spectra
   
   """
 
@@ -7455,7 +7474,7 @@ def vgsynth(synthfile,wavelength,fwhm,out_synthfile=None,ppr=5,wrange=None,origi
   if ending < -1:
       ending = len(synthfile) + 1
   root = synthfile[2:ending]
-  if out_synthfile is None: out_synthfile = 'v_'+root+'.dat'
+  if outsynthfile is None: outsynthfile = 'v_'+root+'.dat'
     
   gg = np.zeros((len(xx),len(xx)))
 
@@ -7499,10 +7518,11 @@ def vgsynth(synthfile,wavelength,fwhm,out_synthfile=None,ppr=5,wrange=None,origi
   #h3['COMMENTS7'] = "'wavelenghts are as following:"+' '.join(map(str,xff))+"'"
 
 
-  write_synth(out_synthfile,p,d3,hdr=h3)
-  xff.tofile(out_synthfile+'.lambda',sep=" ",format="%s")
+  write_synth(outsynthfile,p,d3,hdr=h3)
+  xff.tofile(outsynthfile+'.lambda',sep=" ",format="%s")
 
   return()
+  
   
   
 def fit(xdata, ydata, modelfile, params, bounds,  
@@ -7610,37 +7630,70 @@ def fun(parvalues, *args ):
   
   return(chi)
 
-def clchi(d,ff,ee):
-    ##chi = np.sum((d-ff)**2/ee**2,-1) #slow and serial
-    ##chi = np.matmul((d-ff)**2,1./ee**2)   #faster and can be parallel 
-    chi = np.sum((d-ff)**2,-1)   #a bit faster 
-    ##chi = np.sum(ne.evaluate('(d-ff)**2/ee**2'),-1)
-    ##chi = mat_mul((d-ff)**2,1./ee**2)  
-    chi = chi/np.min(chi)
 
-    return(np.exp(-chi*100.))
+def cebas(p,d,flx,iva):
 
-def ce(p,d,y,yerr):
-
-    """Contrast-Enhanced
+    """Contrast-Expansion for BAS
+    Evaluates the chi-squared between an observed spectrum
+    (flx, with inverse variance iva) and an entire model grid  (p,d)
+    to determine the best-fitting parameters and model
+    
+    Parameters
+    ----------
+    p: 2D numpy array of floats 
+      parameter table with as many columns as parameters and
+      as many rows as spectra in the array d
+      
+    d: 2D numpy array of floats
+      spectra table with as many columns as frequencies in the spectdra
+      and as many rows as spectra
+      
+    flx: 1D numpy array of floats
+      observed spectrum 
+    
+    iva: 1D numpy array of float
+      inverse variance for the observed spectrum
+    
+    Returns
+    -------
+    res: numpy array of floats
+      best-fitting parameters (as many entries as columns in p)
+      
+    eres: numpy array of floats
+      uncertainties for the best-fitting parameters
+    
+    cov: numpy array of floats
+      top half of the covariance matrix for the best-fitting parameters
+      
+    bflx: numpy arry of floats
+      best-fitting model (same size as flx)
+      
     """
-		
-    likeli = clchi( d, y, yerr)
+
+    chi = np.sum((d-flx)**2 * iva,-1)
+    beta = np.median(chi) / 1490. / 5.
+    #print('min/max/median chi=',np.min(chi),np.max(chi),np.median(chi))
+    #print('beta=',beta)
+    while np.exp(-np.min(chi)/2./beta) <= 0.0:
+      beta = beta * 2.
+      #print('-- new beta=',beta)
 
     #parameters
     ndim = len(p[0,:])
     res = np.zeros(ndim)
     eres = np.zeros(ndim)
     cov = np.zeros(ndim*(ndim+1)//2)
+    likeli = np.exp(-chi/2./beta)
     den = np.sum(likeli)
+    #print('den=',den)
     k = 0
     for i in range(ndim):
         #parameters
-        res[i] = np.sum(likeli * p[:,i])/den
+        res[i] = np.sum( likeli * p[:,i])/den
         
         #uncertainties
         for j in range(ndim-i):
-          cov[k] = np.sum(likeli * (p[:,i] - res[i]) * (p[:,j+i] - res[j+i]) )/den 
+          cov[k] = np.sum( likeli * (p[:,i] - res[i]) * (p[:,j+i] - res[j+i]) )/den
           if j == 0: eres[i] = np.sqrt(cov[k])
           k = k + 1
       
@@ -7652,56 +7705,449 @@ def ce(p,d,y,yerr):
       
     return(res,eres,cov,bflx)
 
-def bas_lamost(specfile,synthfile='l_lasc1.pickle'):
 
-    """Bayesian-Algorithm Search
+def bas(infile, synthfile=None, outfile=None, target=None, rvxc=False):
+
+    """Bayesian Algorithm in Synple
     
     Parameters
     ----------
+    infile: str or list
+      input FITS file, 
+      root for the filenames of the input frd/err files,
+      (and, if outfile is None, the output opf/mdl files,)
+      or a string with wildcards (*?[]) that expand into multiple files,
+      or a list of files
     synthfile: str
       name of the model grid
-    opffile: str
-     ...
+      (default is None and the code attempts to choose the appropriate
+      grid according to the source of the input data)      
+    outfile: str
+      output FITS file or
+      root for the filenames of the output opdf/mdf files
+    target: list
+      input list of numerals or targetids (DESI) to select objects
+      to process. If the list includes numbers < 10000, they are interpreted
+      as the order of the targets in the input file(s). Otherwise they are 
+      interpreted as a list of target ids. Either way only the target list
+      will be analyzed and the others skipped.
+      (default is None and all the targets in the input file(s) are analyzed)
+    rvxc: boolean
+      whether or not the RV should be determined and corrected by cross-correlation
+      (default is False)
+   
+    Returns
+    -------
+    Creates output FERRE-formatted files with the normalized data (.nrd),
+    best-fitting parameters (.opf) and best-fitting models (.mdl).
     
     """
+    
+    if type(infile) is list:
+        infiles = infile
+    else:
+        if type(infile) is str:
+            if '*' in infile or '?' in infile or '[' in infile:
+              infiles = glob.glob(infile)
+            else:
+              infiles = [infile]
 
-    from astropy.io import fits
-    
-    #reading spec file
-    fi = fits.open(specfile)
-    s = fi[1].data
-    wave = np.transpose(s['WAVELENGTH'])[:,0]
-    flux = np.transpose(s['FLUX'])[:,0]
-    ivar = np.transpose(s['IVAR'])[:,0]
-    head = fi[0].header
-    rv = head['HELIO_RV']
-    
-    #read FERRE grid    
+    if synthfile is None:
+        instr, synthfile = identify_instrument(infiles[0])
+        instr0 = instr
+    else:
+        instr0 = None
+
+    #models    
+    print('reading grid...')
+    hd, p, d = read_synth(synthfile)      
     x = lambda_synth(synthfile)
-    hd, p, d = read_synth(synthfile)   
+    lenx = len(x)
     
-    #normalize
-    mf = np.mean(flux)
-    #mf = continuum(flux)
-    flux = flux / mf
-    ivar = ivar * mf**2
-    for entry in range(len(p[:,0])):
+    #normalization
+    print('normalizing grid...')
+    for entry in range(len(d[:,0])):
         d[entry,:] = d[entry,:] / np.mean(d[entry,:])
-        #d[entry,:] = d[entry,:] / continuum(d[entry,:])
-    
-    #interpolate data (change to interpolate models)
-    frd = np.interp(x, wave*(1.-rv/clight), flux)
-    ivr = np.interp(x, wave*(1.-rv/clight), ivar)
-    
-    res, eres, cov, mdl = ce( p, d, frd, ivr )
-    delta, edelta = xc(mdl,frd)
-    px = np.arange(len(frd), dtype=float)
-    frd = np.interp(px, px + delta, frd)
-    ivr = np.interp(px, px + delta, ivr)
-    lchi = np.log10( np.sum((mdl-frd)**2*ivr,-1) / (len(mdl) - len(res)) )
+        
+        
+    for file in infiles:
 
-    return(res,eres,cov,x,frd,mdl,lchi)
+      #data
+      print('reading data from file '+file+'...')
+      instr, synthfile = identify_instrument(file)
+      if instr0 is not None:
+          assert(instr == instr0),'all the input files must be from the same instrument'
+      x2, frd, ivr = read_spec(file,wavelengths=x,target=target)
+      lenx2 = len(x2)
+      if ivr.ndim == 1: 
+        frd = frd.reshape((1,lenx2))
+        ivr = ivr.reshape((1,lenx2))
+      nspec = len(frd[:,0])
+      print('nspec in bas:',nspec)
 
+      if outfile is None:
+        opffile = file + '.opf'
+        mdlfile = file + '.mdl'
+        nrdfile = file + '.nrd'
+      else:
+        assert len(outfile) == 1,'outfile can only be specified when there is a single infile'
+        opffile = outfile + '.opf'
+        mdlfile = outfile + '.mdl'      
+        nrdfile = outfile + '.nrd'
+
+      #open output parameter, observed and model file
+      opf = open(opffile,'w')
+      nrd = open(nrdfile,'w')
+      mdl = open(mdlfile,'w')
+
+      #nspec = 5
+        
+      for j in range(nspec):
+
+        print('spectrum ',j,' of ',nspec,' in ',file)
+        
+        #clean the data
+        flx = frd[j,:]
+        www = np.where(np.isnan(flx))[0]
+        #print('www:',www)
+        if len(www) > 0:
+          www2 = np.where(not np.isnan(flx))[0]
+          xax = np.arange(lenx2)
+          flx = np.interp(xax,xax[www2],flx[www2])
+
+        #normalize
+        mflx = np.mean(flx)
+        if mflx == 0.0: mflx = np.median(flx)
+        if mflx == 0.0: mflx = 1.
+        flx = flx / mflx
+        iva = ivr[j,:] * mflx**2
+
+        #analyze
+        res, eres, cov, bflx = cebas( p, d, flx, iva )
+        lchi = np.log10( np.sum((bflx-flx)**2 * iva,-1) / (len(bflx) - len(res)) )
+        print('reduced lchi =',lchi)
+                
+        rv = 0.0
+        if rvxc:
+          delta = 0.0
+          space = 0.0
+          #derive radial velocity
+          #resampling to log(lambda) if need be
+          xx = np.diff(x2)
+          #resampling to log(lambda) if need be
+          if abs(np.median(xx) - xx[0]) > 1e-7:
+            space = (np.log(x2.max()) -np.log(x2.min()) ) / len(x2)
+            px = np.arange(len(x2))*space + np.log(x2.min())
+            bflx = np.interp(np.exp(px),x2,bflx)
+            flx =  np.interp(np.exp(px),x2,flx)
+          else:
+            space = np.log(x2[1]) - np.log(x2[0])
+          
+
+          delta, edelta = xc(bflx,flx)
+          #print('delta,edelta=',delta,edelta)
+          rv = -delta*space*clight
+          print('RV = ',rv,' km/s')
+        
+          #correct RV and reanalyze
+          px = np.arange(len(x2))
+          flx = np.interp(px, px + delta, flx)
+          iva = np.interp(px, px + delta, iva) 
+          res, eres, cov, bflx = cebas( p, d, flx, iva )
+          
+        lchi = np.log10( np.sum((bflx-flx)**2 * iva,-1) / (len(bflx) - len(res)) )
+        print('reduced lchi =',lchi)
+      
+        opf.write(str(j+1)+' '+' '.join(map(str,res))+' '+' '.join(map(str,eres))+' '+
+            str(rv)+' '+str(np.median(flx*np.sqrt(iva)))+' '+
+            str(lchi)+' '+' '.join(map(str,cov))+'\n')
+        nrd.write(' '.join(map(str,flx))+'\n')
+        mdl.write(' '.join(map(str,bflx))+'\n')
+      
+      opf.close()
+      nrd.close()
+      mdl.close()
+      
+    return()
+    
+def identify_instrument(infile):
+	
+    """Identify the instrument that produced infile
+       LAMOST, DESI, NGSL(STIS)/CALSPEC
+       
+    Parameters
+    ----------
+    infile: str
+      name of an input (FITS) data file
+      
+    Returns
+    -------
+    instr: str
+      instrument/telescope from which the data comes
+      
+    grid: str
+      default BAS grid to adopt for it (see config/bas-grids.yaml
+      
+    """
+    
+    conf = load_conf(config='bas-grids.yaml',confdir=confdir)
+
+    instr = None
+    if infile[-4:] == 'fits':
+        fi = fits.open(infile)
+        head = fi[0].header
+        if 'TELESCOP' in head: 
+            telescop = head['TELESCOP']
+            if head['TELESCOP'] == 'LAMOST' and infile[:4] == 'spec' and len(fi) == 2:
+               instr = 'LAMOST'
+            if 'INSTRUME' in head:
+                if head['TELESCOP'] == 'HST' and head['INSTRUME'][:4] == 'STIS':
+                    instr = 'STIS'  
+        else:
+            if 'MAPKEY' in head:
+                if head['MAPKEY'] == 'calspec':
+                    instr = 'CALSPEC'
+            if (infile[:5] == 'coadd' or infile[:7] == 'spectra') and len(fi) > 10:
+                instr = 'DESI'
+    
+    if instr is None:
+        grid = None
+    else:            
+        grid = conf[instr]
+                
+    return(instr,grid)
+
+def read_spec(infile,wavelengths=None,target=None):
+    """Read and (if wavelengths is given) resample spectral observations
+    
+    Parameters
+    ----------
+    
+    infile: str
+      name of an input FITS file, or root for input FERRE-formatted files
+      (frd,err)
+      
+    wavelenghts: numpy array of floats
+      array with the wavelengths of a grid to resample the observations
+      
+    target: iterable of integers/longs
+      list of targets to read -- can be either integers indicating
+      the order of the targets of interest in the input infile or
+      targetids (e.g. for DESI)
+      
+    Returns
+    -------
+    wav: numpy array of floats
+      common wavelength array for the spectra
+      which will be identical to the input 'wavelengths' array if provided
+      
+    frd: numpy array of floats
+      observed spectra (as many columns as frequencies and as many rows
+      as spectra)
+      
+    ivr: numpy array of floats
+      inverse variance for frd (same size as frd)
+      
+    """
+
+    #data
+    if infile[-4:] == 'fits':
+      instr, synthfile = identify_instrument(infile)    
+      if instr == 'LAMOST':
+        #reading LAMOST spec file
+        fi = fits.open(infile)
+        head = fi[0].header
+        s = fi[1].data        
+        wav = np.transpose(s['WAVELENGTH'])[:,0]
+        wav = vac2air(wav)
+        lenwav = len(wav)
+        flux = np.transpose(s['FLUX'])[:,0]
+        ivar = np.transpose(s['IVAR'])[:,0]
+
+        if wavelengths is None:
+          frd = flux
+          ivr = ivar
+        else:
+          lenx = len(wavelengths)
+          frd = np.interp(wavelengths,wav,flux)
+          ivr = np.interp(wavelengths,wav,ivar)
+          wav = wavelengths
+
+      elif instr == 'DESI':
+         i = 0
+         for band in ('B','R','Z'):
+           wav1,flux1,ivar1,res1,map1,head1 = read_desispec(infile,band)
+           wav1 = vac2air(wav1)
+           if target is not None:
+             if np.max(target) < 10000:
+               #target is a list with the order of the desired spectra
+               ind = target
+             else:
+               #target is a list with targetids
+               ind = np.where(np.isin(map1['targetid'],target))[0]
+			 
+             print('ind=',ind)
+             flux1 = flux1[ind,:]
+             ivar1 = ivar1[ind,:]
+             res1 = res1[ind,:,:]
+             map1 = map1[ind] 
+             
+           nspec = len(flux1[:,0])
+           if wavelengths is not None:
+             assert (type(wavelengths) is list),'A list is expected for the input wavelengths'
+             nfreq = len(wavelengths[i])
+             print('nfreq=',nfreq)
+             flux2 = np.zeros((nspec,nfreq))
+             ivar2 = np.zeros((nspec,nfreq))
+             for j in range(nspec):
+               flux2[j,:] = np.interp(wavelengths[i],wav1,flux1[j,:])
+               ivar2[j,:] = np.interp(wavelengths[i],wav1,ivar1[j,:]) 
+             flux1 = flux2
+             ivar1 = ivar2
+             wav1 = wavelengths[i]
+               
+           if band == 'B':
+             wav = wav1
+             frd = flux1
+             ivr = ivar1
+           else:
+             wav = np.concatenate((wav,wav1))
+             frd = np.concatenate((frd,flux1),axis=1)
+             ivr = np.concatenate((ivr,ivar1),axis=1)
+           print(len(wav1),len(wav))
+
+           i += 1
+
+      elif instr == "CALSPEC" or instr == "STIS":
+        fi = fits.open(infile)
+        head = fi[0].header
+        s = fi[1].data
+        wav = s['WAVELENGTH']
+        wav = vac2air(wav)
+        lenwav = len(wav)
+        flux = s['FLUX']
+        if 'STATERROR' in s.names:
+          err = s['STATERROR']
+        elif 'STATERR' in s.names:
+          err = s['STATERR']
+        else:
+          print('Warning: cannot find the statistical error in the file from HST')
+          print('         assuming S/N = 10!')
+          err = flux * 0.1
+        if 'SYSERROR' in s.names: err = err + s['SYSERROR']
+        ivar = np.divide(1.,err, where = (err > 0.) )
+        if wavelengths is None:
+          frd = flux
+          ivr = ivar
+        else:
+          lenx = len(wavelengths)
+          frd = np.interp(wavelengths,wav,flux)
+          ivr = np.interp(wavelengths,wav,ivar)
+          wav = wavelengths
+
+    else: 
+      instr = 'FERRE'
+      if infile is None: infile = synthfile[2:synthfile.find('.dat')]
+      frdfile = infile + '.frd'
+      errfile = infile + '.err'
+              
+      #read frdfile and errfile
+      frd = np.loadtxt(frdfile,dtype=float)
+      err = (np.loadtxt(errfile,dtype=float)**2)
+      ivr = np.divide(1.,err, where = (err > 0.) )
+      wav = wavelengths
+
+    return(wav,frd,ivr)
+
+
+def read_desispec(filename,band=None):
+  """Reads a DESI band spectrum, or a (full) SDSS/BOSS spectrum
+  
+  Parameters
+  ----------
+  filename: str
+    name of an input DESI (spectra* or coadd*) or SDSS-BOSS (spPlate)
+    FITS file
+    
+  band: str
+    name of a band for multi-band DESI spectra
+    (can be 'B', 'R' or 'Z')
+    
+  Returns
+  -------
+  wavelength: numpy array of floats
+  
+  flux: numpy array of floats
+    observed fluxes
+  
+  ivar: numpy array of floats
+    inverse variance for the observed fluxes
+    
+  res: structure
+    resolution matrix for DESI
+    
+  fibermap: structure
+    fibermap 
+    
+  header: dict
+    very first header of the file
+    
+  """
+
+  hdu=fits.open(filename)
+
+  if filename.find('spectra-') > -1 or filename.find('exp_') > -1 or filename.find('coadd') > -1: #DESI
+    header=hdu[0].header
+    wavelength=hdu[band+'_WAVELENGTH'].data #wavelength array
+    flux=hdu[band+'_FLUX'].data       #flux array (multiple spectra)
+    ivar=hdu[band+'_IVAR'].data       #inverse variance (multiple spectra)
+    #mask=hdu[band+'_MASK'].data       #mask (multiple spectra)
+    res=hdu[band+'_RESOLUTION'].data  #resolution matrix (multiple spectra)
+    #bintable=hdu['BINTABLE'].data  #bintable with info (incl. mag, ra_obs, dec_obs)
+    fibermap=hdu['FIBERMAP'].data
+
+  if filename.find('spPlate') > -1: #SDSS/BOSS
+    header=hdu['PRIMARY'].header
+    wavelength=header['CRVAL1']+arange(header['NAXIS1'])*header['CD1_1']
+#wavelength array
+    wavelength=10.**wavelength
+    flux=hdu['PRIMARY'].data       #flux array (multiple spectra)
+    #ivar=hdu['IVAR'].data       #inverse variance (multiple spectra)
+    ivar=hdu[1].data       #inverse variance (multiple spectra)
+    #andmask=hdu['ANDMASK'].data       #AND mask (multiple spectra)
+    #ormask=hdu['ORMASK'].data       #OR mask (multiple spectra)
+    #res=hdu['WAVEDISP'].data  #FWHM array (multiple spectra)
+    res=hdu[4].data  #FWHM array (multiple spectra)
+    #bintable=hdu['BINTABLE'].data  #bintable with info (incl. mag, ra, dec)
+    fibermap=hdu['FIBERMAP'].data
+
+
+  return((wavelength,flux,ivar,res,fibermap,header))
+
+def vac2air(wavelength):
+    """Conversion from vacuum to air for wavelengths based on Ciddor (1996)
+    
+    Parameters
+    ----------
+    wavelength: float, or iterable
+       vacuum wavelength(s) in AA
+    
+    Returns
+    -------
+    wavelength: numpy array
+       corresponding air wavelengths in AA (keeps vacuum for lambda<=2000. A)
+       
+    Based on Ciddor (1996). Copied literally from the IDL Astro library
+    """
+    if type(wavelength) is list or type(wavelength) is float or type(wavelength) is tuple:
+        wavelength = np.array(wavelength)
+    g = (wavelength >= 2000.)
+    sigma2 = (1e4/wavelength[g])**2
+    fact = 1. +  5.792105e-2/(238.0185 - sigma2) + 1.67917e-3/( 57.362 - sigma2)
+    wavelength[g] = wavelength[g]/fact
+
+    return(wavelength)
+    
 def xc(y1,y2, npoints=None, gaus=False, plot=False):
     """Determines a pixel offset between two arrays by 
     cross correlation.
@@ -7813,8 +8259,89 @@ def xc(y1,y2, npoints=None, gaus=False, plot=False):
 
 
     return (delta,edelta)
+
+
+def xc_np(y1,y2, npoints=None, gaus=False, plot=False):
+    """Determines a pixel offset between two arrays by 
+    cross correlation. Variant of xc using numpy correlate 
     
+    Parameters
+    ----------
+    y1 float array
+       Array 1
+
+    y2 float array
+       Array 2    
+       
+    npoints int
+       Number of points to use in fitting a model to the peak
+       of the cross-correlation function
+    
+    gaus bool
+       When True a Gaussian model is used instead of the default
+       parabola
+    
+    plot bool
+       When True the program plots the model fit to the peak of
+       the cross-correlation function
+    
+    Returns
+    -------
+    delta float
+       Shift to apply to y2 to match y1 (max of the cross-correlation
+       function)
+       (units are in pixels)
+       
+    edelta float
+       Uncertainty in delta (pixels)
+    
+    """
+
+    #set failure values for delta/edelta
+    delta = None
+    edelta = None
+	
+    xlen = len(y1) + len(y2) - 1
+    x = np.arange(xlen, dtype=float) - len(y1) 
+    ccf = np.correlate(y1,y2,mode='full')
+	
+	
+    w = np.where(ccf == np.max(ccf))[0]
+    w0 = w[0]
+    
+    if (gaus):
+        if npoints is None: npoints = 39
+        nhalf = (npoints - 1) // 2
+        xx = x[w0-nhalf:w0+nhalf+1]
+        yy = ccf[w0-nhalf:w0+nhalf+1]
+        p0 = [np.mean(yy)*2., x[w0], 2.0, np.min(yy)]
+        coef, covar = curve_fit(gauss, xx, yy, p0=p0)
+        delta = coef[1]
+        edelta = covar[1,1]
+        edelta = np.sqrt(edelta)
+        model = gauss(xx,coef[0],coef[1],coef[2],coef[3])
+    else:
+        if npoints is None: npoints = 7
+        nhalf = npoints // 2
+        xx = x[w0-nhalf:w0+nhalf+1]
+        yy = ccf[w0-nhalf:w0+nhalf+1]		
+        coef, covar = np.polyfit(xx, yy, 2, cov=True)
+        delta = -coef[1]/2./coef[0]
+        edelta = 1./4./coef[0]**2*(covar[1,1] + coef[1]**2/coef[0]**2*covar[0,0]) - coef[1]/2./coef[0]**3*covar[1,0]		
+        edelta = np.sqrt(edelta)
+        model = coef[0]*xx**2+coef[1]*xx+coef[2]
+
+    if plot:
+        plt.plot(xx,yy,'.')
+        plt.plot(xx,model)
+        plt.show()
+
+
+    return (delta,edelta)
+        
 def gauss(x, *p):
+    """Evaluate a Gaussian function from the input parameters
+    """	
     A, mu, sigma, base = p
     return A*np.exp(-(x-mu)**2/(2.*sigma**2)) + base
     
@@ -7842,6 +8369,199 @@ polyorder : int
     """    
     
     return(savgol_filter(x, window_length, polyorder))	
+   
+
+def bas_test(synthfile,snr=1.e6):
+    """Use the data in synthfile to create mock observations
+	   for testing purposes
+    """
+    h,p,d = read_synth(synthfile)    
+    ndim = len(p[0,:])
+    npix = len(d[0,:])
+    ending = synthfile.find('.dat')
+    if ending < -1: 
+        ending = synthfile.find('.pickle')
+    if ending < -1:
+        ending = len(synthfile) + 1
+    root = synthfile[2:ending]
+    vf = open(root+'.ipf','w')
+    of = open(root+'.frd','w')
+    ef = open(root+'.err','w')
+    
+    for i in range(len(p[:,0])):
+        vf.write(str(i)+' '+' '.join(map(str,p[i,:]))+'\n')
+        of.write(' '.join(map(str,d[i,:] * (1. + 
+             1./snr*np.random.normal(size=npix))))+'\n')
+        ef.write(' '.join(map(str,d[i,:]/snr))+'\n')
+	
+    vf.close()
+    of.close()
+    ef.close()
+    
+    return
+
+def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False):
+    """Creates an irregular FERRE grid from a pre-existing regular or 
+       irregular one
+ 
+    Parameters
+    ----------
+    synthfile: str
+      name of the input FERRE/BAS synthfile
+    
+    outsynthfile: str
+      name of the output FERRE/BAS synthfile
+    
+    n: int
+      number of spectra to create by RBF interpolation
+    
+    rv: bool
+      if true, fold in a dimension with RV variations
+      
+    ebv: bool
+      if true, fold in a dimension with E(B-V) variations
+      
+    Returns
+    -------
+    Creates an output grid (outsynthfile)
+
+    """
+    
+    from extinction import apply,ccm89
+
+    if rv or ebv : x = lambda_synth(synthfile)
+    h,p,d = read_synth(synthfile)
+    
+    
+    ndim = len(p[0,:])
+    npix = len(d[0,:])
+    ntot = len(p[:,0])
+
+    if n is None: n = ntot
+    
+    for i in range(ndim):
+        vals = np.random.random_sample(n)*(np.max(p[:,i])-np.min(p[:,i])) + np.min(p[:,i])
+        if i == 0: 
+            p2 = vals
+        else:	
+            p2 = np.vstack((p2,vals))
+    
+    c, pmin, ptp = rbf_get(synthfile)
+    d2 = rbf_apply(synthfile, c, pmin, ptp, np.transpose(p2))
+    h2 = h
+
+    
+    ndim2 = 0
+    if rv:		
+        if 'RESOLUTION' in h: rvmax = clight/float(h['RESOLUTION'])
+        vals = np.random.random_sample(n)*2*rvmax - rvmax
+        p2 = np.vstack((p2,vals))
+        ndim2 += 1
+        h2['LABEL('+str(ndim+ndim2)+')'] = "'RV'"
+    if ebv:	
+        ebvmax = 0.25 # mag
+        vals = np.random.random_sample(n)*ebvmax 
+        p2 = np.vstack((p2,vals))
+        ndim2 += 1
+        h2['LABEL('+str(ndim+ndim2)+')'] = "'E(B-V)'"
+        
+    p2 = np.transpose(p2)
+    ending = synthfile.find('.dat')
+    if ending < -1: 
+        ending = synthfile.find('.pickle')
+    if ending < -1:
+        ending = len(synthfile) + 1
+    root = synthfile[2:ending]
+    if outsynthfile is None: outsynthfile = 'n_'+root+'rbf'+'.dat'
+    of = open(outsynthfile,'w')
+    if type(h2) is not list:
+      h2 = [h2]
+    for block in h2:
+      block['TYPE'] = "'irregular'"
+      block['N_OF_DIM'] = str(ndim+ndim2)
+      block['NTOT'] = str(n)
+    of.write(' &SYNTH\n')
+    for block in h2:
+      for entry in block: of.write(' '+entry + ' = ' + block[entry] + '\n')
+      of.write(' /\n')
+
+    for i in range(len(p2[:,0])):
+        flx = d2[i,:]
+        if rv:
+            flx = np.interp(x,x*(1.+p2[i,ndim]/clight),flx)
+        if ebv:
+            flx = apply(ccm89(x, p2[i,ndim+ndim2-1]* 3.1, 3.1), flx)
+        
+        #normalization
+        #flx = flx / np.mean(flx)
+        of.write(' '.join(map(str,p2[i,:]))+' '+' '.join(map(str,flx))+'\n')	
+    of.close()
+    
+    return
+
+
+    
+    
+def fparams(root,synthfile=None):
+    """"Evaluates the agreement between input/output parameters in 
+    FERRE (root.ipf and root.opf) files
+    
+    Parameters
+    ----------
+    root: str
+      root for the input/output parameter FERRE files
+    synthfile: str
+      associated FERRE/BAS synthfile to look for labels and other info
+      
+    Returns
+    -------
+    result: numpy array of floats
+      mean, std. dev. and 16-50-86 percentiles for all the parameters
+    
+    """
+    
+    if synthfile is None:
+      synthfile = 'f_'+root+'.dat'
+      if not os.path.exists(synthfile): 
+        synthfile = 'n_'+root+'.dat'
+        if not os.path.exists(synthfile): 
+          synthfile = 'l_'+root+'.dat'
+          if not os.path.exists(synthfile): 
+            synthfile = 'f_'+root+'.pickle'
+            if not os.path.exists(synthfile): 
+              synthfile = 'n_'+root+'.pickle'
+              if not os.path.exists(synthfile):
+                synthfile = 'l_'+root+'.pickle'
+                assert os.path.exists(synthfile),'cannot find synthfile:'+synthfile
+                
+    h = head_synth(synthfile)
+    ndim = int(h['N_OF_DIM'])
+    v = np.loadtxt(root + '.ipf',usecols=np.arange(ndim)+1)
+    o = np.loadtxt(root + '.opf',usecols=np.arange(ndim)+1)
+    result = np.mean(o-v,axis=0),np.std(o-v,axis=0),np.percentile(o-v,[15.85,50.,84.15],axis=0)
+    for i in range(ndim):
+        plt.subplot(2,ndim,i+1)
+        plt.plot(v[:,i],o[:,i],'.')
+        if 'LABEL('+str(i+1)+')' in h: plt.title(h['LABEL('+str(i+1)+')'])
+        if i == 0: plt.ylabel('output')
+    for i in range(ndim):
+        plt.subplot(2,ndim,i+1+ndim)
+        hi = plt.hist(o[:,i]-v[:,i],bins=20)
+        if i == 0: plt.xlabel('difference')
+        plt.text(hi[1][0],max(hi[0])*0.8,"mean " % result[0][i] )
+        plt.text(hi[1][0],max(hi[0])*0.6,"std"  % result[1][i] )
+        plt.text(hi[1][0],max(hi[0])*0.4, "p16" % result[2][0,i] )
+        plt.text(hi[1][0],max(hi[0])*0.3, "p50" % result[2][1,i] )
+        plt.text(hi[1][0],max(hi[0])*0.2, "p84" % result[2][2,i] )
+        plt.text(result[2][1,i]+0.5*(result[2][0,i]+result[2][2,i]),max(hi[0])*0.8,"%6.2f" % result[0][i] )
+        plt.text(result[2][1,i]+0.5*(result[2][0,i]+result[2][2,i]),max(hi[0])*0.6,"%6.2f"  % result[1][i] )
+        plt.text(result[2][0,i],max(hi[0])*0.4, "%6.2f" % result[2][0,i] )
+        plt.text(result[2][1,i],max(hi[0])*0.3, "%6.2f" % result[2][1,i] )
+        plt.text(result[2][2,i],max(hi[0])*0.2, "%6.2f" % result[2][2,i] )
+    
+    plt.show()
+    
+    return(result)
 
   
 
