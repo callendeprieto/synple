@@ -4382,6 +4382,9 @@ def read_synth(synthfile,nd=False):
         #data
         data=np.loadtxt(synthfile, skiprows=nlines, dtype=float)
 
+        print('type(header0)=',type(header))
+        print('header0=',header0)
+
         #parameters
         ndim = int(header0['N_OF_DIM']) 
         if ('TYPE' in header0 and header0['TYPE'] == 'irregular'):
@@ -8496,6 +8499,7 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False):
       block['NTOT'] = str(n)
     of.write(' &SYNTH\n')
     for block in h2:
+      of.write(' &SYNTH\n')
       for entry in block: of.write(' '+entry + ' = ' + block[entry] + '\n')
       of.write(' /\n')
 
