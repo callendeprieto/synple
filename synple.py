@@ -6930,7 +6930,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
 
   """
   
-  from extinction import apply,ccm89
+  #from extinction import apply,ccm89
   from synple import vgconv
   import numpy as np
   clight = 299792.458
@@ -8427,9 +8427,10 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False):
 
     """
     
-    from extinction import apply,ccm89
+    #from extinction import apply,ccm89
 
     if rv or ebv : x = lambda_synth(synthfile)
+    if type(x) is list: x = np.hstack(x)
     h,p,d = read_synth(synthfile)
     
     
@@ -8453,17 +8454,30 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False):
     
     ndim2 = 0
     if rv:		
-        if 'RESOLUTION' in h: rvmax = clight/float(h['RESOLUTION'])
+        if type(h2) is list: 
+          h0 = h2[1]
+        else:
+          h0 = h2  
+        rvmax = 1000.
+        if 'RESOLUTION' in h0: rvmax = clight/float(h0['RESOLUTION'])
         vals = np.random.random_sample(n)*2*rvmax - rvmax
         p2 = np.vstack((p2,vals))
         ndim2 += 1
-        h2['LABEL('+str(ndim+ndim2)+')'] = "'RV'"
+        if type(h2) is list:
+            for entry in range(len(h2)):
+                h2[entry]['LABEL('+str(ndim+ndim2)+')'] = "'RV'"
+        else:
+            h2['LABEL('+str(ndim+ndim2)+')'] = "'RV'"  
     if ebv:	
         ebvmax = 0.25 # mag
         vals = np.random.random_sample(n)*ebvmax 
         p2 = np.vstack((p2,vals))
         ndim2 += 1
-        h2['LABEL('+str(ndim+ndim2)+')'] = "'E(B-V)'"
+        if type(h2) is list:
+           for entry in range(len(h2)):
+               h2[entry]['LABEL('+str(ndim+ndim2)+')'] = "'E(B-V)'"
+        else:
+            h2['LABEL('+str(ndim+ndim2)+')'] = "'E(B-V)'"
         
     p2 = np.transpose(p2)
     ending = synthfile.find('.dat')
