@@ -8429,8 +8429,9 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False):
     
     #from extinction import apply,ccm89
 
-    if rv or ebv : x = lambda_synth(synthfile)
-    if type(x) is list: x = np.hstack(x)
+    if rv or ebv : 
+      x = lambda_synth(synthfile)
+      if type(x) is list: x = np.hstack(x)
     h,p,d = read_synth(synthfile)
     
     
