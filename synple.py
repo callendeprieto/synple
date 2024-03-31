@@ -8495,7 +8495,6 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False):
       block['TYPE'] = "'irregular'"
       block['N_OF_DIM'] = str(ndim+ndim2)
       block['NTOT'] = str(n)
-    of.write(' &SYNTH\n')
     for block in h2:
       of.write(' &SYNTH\n')
       for entry in block: of.write(' '+entry + ' = ' + block[entry] + '\n')
