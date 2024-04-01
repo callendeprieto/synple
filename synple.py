@@ -7855,8 +7855,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rvxc=False):
           iva = np.interp(px, px + delta, iva) 
           res, eres, cov, bflx = cebas( p, d, flx, iva )
           
-        lchi = np.log10( np.sum((bflx-flx)**2 * iva,-1) / (len(bflx) - len(res)) )
-        print('reduced lchi =',lchi)
+          lchi = np.log10( np.sum((bflx-flx)**2 * iva,-1) / (len(bflx) - len(res)) )
+          print('reduced lchi =',lchi)
       
         opf.write(str(j+1)+' '+' '.join(map(str,res))+' '+' '.join(map(str,eres))+' '+
             str(rv)+' '+str(np.median(flx*np.sqrt(iva)))+' '+
