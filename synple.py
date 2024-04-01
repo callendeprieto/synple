@@ -7759,6 +7759,9 @@ def bas(infile, synthfile=None, outfile=None, target=None, rvxc=False):
         instr0 = None
 
     #models    
+    if not os.path.isfile(synthfile):
+      sf = os.path.join(griddir,synthfile)
+      if os.path.isfile(sf): synthfile = sf
     print('reading grid...')
     hd, p, d = read_synth(synthfile)      
     x = lambda_synth(synthfile)
