@@ -7762,6 +7762,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rvxc=False):
     print('reading grid...')
     hd, p, d = read_synth(synthfile)      
     x = lambda_synth(synthfile)
+    if type(x) is list: x = np.hstack(x)
     lenx = len(x)
     
     #normalization
