@@ -7765,7 +7765,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rvxc=False):
     print('reading grid...')
     hd, p, d = read_synth(synthfile)      
     x = lambda_synth(synthfile)
-    if type(x) is list: x = np.hstack(x)
     lenx = len(x)
     
     #normalization
@@ -7779,7 +7778,10 @@ def bas(infile, synthfile=None, outfile=None, target=None, rvxc=False):
       #data
       print('reading data from file '+file+'...')
       instr, synthfile = identify_instrument(file)
-      if instr0 is not None:
+      if instr0 is None:
+          #FERRE files, expand lists of wavelengths arrays into a single array
+          if type(x) is list: x = np.hstack(x)
+      else:
           assert(instr == instr0),'all the input files must be from the same instrument'
       x2, frd, ivr = read_spec(file,wavelengths=x,target=target)
       lenx2 = len(x2)
