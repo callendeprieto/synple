@@ -7844,7 +7844,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rvxc=False):
           else:
             space = np.log(x2[1]) - np.log(x2[0])
           
-
           delta, edelta = xc(bflx,flx)
           #print('delta,edelta=',delta,edelta)
           rv = -delta*space*clight
