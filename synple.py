@@ -7991,7 +7991,7 @@ def read_spec(infile,wavelengths=None,target=None):
                #target is a list with targetids
                ind = np.where(np.isin(map1['targetid'],target))[0]
 			 
-             print('ind=',ind)
+             #print('ind=',ind)
              flux1 = flux1[ind,:]
              ivar1 = ivar1[ind,:]
              res1 = res1[ind,:,:]
@@ -8001,7 +8001,7 @@ def read_spec(infile,wavelengths=None,target=None):
            if wavelengths is not None:
              assert (type(wavelengths) is list),'A list is expected for the input wavelengths'
              nfreq = len(wavelengths[i])
-             print('nfreq=',nfreq)
+             #print('nfreq=',nfreq)
              flux2 = np.zeros((nspec,nfreq))
              ivar2 = np.zeros((nspec,nfreq))
              for j in range(nspec):
