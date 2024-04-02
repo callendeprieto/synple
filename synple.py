@@ -4415,9 +4415,31 @@ def pickle_synth(synthfile):
 	
 	return()
     
-def write_synth(synthfile,p,d,hdr=None):
+def write_synth(synthfile,p,d,hdr=None,irregular=False):
     """
     Writes a FERRE spectral grid to disk
+
+    Parameters
+    ----------
+    synthfile: str
+      Name of the output synthfile
+    p: numpy array of floats
+       2D array with the parameters 
+      (nmodel rows x nparam columns)
+    d: numpy array
+       2D array with the data (fluxes)
+      (nmodel rows x nfreqencies columns)
+    hdr: dict
+      header
+      (made up with basic data if None)
+    irregular: bool
+      force the output grid to be irregular
+
+    Returns
+    -------
+    writes out the data to a synthfile
+
+
     """
 	
     #ndim = d.ndim-1
@@ -4426,11 +4448,13 @@ def write_synth(synthfile,p,d,hdr=None):
     
     ndim = len(p[0,:])
     npix = len(d[0,:])
+    ntot = len(p[:,0])
     
     pwd=os.path.abspath(os.curdir)
     nowtime=time.ctime(time.time())
     osinfo=os.uname()
    
+
 
     if hdr is None:
         #minimal header        
@@ -4448,6 +4472,21 @@ def write_synth(synthfile,p,d,hdr=None):
     else:
         ndim = int(hdr['N_OF_DIM']) 
         #n_p = list(map(int,hdr['N_P'].split()))
+        if 'TYPE' in hdr: 
+          if hdr['TYPE'] == "'irregular'":
+            irregular = True
+
+    if irregular:
+       #drop models with zeros and add the model parameteres to the data
+       ds = np.sum(d,1)
+       wi = np.where(ds + 1e-31 > 1e-30)[0]
+       d = d[wi,:]
+       p = d[wi,:]
+       d = np.hstack((p,d))
+       ntot = len(p[:,0])
+       hdr['TYPE'] = "'irregular'"
+       hdr['NTOT'] = str(ntot)
+
 
     fout = open(synthfile,'w')
     fout.write(' &SYNTH\n')
@@ -4457,7 +4496,7 @@ def write_synth(synthfile,p,d,hdr=None):
     #now the data	
     #if ndim > 1:
     #    dd = np.reshape( d, (np.product(n_p), npix) )
-    for entry in range(len(d[:,0])):
+    for entry in range(ntot):
         d[entry,:].tofile(fout,sep=" ",format="%0.4e")
         fout.write("\n")
 
