@@ -7184,9 +7184,8 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
   for i in ind:
     j = j + 1
     print('line ',j,' of ',ntot)
-    print(k,ntot,i)
+    #print(k,ntot,i)
     if len(newcol) == 0 or all(i[newcol] == 0):
-      print('reading!')
       line = fin.readline()
     if freeze is not None:
       skip = True
@@ -7204,7 +7203,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
     #print('newcol=',newcol)
     #print('i[newcol]=',i[newcol])
     
-    print('len(y)=',len(y))
+    #print('len(y)=',len(y))
     if wrange is not None: y = y [section1]
       
     #apply Gaussian convolution
@@ -7213,7 +7212,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
       fwhmval = par[w[0][0]]
     else:
       fwhmval = fwhm
-    print('fwhmval=',fwhmval)
+    #print('fwhmval=',fwhmval)
     if fwhmval > 1.e-7:
       if units == 'km/s':
         xx,yy = vgconv(x,y,fwhmval,ppr=ppr)
@@ -7226,14 +7225,14 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
     if 'E(B-V)' in labels:
       w = np.where(np.array(labels) == 'E(B-V)')
       ebvval = par[w[0][0]]
-      print(ebvval)
+      #print(ebvval)
       yy = apply(ccm89(xx, ebvval* 3.1, 3.1), yy)
 
     #apply RV  
     if 'RV' in labels:
       w = np.where(np.array(labels) == 'RV')
       rvval = par[w[0][0]]
-      print(rvval)
+      #print(rvval)
       yy = np.interp(xx, xx*(1.+rvval/clight), yy)
 
 		
