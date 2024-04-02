@@ -2,3 +2,4 @@ LAMOST: n_sc1-lamostrbf.pickle
 DESI: n_sc1-BRZdesirbf.pickle
 STIS: n_sc1-stisrbf.pickle
 CALSPEC: n_sc1-stisrbf.pickle
+XP: n_sc1-xprbf.pickle

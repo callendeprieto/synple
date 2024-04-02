@@ -4481,7 +4481,7 @@ def write_synth(synthfile,p,d,hdr=None,irregular=False):
        ds = np.sum(d,1)
        wi = np.where(ds + 1e-31 > 1e-30)[0]
        d = d[wi,:]
-       p = d[wi,:]
+       p = p[wi,:]
        d = np.hstack((p,d))
        ntot = len(p[:,0])
        hdr['TYPE'] = "'irregular'"
@@ -8413,7 +8413,44 @@ polyorder : int
     """    
     
     return(savgol_filter(x, window_length, polyorder))	
-   
+ 
+ 
+def bas_build(synthfile):
+
+    conf = load_conf(config='bas-build.yaml',confdir=confdir)
+
+    ending = synthfile.find('.dat') 
+    if ending < -1: 
+        ending = synthfile.find('.pickle')
+    if ending < -1: 
+        ending = len(synthfile) + 1
+    root = synthfile[2:ending]
+
+
+    for entry in conf.keys():
+    
+        #smoothed grid
+        sgrid = 'n_'+root+'-'+entry+'.dat'
+        #irregular grid
+        igrid = 'i_'+root+'-'+entry+'.dat'
+        #rbf resampled grid
+        rgrid = 'r_'+root+'-'+entry+'.dat'
+        
+        gsynth(synthfile, fwhm = conf[entry]['fwhm'], 
+                          units = conf[entry]['units'],
+                          ppr = conf[entry]['ppr'],
+                          wrange = conf[entry]['wrange'], 
+                          outsynthfile = sgrid )
+
+        h,p,d = read_synth(sgrid)
+
+        write_synth(igrid, p, d, hdr=h, irregular=True)
+
+
+
+    return()
+
+
 
 def bas_test(synthfile,snr=1.e6):
     """Use the data in synthfile to create mock observations

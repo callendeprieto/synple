@@ -1,0 +1,30 @@
+LAMOST:
+    fwhm: 167.
+    units: 'km/s'
+    ppr: 3.
+    wrange: [3800., 9000.] 
+B-DESI: 
+    fwhm: 1.8
+    units: 'A'
+    ppr: 3.
+    wrange: [3759., 5959]
+R-DESI:
+    fwhm: 1.8
+    units: 'A'
+    ppr: 3.
+    wrange: [5635., 7750.]
+Z-DESI:
+    fwhm: 1.8
+    units: 'A'
+    ppr: 3.
+    wrange: [7445., 9843.]
+STIS: 
+    fwhm: 600.
+    units: 'km/s'
+    ppr: 3.
+    wrange: [3000., 9900.]
+1000:
+    fwhm: 299.792458
+    units: 'km/s'
+    ppr: 3.
+    wrange: [3000., 11000.] 
