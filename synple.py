@@ -8412,6 +8412,68 @@ polyorder : int
     """    
     
     return(savgol_filter(x, window_length, polyorder))	
+
+
+def xxc(x1,y1,iva1,x2,y2, maxv = 1000., plot=False):
+	
+    """Determines the velocity offset to apply to the template
+    spectrum (x2,y2) so that it overlaps with the observed 
+    spectrum (x1,y1,iva1)
+    
+    Parameters
+    ----------
+    x1: numpy array of floats
+      wavelenghts for the observed spectrum  (A)
+    y1: numpy array of floats
+      fluxes for the observed spectrum
+    iva1: numpy array of floats
+      inverse variance for the fluxes of the observed spectrum
+    x2: numpy array of floats
+      wavelenghts for the model/template spectrum
+    y2: numpy array of floats
+      fluxes for the model/template spectrum
+    maxv: float
+      maximum velocity offset to consider between the observed
+      and template spectra
+      (default 1000 km/s)
+    plot: bool
+      switch to show a plot of the chi-square as a function of 
+      velocity offset
+
+    Returns
+    -------
+    delta: float
+      velocity offset need to overlap the template on top of the
+      observed (y1) spectrum in units of km/s
+    edelta: float
+      uncertainty in delta
+    """
+
+    lenx1 = len(x1)
+    dv = np.diff(x1).mean()/x1.mean()*clight / 10.
+    nv = int(2*maxv/dv)
+    v = np.arange(nv)*dv - maxv
+    lenv = len(v)
+    chi = np.zeros(lenv)
+    for i in range(lenv):
+        yy2 = np.interp(x1,x2*(1.+v[i]/clight),y2)
+        chi[i] = np.sum( ( y1 - yy2 )**2 * iva1 ) 
+  
+    beta = np.median(chi) / 1490. / 5. 
+    while np.exp(-np.min(chi)/2./beta) <= 0.0:
+        beta = beta * 2.
+
+    likeli = np.exp(-chi/2./beta)
+    den = np.sum(likeli)
+    delta = np.sum(v*likeli) / den
+    edelta = np.sum( ( v - delta)**2 * likeli) / den
+    edelta = np.sqrt(edelta)
+    
+    if plot:
+        plt.plot(v,chi)
+        plt.show()
+  
+    return(delta,edelta)
  
  
 def bas_build(synthfile):
