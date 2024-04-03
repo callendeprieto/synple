@@ -7868,37 +7868,20 @@ def bas(infile, synthfile=None, outfile=None, target=None, rvxc=False):
 
         #analyze
         res, eres, cov, bflx = cebas( p, d, flx, iva )
-        lchi = np.log10( np.sum((bflx-flx)**2 * iva,-1) / (len(bflx) - len(res)) )
+        lchi = np.log10( np.sum((bflx-flx)**2 * iva) / (len(bflx) - len(res)) )
         print('reduced lchi =',lchi)
                 
         rv = 0.0
         if rvxc:
-          delta = 0.0
-          space = 0.0
-          #derive radial velocity
-          #resampling to log(lambda) if need be
-          xx = np.diff(x2)
-          #resampling to log(lambda) if need be
-          if abs(np.median(xx) - xx[0]) > 1e-7:
-            space = (np.log(x2.max()) -np.log(x2.min()) ) / len(x2)
-            px = np.arange(len(x2))*space + np.log(x2.min())
-            bflx = np.interp(np.exp(px),x2,bflx)
-            flx =  np.interp(np.exp(px),x2,flx)
-          else:
-            space = np.log(x2[1]) - np.log(x2[0])
-          
-          delta, edelta = xc(bflx,flx)
-          #print('delta,edelta=',delta,edelta)
-          rv = -delta*space*clight
+          rv, erv = xxc(x2,flx,iva,x2,bflx)
           print('RV = ',rv,' km/s')
         
           #correct RV and reanalyze
-          px = np.arange(len(x2))
-          flx = np.interp(px, px + delta, flx)
-          iva = np.interp(px, px + delta, iva) 
+          flx = np.interp(x2, x2 * (1. - rv/clight), flx)
+          iva = np.interp(x2, x2 * (1. - rv/clight), iva)
           res, eres, cov, bflx = cebas( p, d, flx, iva )
           
-          lchi = np.log10( np.sum((bflx-flx)**2 * iva,-1) / (len(bflx) - len(res)) )
+          lchi = np.log10( np.sum((bflx-flx)**2 * iva) / (len(bflx) - len(res)) )
           print('reduced lchi =',lchi)
       
         opf.write(str(j+1)+' '+' '.join(map(str,res))+' '+' '.join(map(str,eres))+' '+
@@ -7912,6 +7895,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rvxc=False):
       mdl.close()
       
     return()
+    
     
 def identify_instrument(infile):
 	
