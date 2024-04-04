@@ -6969,7 +6969,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
 
   """
   
-  #from extinction import apply,ccm89
+  from extinction import apply,ccm89
   from synple import vgconv
   import numpy as np
   clight = 299792.458
@@ -8553,7 +8553,7 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False):
 
     """
     
-    #from extinction import apply,ccm89
+    from extinction import apply,ccm89
 
     if rv or ebv : 
       x = lambda_synth(synthfile)
