@@ -4499,7 +4499,7 @@ def write_synth(synthfile,p,d,hdr=None,irregular=False):
     fout = open(synthfile,'w')
     for block in hdr:
       fout.write(' &SYNTH\n')
-      for entry in block: fout.write(' '+entry + ' = ' + block[entry] + '\n')
+      for entry in block: fout.write(' '+entry + ' = ' + str(block[entry]) + '\n')
       fout.write(' /\n')
 
     #now the data	
@@ -4513,7 +4513,23 @@ def write_synth(synthfile,p,d,hdr=None,irregular=False):
 
 def merge_synth(synthfiles,outsynthfile=None):
 
-    """
+    """Merges various synthfiles with the same parameters but
+    different spectral ranges into one synthfile with a multiheader.
+
+    Parameters
+    ----------
+    synthfiles:  iterable of strings
+      Names of the synthfiles to merge
+    outsynthfile: name of the output synthfile
+
+    Returns
+    -------
+    hh: dict or list
+      header of the merged synthfile
+    p: numpy array of floats
+      parameters
+    dd: numpy array of floats
+      data (fluxes)
     """
 
     k = 0
@@ -4521,7 +4537,8 @@ def merge_synth(synthfiles,outsynthfile=None):
     for entry in synthfiles:
 
         h,p,d = read_synth(entry) 
-	synthfile2 += synthfile2 + entry
+        synthfile2 += entry
+        print('synthfile2=',synthfile2)
 
         if k == 0:
           if type(h) is list:
@@ -4540,6 +4557,18 @@ def merge_synth(synthfiles,outsynthfile=None):
           dd = np.hstack((dd,d))	
 
         k += 1
+
+    h0 = dict()
+    h0['MULTI'] = len(hh)
+    h0['ID'] = synthfile2
+    h0['COMMENTS1'] = "'merged with synple.merge_synth'"
+    h0['N_OF_DIM'] = hh[0]['N_OF_DIM']
+    if 'NTOT' in hh[0]:
+      h0['NTOT'] = hh[0]['NTOT']
+    if 'TYPE' in hh[0]: 
+      h0['TYPE'] = hh[0]['TYPE']
+
+    hh.insert(0,h0)
 
     if outsynthfile is None: outsynthfile = synthfile2 + '.dat'
     write_synth(outsynthfile,p,dd,hdr=hh)
