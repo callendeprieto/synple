@@ -8629,6 +8629,7 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False):
     for i in range(len(p2[:,0])):
         flx = d2[i,:]
         if rv:
+            print(type(x),len(x),type(flx),len(flx))
             flx = np.interp(x,x*(1.+p2[i,ndim]/clight),flx)
         if ebv:
             flx = apply(ccm89(x, p2[i,ndim+ndim2-1]* 3.1, 3.1), flx)
