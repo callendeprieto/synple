@@ -4470,10 +4470,17 @@ def write_synth(synthfile,p,d,hdr=None,irregular=False):
         hdr['COMMENTS3'] = "'pwd is "+pwd+"'"
 
     else:
-        ndim = int(hdr['N_OF_DIM']) 
+        if type(hdr) is list:
+          hdr0 = hdr[1]
+        else:
+          hdr0 = hdr.copy()
+          hdr = [hdr]
+
+	
+        ndim = int(hdr0['N_OF_DIM']) 
         #n_p = list(map(int,hdr['N_P'].split()))
-        if 'TYPE' in hdr: 
-          if hdr['TYPE'] == "'irregular'":
+        if 'TYPE' in hdr0: 
+          if hdr0['TYPE'] == "'irregular'":
             irregular = True
 
     if irregular:
@@ -4484,14 +4491,16 @@ def write_synth(synthfile,p,d,hdr=None,irregular=False):
        p = p[wi,:]
        d = np.hstack((p,d))
        ntot = len(p[:,0])
-       hdr['TYPE'] = "'irregular'"
-       hdr['NTOT'] = str(ntot)
+       for block in hdr:
+         block['TYPE'] = "'irregular'"
+         block['NTOT'] = str(ntot)
 
 
     fout = open(synthfile,'w')
-    fout.write(' &SYNTH\n')
-    for entry in hdr: fout.write(' '+entry + ' = ' + hdr[entry] + '\n')
-    fout.write(' /\n')
+    for block in hdr:
+      fout.write(' &SYNTH\n')
+      for entry in block: fout.write(' '+entry + ' = ' + block[entry] + '\n')
+      fout.write(' /\n')
 
     #now the data	
     #if ndim > 1:
@@ -4501,6 +4510,42 @@ def write_synth(synthfile,p,d,hdr=None,irregular=False):
         fout.write("\n")
 
     return(None)			
+
+def merge_synth(synthfiles,outsynthfile=None):
+
+    """
+    """
+
+    k = 0
+    synthfile2 = ''
+    for entry in synthfiles:
+
+        h,p,d = read_synth(entry) 
+	synthfile2 += synthfile2 + entry
+
+        if k == 0:
+          if type(h) is list:
+            hh = h.copy()
+          else:
+            hh = [h]
+            pp = p.copy()
+            dd = d.copy()
+        else:
+          if type(h) is list:
+            for block in h:
+              hh.append(block)
+          else:
+            hh.append(h)
+          assert(np.max(pp - p) < 1e-30),'The parameters of the file '+entry+ ' do not match those for preceding synthfiles'
+          dd = np.hstack((dd,d))	
+
+        k += 1
+
+    if outsynthfile is None: outsynthfile = synthfile2 + '.dat'
+    write_synth(outsynthfile,p,dd,hdr=hh)
+
+    return(hh,p,dd)
+
 
 def fill_synth(d,kernel='thin_plate_spline', neighbors=100):
     """
