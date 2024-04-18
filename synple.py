@@ -7818,7 +7818,7 @@ def cebas(p,d,flx,iva):
     return(res,eres,cov,bflx)
 
 
-def bas(infile, synthfile=None, outfile=None, target=None, rvxc=False):
+def bas(infile, synthfile=None, outfile=None, target=None, rv=None):
 
     """Bayesian Algorithm in Synple
     
@@ -7837,16 +7837,18 @@ def bas(infile, synthfile=None, outfile=None, target=None, rvxc=False):
     outfile: str
       output FITS file or
       root for the filenames of the output opdf/mdf files
-    target: list
-      input list of numerals or targetids (DESI) to select objects
+    target: iterable
+      input list of numerals or targetids to select objects
       to process. If the list includes numbers < 10000, they are interpreted
       as the order of the targets in the input file(s). Otherwise they are 
       interpreted as a list of target ids. Either way only the target list
       will be analyzed and the others skipped.
-      (default is None and all the targets in the input file(s) are analyzed)
-    rvxc: boolean
-      whether or not the RV should be determined and corrected by cross-correlation
-      (default is False)
+      (default is None meaning that all the targets in the input file(s) are analyzed)
+    rv: iterable
+      this can be an iterable matching the length of target with the RVs to be corrected
+      prior to the analysis. When equal to None, if RV is among the parameters in the synthfile, 
+      RVs will be determined as such, but otherwise RVs are derived by the routine xxc.
+      (default is None)
    
     Returns
     -------
@@ -7874,7 +7876,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rvxc=False):
     if not os.path.isfile(synthfile):
       sf = os.path.join(griddir,synthfile)
       if os.path.isfile(sf): synthfile = sf
-    print('reading grid...')
+    print('reading grid '+synthfile+'...')
     hd, p, d = read_synth(synthfile)      
     x = lambda_synth(synthfile)
     lenx = len(x)
@@ -7895,7 +7897,17 @@ def bas(infile, synthfile=None, outfile=None, target=None, rvxc=False):
           if type(x) is list: x = np.hstack(x)
       else:
           assert(instr == instr0),'all the input files must be from the same instrument'
-      x2, frd, ivr = read_spec(file,wavelengths=x,target=target)
+      
+      if rv is not None:
+          assert(target is not None),'the length of the input rv should match that of target, but target is None'
+          try:
+              lentarget = len(target)
+              lenrv = len(rv)
+              assert(lenrv == lentarget),'the length of rv should match that of target'
+          except ValueError:
+              print('rv and target should be both None or both iterables of the same length')
+              
+      x2, frd, ivr = read_spec(file,wavelengths=x,target=target, rv=rv)
       lenx2 = len(x2)
       if ivr.ndim == 1: 
         frd = frd.reshape((1,lenx2))
@@ -7945,14 +7957,14 @@ def bas(infile, synthfile=None, outfile=None, target=None, rvxc=False):
         lchi = np.log10( np.sum((bflx-flx)**2 * iva) / (len(bflx) - len(res)) )
         print('reduced lchi =',lchi)
                 
-        rv = 0.0
-        if rvxc:
-          rv, erv = xxc(x2,flx,iva,x2,bflx)
-          print('RV = ',rv,' km/s')
+        vrad = 0.0
+        if rv is None and 'RV' not in hd.values() and instr0 is not None:
+          vrad, evrad = xxc(x2,flx,iva,x2,bflx)
+          print('RV = ',vrad,' km/s')
         
           #correct RV and reanalyze
-          flx = np.interp(x2, x2 * (1. - rv/clight), flx)
-          iva = np.interp(x2, x2 * (1. - rv/clight), iva)
+          flx = np.interp(x2, x2 * (1. - vrad/clight), flx)
+          iva = np.interp(x2, x2 * (1. - vrad/clight), iva)
           res, eres, cov, bflx = cebas( p, d, flx, iva )
           
           lchi = np.log10( np.sum((bflx-flx)**2 * iva) / (len(bflx) - len(res)) )
@@ -8018,23 +8030,25 @@ def identify_instrument(infile):
                 
     return(instr,grid)
 
-def read_spec(infile,wavelengths=None,target=None):
+def read_spec(infile,wavelengths=None,target=None,rv=None):
     """Read and (if wavelengths is given) resample spectral observations
     
     Parameters
     ----------
-    
     infile: str
       name of an input FITS file, or root for input FERRE-formatted files
       (frd,err)
-      
     wavelenghts: numpy array of floats
       array with the wavelengths of a grid to resample the observations
-      
     target: iterable of integers/longs
       list of targets to read -- can be either integers indicating
       the order of the targets of interest in the input infile or
       targetids (e.g. for DESI)
+      (default is none)
+    rv: iterable of floats
+      this can be an iterable matching the length of target with the RVs to be corrected. 
+      When equal to None, velocities offsets are not considered.
+      (default is None)
       
     Returns
     -------
@@ -8064,10 +8078,27 @@ def read_spec(infile,wavelengths=None,target=None):
         lenwav = len(wav)
         flux = np.transpose(s['FLUX'])[:,0]
         ivar = np.transpose(s['IVAR'])[:,0]
+        
+        if target is not None:
+          assert(type(target) is int or type(target) is long),'target must be None or an int/long'
+          if target < 10000:
+               if(target != 0): 
+                   print('target needs to be 0 in order to read the one and only LAMOST spectrum in the input file')
+                   return(None,None,None)
+          else:
+               if (target != long(head['OBJNAME'])):
+                   print('target needs to be '+head['OBJNAME']+' in order to read the one and only LAMOST spectrum in the input file')
+                   return(None,None,None)				   
 
+        if rv is None: 
+          vrad = 0.0
+        else:
+          assert(type(rv) is float or type(rv) is int),'rv must be None or a float/int'
+          vrad = float(rv)
+			 
         if wavelengths is None:
-          frd = flux
-          ivr = ivar
+          frd = np.interp(wav,wav*(1. + vrad/clight),flux)
+          ivr = np.interp(wav,wav*(1. + vrad/clight),ivar)
         else:
           lenx = len(wavelengths)
           frd = np.interp(wavelengths,wav,flux)
@@ -8094,15 +8125,32 @@ def read_spec(infile,wavelengths=None,target=None):
              map1 = map1[ind] 
              
            nspec = len(flux1[:,0])
-           if wavelengths is not None:
+           
+           if rv is None:
+             vrad = np.zeros(nspec)
+           else:
+             assert (len(rv) == nspec),'the length of rv should match that of target'
+             vrad = rv.copy()
+
+           if wavelengths is None:
+             nfreq = len(wav1)
+             #print('nfreq=',nfreq)
+             flux2 = np.zeros((nspec,nfreq))
+             ivar2 = np.zeros((nspec,nfreq))
+             for j in range(nspec):
+               flux2[j,:] = np.interp(wav1,wav1*(1.+vrad[j]/clight),flux1[j,:])
+               ivar2[j,:] = np.interp(wav1,wav1*(1.+vrad[j]/clight),ivar1[j,:]) 
+             flux1 = flux2
+             ivar1 = ivar2
+           else:
              assert (type(wavelengths) is list),'A list is expected for the input wavelengths'
              nfreq = len(wavelengths[i])
              #print('nfreq=',nfreq)
              flux2 = np.zeros((nspec,nfreq))
              ivar2 = np.zeros((nspec,nfreq))
              for j in range(nspec):
-               flux2[j,:] = np.interp(wavelengths[i],wav1,flux1[j,:])
-               ivar2[j,:] = np.interp(wavelengths[i],wav1,ivar1[j,:]) 
+               flux2[j,:] = np.interp(wavelengths[i],wav1*(1.+vrad[j]/clight),flux1[j,:])
+               ivar2[j,:] = np.interp(wavelengths[i],wav1*(1.+vrad[j]/clight),ivar1[j,:]) 
              flux1 = flux2
              ivar1 = ivar2
              wav1 = wavelengths[i]
@@ -8137,16 +8185,32 @@ def read_spec(infile,wavelengths=None,target=None):
           err = flux * 0.1
         if 'SYSERROR' in s.names: err = err + s['SYSERROR']
         ivar = np.divide(1.,err, where = (err > 0.) )
+        
+        if target is not None:
+          assert(type(target) is int or type(target) is long),'target must be None or an int/long'
+          if(target != 0): 
+            print('target needs to be 0 in order to read the one and only STIS spectrum in the input file')
+            return(None,None,None)
+
+        if rv is None: 
+          vrad = 0.0
+        else:
+          assert(type(rv) is float or type(rv) is int),'rv must be None or a float/int'
+          vrad = float(rv)
+			 
         if wavelengths is None:
-          frd = flux
-          ivr = ivar
+          frd = np.interp(wav,wav*(1. + vrad/clight),flux)
+          ivr = np.interp(wav,wav*(1. + vrad/clight),ivar)
         else:
           lenx = len(wavelengths)
           frd = np.interp(wavelengths,wav,flux)
           ivr = np.interp(wavelengths,wav,ivar)
           wav = wavelengths
-
+        
     else: 
+
+      assert(target is not None),'target must be none for FERRE input files'
+      assert(rv is not None),'rv must be none for FERRE input files'
       instr = 'FERRE'
       if infile is None: infile = synthfile[2:synthfile.find('.dat')]
       frdfile = infile + '.frd'
