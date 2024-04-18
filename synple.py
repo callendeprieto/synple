@@ -8088,12 +8088,14 @@ def read_spec(infile,wavelengths=None,target=None,rv=None):
           else:
                if (target != long(head['OBJNAME'])):
                    print('target needs to be '+head['OBJNAME']+' in order to read the one and only LAMOST spectrum in the input file')
-                   return(None,None,None)				   
+                   return(None,None,None)				    
 
         if rv is None: 
           vrad = 0.0
         else:
-          assert(type(rv) is float or type(rv) is int),'rv must be None or a float/int'
+          assert(len(rv) == 1),'rv must be None or an iterable'
+          rv = rv[0]
+          assert(type(rv) is float or type(rv) is int),'rv must be None or an interable with a single float/int'
           vrad = float(rv)
 			 
         if wavelengths is None:
@@ -8191,12 +8193,15 @@ def read_spec(infile,wavelengths=None,target=None,rv=None):
           if(target != 0): 
             print('target needs to be 0 in order to read the one and only STIS spectrum in the input file')
             return(None,None,None)
-
+          
         if rv is None: 
           vrad = 0.0
         else:
-          assert(type(rv) is float or type(rv) is int),'rv must be None or a float/int'
+          assert(len(rv) == 1),'rv must be None or an iterable'
+          rv = rv[0]
+          assert(type(rv) is float or type(rv) is int),'rv must be None or an interable with a single float/int'
           vrad = float(rv)
+          
 			 
         if wavelengths is None:
           frd = np.interp(wav,wav*(1. + vrad/clight),flux)
