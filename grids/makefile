@@ -9,9 +9,15 @@ WGET = `which wget`
 #general line lists
 STANDARD =  n_sc1-BRZdesirbf.pickle n_sc1-lamostrbf.pickle n_sc1-stisrbf.pickle n_sc1-xprbf.pickle 
 
+RVEBV =  n_sc1-BRZDESIrbf-RVEBV.pickle n_sc1-LAMOSTrbf-RVEBV.pickle n_sc1-STISrbf-RVEBV.pickle v_sc1-XPrbf-RVEBV.pickle
+
+
 
 all: 
 	$(call sequence, $(STANDARD))
+
+rvebv:
+	$(call sequence, $(RVEBV))
 
 
 clean: 
