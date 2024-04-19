@@ -8065,6 +8065,19 @@ def read_spec(infile,wavelengths=None,target=None,rv=None):
       
     """
 
+    if target is not None:
+      try:
+        _ = (e for e in target)
+      except TypeError:
+        print('target must be None or an iterable')
+
+    if rv is not None:
+      try:
+        _ = (e for e in rv)
+      except TypeError:
+        print('rv must be None or an iterable')
+      assert(len(rv) == len(target)),'rv and target must have the same length'
+
     #data
     if infile[-4:] == 'fits':
       instr, synthfile = identify_instrument(infile)    
@@ -8080,23 +8093,23 @@ def read_spec(infile,wavelengths=None,target=None,rv=None):
         ivar = np.transpose(s['IVAR'])[:,0]
         
         if target is not None:
-          assert(type(target) is int or type(target) is long),'target must be None or an int/long'
-          if target < 10000:
-               if(target != 0): 
+          assert(type(target[0]) is int or type(target[0]) is long),'target must be None or an int/long'
+          assert(len(target) == 1),'target can only have one element for single-target LAMOST files'
+          if target[0] < 10000:
+               if(target[0] != 0): 
                    print('target needs to be 0 in order to read the one and only LAMOST spectrum in the input file')
                    return(None,None,None)
           else:
-               if (target != long(head['OBJNAME'])):
+               if (target[0] != long(head['OBJNAME'])):
                    print('target needs to be '+head['OBJNAME']+' in order to read the one and only LAMOST spectrum in the input file')
                    return(None,None,None)				    
 
         if rv is None: 
           vrad = 0.0
         else:
-          assert(len(rv) == 1),'rv must be None or an iterable'
-          rv = rv[0]
-          assert(type(rv) is float or type(rv) is int),'rv must be None or an interable with a single float/int'
-          vrad = float(rv)
+          assert(len(rv) == 1),'rv can have only one element for single-target LAMOST files'
+          assert(type(rv[0]) is float or type(rv[0]) is int),'rv must be None or an interable with a single float/int'
+          vrad = float(rv[0])
 			 
         if wavelengths is None:
           frd = np.interp(wav,wav*(1. + vrad/clight),flux)
@@ -8189,10 +8202,11 @@ def read_spec(infile,wavelengths=None,target=None,rv=None):
         ivar = np.divide(1.,err, where = (err > 0.) )
         
         if target is not None:
-          assert(type(target) is int or type(target) is long),'target must be None or an int/long'
-          if(target != 0): 
-            print('target needs to be 0 in order to read the one and only STIS spectrum in the input file')
-            return(None,None,None)
+          assert(type(target[0]) is int or type(target[0]) is long),'target must be None or an int/long'
+          assert(len(target) == 1),'target can only have one element for single-target STIS files'
+          if(target[0] != 0):
+              print('target needs to be 0 in order to read the one and only STIS spectrum in the input file')
+              return(None,None,None)
           
         if rv is None: 
           vrad = 0.0
