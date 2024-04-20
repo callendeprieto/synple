@@ -7907,7 +7907,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None):
           except ValueError:
               print('rv and target should be both None or both iterables of the same length')
               
-      x2, frd, ivr = read_spec(file,wavelengths=x,target=target, rv=rv)
+      ids, x2, frd, ivr = read_spec(file,wavelengths=x,target=target, rv=rv)
       lenx2 = len(x2)
       if ivr.ndim == 1: 
         frd = frd.reshape((1,lenx2))
@@ -7919,19 +7919,20 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None):
         opffile = file + '.opf'
         mdlfile = file + '.mdl'
         nrdfile = file + '.nrd'
+        errfile = file + '.err'
       else:
         assert len(outfile) == 1,'outfile can only be specified when there is a single infile'
         opffile = outfile + '.opf'
         mdlfile = outfile + '.mdl'      
         nrdfile = outfile + '.nrd'
+        errfile = outfile + '.err'
 
       #open output parameter, observed and model file
       opf = open(opffile,'w')
-      nrd = open(nrdfile,'w')
       mdl = open(mdlfile,'w')
+      nrd = open(nrdfile,'w')
+      err = open(errfile,'w')
 
-      #nspec = 5
-        
       for j in range(nspec):
 
         print('spectrum ',j,' of ',nspec,' in ',file)
@@ -7970,15 +7971,17 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None):
           lchi = np.log10( np.sum((bflx-flx)**2 * iva) / (len(bflx) - len(res)) )
           print('reduced lchi =',lchi)
       
-        opf.write(str(j+1)+' '+' '.join(map(str,res))+' '+' '.join(map(str,eres))+' '+
-            str(rv)+' '+str(np.median(flx*np.sqrt(iva)))+' '+
+        opf.write(ids[j]+' '+' '.join(map(str,res))+' '+' '.join(map(str,eres))+' '+
+            str(vrad)+' '+str(np.median(flx*np.sqrt(iva)))+' '+
             str(lchi)+' '+' '.join(map(str,cov))+'\n')
         nrd.write(' '.join(map(str,flx))+'\n')
         mdl.write(' '.join(map(str,bflx))+'\n')
+        err.write(' '.join(map(str,1./np.sqrt(iva)))+'\n')
       
       opf.close()
-      nrd.close()
       mdl.close()
+      nrd.close()
+      err.close()
       
     return()
     
@@ -8052,6 +8055,9 @@ def read_spec(infile,wavelengths=None,target=None,rv=None):
       
     Returns
     -------
+    ids: numpy array of str
+      strings identifying the target(s). In some cases it may simply 
+      be a number 
     wav: numpy array of floats
       common wavelength array for the spectra
       which will be identical to the input 'wavelengths' array if provided
@@ -8091,6 +8097,10 @@ def read_spec(infile,wavelengths=None,target=None,rv=None):
         lenwav = len(wav)
         flux = np.transpose(s['FLUX'])[:,0]
         ivar = np.transpose(s['IVAR'])[:,0]
+        if 'OBJNAME' in head:
+          ids = np.array([head['OBJNAME']])
+        else:
+          ids = np.array([infile])
         
         if target is not None:
           assert(type(target[0]) is int or type(target[0]) is long),'target must be None or an int/long'
@@ -8174,6 +8184,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None):
              wav = wav1
              frd = flux1
              ivr = ivar1
+             ids = map1['targetid']
            else:
              wav = np.concatenate((wav,wav1))
              frd = np.concatenate((frd,flux1),axis=1)
@@ -8196,10 +8207,16 @@ def read_spec(infile,wavelengths=None,target=None,rv=None):
           err = s['STATERR']
         else:
           print('Warning: cannot find the statistical error in the file from HST')
-          print('         assuming S/N = 10!')
-          err = flux * 0.1
+          print('         assuming S/N = 5!')
+          err = flux * 0.05
         if 'SYSERROR' in s.names: err = err + s['SYSERROR']
-        ivar = np.divide(1.,err, where = (err > 0.) )
+        ivar = np.divide(1.,err**2, where = (err > 0.) )
+        if 'TARGETID' in head:
+          ids = np.array([head['TARGETID']])
+        elif 'TARGNAME' in head:
+          ids = np.array([head['TARGNAME']])
+        else:
+          ids = np.array([infile])
         
         if target is not None:
           assert(type(target[0]) is int or type(target[0]) is long),'target must be None or an int/long'
@@ -8240,8 +8257,9 @@ def read_spec(infile,wavelengths=None,target=None,rv=None):
       err = (np.loadtxt(errfile,dtype=float)**2)
       ivr = np.divide(1.,err, where = (err > 0.) )
       wav = wavelengths
+      ids = np.array(list(map(str,range(len(frd[:,0])))))
 
-    return(wav,frd,ivr)
+    return(ids,wav,frd,ivr)
 
 
 def read_desispec(filename,band=None):
@@ -8307,6 +8325,14 @@ def read_desispec(filename,band=None):
 
 
   return((wavelength,flux,ivar,res,fibermap,header))
+
+def plot_spec(x,y,err=None):
+
+    """Plot one or multiple spectra
+    """
+
+    return()
+
 
 def vac2air(wavelength):
     """Conversion from vacuum to air for wavelengths based on Ciddor (1996)
