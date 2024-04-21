@@ -7866,11 +7866,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None):
             else:
               infiles = [infile]
 
-    if synthfile is None:
-        instr, synthfile = identify_instrument(infiles[0])
-        instr0 = instr
-    else:
-        instr0 = None
+    instr, synthfile = identify_instrument(infiles[0])
+    instr0 = instr
 
     #models    
     if not os.path.isfile(synthfile):
@@ -7893,6 +7890,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None):
       print('reading data from file '+file+'...')
       instr, synthfile = identify_instrument(file)
       if instr0 is None:
+          print(rv,instr0)
           #FERRE files, expand lists of wavelengths arrays into a single array
           if type(x) is list: x = np.hstack(x)
       else:
@@ -7959,6 +7957,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None):
         print('reduced lchi =',lchi)
                 
         vrad = 0.0
+        print(rv,instr0)
         if rv is None and 'RV' not in hd.values() and instr0 is not None:
           vrad, evrad = xxc(x2,flx,iva,x2,bflx)
           print('RV = ',vrad,' km/s')
