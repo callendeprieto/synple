@@ -4250,12 +4250,20 @@ def create_irregular_kurucz(n,pteff=None, plogg =None, \
 def head_synth(synthfile):
     if synthfile[-6:] == "pickle":
         import pickle
+        if not os.path.isfile(synthfile):
+          sf = os.path.join(griddir,synthfile)
+          if os.path.isfile(sf): synthfile = sf
+        print('reading grid '+synthfile+'...')
         file=open(synthfile,'rb')
         header, pars, data = pickle.load(file)
         file.close()
     else:
         meta=0
         multi=0
+        if not os.path.isfile(synthfile):
+          sf = os.path.join(griddir,synthfile)
+          if os.path.isfile(sf): synthfile = sf
+        print('reading grid '+synthfile+'...')
         file=open(synthfile,'r')
         line=file.readline()
         header={}
@@ -4316,7 +4324,9 @@ def read_synth(synthfile,nd=False):
   Parameters
   ----------
   synthfile: string
-   Name of the FERRE synthfile to read
+   Name of the FERRE synthfile to read. The code will automatically
+   look for it in the current directory but if not present will attempt
+   to read it from the synple default griddir.
   nd: boolean
    Keyword to reshape the data array from 2D to the actual
    grid dimensions, given in the array N_P, included in the header
@@ -4337,6 +4347,10 @@ def read_synth(synthfile,nd=False):
 
     if synthfile[-6:] == "pickle":
         import pickle 
+        if not os.path.isfile(synthfile):
+          sf = os.path.join(griddir,synthfile)
+          if os.path.isfile(sf): synthfile = sf
+        print('reading grid '+synthfile+'...')
         file=open(synthfile,'rb')
         header, pars, data = pickle.load(file)
         file.close()
@@ -4344,6 +4358,10 @@ def read_synth(synthfile,nd=False):
         #header	
         meta=0
         multi=0
+        if not os.path.isfile(synthfile):
+          sf = os.path.join(griddir,synthfile)
+          if os.path.isfile(sf): synthfile = sf
+        print('reading grid '+synthfile+'...')
         file=open(synthfile,'r')
         line=file.readline()
         header={}
@@ -4664,7 +4682,6 @@ def rbf_get(synthfile, kernel='thin_plate_spline', neighbors=100):
   from scipy.interpolate import RBFInterpolator
 
 
-  print('reading grid ...')
   h, p, d = read_synth(synthfile)
 
   #n_p = np.array(h['N_P'].split(),dtype=int)
@@ -7873,10 +7890,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None):
     instr0 = instr
 
     #models    
-    if not os.path.isfile(synthfile):
-      sf = os.path.join(griddir,synthfile)
-      if os.path.isfile(sf): synthfile = sf
-    print('reading grid '+synthfile+'...')
     hd, p, d = read_synth(synthfile)      
     x = lambda_synth(synthfile)
     lenx = len(x)
@@ -8327,7 +8340,7 @@ def read_desispec(filename,band=None):
 
   return((wavelength,flux,ivar,res,fibermap,header))
 
-def plot_spec(x,y,err=None):
+def plot_spec(x,n,m=None,r=None):
 
     """Plot one or multiple spectra
     """
@@ -8679,6 +8692,20 @@ def bas_build(synthfile):
 
     return()
 
+def bas_perfcheck(synthfile,n=1000,snr=1.e6):
+    """Carry out a full performance check using bas on the synthgrid
+    """
+
+    checksynthfile=synthfile+'-check.dat'
+    synth_rbf(synthfile,outsynthfile=checksynthfile,n=n,
+              rv=False,ebv=False)
+    bas_test(checksynthfile,snr=snr)
+    bas(checksynthfile[2:-4],synthfile=synthfile)
+    result = fparams(checksynthfile[2:-4],synthfile=synthfile)
+
+  
+    return(result) 
+     
 
 
 def bas_test(synthfile,snr=1.e6):
