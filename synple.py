@@ -8734,9 +8734,9 @@ def bas_test(synthfile,snr=1.e6):
     h,p,d = read_synth(synthfile)    
     ndim = len(p[0,:])
     npix = len(d[0,:])
-    ending = synthfile.find('.dat')
+    ending = synthfile.rfind('.dat')
     if ending < -1: 
-        ending = synthfile.find('.pickle')
+        ending = synthfile.rfind('.pickle')
     if ending < -1:
         ending = len(synthfile) + 1
     root = synthfile[2:ending]
@@ -8837,9 +8837,9 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False):
             h2['LABEL('+str(ndim+ndim2)+')'] = "'E(B-V)'"
         
     p2 = np.transpose(p2)
-    ending = synthfile.find('.dat')
+    ending = synthfile.rfind('.dat')
     if ending < -1: 
-        ending = synthfile.find('.pickle')
+        ending = synthfile.rfind('.pickle')
     if ending < -1:
         ending = len(synthfile) + 1
     root = synthfile[2:ending]
