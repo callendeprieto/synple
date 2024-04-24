@@ -8259,8 +8259,8 @@ def read_spec(infile,wavelengths=None,target=None,rv=None):
         
     else: 
 
-      assert(target is not None),'target must be none for FERRE input files'
-      assert(rv is not None),'rv must be none for FERRE input files'
+      assert(target is None),'target must be none for FERRE input files'
+      assert(rv is None),'rv must be none for FERRE input files'
       instr = 'FERRE'
       if infile is None: infile = synthfile[2:synthfile.find('.dat')]
       frdfile = infile + '.frd'
@@ -8693,15 +8693,34 @@ def bas_build(synthfile):
     return()
 
 def bas_perfcheck(synthfile,n=1000,snr=1.e6):
-    """Carry out a full performance check using bas on the synthgrid
+    """Carry out a full performance check using bas on a synthetic grid
+
+    Parameters
+    ---------
+    synthfile: str
+      Name of the input synth file
+    n: int
+      Number of mock spectra to produce for the test
+      (default is 1000)
+    snr: float
+      Signal to noise ratio for the mock spectra
+      (default is 1.e6)
+
+    Returns
+    ------
+    result: numpy array of floats
+      mean, std. dev. and 16-50-86 percentiles for all the parameters
+    
     """
 
     checksynthfile=synthfile+'-check.dat'
     synth_rbf(synthfile,outsynthfile=checksynthfile,n=n,
               rv=False,ebv=False)
     bas_test(checksynthfile,snr=snr)
+    print('running ... ','bas(',checksynthfile[2:-4],'synthfile=',synthfile,')')
     bas(checksynthfile[2:-4],synthfile=synthfile)
-    result = fparams(checksynthfile[2:-4],synthfile=synthfile)
+    result = fparams(checksynthfile[2:-4],synthfile=synthfile,
+                     figure=checksynthfile[2:-4]+'-n'+str(n)+'-snr'+str(snr)+'.png')
 
   
     return(result) 
@@ -8855,7 +8874,7 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False):
 
     
     
-def fparams(root,synthfile=None):
+def fparams(root,synthfile=None,figure=None):
     """"Evaluates the agreement between input/output parameters in 
     FERRE (root.ipf and root.opf) files
     
@@ -8865,6 +8884,9 @@ def fparams(root,synthfile=None):
       root for the input/output parameter FERRE files
     synthfile: str
       associated FERRE/BAS synthfile to look for labels and other info
+    figure: str
+      name for the output file with a summary figure (usually a png file)
+     (default is None, and the plot is only shown on the screen)
       
     Returns
     -------
@@ -8892,6 +8914,9 @@ def fparams(root,synthfile=None):
     v = np.loadtxt(root + '.ipf',usecols=np.arange(ndim)+1)
     o = np.loadtxt(root + '.opf',usecols=np.arange(ndim)+1)
     result = np.mean(o-v,axis=0),np.std(o-v,axis=0),np.percentile(o-v,[15.85,50.,84.15],axis=0)
+
+
+    plt.clf()
     for i in range(ndim):
         plt.subplot(2,ndim,i+1)
         plt.plot(v[:,i],o[:,i],'.')
@@ -8911,8 +8936,15 @@ def fparams(root,synthfile=None):
         plt.text(result[2][0,i],max(hi[0])*0.4, "%6.2f" % result[2][0,i] )
         plt.text(result[2][1,i],max(hi[0])*0.3, "%6.2f" % result[2][1,i] )
         plt.text(result[2][2,i],max(hi[0])*0.2, "%6.2f" % result[2][2,i] )
-    
+ 
+    manager = plt.get_current_fig_manager() 
+    #manager.resize(*manager.window.maxsize())
+
+    plt.ion()
     plt.show()
+
+    if figure is not None:
+        plt.savefig(figure)
     
     return(result)
 
