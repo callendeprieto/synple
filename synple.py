@@ -1604,19 +1604,23 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
       assuming LTE for a input NLTE Tlusty model.
       (default False)
   nchem: int
-      number of combinations of abundances to include in the synspec calculations when
-      kargs are pairs (irregular grids). 
-      All these will be performed for every model in modelfiles. Which elements to
+      number of combinations of abundances to include in the synspec 
+      calculations when kargs are pairs (irregular grids).
+      All these will be performed for every model in modelfiles. 
+      Which elements to
       vary and the range of values for each are specified through kargs. Note: 
       calculations for regular grids will become irregular when nchem > 1.
+      This parameter is updated automatically in the subroutine for regular 
+      grids.
       (default 1)
   kargs:  tuples
        For irregular grids with random abundances as many pairs as necessary, 
        indicating the range for elemental variations [X/Fe]
        e.g. Na=(-0.2,0.2), Al=(-0.5, 0.2), ...
-       For regular grids as many triplets as necessary, indicating the number of 
-       steps, the lower limit and the stepsize for elemental variations [X/Fe]
+       For regular grids as many triplets as necessary, giving the number of 
+       steps, the lower limits and the stepsize for elemental variations [X/Fe]
        e.g. Na=(9,-0.2,0.05), ...
+       All entries must be pairs or triplets.
 
 
   Returns
@@ -1662,8 +1666,6 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
     print(entry)
     if iel == 0:
       n_p = []
-      llimits = []
-      steps = []
       symbol, mass, sol = elements()
       zatom = dict()
       for i in range(len(symbol)):
@@ -1671,17 +1673,20 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
     assert(len(entry) == 2 or len(entry) == 3),'kargs entries must have 2 (irregular grids with random values) or 3 (regular grids) entries'
     if len(entry) == 2:
       chems[symbols[iel]] = np.random.random_sample(nchem)*(entry[1]-entry[0])+entry[0]
-    #else:
-      #chems[symbols[iel]] = np.arange(entry[0])*entry[2]+entry[1]
+    else:
+      chems[symbols[iel]] = np.arange(entry[0])*entry[2]+entry[1]
       n_p.append(entry[0])
-      llimits.append(entry[1])
-      steps.append(entry[2])
     iel += 1
-    
-    if iel > 0 and len(entry) == 3:
-      aa = getaa(n_p)
-      nchem = len(aa[:,0])
-      #loop to build chems for regular grids goes here
+   
+  lenen = 2 
+  if iel > 0 and len(entry) == 3:
+    lenen = 3
+    kems = np.array(list(product(*chems.values())))
+    nchem = len(kems[:,0])
+    iel = 0
+    for entry in kargs.keys():
+      chems[entry] = kems[:,iel]
+      iel += 1
 
 
 
