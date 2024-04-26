@@ -1535,9 +1535,10 @@ def mkflt(dltfile,wavelengths,blocks=[],fwhm=0.0,unit='km/s',outdir='.'):
 
 
 def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
-    vmicro=None, vrot=0.0, fwhm=0.0, vmacro=0.0, nfe=0.0, \
+    vmicro=None, vrot=0.0, fwhm=0.0, vmacro=0.0,  \
     linelist=linelist0, atom='ap18', \
-    steprot=0.0, stepfwhm=0.0,  clean=True, save=None, lte=True):
+    steprot=0.0, stepfwhm=0.0,  clean=True, save=None, lte=True, 
+    nchem=1, **kargs):
 
   """Sets up a directory tree for computing synthetic spectra for a list of files in 
   parallel. The values of vmicro, vrot, fwhm, and nfe can be iterables. 
@@ -1602,15 +1603,25 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
       can be LTE or NLTE, and this keyword will ignore the populations and compute
       assuming LTE for a input NLTE Tlusty model.
       (default False)
+  nchem: int
+      number of combinations of abundances to include in the synspec calculations when
+      kargs are pairs (irregular grids). 
+      All these will be performed for every model in modelfiles. Which elements to
+      vary and the range of values for each are specified through kargs. Note: 
+      calculations for regular grids will become irregular when nchem > 1.
+      (default 1)
+  kargs:  tuples
+       For irregular grids with random abundances as many pairs as necessary, 
+       indicating the range for elemental variations [X/Fe]
+       e.g. Na=(-0.2,0.2), Al=(-0.5, 0.2), ...
+       For regular grids as many triplets as necessary, indicating the number of 
+       steps, the lower limit and the stepsize for elemental variations [X/Fe]
+       e.g. Na=(9,-0.2,0.05), ...
+
 
   Returns
   -------
-  wave: numpy array of floats (1D)
-      wavelengths (angstroms)
-  flux: numpy array of floats (2D -- as many rows as models input)
-      flux (H_lambda in ergs/s/cm2/A)
-  cont: numpy array of floats (2D -- as many rows as models input)
-      continuum flux (same units as flux)
+  builds a directory tree ready to perform synspec calculations
 
   """
 
@@ -1643,23 +1654,53 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
   except TypeError:
     nvmacro = 1
     vmacros = [ vmacro ]  
-  try: 
-    nnfe = len(nfe)
-    nnfes = nfe
-  except TypeError:
-    nnfe = 1
-    nnfes = [ nfe ] 
+  chems = dict() # abundance variations [X/Fe]
+  symbols = [] #elemental symbols X
+  for entry in list(map(str,kargs.keys())): symbols.append(entry)
+  iel = 0
+  for entry in kargs.values():
+    print(entry)
+    if iel == 0:
+      n_p = []
+      llimits = []
+      steps = []
+      symbol, mass, sol = elements()
+      zatom = dict()
+      for i in range(len(symbol)):
+        zatom[symbol[i]] = i + 1
+    assert(len(entry) == 2 or len(entry) == 3),'kargs entries must have 2 (irregular grids with random values) or 3 (regular grids) entries'
+    if len(entry) == 2:
+      chems[symbols[iel]] = np.random.random_sample(nchem)*(entry[1]-entry[0])+entry[0]
+    #else:
+      #chems[symbols[iel]] = np.arange(entry[0])*entry[2]+entry[1]
+      n_p.append(entry[0])
+      llimits.append(entry[1])
+      steps.append(entry[2])
+    iel += 1
+    
+    if iel > 0 and len(entry) == 3:
+      aa = getaa(n_p)
+      nchem = len(aa[:,0])
+      #loop to build chems for regular grids goes here
+
 
 
   idir = 0
+  ichem = -1
   dirfile = open('dirtree.txt','w')
   for entry in modelfiles:
     for vmicro1 in vmicros:
-      for nfe1 in nnfes:
+      for ichem in range(nchem):
 
         idir = idir + 1
         dir = ( "hyd%07d" % (idir) )
-        dirfile.write(str(idir)+' folder='+dir+' model='+entry+' vmicro='+str(vmicro1)+' [N/Fe]='+str(nfe1)+' \n')
+        cadena = str(idir)+' folder='+dir+' model='+entry+' vmicro='+str(vmicro1)
+        iel = 0
+        for el in symbols:
+           cadena = cadena + ' ['+el+'/Fe]='+str(chems[el][ichem]) + ' '
+           iel += 1
+        cadena = cadena + '\n'
+        dirfile.write(cadena)
         try:
           if dir != '.': os.mkdir(dir)
         except OSError:
@@ -1693,11 +1734,14 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
           abu1 = copy.copy(abu)
 
           #if need be, adjust nitrogen abundance according to nfe
-          if (abs(nfe1) > 1e-7):
+          if (ichem > -1):
             if (abu1 == None):
               linelist, entry = checksynspec(linelist,entry)
               atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
-            abu1[6] = abu1[6] * 10.**nfe1
+            iel = 0 
+            for el in symbols:
+              abu1[zatom[el]-1] = abu1[zatom[el]-1] * 10.**chems[el][ichem]
+              iel += 1
 
 
           x, y, z = syn(entry, wrange, dw=None, strength=strength, vmicro=vmicro1, \
@@ -1744,7 +1788,7 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
           print( "cannot exit dir hyd%07d" % (idir) )
 
 
-  return(None,None,None)
+  return()
 
 
 
