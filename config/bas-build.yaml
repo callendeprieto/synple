@@ -23,7 +23,7 @@ STIS:
     units: 'km/s'
     ppr: 3.
     wrange: [3000., 9900.]
-1000:
+R1000:
     fwhm: 299.792458
     units: 'km/s'
     ppr: 3.
