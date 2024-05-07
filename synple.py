@@ -8938,8 +8938,8 @@ def rbf_test(synthfile,n=None):
       
     Returns
     -------
-    tuple of 3 floats
-      16%, 50% and 84% percentiles between the original input and the output. 
+    tuple of 5 floats
+      mean, std dev., 16%, 50% and 84% percentiles between the original input and the output. 
     
     """
     
@@ -8960,8 +8960,12 @@ def rbf_test(synthfile,n=None):
     #2nd interpolation    
     c, pmin, ptp = rbf_get(synthfile+'-tmp')
     d2 = rbf_apply(synthfile+'-tmp', c, pmin, ptp, p)
+
+    err_mean = np.mean( (d2-d)/d )
+    err_std =  np.std( (d2-d)/d )
+    per = np.percentile( (d2-d)/d,[15.85,50.,84.15])
         
-    return(np.percentile( (d2-d)/d,[15.85,50.,84.15]) )
+    return( err_mean, err_std, per[0], per[1], per[2] )
     
     
     
@@ -8982,7 +8986,7 @@ def fparams(root,synthfile=None,figure=None):
     Returns
     -------
     result: numpy array of floats
-      mean, std. dev. and 16-50-86 percentiles for all the parameters
+      mean, std. dev. and 16-50-84 percentiles for all the parameters
     
     """
     
