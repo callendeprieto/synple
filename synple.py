@@ -8804,6 +8804,7 @@ def bas_test(synthfile,snr=1.e6):
     ef.close()
     
     return
+        
 
 def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False):
     """Creates an irregular FERRE grid from a pre-existing regular or 
@@ -8919,6 +8920,61 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False):
     of.close()
     
     return
+
+def rbf_test(synthfile,n=None):
+    """Creates an irregular FERRE grid using RBF interpolation on a 
+       pre-existing regular or irregular one, and from that one the
+       interpolation is repeated to return to the original/input grid
+       and estimate interpolation errors
+ 
+    Parameters
+    ----------
+    synthfile: str
+      name of the input FERRE/BAS synthfile
+    
+    n: int
+      number of spectra to create by RBF interpolation
+    (default is the number of spectra in the input grid)
+      
+    Returns
+    -------
+    err_std: numpy array of floats
+      Std. deviation between the original input and the output. 
+      The array gives the result for each spectrum in the input
+      grid, in the same order as in the grid
+    
+    err_med: numpy array of floats
+	  Median between the input and the output. Same size as err_std
+    
+    err_max: numpy array of floats
+      Maximum between the input and the output. Same size as err_max
+
+    """
+    
+
+    h,p,d = read_synth(synthfile)    
+    
+    ndim = len(p[0,:])
+    npix = len(d[0,:])
+    ntot = len(p[:,0])
+
+    if n is None: n = ntot
+    
+    #1st interpolation
+    synth_rbf(synthfile,outsynthfile=synthfile+'-tmp',n=n)
+
+    h2,p2,d2 = read_synth(synthfile+'-tmp')
+    
+    #2nd interpolation    
+    c, pmin, ptp = rbf_get(synthfile+'-tmp')
+    d2 = rbf_apply(synthfile+'-tmp', c, pmin, ptp, p)
+        
+    err_std = np.std((d2-d)/d)
+    err_med = np.median((d2-d)/d)
+    err_max = np.max((d2-d)/d)
+    
+    
+    return(err_std,err_med,err_max)
 
 
     
