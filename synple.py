@@ -8938,17 +8938,9 @@ def rbf_test(synthfile,n=None):
       
     Returns
     -------
-    err_std: numpy array of floats
-      Std. deviation between the original input and the output. 
-      The array gives the result for each spectrum in the input
-      grid, in the same order as in the grid
+    tuple of 3 floats
+      16%, 50% and 84% percentiles between the original input and the output. 
     
-    err_med: numpy array of floats
-	  Median between the input and the output. Same size as err_std
-    
-    err_max: numpy array of floats
-      Maximum between the input and the output. Same size as err_max
-
     """
     
 
@@ -8969,14 +8961,8 @@ def rbf_test(synthfile,n=None):
     c, pmin, ptp = rbf_get(synthfile+'-tmp')
     d2 = rbf_apply(synthfile+'-tmp', c, pmin, ptp, p)
         
-    err_std = np.std((d2-d)/d)
-    err_med = np.median((d2-d)/d)
-    err_max = np.max((d2-d)/d)
+    return(np.percentile( (d2-d)/d,[15.85,50.,84.15]) )
     
-    
-    return(err_std,err_med,err_max)
-
-
     
     
 def fparams(root,synthfile=None,figure=None):
