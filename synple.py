@@ -8848,7 +8848,7 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False):
             p2 = np.vstack((p2,vals))
     
     c, pmin, ptp = rbf_get(synthfile)
-    d2 = rbf_apply(synthfile, c, pmin, ptp, np.transpose(p2))
+    d2 = rbf_apply(c, pmin, ptp, np.transpose(p2))
     h2 = h
 
     
@@ -8952,7 +8952,7 @@ def rbf_test(synthfile,n=None):
     
     #2nd interpolation    
     c, pmin, ptp = rbf_get(synthfile+'-tmp')
-    d2 = rbf_apply(synthfile+'-tmp', c, pmin, ptp, p)
+    d2 = rbf_apply(c, pmin, ptp, p)
 
     err_mean = np.mean( (d2-d)/d )
     err_std =  np.std( (d2-d)/d )
