@@ -4748,34 +4748,27 @@ def rbf_get(synthfile, kernel='thin_plate_spline', neighbors=100):
 
   return(c, pmin, ptp)
 
-def rbf_apply(synthfile,c,pmin,ptp,par):
-  """Interpolates in the FERRE grid in the input file
-   using the RBFInterpolate objects in the array c to derive
+def rbf_apply(c,pmin,ptp,par):
+  """Interpolates using the RBFInterpolate objects in the array c
+   and auxiliary minimum on the parameter range (pmin,ptp) to derive
    fluxes for the parameters in the array par
 
   Parameters
   ----------
-  synthfile: string
-   Name of the FERRE synthfile to interpolate in
   c: RBFInterpolate object 
    previously
    derived from calling rbf_get
   par: array of floats
    array of parameters for interpolation
    rows correspond to different interpolations and columns
-   should correspond to the parameters of the FERRE grid 
+   should correspond to the parameters 
   """
 
   from scipy.interpolate import RBFInterpolator
 	
-  #grid parameters from header
-  h = head_synth(synthfile)
-  if type(h) is list: h = h[1]
-  ndim = int(h['N_OF_DIM'])
-  
   #map the parameters from physical to indices
   par2 = par.copy()
-  for i in range(ndim):
+  for i in range(len(par[:,0])):
     #par2[:,i] = (par[:,i] - llimits[i] ) / steps[i] 
     par2[:,i] = (par[:,i] - pmin[i] ) / ptp[i]
 
