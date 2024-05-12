@@ -4768,7 +4768,7 @@ def rbf_apply(c,pmin,ptp,par):
 	
   #map the parameters from physical to indices
   par2 = par.copy()
-  for i in range(len(par[:,0])):
+  for i in range(len(par[0,:])):
     #par2[:,i] = (par[:,i] - llimits[i] ) / steps[i] 
     par2[:,i] = (par[:,i] - pmin[i] ) / ptp[i]
 
