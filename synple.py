@@ -3944,7 +3944,11 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
 
                     file = os.path.join(dir,outconv)
                      
-                    if break_out == False and os.path.isfile(file):
+                    if break_out == False and os.path.isfile(file) and os.path.getsize(file) > 0:
+                      fh = open(file,'r')
+                      fdata = fh.read()
+                      fh.close()
+                      if 'NaN' not in fdata: 
                           print('first successful calculation is for idir=',idir)
                           wave, flux = np.loadtxt(file, unpack=True)
                           if wrange is None: 
@@ -4043,11 +4047,19 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
                           if nfwhm > 1: pars.append(fwhm1)
                           if nvmacro > 1: pars.append(vmacro1)
 
-                          if os.path.isfile(file):
+                          fgood = False
+                          if os.path.isfile(file) and os.path.getsize(file) > 0:
+                            fh = open(file,'r')
+                            fdata = fh.read()
+                            fh.close()
+                            if 'NaN' not in fdata:
+                              fgood = True
+
+                          if fgood == True:
                             wave, flux = np.loadtxt(file, unpack=True)
                           else:
                             if ignore_missing_models == False:
-                              assert os.path.isfile(file), 'Cannot find model '+file                  
+                              sys.exit('Cannot find model '+file+' or it contains no data or NaNs')
                             else:
                               wave, flux = (np.array([np.min(x),np.max(x)]), np.array([0.0, 0.0]))
                  
