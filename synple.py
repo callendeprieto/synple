@@ -3893,11 +3893,10 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
   if nvmacro > 1: pars.append('vmacro')
 
   #track solar reference abundances to set the scale
-  if feh or elem:
-    symbol, mass, sol = elements()
-    solabu = dict()
-    for i in range(len(symbol)):
-      solabu[symbol[i]] = sol[i]
+  symbol, mass, sol = elements()
+  solabu = dict()
+  for i in range(len(symbol)):
+    solabu[symbol[i]] = sol[i]
 
 
   hdr = mkhdr_irregular(pars)
