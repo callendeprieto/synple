@@ -4313,7 +4313,7 @@ def head_synth(synthfile):
         if not os.path.isfile(synthfile):
           sf = os.path.join(griddir,synthfile)
           if os.path.isfile(sf): synthfile = sf
-        print('reading grid '+synthfile+'...')
+        print('reading header of the grid '+synthfile+'...')
         file=open(synthfile,'rb')
         header, pars, data = pickle.load(file)
         file.close()
