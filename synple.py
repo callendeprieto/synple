@@ -4752,6 +4752,7 @@ def rbf_get(synthfile, kernel='thin_plate_spline', neighbors=100):
   ptp  = p.ptp(0)
 
   p2 = (p - pmin) / ptp
+
   
   print('deriving interpolation coefficients...')
   #c= RBFInterpolator(iarr, d, kernel=kernel, neighbors = neighbors )
@@ -8810,7 +8811,9 @@ def bas_test(synthfile,snr=1.e6):
     return
         
 
-def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False):
+def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
+              kernel='thin_plate_spline', neighbors=100):
+
     """Creates an irregular FERRE grid from a pre-existing regular or 
        irregular one
  
@@ -8830,6 +8833,14 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False):
       
     ebv: bool
       if true, fold in a dimension with E(B-V) variations
+
+    kernel: string
+      Type of RBF function (linear, thin_plate_spline, cubic, gaussian ...)
+
+    neighbors: int
+      Number of nearest neighbors used to compute the interpolation coefficients
+      for each grid point
+
       
     Returns
     -------
@@ -8858,7 +8869,7 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False):
         else:	
             p2 = np.vstack((p2,vals))
     
-    c, pmin, ptp = rbf_get(synthfile)
+    c, pmin, ptp = rbf_get(synthfile, kernel=kernel, neighbors=neighbors)
     d2 = rbf_apply(c, pmin, ptp, np.transpose(p2))
     h2 = h
 
@@ -8925,7 +8936,7 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False):
     
     return
 
-def rbf_test(synthfile,n=None):
+def rbf_test(synthfile,n=None, kernel='thin_plate_spline', neighbors=100):
     """Creates an irregular FERRE grid using RBF interpolation on a 
        pre-existing regular or irregular one, and from that one the
        interpolation is repeated to return to the original/input grid
@@ -8939,7 +8950,15 @@ def rbf_test(synthfile,n=None):
     n: int
       number of spectra to create by RBF interpolation
     (default is the number of spectra in the input grid)
-      
+
+    kernel: string
+      Type of RBF function (linear, thin_plate_spline, cubic, gaussian ...)
+
+    neighbors: int
+       Number of nearest neighbors used to compute the interpolation 
+       coefficients for each grid point
+     
+ 
     Returns
     -------
     tuple of 5 floats
@@ -8957,12 +8976,14 @@ def rbf_test(synthfile,n=None):
     if n is None: n = ntot
     
     #1st interpolation
-    synth_rbf(synthfile,outsynthfile=synthfile+'-tmp',n=n)
+    synth_rbf(synthfile,outsynthfile=synthfile+'-tmp',n=n,
+              kernel=kernel, neighbors=neighbors)
 
     h2,p2,d2 = read_synth(synthfile+'-tmp')
     
     #2nd interpolation    
-    c, pmin, ptp = rbf_get(synthfile+'-tmp')
+    c, pmin, ptp = rbf_get(synthfile+'-tmp',
+                           kernel=kernel, neighbors=neighbors)
     d2 = rbf_apply(c, pmin, ptp, p)
 
     err_mean = np.mean( (d2-d)/d )
