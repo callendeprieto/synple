@@ -8991,7 +8991,7 @@ def rbf_test(synthfile,n=None, kernel='thin_plate_spline', neighbors=100):
     per = np.percentile( (d2-d)/d,[15.85,50.,84.15])
 
     fh = open('-'.join((synthfile,str(n),kernel,str(neighbors),'rbf_test.dat')),'w')
-    fh.write(' '.join(map(str,(err_mean, err_std, per[0], per[1], per[2])))+'/n')
+    fh.write(' '.join(map(str,(n,err_mean, err_std, per[0], per[1], per[2])))+'/n')
     fh.close()
         
     return( err_mean, err_std, per[0], per[1], per[2] )
