@@ -8746,7 +8746,9 @@ def bas_build(synthfile):
 
     return()
 
-def bas_perfcheck(synthfile,n=1000,snr=1.e6):
+def bas_perfcheck(synthfile,n=1000,snr=1.e6,
+                  kernel='thin_plate_spline', neighbors=100):
+
     """Carry out a full performance check using bas on a synthetic grid
 
     Parameters
@@ -8759,6 +8761,12 @@ def bas_perfcheck(synthfile,n=1000,snr=1.e6):
     snr: float
       Signal to noise ratio for the mock spectra
       (default is 1.e6)
+    kernel: string
+      Type of RBF function (linear, thin_plate_spline, cubic, gaussian ...)
+    neighbors: int
+       Number of nearest neighbors used to compute the interpolation
+       coefficients for each grid point
+
 
     Returns
     ------
@@ -8769,7 +8777,7 @@ def bas_perfcheck(synthfile,n=1000,snr=1.e6):
 
     checksynthfile=synthfile+'-check.dat'
     synth_rbf(synthfile,outsynthfile=checksynthfile,n=n,
-              rv=False,ebv=False)
+              rv=False,ebv=False,kernel=kernel,neighbors=neighbors)
     bas_test(checksynthfile,snr=snr)
     print('running ... ','bas(',checksynthfile[2:-4],'synthfile=',synthfile,')')
     bas(checksynthfile[2:-4],synthfile=synthfile)
