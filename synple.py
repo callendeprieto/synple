@@ -8776,6 +8776,11 @@ def bas_perfcheck(synthfile,n=1000,snr=1.e6):
     result = fparams(checksynthfile[2:-4],synthfile=synthfile,
                      figure=checksynthfile[2:-4]+'-n'+str(n)+'-snr'+str(snr)+'.png')
 
+    fh = open('-'.join((synthfile,str(n),kernel,str(neighbors),'bas_perfcheck.dat')),'w')
+    fh.write(' '.join(map(str,(n,result[0],result[1],result[2],result[3],result[4])))+'\n')
+    fh.close()
+    
+
   
     return(result) 
      
@@ -8991,7 +8996,7 @@ def rbf_test(synthfile,n=None, kernel='thin_plate_spline', neighbors=100):
     per = np.percentile( (d2-d)/d,[15.85,50.,84.15])
 
     fh = open('-'.join((synthfile,str(n),kernel,str(neighbors),'rbf_test.dat')),'w')
-    fh.write(' '.join(map(str,(n,err_mean, err_std, per[0], per[1], per[2])))+'/n')
+    fh.write(' '.join(map(str,(n,err_mean, err_std, per[0], per[1], per[2])))+'\n')
     fh.close()
         
     return( err_mean, err_std, per[0], per[1], per[2] )
