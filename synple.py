@@ -8784,6 +8784,8 @@ def bas_perfcheck(synthfile,n=1000,snr=1.e6,
     result = fparams(checksynthfile[2:-4],synthfile=synthfile,
                      figure=checksynthfile[2:-4]+'-n'+str(n)+'-snr'+str(snr)+'.png')
 
+    print('len(result)=',len(result)
+
     fh = open('-'.join((synthfile,str(n),kernel,str(neighbors),'bas_perfcheck.dat')),'w')
     fh.write(' '.join(map(str,(n,result[0],result[1],result[2],result[3],result[4])))+'\n')
     fh.close()
