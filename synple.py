@@ -8771,7 +8771,7 @@ def bas_perfcheck(synthfile,n=1000,snr=1.e6,
     Returns
     ------
     result: numpy array of floats
-      mean, std. dev. and 16-50-86 percentiles for all the parameters
+      16-50-86 percentiles for all the parameters
     
     """
 
@@ -8786,7 +8786,7 @@ def bas_perfcheck(synthfile,n=1000,snr=1.e6,
 
 
     fh = open('-'.join((synthfile,str(n),kernel,str(neighbors),'bas_perfcheck.dat')),'w')
-    fh.write(str(n)+' '.join(map(str,np.concatenate(result)))+'\n')
+    fh.write(str(n)+' '+' '.join(map(str,np.concatenate(result)))+'\n')
     fh.close()
     
 
@@ -8975,8 +8975,8 @@ def rbf_test(synthfile,n=None, kernel='thin_plate_spline', neighbors=100):
  
     Returns
     -------
-    tuple of 5 floats
-      mean, std dev., 16%, 50% and 84% percentiles between the original input and the output. 
+    tuple of 3 floats
+      16%, 50% and 84% percentiles between the original input and the output. 
     
     """
     
@@ -9000,15 +9000,13 @@ def rbf_test(synthfile,n=None, kernel='thin_plate_spline', neighbors=100):
                            kernel=kernel, neighbors=neighbors)
     d2 = rbf_apply(c, pmin, ptp, p)
 
-    err_mean = np.mean( (d2-d)/d )
-    err_std =  np.std( (d2-d)/d )
     per = np.percentile( (d2-d)/d,[15.85,50.,84.15])
 
     fh = open('-'.join((synthfile,str(n),kernel,str(neighbors),'rbf_test.dat')),'w')
-    fh.write(' '.join(map(str,(n,err_mean, err_std, per[0], per[1], per[2])))+'\n')
+    fh.write(' '.join(map(str,(n, per[0], per[1], per[2])))+'\n')
     fh.close()
         
-    return( err_mean, err_std, per[0], per[1], per[2] )
+    return( per[0], per[1], per[2] )
     
     
     
@@ -9029,7 +9027,7 @@ def fparams(root,synthfile=None,figure=None):
     Returns
     -------
     result: numpy array of floats
-      mean, std. dev. and 16-50-84 percentiles for all the parameters
+      16-50-84 percentiles for all the parameters
     
     """
     
@@ -9051,7 +9049,7 @@ def fparams(root,synthfile=None,figure=None):
     ndim = int(h['N_OF_DIM'])
     v = np.loadtxt(root + '.ipf',usecols=np.arange(ndim)+1)
     o = np.loadtxt(root + '.opf',usecols=np.arange(ndim)+1)
-    result = np.mean(o-v,axis=0),np.std(o-v,axis=0),np.percentile(o-v,[15.85,50.,84.15],axis=0)
+    result = np.percentile(o-v,[15.85,50.,84.15],axis=0)
 
 
     plt.clf()
