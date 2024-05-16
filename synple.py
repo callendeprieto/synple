@@ -8077,12 +8077,13 @@ def identify_instrument(infile):
     conf = load_conf(config='bas-grids.yaml',confdir=confdir)
 
     instr = None
+    path, filename = os.path.split(infile)
     if infile[-4:] == 'fits':
         fi = fits.open(infile)
         head = fi[0].header
         if 'TELESCOP' in head: 
             telescop = head['TELESCOP']
-            if head['TELESCOP'] == 'LAMOST' and infile[:4] == 'spec' and len(fi) == 2:
+            if head['TELESCOP'] == 'LAMOST' and filename[:4] == 'spec' and len(fi) == 2:
                instr = 'LAMOST'
             if 'INSTRUME' in head:
                 if head['TELESCOP'] == 'HST' and head['INSTRUME'][:4] == 'STIS':
@@ -8091,7 +8092,7 @@ def identify_instrument(infile):
             if 'MAPKEY' in head:
                 if head['MAPKEY'] == 'calspec':
                     instr = 'CALSPEC'
-            if (infile[:5] == 'coadd' or infile[:7] == 'spectra') and len(fi) > 10:
+            if (filename[:5] == 'coadd' or filename[:7] == 'spectra') and len(fi) > 10:
                 instr = 'DESI'
     
     if instr is None:
