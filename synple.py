@@ -7989,7 +7989,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None):
         nrdfile = file + '.nrd'
         errfile = file + '.err'
       else:
-        assert len(outfile) == 1,'outfile can only be specified when there is a single infile'
+        if type(outfile) is list:
+          assert len(outfile) == 1,'outfile can only be specified when there is a single infile'
         opffile = outfile + '.opf'
         mdlfile = outfile + '.mdl'      
         nrdfile = outfile + '.nrd'
