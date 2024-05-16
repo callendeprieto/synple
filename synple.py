@@ -9053,9 +9053,6 @@ def fparams(root,synthfile=None,figure=None):
     o = np.loadtxt(root + '.opf',usecols=np.arange(ndim)+1)
     result = np.mean(o-v,axis=0),np.std(o-v,axis=0),np.percentile(o-v,[15.85,50.,84.15],axis=0)
 
-    print(len(result))
-    print(result)
-
 
     plt.clf()
     for i in range(ndim):
