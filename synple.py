@@ -8044,7 +8044,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None):
           lchi = np.log10( np.sum((bflx-flx)**2 * iva) / (len(bflx) - len(res)) )
           print('reduced lchi =',lchi)
       
-        opf.write(ids[j]+' '+' '.join(map(str,res))+' '+' '.join(map(str,eres))+' '+
+        opf.write(str(ids[j])+' '+' '.join(map(str,res))+' '+
+            ' '.join(map(str,eres))+' '+
             str(vrad)+' '+str(np.median(flx*np.sqrt(iva)))+' '+
             str(lchi)+' '+' '.join(map(str,cov))+'\n')
         nrd.write(' '.join(map(str,flx))+'\n')
