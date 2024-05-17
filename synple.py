@@ -7947,6 +7947,10 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None):
     hd, p, d = read_synth(synthfile)      
     x = lambda_synth(synthfile)
     lenx = len(x)
+    if type(hd) is list:
+      hd0 = hd[1]
+    else:
+      hd0 = hd
     
     #normalization
     print('normalizing grid...')
@@ -8028,7 +8032,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None):
         print('reduced lchi =',lchi)
                 
         vrad = 0.0
-        if rv is None and 'RV' not in hd.values() and instr0 is not None:
+        if rv is None and 'RV' not in hd0.values() and instr0 is not None:
           vrad, evrad = xxc(x2,flx,iva,x2,bflx)
           print('RV = ',vrad,' km/s')
         
