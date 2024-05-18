@@ -8781,6 +8781,15 @@ def bas_perfcheck(synthfile,n=1000,snr=1.e6,
       16-50-86 percentiles for all the parameters
     
     """
+    hd = head_synthfilel(synthfile)
+    if 'NTOT' in hd: 
+      ntot = int(hd['NTOT'])
+    else:
+      if 'N_P' in hd:
+         n_p = map(int,hd['N_P']) 
+         ntot = np.product(n_p)
+      else:
+        ntot = 0
 
     checksynthfile=synthfile+'-check.dat'
     synth_rbf(synthfile,outsynthfile=checksynthfile,n=n,
@@ -8793,7 +8802,7 @@ def bas_perfcheck(synthfile,n=1000,snr=1.e6,
 
 
     fh = open('-'.join((synthfile,str(n),kernel,str(neighbors),'bas_perfcheck.dat')),'w')
-    fh.write(str(n)+' '+' '.join(map(str,np.concatenate(result)))+'\n')
+    fh.write(str(n)+' '+str(ntot)+' '+' '.join(map(str,np.concatenate(result)))+'\n')
     fh.close()
     
 
