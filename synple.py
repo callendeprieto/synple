@@ -8781,7 +8781,7 @@ def bas_perfcheck(synthfile,n=1000,snr=1.e6,
       16-50-86 percentiles for all the parameters
     
     """
-    hd = head_synthfilel(synthfile)
+    hd = head_synthfile(synthfile)
     if 'NTOT' in hd: 
       ntot = int(hd['NTOT'])
     else:
