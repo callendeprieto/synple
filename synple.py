@@ -7889,7 +7889,7 @@ def cebas(p,d,flx,iva):
     return(res,eres,cov,bflx)
 
 
-def bas(infile, synthfile=None, outfile=None, target=None, rv=None):
+def bas(infile, synthfile=None, outfile=None, target=None, rv=None, focus=False):
 
     """Bayesian Algorithm in Synple
     
@@ -7951,6 +7951,15 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None):
       hd0 = hd[1]
     else:
       hd0 = hd
+
+    #focus
+    if focus:
+      p2 = p
+      d2 = d
+      nmod = len(p[:,0])
+      irnd = np.array(np.random.random_sample(int(nmod*0.1))*nmod,dtype=int)
+      p = p[irnd,:]
+      d = d[irnd,:]
     
     #normalization
     print('normalizing grid...')
@@ -8043,6 +8052,12 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None):
           
           lchi = np.log10( np.sum((bflx-flx)**2 * iva) / (len(bflx) - len(res)) )
           print('reduced lchi =',lchi)
+
+        if focus:
+          w = ( (abs(p-res)/eres).max(1) < 3. )
+          res, eres, cov, bflx = cebas( p[w,:], d[w,:], flx, iva )
+          lchi = np.log10( np.sum((bflx-flx)**2 * iva) / (len(bflx) - len(res)) )
+          print('focus reduced lchi =',lchi)
       
         opf.write(str(ids[j])+' '+' '.join(map(str,res))+' '+
             ' '.join(map(str,eres))+' '+
