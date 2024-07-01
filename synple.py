@@ -4462,7 +4462,7 @@ def read_synth(synthfile,nd=False):
 
         #parameters
         ndim = int(header0['N_OF_DIM']) 
-        if ('TYPE' in header0 and header0['TYPE'] == 'irregular'):
+        if ('TYPE' in header0 and 'irregular' in header0['TYPE']):
             pars = data[:,0:ndim]
             data = data[:,ndim:]
         else:
@@ -4532,8 +4532,6 @@ def write_synth(synthfile,p,d,hdr=None,irregular=False):
     nowtime=time.ctime(time.time())
     osinfo=os.uname()
    
-
-
     if hdr is None:
         #minimal header        
         hdr = {}
@@ -4548,17 +4546,17 @@ def write_synth(synthfile,p,d,hdr=None,irregular=False):
         hdr['COMMENTS3'] = "'pwd is "+pwd+"'"
 
     else:
+
         if type(hdr) is list:
           hdr0 = hdr[1]
         else:
           hdr0 = hdr.copy()
           hdr = [hdr]
 
-	
         ndim = int(hdr0['N_OF_DIM']) 
         #n_p = list(map(int,hdr['N_P'].split()))
         if 'TYPE' in hdr0: 
-          if hdr0['TYPE'] == "'irregular'":
+          if 'irregular' in hdr0['TYPE']:
             irregular = True
 
     if irregular:
@@ -4577,7 +4575,9 @@ def write_synth(synthfile,p,d,hdr=None,irregular=False):
     fout = open(synthfile,'w')
     for block in hdr:
       fout.write(' &SYNTH\n')
-      for entry in block: fout.write(' '+entry + ' = ' + str(block[entry]) + '\n')
+      for entry in block: 
+        value = block[entry]
+        fout.write(' '+entry + ' = ' + str(value) + '\n')
       fout.write(' /\n')
 
     #now the data	
@@ -4639,7 +4639,7 @@ def merge_synth(synthfiles,outsynthfile=None):
     h0 = dict()
     h0['MULTI'] = len(hh)
     h0['ID'] = synthfile2
-    h0['COMMENTS1'] = "'merged with synple.merge_synth'"
+    h0['COMMENTS1'] = 'merged with synple.merge_synth'
     h0['N_OF_DIM'] = hh[0]['N_OF_DIM']
     if 'NTOT' in hh[0]:
       h0['NTOT'] = hh[0]['NTOT']
@@ -7149,7 +7149,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
     if "NTOT" in line: ntot = int(line.split()[2])
     hd.append(line)
 
-  if type == "'irregular'":
+  if 'irregular' in type:
     assert (len(labels) == ndim), 'The number of LABELS in the header does not agree with the dimension of the grid'
   else:
     assert (len(n_p) == len(steps) & len(n_p) == len(llimits) & len(n_p) == len(labels) & len(n_p) == ndim), 'The dimension of the parameters from the header are inconsistent'
@@ -7227,7 +7227,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
 
   
   #define indices for grid loops
-  if type == "'irregular'":
+  if 'irregular' in type:
     ind = range(ntot)
     ind_n_p =  list(range(ndim))
     labels2 = list(labels)
@@ -7324,7 +7324,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
   #smooth and write data
   k = 0 #increases only when a line from the original file is used
   j = 0 #increases as we advance through the array ind
-  if type == "'irregular'": 
+  if 'irregular' in type: 
     pass
   else:
     ntot = np.prod(n_p)
@@ -7340,7 +7340,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
         if (abs(freeze[entry] - par[labels.index(entry)]) < 1e-6): skip = False
       if skip: continue
     y = np.array(line.split(),dtype=float)
-    if type == "'irregular'":
+    if 'irregular' in type:
       par = y[:ndim]
       y = y[ndim:]
     else:
@@ -7385,7 +7385,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
 		
     if wrange is not None: yy = yy[section2]
     
-    if type == "'irregular'": yy = np.insert(yy,0,par)
+    if 'irregular' in type: yy = np.insert(yy,0,par)
     yy.tofile(fout,sep=" ",format="%0.4e")
     fout.write("\n")
     k = k + 1
