@@ -8961,6 +8961,7 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
         if ebv: outsynthfile += '-EBV' 
         outsynthfile += '.dat'
     of = open(outsynthfile,'w')
+    print('writing grid ',outsynthfile,'...')
     if type(h2) is not list:
       h2 = [h2]
     for block in h2:
