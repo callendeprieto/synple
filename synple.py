@@ -8955,7 +8955,11 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
     if ending < -1:
         ending = len(synthfile) + 1
     root = synthfile[2:ending]
-    if outsynthfile is None: outsynthfile = 'n_'+root+'rbf'+'.dat'
+    if outsynthfile is None: 
+        outsynthfile = 'n_'+root+'rbf'
+        if rv: outsynthfile += '-RV'
+        if ebv: outsynthfile += '-EBV' 
+        outsynthfile += '.dat'
     of = open(outsynthfile,'w')
     if type(h2) is not list:
       h2 = [h2]
