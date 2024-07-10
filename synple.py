@@ -157,7 +157,8 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       wavelength step for Gaussian convolution (angstroms)
       set to 0. for automatic adjustment (default 0.)
   intensity: bool
-      set to True to include an array with intensities  at mu=0.1,0.2,...,1.0 in the output
+      set to True to return intensities  at
+      mu=0.0001,0.001,0.01,0.1,0.25,0.4,0.55,0.7,0.85,1.0
       -- no broadening due to macro, rotation or instrumental/fwhm effects are considered
       (default False)
   lineid: bool
@@ -205,7 +206,10 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   ---- if intensity is True
   inte: 2D numpy array of floats
-      intensity (I_nu in ergs/s/cm2/Hz/strad) for mu=0.1,0.2,...,1.0
+      intensity (I_nu in ergs/s/cm2/Hz/strad) for
+      mu=0.0001,0.001,0.01,0.1,0.25,0.4,0.55,0.7,0.85,1.0
+  continte: 2D numpy array of float
+      continuum intensity for the same angles
 
 
   ---- if lineid (or tag) is True
@@ -320,7 +324,9 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     wave = None
     flux = None  
     cont = None
-    if intensity: inte = None
+    if intensity: 
+      inte = None
+      continte = None
 
   else:
 
@@ -349,11 +355,16 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       wave2,win = np.unique(wave2,return_index=True)
       flux2 = flux2[win]
     if intensity:
+      nmu = 10
       assert (os.path.isfile('fort.10')), 'Error: I cannot read the file *fort.10* in '+tmpdir
       iwave, inte = read10('fort.10')
+      contiwave, continte1 = read10('fort.18')
       if np.any(np.diff(iwave) <= 0.0):
         iwave, win = np.unique(iwave,return_index=True)
         inte = inte[win,:]
+      continte = np.zeros((len(iwave),nmu))
+      for entry in range(nmu):
+        continte[:,entry] = np.interp(iwave,contiwave,continte1[:,entry]) 
       assert (np.max(iwave-wave) < 1e-7), 'Error: the wavelengths of the intensity (fort.10) and flux arrays  (fort.7) are not the same'
       assert (fwhm < 1e-7), 'Error: computing the intensity at various angles is not compatible with the fwhm keyword'
       assert (vmacro < 1e-7), 'Error: computing the intensity at various angles is not compatible with the vmacro keyword'
@@ -386,9 +397,12 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       if intensity:
         nmu = 10
         inte2 = np.zeros((nsamples,nmu))
+        continte2 = np.zeros((nsamples,nmu))
         for entry in range(nmu): 
           inte2[:,entry] = np.interp(wave3, wave, inte[:,entry])
+          continte2[:,entry] = np.interp(wave3, wave, continte[:,entry])
         inte = inte2
+        continte = continte2
       #flux = interp_spl(wave3, wave, flux)      
       wave = wave3
 
@@ -468,12 +482,12 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   if lineid: 
     if intensity:
-      s = wave, flux, cont, inte, [la,li,lo]
+      s = wave, flux, cont, inte, continte, [la,li,lo]
     else:
       s = wave, flux, cont, [la,li,lo]
   else:
     if intensity:
-      s = wave, flux, cont, inte
+      s = wave, flux, cont, inte, continte
     else:
       s = wave, flux, cont
 
@@ -539,8 +553,8 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       wavelength step for Gaussian convolution (angstroms)
       set to 0. for automatic adjustment (default 0.)
   intensity: bool
-      set to True to include an array with intensities  at mu=0.1,0.2,...,1.0 in the output
-      -- no broadening due to macro, rotation or instrumental/fwhm effects are considered      
+      set to True to return intensities  at mu=0.001,0.2,0.3,...,1.0 in output
+      -- no broadening due to macro, rotation or instrumental/fwhm effects are considered
       (default False)
   lineid: bool
       set to True to add line identifications to the ouput. They will take the form
@@ -584,7 +598,10 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   ---- if intensity is True
   inte: 2D numpy array of floats
-      intensity (I_nu in ergs/s/cm2/Hz/strad) for mu=0.1,0.2,...,1.0
+      intensity (I_nu in ergs/s/cm2/Hz/strad) for
+      mu=0.0001,0.001,0.01,0.1,0.25,0.4,0.55,0.7,0.85,1.0
+  continte: 2D numpy array of float
+      continuum intensity for the same angles
 
 
   ---- if lineid (or tag) is True 
@@ -754,8 +771,9 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       wavelength step for Gaussian convolution (angstroms)
       set to 0. for automatic adjustment (default 0.)
   intensity: bool
-      set to True to include an array with intensities  at mu=0.1,0.2,...,1.0 in the output
-      -- no broadening due to macro, rotation or instrumental/fwhm effects are considered      
+      set to True to return intensities  at 
+      mu=0.0001,0.001,0.01,0.1,0.25,0.4,0.55,0.7,0.85,1.0
+      -- no broadening due to macro, rotation or instrumental/fwhm effects are considered
       (default False)
   lineid: bool
       set to True to add line identifications to the ouput. They will take the form
@@ -797,11 +815,15 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
   cont: numpy array of floats
       continuum flux (same units as flux)
 
- ---- if intensity is True
+  ---- if intensity is True
   inte: 2D numpy array of floats
-      intensity (I_nu in ergs/s/cm2/Hz/strad) for mu=0.1,0.2,...,1.0
+      intensity (I_nu in ergs/s/cm2/Hz/strad) for
+      mu=0.0001,0.001,0.01,0.1,0.25,0.4,0.55,0.7,0.85,1.0
+  continte: 2D numpy array of float
+      continuum intensity for the same angles
 
- ---- if lineid (or tag) is True
+
+  ---- if lineid (or tag) is True
   lalilo: list with three arrays
         la: numpy array of floats
             wavelenghts of lines (angstroms)
@@ -5350,7 +5372,9 @@ def write55(wrange,dw=1e-2,imode=0,iprin=0,inlte=0,hydprf=2,cutoff0=200., \
   else: f.write(str(ll-1) + ' ' + ' '.join(map(str,np.arange(ll-1)+20)))
   f.write("\n")
   f.write( ' %f  \n' % (vmicro) )
-  if intensity: f.write( ' %i  %f %i \n' % (10, 0.1, 1) )
+  if intensity: 
+    f.write( ' %i  %f %i \n' % (-10, 0.0001, 1) )
+    f.write( ' %f %f %f %f %f %f %f %f %f %f \n' % (0.0001,0.001,0.01,0.1,0.25,0.4,0.55,0.7,0.85,1.0) )
   f.close()
 
 def write5(teff,logg,abu, atom='ap18', ofile='fort.5', inlte=0, atommode=None, atominfo=None):
@@ -7922,6 +7946,12 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, focus=False)
       prior to the analysis. When equal to None, if RV is among the parameters in the synthfile, 
       RVs will be determined as such, but otherwise RVs are derived by the routine xxc.
       (default is None)
+
+    focus: bool
+      switch to activate a two-step algorithm in which a coarsely 
+      subsampled version of the grid is used to identify first where  
+      the optimal solution is, and then perform an focused analysis
+      in that region (a +/- 3 sigma volume)
    
     Returns
     -------
@@ -8771,7 +8801,7 @@ def bas_build(synthfile):
     return()
 
 def bas_perfcheck(synthfile,n=1000,snr=1.e6,
-                  kernel='thin_plate_spline', neighbors=100):
+    kernel='thin_plate_spline', neighbors=100, focus=False):
 
     """Carry out a full performance check using bas on a synthetic grid
 
@@ -8790,6 +8820,11 @@ def bas_perfcheck(synthfile,n=1000,snr=1.e6,
     neighbors: int
        Number of nearest neighbors used to compute the interpolation
        coefficients for each grid point
+    focus: bool
+      switch to activate a two-step algorithm in which a coarsely 
+      subsampled version of the grid is used to identify first where   
+      the optimal solution is, and then perform an focused analysis
+      in that region (a +/- 3 sigma volume) 
 
 
     Returns
@@ -8813,7 +8848,8 @@ def bas_perfcheck(synthfile,n=1000,snr=1.e6,
               rv=False,ebv=False,kernel=kernel,neighbors=neighbors)
     bas_test(checksynthfile,snr=snr)
     print('running ... ','bas(',checksynthfile[2:-4],'synthfile=',synthfile,')')
-    bas(checksynthfile[2:-4],synthfile=synthfile)
+    bas(checksynthfile[2:-4],synthfile=synthfile,kernel=kernel,
+              neighbors=neighbors,focus=focus)
     result = fparams(checksynthfile[2:-4],synthfile=synthfile,
                      figure=checksynthfile[2:-4]+'-n'+str(n)+'-snr'+str(snr)+'.png')
 
