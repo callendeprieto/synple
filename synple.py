@@ -362,9 +362,19 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       if np.any(np.diff(iwave) <= 0.0):
         iwave, win = np.unique(iwave,return_index=True)
         inte = inte[win,:]
+
+      clight_cgs = clight * 1e5 # km to cm
+      iwave_cgs = iwave * 1e-8  # AA to cm
+      # I_nu to I_lambda (cgs)
+      inte = (inte.transpose() * clight_cgs / iwave_cgs**2 * 1e-8).transpose()
+
       continte = np.zeros((len(iwave),nmu))
+      #mapping continte onto the same wavelength grid as the actual intensity
       for entry in range(nmu):
         continte[:,entry] = np.interp(iwave,contiwave,continte1[:,entry]) 
+      # I_nu to I_lambda
+      continte = (continte.transpose() * clight_cgs / iwave_cgs**2 * 1e-8).transpose()
+
       assert (np.max(iwave-wave) < 1e-7), 'Error: the wavelengths of the intensity (fort.10) and flux arrays  (fort.7) are not the same'
       assert (fwhm < 1e-7), 'Error: computing the intensity at various angles is not compatible with the fwhm keyword'
       assert (vmacro < 1e-7), 'Error: computing the intensity at various angles is not compatible with the vmacro keyword'
