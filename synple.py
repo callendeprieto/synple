@@ -9084,6 +9084,7 @@ def fparams(root,synthfile=None,figure=None):
                 assert os.path.exists(synthfile),'cannot find synthfile:'+synthfile
                 
     h = head_synth(synthfile)
+    if type(h) is list: h = h[1] 
     ndim = int(h['N_OF_DIM'])
     v = np.loadtxt(root + '.ipf',usecols=np.arange(ndim)+1)
     o = np.loadtxt(root + '.opf',usecols=np.arange(ndim)+1)
