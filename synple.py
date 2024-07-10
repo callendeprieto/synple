@@ -8848,8 +8848,7 @@ def bas_perfcheck(synthfile,n=1000,snr=1.e6,
               rv=False,ebv=False,kernel=kernel,neighbors=neighbors)
     bas_test(checksynthfile,snr=snr)
     print('running ... ','bas(',checksynthfile[2:-4],'synthfile=',synthfile,')')
-    bas(checksynthfile[2:-4],synthfile=synthfile,kernel=kernel,
-              neighbors=neighbors,focus=focus)
+    bas(checksynthfile[2:-4],synthfile=synthfile,focus=focus)
     result = fparams(checksynthfile[2:-4],synthfile=synthfile,
                      figure=checksynthfile[2:-4]+'-n'+str(n)+'-snr'+str(snr)+'.png')
 
