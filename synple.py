@@ -8263,6 +8263,12 @@ def read_spec(infile,wavelengths=None,target=None,rv=None):
           wav = wavelengths
 
       elif instr == 'DESI':
+         if wavelengths is not None and type(wavelengths) is not list:
+           twavelengths = []
+           twavelengths.append(wavelengths[(wavelengths < 5800.)])
+           twavelengths.append(wavelengths[(wavelengths >= 5800.) & (wavelengths < 7600.)])
+           twavelengths.append(wavelengths[wavelengths >= 7600.])
+           wavelengths = twavelengths.copy()
          i = 0
          for band in ('B','R','Z'):
            wav1,flux1,ivar1,res1,map1,head1 = read_desispec(infile,band)
