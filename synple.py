@@ -4804,6 +4804,10 @@ def rbf_apply(c,pmin,ptp,par):
   c: RBFInterpolate object 
    previously
    derived from calling rbf_get
+  pmin: array of floats
+   minimum values for each of the parameters
+  ptp: array of floats
+   peak-to-peak values for each of the parameters
   par: array of floats
    array of parameters for interpolation
    rows correspond to different interpolations and columns
@@ -7919,6 +7923,104 @@ def cebas(p,d,flx,iva):
         #best-fitting model
         bflx = np.matmul(likeli,d)/den
         #bflx = [0.0,0.0]
+        
+    print('res=',res,'eres=',eres)
+      
+    return(res,eres,cov,bflx)
+
+def vicebas(p, d, flx,iva,npoints=10):
+
+    """Visualization-oriented version of cebas
+    
+    Parameters
+    ----------
+   p: 2D numpy array of floats
+      parameter table with as many columns as parameters and
+      as many rows as spectra in the array d
+
+    d: 2D numpy array of floats
+      spectra table with as many columns as frequencies in the spectdra
+      and as many rows as spectra
+
+    flx: 1D numpy array of floats
+      observed spectrum, sampled with the same wavelengths as the grid 
+    
+    iva: 1D numpy array of float
+      inverse variance for the observed spectrum
+    
+    Returns
+    -------
+    res: numpy array of floats
+      best-fitting parameters (as many entries as columns in p)
+      
+    eres: numpy array of floats
+      uncertainties for the best-fitting parameters
+    
+    cov: numpy array of floats
+      top half of the covariance matrix for the best-fitting parameters
+      
+    bflx: numpy arry of floats
+      best-fitting model (same size as flx)
+      
+    """
+
+    from scipy.interpolate import RBFInterpolator
+
+    chi = np.sum((d-flx)**2 * iva,-1)
+    beta = np.median(chi) / 1490. / 5.
+    #print('min/max/median chi=',np.min(chi),np.max(chi),np.median(chi))
+    #print('beta=',beta)
+    while np.exp(-np.min(chi)/2./beta) <= 0.0:
+      beta = beta * 2.
+      #print('-- new beta=',beta)
+
+    #parameters
+    ndim = len(p[0,:])
+    res = np.zeros(ndim)
+    eres = np.zeros(ndim)
+    cov = np.zeros(ndim*(ndim+1)//2)
+    likeli = np.exp(-chi/2./beta)
+    den = np.sum(likeli)
+    #print('den=',den)
+    k = 0
+    for i in range(ndim):
+        #parameters
+        res[i] = np.sum( likeli * p[:,i])/den
+        
+        #uncertainties
+        for j in range(ndim-i):
+          cov[k] = np.sum( likeli * (p[:,i] - res[i]) * (p[:,j+i] - res[j+i]) )/den
+          if j == 0: eres[i] = np.sqrt(cov[k])
+          k = k + 1
+      
+    #best-fitting model
+    bflx = np.matmul(likeli,d)/den
+    #bflx = [0.0,0.0]
+
+    pmin = p.min(0)
+    ptp  = p.ptp(0)
+    p2 = (p - pmin) / ptp
+    c= RBFInterpolator(p2, d, kernel='thin_plate_spline', neighbors=100 )
+
+    rres = np.tile(res,npoints**2).reshape((ndim,npoints**2))
+
+    for i in range(ndim):
+      for j in range(ndim-1):
+        xx = np.linspace(pmin[i],pmin[i]+ptp[i],npoints)
+        yy = np.linspace(pmin[j+1],pmin[j+1]+ptp[j+1],npoints)
+        xxyy = np.array(list(product(*(xx,yy))))
+        #get a regular grid of parameters for dimensions i and j+1
+        #while going through the solution on the rest of the dimensions
+        par = rres
+        par[i,:] = xxyy[:,0]
+        par[j+1,:] = xxyy[:,1]
+        data = rbf_apply(c, pmin, ptp, par.transpose())
+        chi = np.sum((data-flx)**2 * iva,-1).reshape((npoints,npoints))
+        likeli = np.exp(-chi/2./beta)
+        print(likeli.shape)
+        plt.imshow(likeli)
+        plt.show()
+        
         
     print('res=',res,'eres=',eres)
       
