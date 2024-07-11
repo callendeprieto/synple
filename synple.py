@@ -7920,9 +7920,9 @@ def cebas(p,d,flx,iva):
           if j == 0: eres[i] = np.sqrt(cov[k])
           k = k + 1
       
-        #best-fitting model
-        bflx = np.matmul(likeli,d)/den
-        #bflx = [0.0,0.0]
+    #best-fitting model
+    bflx = np.matmul(likeli,d)/den
+    #bflx = [0.0,0.0]
         
     print('res=',res,'eres=',eres)
       
