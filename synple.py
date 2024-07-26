@@ -8566,10 +8566,42 @@ def read_desispec(filename,band=None):
 
   return((wavelength,flux,ivar,res,fibermap,header))
 
-def plot_spec(x,n,m=None,r=None):
+def plot_spec(x,n,m=None,nozero=False):
 
     """Plot one or multiple spectra
     """
+
+    if type(x) is list: 
+      xx = np.hstack(x)
+      xx = xx/10.
+    else:
+      xx = x/10.
+
+    if nozero:
+      n[(n <= 0.)] = np.mean(n)
+
+    nfreq = len(x)
+    if n.ndim == 1: 
+      nspec = 1
+      plt.clf()
+      plt.plot(xx,n)
+      plt.xlabel('wavelength (nm)')
+      plt.ylabel('normalized flux')
+      if m is not None:
+        plt.plot(xx,m)
+      plt.savefig('fig1.png')
+      plt.show()
+    else:
+      nspec = len(n[:,0])
+      for i in range(nspec):
+        plt.clf()
+        plt.plot(xx,n[i,:])
+        plt.xlabel('wavelength (nm)')
+        plt.ylabel('normalized flux')
+        if m is not None:
+          plt.plot(xx,m[i,:])
+        plt.savefig('fig'+str(i+1)+'.png')
+        
 
     return()
 
