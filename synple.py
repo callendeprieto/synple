@@ -8566,7 +8566,7 @@ def read_desispec(filename,band=None):
 
   return((wavelength,flux,ivar,res,fibermap,header))
 
-def plot_spec(x,n,m=None,nozero=False):
+def plot_spec(x,n,m=None,xlim=None,ylim=None,nozero=False):
 
     """Plot one or multiple spectra
     """
@@ -8574,32 +8574,80 @@ def plot_spec(x,n,m=None,nozero=False):
     if type(x) is list: 
       xx = np.hstack(x)
       xx = xx/10.
+      p = [0]
+      for i in range(len(x)):
+        p.append(p[i] + len(x[i])) 
     else:
       xx = x/10.
 
-    if nozero:
-      n[(n <= 0.)] = np.mean(n)
+    if xlim is None: xlim = (min(xx),max(xx))
 
-    nfreq = len(x)
+    nfreq = len(xx)
     if n.ndim == 1: 
       nspec = 1
       plt.clf()
-      plt.plot(xx,n)
+      labels = []
+      if type(x) is list:
+        for i in range(len(x)):
+          if nozero:
+            w = (n[p[i]:p[i+1]] > 0.)
+          else:
+            w = range(p[i+1]-p[i])
+          plt.plot(xx[p[i]:p[i+1]][w],n[p[i]:p[i+1]][w])
+          labels.append('data')
+          if m is not None: 
+            plt.plot(xx[p[i]:p[i+1]][w],m[p[i]:p[i+1]][w])
+            labels.append('model')
+      else:
+        if nozero:
+          w = (n > 0.)
+        else:
+          w = range(len(x))
+        plt.plot(xx[w],n[w])
+        labels.append('data')
+        if m is not None:
+          plt.plot(xx[w],m[w])
+          labels.append('model')
+      if ylim is None: ylim = (min(n)*0.95,max(n)*1.05)
       plt.xlabel('wavelength (nm)')
       plt.ylabel('normalized flux')
-      if m is not None:
-        plt.plot(xx,m)
+      plt.xlim(xlim)
+      plt.ylim(ylim)
+      if m is not None: plt.legend(labels)
       plt.savefig('fig1.png')
       plt.show()
     else:
       nspec = len(n[:,0])
-      for i in range(nspec):
+      labels = []
+      for j in range(nspec):
         plt.clf()
-        plt.plot(xx,n[i,:])
+        if type(x) is list:
+          for i in range(len(x)):
+            if nozero:
+              w = (n[j,p[i]:p[i+1]] > 0.)
+            else:
+              w = range(p[i+1]-p[i])
+            plot(xx[p[i]:p[i+1]][w],n[j,p[i]:p[i+1]][w])
+            labels.append('data')
+            if m is not None:
+              plot(xx[p[i]:p[i+1]][w],m[j,p[i]:p[i+1]][w])
+              labels.append('model')
+        else:
+          if nozero:
+            w = (n[j,:] > 0.)
+          else:
+            w = range(len(x))
+          plt.plot(xx[w],n[j,w])
+          labels.append('data')
+          if m is not None:
+            plt.plot(xx[w],m[j,w])
+            lables.append('model')
+        if ylim is None: ylim = (min(n[j,:])*0.95,max(n[j,:])*1.05)
         plt.xlabel('wavelength (nm)')
         plt.ylabel('normalized flux')
-        if m is not None:
-          plt.plot(xx,m[i,:])
+        plt.xlim(xlim)
+        plt.ylim(ylim)
+        if m is not None: plt.legend(labels)
         plt.savefig('fig'+str(i+1)+'.png')
         
 
