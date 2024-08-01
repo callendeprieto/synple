@@ -206,7 +206,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   ---- if intensity is True
   inte: 2D numpy array of floats
-      intensity (I_nu in ergs/s/cm2/Hz/strad) for
+      intensity (I_lambda in ergs/s/cm2/A/strad) for
       mu=0.0001,0.001,0.01,0.1,0.25,0.4,0.55,0.7,0.85,1.0
   continte: 2D numpy array of float
       continuum intensity for the same angles
@@ -609,7 +609,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   ---- if intensity is True
   inte: 2D numpy array of floats
-      intensity (I_nu in ergs/s/cm2/Hz/strad) for
+      intensity (I_lambda in ergs/s/cm2/A/strad) for
       mu=0.0001,0.001,0.01,0.1,0.25,0.4,0.55,0.7,0.85,1.0
   continte: 2D numpy array of float
       continuum intensity for the same angles
@@ -828,7 +828,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   ---- if intensity is True
   inte: 2D numpy array of floats
-      intensity (I_nu in ergs/s/cm2/Hz/strad) for
+      intensity (I_lambda in ergs/s/cm2/A/strad) for
       mu=0.0001,0.001,0.01,0.1,0.25,0.4,0.55,0.7,0.85,1.0
   continte: 2D numpy array of float
       continuum intensity for the same angles
