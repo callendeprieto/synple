@@ -1,8 +1,8 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=latex 2023.6.2)  22 DEC 2023 00:47
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=latex 2024.3.16)  1 AUG 2024 13:32
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**synple.tex
+**synple
 (./synple.tex
 LaTeX2e <2021-11-15> patch level 1
 L3 programming layer <2022-01-21>
@@ -160,51 +160,54 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 
  [1
 
-] [2]
+]
+
+LaTeX Warning: Command \r invalid in math mode on input line 64.
+
+[2]
 File: Figure_1.ps Graphic file (type eps)
  <Figure_1.ps>
 LaTeX Font Info:    Trying to load font information for TS1+cmtt on input line 
-104.
-
-(/usr/share/texlive/texmf-dist/tex/latex/base/ts1cmtt.fd
+116.
+ (/usr/share/texlive/texmf-dist/tex/latex/base/ts1cmtt.fd
 File: ts1cmtt.fd 2019/12/16 v2.5j Standard LaTeX font definitions
 )
-Underfull \hbox (badness 10000) in paragraph at lines 100--111
+Underfull \hbox (badness 10000) in paragraph at lines 112--123
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 100--111
+Underfull \hbox (badness 10000) in paragraph at lines 112--123
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 100--111
+Underfull \hbox (badness 10000) in paragraph at lines 112--123
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 112--120
+Underfull \hbox (badness 10000) in paragraph at lines 124--132
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 112--120
+Underfull \hbox (badness 10000) in paragraph at lines 124--132
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 121--131
+Underfull \hbox (badness 10000) in paragraph at lines 133--143
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 121--131
+Underfull \hbox (badness 10000) in paragraph at lines 133--143
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 121--131
+Underfull \hbox (badness 10000) in paragraph at lines 133--143
 
  []
 
@@ -213,32 +216,32 @@ File: Figure_2a.ps Graphic file (type eps)
  <Figure_2a.ps>
 File: Figure_2b.ps Graphic file (type eps)
  <Figure_2b.ps>
-Underfull \hbox (badness 10000) in paragraph at lines 151--158
+Underfull \hbox (badness 10000) in paragraph at lines 163--170
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 151--158
+Underfull \hbox (badness 10000) in paragraph at lines 163--170
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 159--165
+Underfull \hbox (badness 10000) in paragraph at lines 171--177
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 159--165
+Underfull \hbox (badness 10000) in paragraph at lines 171--177
 
  []
 
 [4]
-Underfull \hbox (badness 10000) in paragraph at lines 175--190
+Underfull \hbox (badness 10000) in paragraph at lines 187--202
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 175--190
+Underfull \hbox (badness 10000) in paragraph at lines 187--202
 
  []
 
@@ -246,83 +249,83 @@ File: Figure_3.ps Graphic file (type eps)
 <Figure_3.ps> [5]
 File: Figure_4.ps Graphic file (type eps)
  <Figure_4.ps>
-Underfull \hbox (badness 10000) in paragraph at lines 220--233
+Underfull \hbox (badness 10000) in paragraph at lines 232--245
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 220--233
+Underfull \hbox (badness 10000) in paragraph at lines 232--245
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 220--233
+Underfull \hbox (badness 10000) in paragraph at lines 232--245
 
  []
 
 [6]
 File: Figure_5.ps Graphic file (type eps)
  <Figure_5.ps>
-Underfull \hbox (badness 10000) in paragraph at lines 266--278
+Underfull \hbox (badness 10000) in paragraph at lines 278--290
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 266--278
+Underfull \hbox (badness 10000) in paragraph at lines 278--290
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 266--278
+Underfull \hbox (badness 10000) in paragraph at lines 278--290
 
  []
 
 [7]
 File: Figure_6.ps Graphic file (type eps)
  <Figure_6.ps>
-Underfull \hbox (badness 10000) in paragraph at lines 304--310
+Underfull \hbox (badness 10000) in paragraph at lines 316--322
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 304--310
+Underfull \hbox (badness 10000) in paragraph at lines 316--322
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 304--310
+Underfull \hbox (badness 10000) in paragraph at lines 316--322
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 314--318
+Underfull \hbox (badness 10000) in paragraph at lines 326--330
 
  []
 
 [8]
-Underfull \hbox (badness 10000) in paragraph at lines 326--328
+Underfull \hbox (badness 10000) in paragraph at lines 338--340
 
  []
 
 
-Overfull \hbox (0.14017pt too wide) in paragraph at lines 336--337
+Overfull \hbox (0.14017pt too wide) in paragraph at lines 348--349
 []\OT1/cmr/m/n/10 fill[]synth(d,kernel='thin[]plate[]spline',neighbors=100): fi
 lls-in miss-ing data us-ing Ra-dial Ba-sis Func-
  []
 
 File: Figure_7.ps Graphic file (type eps)
 <Figure_7.ps>
-Underfull \hbox (badness 10000) in paragraph at lines 369--374
+Underfull \hbox (badness 10000) in paragraph at lines 381--386
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 369--374
+Underfull \hbox (badness 10000) in paragraph at lines 381--386
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 381--394
+Underfull \hbox (badness 10000) in paragraph at lines 393--406
 
  []
 
@@ -330,46 +333,40 @@ Underfull \hbox (badness 10000) in paragraph at lines 381--394
 File: Figure_8.ps Graphic file (type eps)
  <Figure_8.ps>
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <14.4> on input line 407.
-LaTeX Font Info:    Trying to load font information for OMS+cmtt on input line 
-425.
-LaTeX Font Info:    No file OMScmtt.fd. on input line 425.
+(Font)              <14.4> on input line 419.
 
-
-LaTeX Font Warning: Font shape `OMS/cmtt/m/n' undefined
-(Font)              using `OMS/cmsy/m/n' instead
-(Font)              for symbol `textbraceleft' on input line 425.
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 409--432
+Underfull \hbox (badness 10000) in paragraph at lines 421--455
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 409--432
+Overfull \hbox (1.5019pt too wide) in paragraph at lines 421--455
+\OT1/cmtt/m/n/10 In [3]: wave, flux, con, inte, coninte = syn('ksun.mod', (6160
+,6164), intensity=True ) 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 421--455
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 409--432
+Underfull \hbox (badness 10000) in paragraph at lines 421--455
 
  []
 
 [10] [11] (./synple.aux)
 
-LaTeX Font Warning: Some font shapes were not available, defaults substituted.
-
-
 LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 1523 strings out of 480172
- 25207 string characters out of 5894516
- 326269 words of memory out of 5000000
- 19495 multiletter control sequences out of 15000+600000
+ 1512 strings out of 478288
+ 25059 string characters out of 5849315
+ 332069 words of memory out of 5000000
+ 19730 multiletter control sequences out of 15000+600000
  475275 words of font info for 48 fonts, out of 8000000 for 9000
- 59 hyphenation exceptions out of 8191
- 55i,9n,62p,703b,265s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 1141 hyphenation exceptions out of 8191
+ 55i,9n,62p,699b,265s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on synple.dvi (11 pages, 34400 bytes).
+Output written on synple.dvi (11 pages, 35292 bytes).
