@@ -563,7 +563,8 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       wavelength step for Gaussian convolution (angstroms)
       set to 0. for automatic adjustment (default 0.)
   intensity: bool
-      set to True to return intensities  at mu=0.001,0.2,0.3,...,1.0 in output
+      set to True to return intensities  at
+      mu=0.0001,0.001,0.01,0.1,0.25,0.4,0.55,0.7,0.85,1.0
       -- no broadening due to macro, rotation or instrumental/fwhm effects are considered
       (default False)
   lineid: bool
