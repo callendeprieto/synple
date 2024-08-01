@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=latex 2024.3.16)  1 AUG 2024 13:43
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=latex 2024.3.16)  1 AUG 2024 13:44
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -149,18 +149,18 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <8> on input line 22.
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <6> on input line 22.
-(./synple.toc)
+(./synple.toc
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <7> on input line 4.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <5> on input line 4.
+)
 \tf@toc=\write3
 \openout3 = `synple.toc'.
 
  [1
 
 ]
-LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <7> on input line 39.
-LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <5> on input line 39.
-
 
 LaTeX Warning: Command \r invalid in math mode on input line 64.
 
@@ -330,13 +330,17 @@ Underfull \hbox (badness 10000) in paragraph at lines 393--406
  []
 
 [9]
-
-LaTeX Warning: Reference `opacity-fig' on page 10 undefined on input line 407.
-
 File: Figure_8.ps Graphic file (type eps)
-<Figure_8.ps>
+ <Figure_8.ps>
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <14.4> on input line 419.
+LaTeX Font Info:    Trying to load font information for OMS+cmtt on input line 
+448.
+ (/usr/share/texmf/tex/latex/R/tex/latex/omscmtt.fd
+File: omscmtt.fd 
+)
+LaTeX Font Info:    Font shape `OMS/cmtt/m/n' in size <10> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 448.
 
 Underfull \hbox (badness 10000) in paragraph at lines 421--455
 
@@ -358,26 +362,18 @@ Underfull \hbox (badness 10000) in paragraph at lines 421--455
 
  []
 
-[10]
-
-LaTeX Warning: Reference `intensity-fig' on page 11 undefined on input line 456
-.
-
-[11] (./synple.aux)
-
-LaTeX Warning: There were undefined references.
-
+[10] [11] (./synple.aux)
 
 LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 1512 strings out of 478288
- 25059 string characters out of 5849315
- 332058 words of memory out of 5000000
- 19730 multiletter control sequences out of 15000+600000
+ 1533 strings out of 478288
+ 25445 string characters out of 5849315
+ 332069 words of memory out of 5000000
+ 19747 multiletter control sequences out of 15000+600000
  475275 words of font info for 48 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  55i,9n,62p,699b,265s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on synple.dvi (11 pages, 33400 bytes).
+Output written on synple.dvi (11 pages, 35316 bytes).
