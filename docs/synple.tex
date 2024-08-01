@@ -50,7 +50,19 @@ H_{\nu} = \int_0^{\pi} I_{\nu} (\theta) \cos \theta \sin \theta d\theta
 
 Prior to solving the equation of radiative transfer, one requires a physical model of the stellar atmosphere in order to compute $\eta$, $\kappa$ and $\phi$. This is the running of the thermodynamical quantities (e.g temperature and density) with height, as well as the chemical composition. This input {\it model atmosphere} is the sole required input to Synple.  Of course, computing a detailed spectrum requires fundamental physical data on the interaction of matter and radiation (photoionization cross-sections, atomic and molecular transition probabilities and damping constants, etc), but a generic collection of such data is bundled with Synspec.
 
-Multiple codes for radiative transfer exist and are publicly available. However, most require deep knowledge of the related physics and are cumbersome to use. Synple provides an easy-to-use Python interface to Synspec (Hubeny \& Lanz 2017; Hubeny et al. 2021) for the fast computation of model stellar spectra with accuracy and flexibility.
+Multiple codes for radiative transfer exist and are publicly available. However, most require deep knowledge of the related physics and are cumbersome to use. Synple provides an easy-to-use Python interface to Synspec (Hubeny \& Lanz 2017; Hubeny et al. 2021) for the fast computation of model stellar spectra with accuracy and flexibility. 
+
+Note that the quantities returned by Synple are 
+per unit (vacuum) wavelength, i.e. $H_{\lambda}$ and $I_{\lambda}$, 
+rather than per unit frequency, $H_{\nu}$ and $I_{\nu}$, but the conversion 
+is trivial by requiring that $I_{\nu} d\nu = I_{\lambda} d\lambda$
+\begin{eqnarray}
+  H_{\lambda} = \frac{\nu^2}{c} H_{\nu}, 
+  I_{\lambda} = \frac{\nu^2}{c} I_{\nu},
+\end{eqnarray}
+and the returned wavelength arrays are given for standard air 
+for $\lambda > 2000 \AA$ and 
+ vacuum otherwise.
 
 
 
@@ -398,15 +410,26 @@ In [10]: plt.show().
 \begin{figure}[t!]
 \centering
 \includegraphics[width=14cm]{Figure_8.ps}
-\caption{Example of the computation of emergent specific intensities I$_{\nu}$ for various directions ($\mu = \cos \theta = 1$ the highest and $\mu = \cos \theta = 0.1$ the lowest). The units are in erg cm$^{-2}$ s$^{-1}$ Hz$^{-1}$ steradian$^{-1}$.
+\caption{Example of the computation of emergent specific intensities I$_{\lambda}$ for various directions ($\mu = \cos \theta = 1$ the highest and $\mu = \cos \theta = 0.0001$ the lowest). The units are in erg cm$^{-2}$ s$^{-1}$ \AA$^{-1}$ steradian$^{-1}$.
 \label{intensity-fig}
 }
 \end{figure}
 
 
-\section{Computing emergent intensities $I_{\nu}$}
+\section{Computing emergent intensities $I_{\lambda}$}
 
-It is very easy to tweak the basic routine {\it syn} (see Sect. \ref{6162}), or the parallel versions {\it polysyn} or {\it raysyn}, to output the specific intensity as a function of the angle from the vertical ($\theta$). One simply needs to set the keyword {\tt intensity} to true, as in the following example. When this is activated the output from {\tt syn} will change from a tuple with 3 arrays (4 if {\tt tag} is set, as explained in Sect. \ref{tag}) to a tuple with 4 arrays (5 if {\tt tag} is set), and the 4th array will be a 2D matrix with the emergent intensity for 10 inclinations corresponding to $\mu \equiv = \cos \theta = 0.1, 0.2, \dots, 1.0$.
+It is very easy to tweak the basic routine {\it syn} (see Sect. \ref{6162}), 
+or the parallel versions {\it polysyn} or {\it raysyn}, to output the 
+specific intensity as a function of the angle from the vertical ($\theta$). 
+One simply needs to set the keyword {\tt intensity} to true, as in the 
+following example. When this is activated the output from {\tt syn} will 
+change from a tuple with 3 arrays (4 if {\tt tag} is set, 
+as explained in Sect. \ref{tag}) to a tuple with 5 arrays 
+(6 if {\tt tag} is set), and 
+the 4th array will be a 2D matrix with the emergent intensity for 
+10 inclinations corresponding to 
+$\mu \equiv = \cos \theta = 0.0001, 0.001, 0.01, 0.1, 0.25, 0.4, 0.55, 0.7, 0.85, and 1.0$, while the 5th array will correspond to the continuum intensity
+for the same angles.
 \\
 \\
 \noindent {\tt 
@@ -414,7 +437,7 @@ In [1]: from synple import syn
 \\
 In [2]: import matplotlib.pyplot as plt
 \\
-In [3]: wave, flux, con, inte = syn('ksun.mod', (6160,6164), intensity=True )                     \\    
+In [3]: wave, flux, con, inte, coninte = syn('ksun.mod', (6160,6164), intensity=True )                     \\    
 /home/callende/synple/models/ksun.mod is a kurucz  model
 \\
 teff,logg,vmicro= 5777.0 4.437 2.0 \\
@@ -422,7 +445,7 @@ syn ellapsed time   16.27164101600647 seconds \\
 \\
 In [4]: for angle in range(10): plt.plot(wave,inte[:,angle])
 \\
-In [5]: plt.ylabel('I\$\_\{nu\}\$ (erg/s/cm2/Hz)')
+In [5]: plt.ylabel('$I_{\lambda}$ (erg/s/cm2/A/steradian)')
 \\
 In [6]: plt.xlabel('Wavelength (angstroms)')
 \\
