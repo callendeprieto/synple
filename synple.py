@@ -5720,21 +5720,38 @@ def read_kurucz_model(modelfile):
   t = [ float(entries[1]) ]
   p = [ float(entries[2]) ]
   ne = [ float(entries[3]) ] 
-
+ 
+  getout = False
   for i in range(nd-1):
     line = f.readline()
-    entries = line.split()
-    dm.append( float(entries[0]))
-    t.append(  float(entries[1]))
-    p.append(  float(entries[2]))
-    ne.append( float(entries[3]))
-
-  atmos = np.zeros(nd, dtype={'names':('dm', 't', 'p','ne'),
+    try:
+      entries = line.split()
+      try:
+        dm.append( float(entries[0]))
+        try:
+          t.append(  float(entries[1]))
+          try:
+            p.append(float(entries[2]))
+            try:
+              ne.append( float(entries[3]))
+            except TypeError:
+              getout = True    
+          except TypeError:
+            getout = True
+        except TypeError:
+          getout = True
+      except TypeError:
+        getout = True
+    except TypeError:
+      getout = True
+ 
+  if not getout: 
+    atmos = np.zeros(nd, dtype={'names':('dm', 't', 'p','ne'),
                           'formats':('f', 'f', 'f','f')}) 
-  atmos['dm'] = dm
-  atmos['t'] = t
-  atmos['p'] = p
-  atmos['ne'] = ne
+    atmos['dm'] = dm
+    atmos['t'] = t
+    atmos['p'] = p
+    atmos['ne'] = ne
 
   return (teff,logg,vmicro,abu,nd,atmos)
 
