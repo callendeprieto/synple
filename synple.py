@@ -1776,7 +1776,7 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
             if (abu1 == None):
               linelist, entry = checksynspec(linelist,entry)
               atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
-            if teff is None: break #format error in the model
+            if teff is None: continue 
             iel = 0 
             for el in symbols:
               abu1[zatom[el]-1] = abu1[zatom[el]-1] * 10.**chems[el][ichem]
