@@ -1795,7 +1795,7 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
             si = open("fort.55",'r')
             for i in range(6): line = si.readline()
             entries = line.split()
-             space = float(entries[5])
+            space = float(entries[5])
             si.close()
             
             iconv = 0
