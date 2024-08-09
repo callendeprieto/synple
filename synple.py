@@ -1776,6 +1776,7 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
             if (abu1 == None):
               linelist, entry = checksynspec(linelist,entry)
               atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
+            if teff is None: break #format error in the model
             iel = 0 
             for el in symbols:
               abu1[zatom[el]-1] = abu1[zatom[el]-1] * 10.**chems[el][ichem]
@@ -5721,37 +5722,32 @@ def read_kurucz_model(modelfile):
   p = [ float(entries[2]) ]
   ne = [ float(entries[3]) ] 
  
-  getout = False
+  good = True
   for i in range(nd-1):
     line = f.readline()
-    try:
-      entries = line.split()
-      try:
-        dm.append( float(entries[0]))
-        try:
-          t.append(  float(entries[1]))
-          try:
-            p.append(float(entries[2]))
-            try:
-              ne.append( float(entries[3]))
-            except TypeError:
-              getout = True    
-          except TypeError:
-            getout = True
-        except TypeError:
-          getout = True
-      except TypeError:
-        getout = True
-    except TypeError:
-      getout = True
+    entries = line.split()
+    for char in entries:
+      if char.count('E') > 1:
+        good = False
+
+    if not good: break
+
+    dm.append(float(entries[0]))
+    t.append(float(entries[1]))
+    p.append(float(entries[2]))
+    ne.append( float(entries[3]))
  
-  if not getout: 
-    atmos = np.zeros(nd, dtype={'names':('dm', 't', 'p','ne'),
+  atmos = np.zeros(nd, dtype={'names':('dm', 't', 'p','ne'),
                           'formats':('f', 'f', 'f','f')}) 
+
+  if good:
     atmos['dm'] = dm
     atmos['t'] = t
     atmos['p'] = p
     atmos['ne'] = ne
+
+  else:
+    return(None,None,None,None,None,None)
 
   return (teff,logg,vmicro,abu,nd,atmos)
 
