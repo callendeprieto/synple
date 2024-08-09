@@ -1751,75 +1751,78 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
         if entry == 'missing' or os.path.getsize(entry) == 0:
           pass
         else:
-          #setup the slurm script
-          sfile = dir+".job"
-          now=time.strftime("%c")
-          s = open(sfile ,"w")
-          s.write("#!/bin/bash \n")
-          s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
-          s.write("#This script was written by synple on "+now+" \n") 
-          s.write("#SBATCH  -J "+dir+" \n")
-          s.write("#SBATCH  -o "+dir+"_%j.out"+" \n")
-          s.write("#SBATCH  -e "+dir+"_%j.err"+" \n")
-          #s.write("#SBATCH  -n "+str(nthreads)+" \n")
-          s.write("#SBATCH  --ntasks-per-node="+str(1)+" \n")
-          s.write("#SBATCH  --cpus-per-task="+str(1)+" \n")
-          s.write("#SBATCH  -t 04:00:00"+" \n") #hh:mm:ss
-          s.write("#SBATCH  -D "+os.path.abspath(os.curdir)+" \n")
-          s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n\n\n")
+          atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
+          if teff is None: 
+            pass
+          else:
+            #setup the slurm script
+            sfile = dir+".job"
+            now=time.strftime("%c")
+            s = open(sfile ,"w")
+            s.write("#!/bin/bash \n")
+            s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
+            s.write("#This script was written by synple on "+now+" \n") 
+            s.write("#SBATCH  -J "+dir+" \n")
+            s.write("#SBATCH  -o "+dir+"_%j.out"+" \n")
+            s.write("#SBATCH  -e "+dir+"_%j.err"+" \n")
+            #s.write("#SBATCH  -n "+str(nthreads)+" \n")
+            s.write("#SBATCH  --ntasks-per-node="+str(1)+" \n")
+            s.write("#SBATCH  --cpus-per-task="+str(1)+" \n")
+            s.write("#SBATCH  -t 04:00:00"+" \n") #hh:mm:ss
+            s.write("#SBATCH  -D "+os.path.abspath(os.curdir)+" \n")
+            s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n\n\n")
 
 
-          abu1 = copy.copy(abu)
+            abu1 = copy.copy(abu)
 
-          #if need be, adjust nitrogen abundance according to nfe
-          if (ichem > -1):
-            if (abu1 == None):
-              linelist, entry = checksynspec(linelist,entry)
-              atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
-            if teff is None: continue 
-            iel = 0 
-            for el in symbols:
-              abu1[zatom[el]-1] = abu1[zatom[el]-1] * 10.**chems[el][ichem]
-              iel += 1
+            #if need be, adjust nitrogen abundance according to nfe
+            if (ichem > -1):
+              if (abu1 == None):
+                linelist, entry = checksynspec(linelist,entry)
+                atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
+              iel = 0 
+              for el in symbols:
+                abu1[zatom[el]-1] = abu1[zatom[el]-1] * 10.**chems[el][ichem]
+                iel += 1
 
 
-          x, y, z = syn(entry, wrange, dw=None, strength=strength, vmicro=vmicro1, \
-          abu=abu1, linelist=linelist, atom=atom, lte=lte, clean=False, compute=False, tmpdir=".")
+            x, y, z = syn(entry, wrange, dw=None, strength=strength, vmicro=vmicro1, \
+            abu=abu1, linelist=linelist, atom=atom, lte=lte, clean=False, compute=False, tmpdir=".")
 
-          s.write("cd "+os.path.abspath(os.curdir)+" \n")
-          s.write(synspec+" < "+"fort.5"+"\n")
+            s.write("cd "+os.path.abspath(os.curdir)+" \n")
+            s.write(synspec+" < "+"fort.5"+"\n")
 
-          si = open("fort.55",'r')
-          for i in range(6): line = si.readline()
-          entries = line.split()
-          space = float(entries[5])
-          si.close()
+            si = open("fort.55",'r')
+            for i in range(6): line = si.readline()
+            entries = line.split()
+             space = float(entries[5])
+            si.close()
             
-          iconv = 0
-          for vrot1 in vrots:
-            for fwhm1 in fwhms:
-              for vmacro1 in vmacros:
+            iconv = 0
+            for vrot1 in vrots:
+              for fwhm1 in fwhms:
+                for vmacro1 in vmacros:
 
-                print('iconv=',iconv)
+                  print('iconv=',iconv)
 
-                dirfile.write(' -- '+str(iconv+1)+' vrot='+str(vrot1)+' fwhm='+str(fwhm1)+'\n')
-                iconv = iconv + 1
-                inconv = ("%07dfort.5" % (iconv) )
-                outconv = ("'%07dfort.7'" % (iconv) )
-                if vrot1 > 0.0 or fwhm1 > 0. or vmacro1 > 0.:
-                  f = open(inconv,'w')
-                  f.write( ' %s %s %s \n' % ("'fort.7'", "'fort.17'", outconv) )
-                  f.write( ' %f %f %f \n' % (vrot1, space, steprot) )
-                  f.write( ' %f %f %f \n' % (fwhm1, stepfwhm, vmacro1) )
-                  print('stepfwhm=',stepfwhm)
-                  f.write( ' %f %f %i \n' % (wrange[0], wrange[1], 0) )
-                  f.close()
-                  s.write(rotin+" < "+inconv+"\n")
-                else:
-                  s.write("cp "+" fort.7 "+outconv[1:-1]+"\n")
+                  dirfile.write(' -- '+str(iconv+1)+' vrot='+str(vrot1)+' fwhm='+str(fwhm1)+'\n')
+                  iconv = iconv + 1
+                  inconv = ("%07dfort.5" % (iconv) )
+                  outconv = ("'%07dfort.7'" % (iconv) )
+                  if vrot1 > 0.0 or fwhm1 > 0. or vmacro1 > 0.:
+                    f = open(inconv,'w')
+                    f.write( ' %s %s %s \n' % ("'fort.7'", "'fort.17'", outconv) )
+                    f.write( ' %f %f %f \n' % (vrot1, space, steprot) )
+                    f.write( ' %f %f %f \n' % (fwhm1, stepfwhm, vmacro1) )
+                    print('stepfwhm=',stepfwhm)
+                    f.write( ' %f %f %i \n' % (wrange[0], wrange[1], 0) )
+                    f.close()
+                    s.write(rotin+" < "+inconv+"\n")
+                  else:
+                    s.write("cp "+" fort.7 "+outconv[1:-1]+"\n")
 
-          s.close()
-          os.chmod(sfile ,0o755)
+            s.close()
+            os.chmod(sfile ,0o755)
 
         try:
           os.chdir('..')
