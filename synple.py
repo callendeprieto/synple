@@ -9369,7 +9369,76 @@ def fparams(root,synthfile=None,figure=None):
     
     return(result)
 
-  
+
+def desida(path_to_data='healpix',path_to_output='sp_output',seconds_per_target=1):
+
+  """ Prepare a DESI data for parallalel processing
+  """
+
+  python_path1=os.environ['HOME']+"/synple"
+  try:
+    host=os.environ['HOST']
+  except:
+    host='Unknown'
+  now=time.strftime("%c")
+
+ 
+  infiles = list(glob.iglob(os.path.join(path_to_data,'**',
+            'coadd*fits'), recursive=True)) 
+
+  folders = []
+  for entry in infiles:
+    print('entry=',entry)
+    parts = entry.split('/')
+    infile = parts[-1]
+    folder = ('/'.join(parts[-5:-1]))
+    tpath = os.path.join(path_to_output,folder)
+    os.makedirs(tpath,exist_ok=True) 
+
+    minutes = 4000*seconds_per_target/60.
+    root = infile[:-5]
+
+    sfile = os.path.join(tpath,root+'.job') 
+    outfile = os.path.join(tpath,root)
+
+    print('infile=',infile)
+    print('tpath=',tpath)
+    print('sfile=',sfile)
+    print('outfile=',outfile)
+    s = open(sfile,'w')
+    s.write("#!/bin/bash \n")
+    s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
+    s.write("#This script was written by synple.py on "+now+" \n")
+    s.write("#SBATCH --time="+str(int(minutes)+1)+"\n") #minutes
+    s.write("#SBATCH --ntasks=1" + "\n")
+    s.write("#SBATCH --nodes=1" + "\n")
+    if (host == 'login1'): #lapalma
+      s.write("#SBATCH  -J "+str(root)+" \n")
+      s.write("#SBATCH  -o "+str(root)+"_%j.out"+" \n")
+      s.write("#SBATCH  -e "+str(root)+"_%j.err"+" \n")
+      s.write("#SBATCH --cpus-per-task="+str(16)+"\n")
+      s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
+      s.write("module load python/3.8"+"\n")
+    else: # perlmutter
+      s.write("#SBATCH --qos=regular" + "\n")
+      s.write("#SBATCH --constraint=cpu" + "\n")
+      s.write("#SBATCH --account=desi \n")
+      s.write("#SBATCH --cpus-per-task="+str(128*2)+"\n")
+      s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
+      s.write("module load python"+"\n")
+
+
+    command="python3 -c \"import sys; sys.path.insert(0, '"+python_path1+ \
+     "'); from synple import bas; bas(\'"+entry+"\',outfile=\'"+outfile+"\')\""+ "\n"
+
+    s.write(command)
+    s.close()
+    os.chmod(sfile,0o755)
+ 
+
+
+  return()
+
 
 if __name__ == "__main__":
 
