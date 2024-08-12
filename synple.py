@@ -2277,7 +2277,7 @@ def merge_slurm_parallel(path='./',ext='slurm',nmerge=2,ncpu=2):
       k = k + 1
       if k > 1: 
         if wtime > -1:
-          if concurrent: time = int(time*3.) #factor 3 is a safety margin
+          #if concurrent: time = int(time*3.) #factor 3 is a safety margin
           entries = header[wtime].split('=')
           header[wtime] = entries[0]+'='+str(time)+'\n'
         f2.writelines(header)
@@ -9417,7 +9417,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
     s.write("#SBATCH --ntasks=1" + "\n")
     s.write("#SBATCH --nodes=1" + "\n")
     if (host == 'login1'): #lapalma
-      nthreads = 16
+      nthreads = 4
       s.write("#SBATCH  -J "+str(root)+" \n")
       s.write("#SBATCH  -o "+str(root)+"_%j.out"+" \n")
       s.write("#SBATCH  -e "+str(root)+"_%j.err"+" \n")
@@ -9425,7 +9425,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
       s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
       s.write("module load python"+"\n")
     else: # perlmutter
-      nthreads = 128
+      nthreads = 4
       s.write("#SBATCH --qos=regular" + "\n")
       s.write("#SBATCH --constraint=cpu" + "\n")
       s.write("#SBATCH --account=desi \n")
