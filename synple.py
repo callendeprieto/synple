@@ -8044,7 +8044,8 @@ def vicebas(p, d, flx,iva,npoints=10):
     return(res,eres,cov,bflx)
 
 
-def bas(infile, synthfile=None, outfile=None, target=None, rv=None, focus=False):
+def bas(infile, synthfile=None, outfile=None, target=None, rv=None, 
+        focus=False, star=True):
 
     """Bayesian Algorithm in Synple
     
@@ -8081,6 +8082,11 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, focus=False)
       subsampled version of the grid is used to identify first where  
       the optimal solution is, and then perform an focused analysis
       in that region (a +/- 3 sigma volume)
+
+    star: bool
+      switch to limit the analysis of DESI spectra to stars. It has no
+      effect on other data sets
+      (default True)
    
     Returns
     -------
@@ -8149,7 +8155,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, focus=False)
           except ValueError:
               print('rv and target should be both None or both iterables of the same length')
               
-      ids, x2, frd, ivr = read_spec(file,wavelengths=x,target=target, rv=rv)
+      ids, x2, frd, ivr = read_spec(file,wavelengths=x,target=target,rv=rv, 
+                                    star=star)
       lenx2 = len(x2)
       if ivr.ndim == 1: 
         frd = frd.reshape((1,lenx2))
@@ -8284,7 +8291,7 @@ def identify_instrument(infile):
                 
     return(instr,grid)
 
-def read_spec(infile,wavelengths=None,target=None,rv=None):
+def read_spec(infile,wavelengths=None,target=None,rv=None,star=True):
     """Read and (if wavelengths is given) resample spectral observations
     
     Parameters
@@ -8303,6 +8310,10 @@ def read_spec(infile,wavelengths=None,target=None,rv=None):
       this can be an iterable matching the length of target with the RVs to be corrected. 
       When equal to None, velocities offsets are not considered.
       (default is None)
+    star: bool
+      flag to pre-select only stars for DESI. It has no effect on other 
+      data sets. Setting target overrides star, which becomes False
+      (default is True)
       
     Returns
     -------
@@ -8392,19 +8403,36 @@ def read_spec(infile,wavelengths=None,target=None,rv=None):
          for band in ('B','R','Z'):
            wav1,flux1,ivar1,res1,map1,head1 = read_desispec(infile,band)
            wav1 = vac2air(wav1)
-           if target is not None:
-             if np.max(target) < 10000:
-               #target is a list with the order of the desired spectra
-               ind = target
+           if i == 0: #check if there is a 'target' or 'star' preselection
+             ind = -1
+             if target is None:
+               if star:
+                 ind = []
+                 j = 0
+                 for entry in map1['desi_target']:
+                   bits = desimask(entry)
+                   print('bits=',bits)
+                   if 'STD_FAINT' in bits or 'STD_WD' in bits or 'STD_BRIGHT' in bits or 'MWS_ANY' in bits or 'SCND_ANY' in bits:
+                     ind.append(j) 
+                   j += 1
              else:
-               #target is a list with targetids
-               ind = np.where(np.isin(map1['targetid'],target))[0]
-			 
+               if np.max(target) < 10000:
+                 #target is a list with the order of the desired spectra
+                 ind = target
+               else:
+                 #target is a list with targetids
+                 ind = np.where(np.isin(map1['targetid'],target))[0]
+
+           if type(ind) is list and len(ind) > 0:
              #print('ind=',ind)
              flux1 = flux1[ind,:]
              ivar1 = ivar1[ind,:]
              res1 = res1[ind,:,:]
              map1 = map1[ind] 
+           else:
+             if star:
+               print('star is True, but cannot find star targetting bits ... so doing all targets')
+
              
            nspec = len(flux1[:,0])
            
@@ -9371,7 +9399,7 @@ def fparams(root,synthfile=None,figure=None):
 
 
 def desida(path_to_data='healpix',path_to_output='sp_output',
-           synthfile=None, seconds_per_target=1):
+           synthfile=None, seconds_per_target=2.,star=True):
 
   """ Prepare a DESI data for parallel processing
   """
@@ -9444,7 +9472,8 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
      " from synple import bas; " + \
      " bas(\'" + entry + "\'," + \
      " outfile=\'" + outfile + "\'," + \
-     " synthfile=" + str(synthfile1) + ")\"" + "\n"
+     " synthfile=" + str(synthfile1) + ", star= " + str(star) + \
+     ")\"" + "\n"
 
     s.write(command)
     s.close()
@@ -9453,6 +9482,53 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
 
 
   return()
+
+
+def desimask(desi_target):
+
+  """Returns targetting classes from DESI_TARGET bits in the FIBERMAP
+  extension of DESI data files
+  """
+
+  mask = [('LRG', 0, 1),
+  ('ELG', 1, 2),
+  ('QSO', 2, 4),
+  ('LRG_1PASS', 3, 8),
+  ('LRG_2PASS', 4, 16),
+  ('LRG_NORTH', 8, 256),
+  ('ELG_NORTH', 9, 512),
+  ('QSO_NORTH', 10, 1024),
+  ('LRG_SOUTH', 16, 65536),
+  ('ELG_SOUTH', 17, 131072),
+  ('QSO_SOUTH', 18, 262144),
+  ('LRG_1PASS_NORTH', 24, 16777216),
+  ('LRG_2PASS_NORTH', 25, 33554432),
+  ('LRG_1PASS_SOUTH', 28, 268435456),
+  ('LRG_2PASS_SOUTH', 29, 536870912),
+  ('SKY', 32, 4294967296),
+  ('STD_FAINT', 33, 8589934592),
+  ('STD_WD', 34, 17179869184),
+  ('STD_BRIGHT', 35, 34359738368),
+  ('BAD_SKY', 36, 68719476736),
+  ('SUPP_SKY', 37, 137438953472),
+  ('NO_TARGET', 49, 562949953421312),
+  ('BRIGHT_OBJECT', 50, 1125899906842624),
+  ('IN_BRIGHT_OBJECT', 51, 2251799813685248),
+  ('NEAR_BRIGHT_OBJECT', 52, 4503599627370496),
+  ('BGS_ANY', 60, 1152921504606846976),
+  ('MWS_ANY', 61, 2305843009213693952),
+  ('SCND_ANY', 62, 4611686018427387904)]
+
+  bits = []
+  target = desi_target
+  for entry in reversed(mask):
+    if target - entry[2] >= 0: 
+      target = target - entry[2]
+      bits.append(entry[0])
+
+
+  return(bits)
+
 
 
 if __name__ == "__main__":
