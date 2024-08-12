@@ -9434,9 +9434,6 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
       s.write("module load python"+"\n")
 
     
-    print('python_path1=',python_path1)
-    print('nthreads=',nthreads)
-    print('synthfile1=',synthfile1)
 
     command="python3 -c \"import sys; " + \
      " sys.path.insert(0, '"+python_path1 + "'); " + \
