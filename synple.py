@@ -9370,17 +9370,24 @@ def fparams(root,synthfile=None,figure=None):
     return(result)
 
 
-def desida(path_to_data='healpix',path_to_output='sp_output',seconds_per_target=1):
+def desida(path_to_data='healpix',path_to_output='sp_output',
+           synthfile=None, seconds_per_target=1):
 
-  """ Prepare a DESI data for parallalel processing
+  """ Prepare a DESI data for parallel processing
   """
 
   python_path1=os.environ['HOME']+"/synple"
+
   try:
     host=os.environ['HOST']
   except:
     host='Unknown'
   now=time.strftime("%c")
+
+  if synthfile is None:
+    synthfile1 = 'None'
+  else:
+    synthfile1 = "'"+str(synthfile)+"'"
 
  
   infiles = list(glob.iglob(os.path.join(path_to_data,'**',
@@ -9388,7 +9395,6 @@ def desida(path_to_data='healpix',path_to_output='sp_output',seconds_per_target=
 
   folders = []
   for entry in infiles:
-    print('entry=',entry)
     parts = entry.split('/')
     infile = parts[-1]
     folder = ('/'.join(parts[-5:-1]))
@@ -9401,9 +9407,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',seconds_per_target=
     sfile = os.path.join(tpath,root+'.job') 
     outfile = os.path.join(tpath,root)
 
-    print('infile=',infile)
-    print('tpath=',tpath)
-    print('sfile=',sfile)
+    print('infile=',entry)
     print('outfile=',outfile)
     s = open(sfile,'w')
     s.write("#!/bin/bash \n")
@@ -9413,13 +9417,15 @@ def desida(path_to_data='healpix',path_to_output='sp_output',seconds_per_target=
     s.write("#SBATCH --ntasks=1" + "\n")
     s.write("#SBATCH --nodes=1" + "\n")
     if (host == 'login1'): #lapalma
+      nthreads = 16
       s.write("#SBATCH  -J "+str(root)+" \n")
       s.write("#SBATCH  -o "+str(root)+"_%j.out"+" \n")
       s.write("#SBATCH  -e "+str(root)+"_%j.err"+" \n")
       s.write("#SBATCH --cpus-per-task="+str(16)+"\n")
       s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
-      s.write("module load python/3.8"+"\n")
+      s.write("module load python"+"\n")
     else: # perlmutter
+      nthreads = 128
       s.write("#SBATCH --qos=regular" + "\n")
       s.write("#SBATCH --constraint=cpu" + "\n")
       s.write("#SBATCH --account=desi \n")
@@ -9427,9 +9433,21 @@ def desida(path_to_data='healpix',path_to_output='sp_output',seconds_per_target=
       s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
       s.write("module load python"+"\n")
 
+    
+    print('python_path1=',python_path1)
+    print('nthreads=',nthreads)
+    print('synthfile1=',synthfile1)
 
-    command="python3 -c \"import sys; sys.path.insert(0, '"+python_path1+ \
-     "'); from synple import bas; bas(\'"+entry+"\',outfile=\'"+outfile+"\')\""+ "\n"
+    command="python3 -c \"import sys; " + \
+     " sys.path.insert(0, '"+python_path1 + "'); " + \
+     " nthreads = " + str(nthreads) + ";" + \
+     " import os; os.environ['OMP_NUM_THREADS'] = str(nthreads) ; "+ \
+     " os.environ['OPENBLAS_NUM_THREADS'] = str(nthreads) ;"  + \
+     " os.environ['MKL_NUM_THREADS'] = str(nthreads) ; " + \
+     " from synple import bas; " + \
+     " bas(\'" + entry + "\'," + \
+     " outfile=\'" + outfile + "\'," + \
+     " synthfile=" + str(synthfile1) + ")\"" + "\n"
 
     s.write(command)
     s.close()
