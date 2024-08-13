@@ -8311,8 +8311,12 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,star=True):
       When equal to None, velocities offsets are not considered.
       (default is None)
     star: bool
-      flag to pre-select only stars for DESI. It has no effect on other 
-      data sets. Setting target overrides star, which becomes False
+      flag to pre-select only stars for DESI for having any of the 
+      following targetting bits set:
+      STD_FAINT, STD_WD, STD_BRIGHT, MWS_ANY or SCND_ANY. 
+      It has no effect on other data sets apart from DESI.
+      Can be combined with target, and of the selected targets
+      only those thought to be stars are selected.
       (default is True)
       
     Returns
@@ -8370,11 +8374,11 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,star=True):
           if target[0] < 10000:
                if(target[0] != 0): 
                    print('target needs to be 0 in order to read the one and only LAMOST spectrum in the input file')
-                   return(None,None,None)
+                   return(None,None,None,None)
           else:
                if (target[0] != long(head['OBJNAME'])):
                    print('target needs to be '+head['OBJNAME']+' in order to read the one and only LAMOST spectrum in the input file')
-                   return(None,None,None)				    
+                   return(None,None,None,None)				    
 
         if rv is None: 
           vrad = 0.0
@@ -8403,18 +8407,14 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,star=True):
          for band in ('B','R','Z'):
            wav1,flux1,ivar1,res1,map1,head1 = read_desispec(infile,band)
            wav1 = vac2air(wav1)
-           if i == 0: #check if there is a 'target' or 'star' preselection
-             ind = -1
+
+           if band == 'B': #check if there is a 'target' or 'star' preselection
+             ind = []
              if target is None:
-               if star:
-                 ind = []
-                 j = 0
-                 for entry in map1['desi_target']:
-                   bits = desimask(entry)
-                   print('bits=',bits)
-                   if 'STD_FAINT' in bits or 'STD_WD' in bits or 'STD_BRIGHT' in bits or 'MWS_ANY' in bits or 'SCND_ANY' in bits:
-                     ind.append(j) 
-                   j += 1
+               ind = np.arange(len(map1))
+               if len(ind) == 0:
+                 print('no DESI targets in file ',infile)
+                 return(None,None,None,None)
              else:
                if np.max(target) < 10000:
                  #target is a list with the order of the desired spectra
@@ -8423,16 +8423,34 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,star=True):
                  #target is a list with targetids
                  ind = np.where(np.isin(map1['targetid'],target))[0]
 
-           if type(ind) is list and len(ind) > 0:
+               if len(ind) == 0:
+                 print('no DESI target in file ',infile,' matches the input target=',target)
+                 return(None,None,None,None)
+
+             if star:
+               ind2 = []
+               j = 0
+               for entry in map1['desi_target'][ind]:
+                 bits = desimask(entry)
+                 print('bits=',bits)
+                 if 'STD_FAINT' in bits or 'STD_WD' in bits or 'STD_BRIGHT' in bits or 'MWS_ANY' in bits or 'SCND_ANY' in bits:
+                   ind2.append(ind[j])
+                 j += 1
+
+               if len(ind2) == 0:
+                 print('no DESI target in file ',infile,' has star targetting bits (STD_BRIGHT/FAINT, STD_WD, MWS_ANY or SCND_ANY)')
+                 print('processing ALL targets')
+                 ind = np.arange(len(map1)) 
+               else:
+                 ind = ind2.copy()
+                                   
+                                      
+           if len(ind) > 0:
              #print('ind=',ind)
              flux1 = flux1[ind,:]
              ivar1 = ivar1[ind,:]
              res1 = res1[ind,:,:]
              map1 = map1[ind] 
-           else:
-             if star:
-               print('star is True, but cannot find star targetting bits ... so doing all targets')
-
              
            nspec = len(flux1[:,0])
            
@@ -8508,7 +8526,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,star=True):
           assert(len(target) == 1),'target can only have one element for single-target STIS files'
           if(target[0] != 0):
               print('target needs to be 0 in order to read the one and only STIS spectrum in the input file')
-              return(None,None,None)
+              return(None,None,None,None)
           
         if rv is None: 
           vrad = 0.0
