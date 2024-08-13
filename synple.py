@@ -5,7 +5,7 @@
 
 Calculation of synthetic spectra of stars and convolution with a rotational/Gaussian kernel.
 Makes the use of synspec simpler, and retains the main functionalities (when used from
-python). The command line interface for the sheread_ll is even simpler but fairly limited. 
+python). The command line interface is even simpler but fairly limited. 
 
 For information on
 synspec visit http://nova.astro.umd.edu/Synspec43/synspec.html.
@@ -8044,7 +8044,7 @@ def vicebas(p, d, flx,iva,npoints=10):
     return(res,eres,cov,bflx)
 
 
-def bas(infile, synthfile=None, outfile=None, target=None, rv=None, 
+def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None, 
         focus=False, star=True):
 
     """Bayesian Algorithm in Synple
@@ -8076,7 +8076,10 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None,
       prior to the analysis. When equal to None, if RV is among the parameters in the synthfile, 
       RVs will be determined as such, but otherwise RVs are derived by the routine xxc.
       (default is None)
-
+    ebv: iterable
+      this can be an iterable matching the length of target with the E(B-V) values to be corrected prior to the analysis. If equal to None, if E(B-V) is 
+among the parameters in the synthfile, it will be determined as such,  but 
+ otherwise, only for DESI, it will be read from infile and corrected for
     focus: bool
       switch to activate a two-step algorithm in which a coarsely 
       subsampled version of the grid is used to identify first where  
@@ -8132,7 +8135,11 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None,
     print('normalizing grid...')
     for entry in range(len(d[:,0])):
         d[entry,:] = d[entry,:] / np.mean(d[entry,:])
-        
+    
+    #sanity check  
+    if len(infiles) > 1 and (rv is not None or ebv is not None):
+      print('BAS warning: are the same rv/ebv arrays/lists intended for multiple infiles ...??')  
+
         
     for file in infiles:
 
@@ -8154,9 +8161,20 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None,
               assert(lenrv == lentarget),'the length of rv should match that of target'
           except ValueError:
               print('rv and target should be both None or both iterables of the same length')
+
+      if ebv is not None:
+          assert(target is not None),'the length of the input ebv should match that of target, but target is None'
+          try:
+              lentarget = len(target)
+              lenebv = len(ebv)
+              assert(lenebv == lentarget),'the length of ebv should match that of target'
+          except ValueError:
+              print('ebv and target should be both None or both iterables of the same length')
+
+
               
       ids, x2, frd, ivr = read_spec(file,wavelengths=x,target=target,rv=rv, 
-                                    star=star)
+                                    ebv=ebv, star=star)
       lenx2 = len(x2)
       if ivr.ndim == 1: 
         frd = frd.reshape((1,lenx2))
@@ -8291,7 +8309,7 @@ def identify_instrument(infile):
                 
     return(instr,grid)
 
-def read_spec(infile,wavelengths=None,target=None,rv=None,star=True):
+def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
     """Read and (if wavelengths is given) resample spectral observations
     
     Parameters
@@ -8310,6 +8328,11 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,star=True):
       this can be an iterable matching the length of target with the RVs to be corrected. 
       When equal to None, velocities offsets are not considered.
       (default is None)
+    ebv: iterable of floats
+      this can be an iterable matching the length of target with the reddening 
+ to be corrected. 
+      When equal to None, no reddening correction is applied, excpect for 
+ DESI data, for which the SFD values from the DESI files will be used.
     star: bool
       flag to pre-select only stars for DESI for having any of the 
       following targetting bits set:
@@ -8337,6 +8360,8 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,star=True):
       
     """
 
+    from extinction import apply,remove,ccm89
+
     if target is not None:
       try:
         _ = (e for e in target)
@@ -8349,6 +8374,14 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,star=True):
       except TypeError:
         print('rv must be None or an iterable')
       assert(len(rv) == len(target)),'rv and target must have the same length'
+   
+    if ebv is not None:
+      try:
+        _ = (e for e in ebv)
+      except TypeError:
+        print('ebv must be None or an iterable')
+      assert(len(ebv) == len(target)),'ebv and target must have the same length'
+
 
     #data
     if infile[-4:] == 'fits':
@@ -8403,6 +8436,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,star=True):
            twavelengths.append(wavelengths[(wavelengths >= 5800.) & (wavelengths < 7600.)])
            twavelengths.append(wavelengths[wavelengths >= 7600.])
            wavelengths = twavelengths.copy()
+
          i = 0
          for band in ('B','R','Z'):
            wav1,flux1,ivar1,res1,map1,head1 = read_desispec(infile,band)
@@ -8443,22 +8477,42 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,star=True):
                  ind = np.arange(len(map1)) 
                else:
                  ind = ind2.copy()
+
+             if len(ind) > 0:
+               nspec = len(ind)
+             else:
+               nspec = len(map1)
                                    
-                                      
+             if rv is None:
+               vrad = np.zeros(nspec)
+             else:
+               assert (len(rv) == nspec),'the length of rv is '+str(len(rv))+' but should match that of target '+str(nspec)
+               vrad = rv.copy()
+
+             if ebv is None:
+               red = map1['EBV']
+             else:
+               assert (len(ebv) == nspec),'the length of ebv is '+str(len(ebv))+' but should match that of target '+str(nspec)
+               red = ebv.copy()
+                            
+           #limit the sample to target/star          
            if len(ind) > 0:
              #print('ind=',ind)
              flux1 = flux1[ind,:]
              ivar1 = ivar1[ind,:]
              res1 = res1[ind,:,:]
              map1 = map1[ind] 
+
+           #correct reddening
+           print('correcting reddening from SFD maps with a mean E(B-V)=',
+                 np.mean(red),' +/- ', np.std(red))
+           for j in range(nspec):
+             xtmp = np.array(wav1,dtype=float)
+             ytmp = np.array(flux1[j,:],dtype=float)
+             tmp = remove(ccm89(xtmp, red[j] * 3.1, 3.1), ytmp)
+             #ivar1[j,:] = ivar1[j,:] * (np.divide(ytmp,tmp,tmp>0))**2
+             flux1[j,:] = tmp
              
-           nspec = len(flux1[:,0])
-           
-           if rv is None:
-             vrad = np.zeros(nspec)
-           else:
-             assert (len(rv) == nspec),'the length of rv should match that of target'
-             vrad = rv.copy()
 
            if wavelengths is None:
              nfreq = len(wav1)
@@ -8690,10 +8744,10 @@ def plot_spec(x,n,m=None,xlim=None,ylim=None,nozero=False):
               w = (n[j,p[i]:p[i+1]] > 0.)
             else:
               w = range(p[i+1]-p[i])
-            plot(xx[p[i]:p[i+1]][w],n[j,p[i]:p[i+1]][w])
+            plt.plot(xx[p[i]:p[i+1]][w],n[j,p[i]:p[i+1]][w])
             labels.append('data')
             if m is not None:
-              plot(xx[p[i]:p[i+1]][w],m[j,p[i]:p[i+1]][w])
+              plt.plot(xx[p[i]:p[i+1]][w],m[j,p[i]:p[i+1]][w])
               labels.append('model')
         else:
           if nozero:
@@ -8711,7 +8765,7 @@ def plot_spec(x,n,m=None,xlim=None,ylim=None,nozero=False):
         plt.xlim(xlim)
         plt.ylim(ylim)
         if m is not None: plt.legend(labels)
-        plt.savefig('fig'+str(i+1)+'.png')
+        plt.savefig('fig'+str(j+1)+'.png')
         
 
     return()
