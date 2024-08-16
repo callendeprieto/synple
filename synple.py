@@ -8488,12 +8488,12 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
              if rv is None:
                vrad = np.zeros(nspec)
              else:
-               vrad = rv[np.array(ind,dtype=int)]
+               vrad = rv
 
              if ebv is None:
                red = map1['EBV']
              else:
-               red = ebv[np.array(ind,dtype=int)]
+               red = ebv
                             
            #limit the sample to target/star          
            if len(ind) > 0:
@@ -8507,11 +8507,12 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
            print('correcting reddening from SFD maps with a mean E(B-V)=',
                  np.mean(red),' +/- ', np.std(red))
            for j in range(nspec):
-             xtmp = np.array(wav1,dtype=float)
-             ytmp = np.array(flux1[j,:],dtype=float)
-             tmp = remove(ccm89(xtmp, red[j] * 3.1, 3.1), ytmp)
-             #ivar1[j,:] = ivar1[j,:] * (np.divide(ytmp,tmp,tmp>0))**2
-             flux1[j,:] = tmp
+             if np.abs(red[j]) > 1e-7:
+               xtmp = np.array(wav1,dtype=float)
+               ytmp = np.array(flux1[j,:],dtype=float)
+               tmp = remove(ccm89(xtmp, red[j] * 3.1, 3.1), ytmp)
+               ivar1[j,:] = ivar1[j,:] * (np.divide(ytmp,tmp,where=tmp>0))**2
+               flux1[j,:] = tmp
              
 
            if wavelengths is None:
@@ -8731,7 +8732,7 @@ def plot_spec(x,n,m=None,o=None,xlim=None,ylim=None,nozero=False):
       if o is not None:
         npar = len(o)-3
         if npar >= 16: 
-          npar = int(sqrt(npar*1.0 - 1.))
+          npar = int(np.sqrt(npar*1.0 - 1.))
         else:
           npar = npar// 2
         plt.title('params: '+' -- '.join(map("{:.2f}".format,o[1:npar+1])))
@@ -8775,7 +8776,7 @@ def plot_spec(x,n,m=None,o=None,xlim=None,ylim=None,nozero=False):
         if o is not None:
           npar = len(o[0,:])-3
           if npar >= 16: 
-            npar = int(sqrt(npar*1.0 - 1.))
+            npar = int(np.sqrt(npar*1.0 - 1.))
           else:
             npar = npar// 2
           plt.title('params: '+' -- '.join(map("{:.2f}".format,o[j,1:npar+1])))
