@@ -8088,7 +8088,7 @@ among the parameters in the synthfile, it will be determined as such,  but
 
     star: bool
       switch to limit the analysis of DESI spectra to stars. It has no
-      effect on other data sets
+      effect on other data sets. Activating target disables star.
       (default True)
    
     Returns
@@ -8338,8 +8338,8 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
       following targetting bits set:
       STD_FAINT, STD_WD, STD_BRIGHT, MWS_ANY or SCND_ANY. 
       It has no effect on other data sets apart from DESI.
-      Can be combined with target, and of the selected targets
-      only those thought to be stars are selected.
+      Cannot be combined with target; passing a list in target  
+      sets star to False 
       (default is True)
       
     Returns
@@ -8450,6 +8450,9 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
                  print('no DESI targets in file ',infile)
                  return(None,None,None,None)
              else:
+               if star:
+                 print('passing a list in target disables star!')
+                 star = False
                if np.max(target) < 10000:
                  #target is a list with the order of the desired spectra
                  ind = target
@@ -8462,38 +8465,35 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
                  return(None,None,None,None)
 
              if star:
-               ind2 = []
+               ind = []
                j = 0
-               for entry in map1['desi_target'][ind]:
+               for entry in map1['desi_target']:
                  bits = desimask(entry)
                  print('bits=',bits)
                  if 'STD_FAINT' in bits or 'STD_WD' in bits or 'STD_BRIGHT' in bits or 'MWS_ANY' in bits or 'SCND_ANY' in bits:
-                   ind2.append(ind[j])
+                   ind.append(j)
                  j += 1
 
-               if len(ind2) == 0:
+               if len(ind) == 0:
                  print('no DESI target in file ',infile,' has star targetting bits (STD_BRIGHT/FAINT, STD_WD, MWS_ANY or SCND_ANY)')
                  print('processing ALL targets')
                  ind = np.arange(len(map1)) 
-               else:
-                 ind = ind2.copy()
 
              if len(ind) > 0:
                nspec = len(ind)
+               print('read_spec: selecting targets with indices -- ',ind)
              else:
                nspec = len(map1)
                                    
              if rv is None:
                vrad = np.zeros(nspec)
              else:
-               assert (len(rv) == nspec),'the length of rv is '+str(len(rv))+' but should match that of target '+str(nspec)
-               vrad = rv.copy()
+               vrad = rv[np.array(ind,dtype=int)]
 
              if ebv is None:
                red = map1['EBV']
              else:
-               assert (len(ebv) == nspec),'the length of ebv is '+str(len(ebv))+' but should match that of target '+str(nspec)
-               red = ebv.copy()
+               red = ebv[np.array(ind,dtype=int)]
                             
            #limit the sample to target/star          
            if len(ind) > 0:
@@ -8683,7 +8683,7 @@ def read_desispec(filename,band=None):
 
   return((wavelength,flux,ivar,res,fibermap,header))
 
-def plot_spec(x,n,m=None,xlim=None,ylim=None,nozero=False):
+def plot_spec(x,n,m=None,o=None,xlim=None,ylim=None,nozero=False):
 
     """Plot one or multiple spectra
     """
@@ -8728,6 +8728,13 @@ def plot_spec(x,n,m=None,xlim=None,ylim=None,nozero=False):
       if ylim is None: ylim = (min(n)*0.95,max(n)*1.05)
       plt.xlabel('wavelength (nm)')
       plt.ylabel('normalized flux')
+      if o is not None:
+        npar = len(o)-3
+        if npar >= 16: 
+          npar = int(sqrt(npar*1.0 - 1.))
+        else:
+          npar = npar// 2
+        plt.title('params: '+' -- '.join(map("{:.2f}".format,o[1:npar+1])))
       plt.xlim(xlim)
       plt.ylim(ylim)
       if m is not None: plt.legend(labels)
@@ -8765,6 +8772,14 @@ def plot_spec(x,n,m=None,xlim=None,ylim=None,nozero=False):
         plt.xlim(xlim)
         plt.ylim(ylim)
         if m is not None: plt.legend(labels)
+        if o is not None:
+          npar = len(o[0,:])-3
+          if npar >= 16: 
+            npar = int(sqrt(npar*1.0 - 1.))
+          else:
+            npar = npar// 2
+          plt.title('params: '+' -- '.join(map("{:.2f}".format,o[j,1:npar+1])))
+
         plt.savefig('fig'+str(j+1)+'.png')
         
 
