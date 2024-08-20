@@ -71,6 +71,7 @@ modeldir = os.path.join(synpledir, "models")
 modelatomdir = os.path.join(synpledir , "data")
 confdir = os.path.join(synpledir, "config")
 griddir = os.path.join(synpledir, "grids")
+atlasdir = os.path.join(synpledir, "atlases")
 linelistdir = os.path.join(synpledir, "linelists")
 linelist0 = ['gfATO.19','gfMOLsun.20','gfTiO.20','H2O-8.20']
 bindir = os.path.join(synpledir,"bin")
@@ -8308,6 +8309,50 @@ def identify_instrument(infile):
         grid = conf[instr]
                 
     return(instr,grid)
+
+def read_knoao2005(wrange):
+ 
+  """Solar Kurucz 2005 atlas"""
+
+  file = os.path.join(atlasdir,'solarfluxintwl.fits')
+
+  d = fits.open(file)[0].data
+  w = d[:,0]*10.
+  f = d[:,1]
+  ind = np.where((w > wrange[0]) & (w < wrange[1]))
+
+  return(w[ind],f[ind])
+
+
+def read_iag(wrange):
+
+  """Solar IAG atlas (Reiners et al. 2016 A&A 587, 65)"""
+  
+  if wrange[0] < 10300.:
+    file = os.path.join(atlasdir,'iag-vis.fits')
+  else:
+    file = os.path.join(atlasdir,'iag-nir.fits')
+  d = fits.open(file)[0].data    
+  w = vac2air(d[:,0])
+  f = d[:,1]
+  ind = np.where((w > wrange[0]) & (w < wrange[1]))
+
+  return(w[ind],f[ind])
+  
+
+def read_arcturus(wrange):
+
+  """Arcturus atlas (Hinkle et al. 2000)"""
+
+  file = os.path.join(atlasdir,'ardata.fits')
+
+  d = fits.open(file)[1].data
+  w = d['wavelength']
+  f = d['arcturus']
+  ind = np.where((w > wrange[0]) & (w < wrange[1]))
+
+  return(w[ind],f[ind])
+
 
 def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
     """Read and (if wavelengths is given) resample spectral observations
