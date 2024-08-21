@@ -8875,7 +8875,7 @@ C
          QL=QU
          QU=FRA
          IEVEN=0
-         IF(INLIST.GE.10) THEN
+C         IF(INLIST.GE.10) THEN
             IFRA=ISQL
             ISQL=ISQU
             ISQU=IFRA
@@ -8887,7 +8887,7 @@ C
             IFRA=IPQL
             IPQL=IPQU
             IPQU=IFRA
-         END IF
+C         END IF
       END IF
       GFP=C1*GF-C2
       EPP=C3*EXCL
