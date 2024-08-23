@@ -14,7 +14,7 @@ DESI:
     {'synthfile': 'n_R-DESI.dat', 'outsynthfile': 'i_R-DESI.dat'},
     {'synthfile': 'n_Z-DESI.dat', 'outsynthfile': 'i_Z-DESI.dat'}]
   merge_synth: [ 
-    {'synthfile': ['i_B-DESI.dat','i_R-DESI.dat','i_Z-DESI.dat'],
+    {'synthfiles': ['i_B-DESI.dat','i_R-DESI.dat','i_Z-DESI.dat'],
      'outsynthfile': 'i_BRZ-DESI.dat'} ]
   synth_rbf:  [ 
     {'synthfile': 'i_BRZ-DESI.dat', 
