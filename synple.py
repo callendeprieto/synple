@@ -9154,27 +9154,36 @@ def bas_build(synthfile):
 
 
     for entry in conf.keys():
+        for task in conf[entry]:
+            print(entry,task)
+            for job in conf[entry][task]:
+                print('kargs=',job)
+                call(task,kargs=job)
     
-        #smoothed grid
-        sgrid = 'n_'+root+'-'+entry+'.dat'
-        #irregular grid
-        igrid = 'i_'+root+'-'+entry+'.dat'
-        #rbf resampled grid
-        rgrid = 'r_'+root+'-'+entry+'.dat'
-        
-        gsynth(synthfile, fwhm = conf[entry]['fwhm'], 
-                          units = conf[entry]['units'],
-                          ppr = conf[entry]['ppr'],
-                          wrange = conf[entry]['wrange'], 
-                          outsynthfile = sgrid )
+    return()
 
-        h,p,d = read_synth(sgrid)
+def call(func,**kargs):
 
-        write_synth(igrid, p, d, hdr=h, irregular=True)
+    func(**kargs)
 
+    return()
+
+
+def rewrite_synth(synthfile,outsynthfile=None):
+
+    """Read a FERRE grid and write it back to disk as an irregular grid
+    """
+
+    if outsynthfile is None:
+        outsynthfile = 'i_'+synthfile[2:]
+
+    h,p,d = read_synth(synthfile)
+    write_synth(outsynthfile, p, d, hdr=h, irregular=True)
 
 
     return()
+
+
 
 def bas_perfcheck(synthfile,n=1000,snr=1.e6,
     kernel='thin_plate_spline', neighbors=100, focus=False):
