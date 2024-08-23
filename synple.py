@@ -4516,16 +4516,19 @@ def read_synth(synthfile,nd=False):
 
     return header,pars,data
     
-def pickle_synth(synthfile):
+def pickle_synth(synthfile,outsynthfile=None):
 	"""
 	Reads a (text) FERRE grid and rewrites it to disk in pickle
 	(binary) format with the extension .pickle
 	"""
 	
 	import pickle
+
+        #if outsynthfile is None:
+        #    outsynthfile = synthfile[:-3]+'pickle'
 	
 	h, p, d = read_synth(synthfile)
-	file = open(synthfile[:-3]+'pickle', 'wb')
+	file = open(outsynthfile, 'wb')
 	pickle.dump( (h, p, d), file)
 	file.close()
 	
@@ -4627,14 +4630,14 @@ def write_synth(synthfile,p,d,hdr=None,irregular=False):
 
     return(None)			
 
-def merge_synth(synthfiles,outsynthfile=None):
+def merge_synth(synthfile,outsynthfile=None):
 
     """Merges various synthfiles with the same parameters but
     different spectral ranges into one synthfile with a multiheader.
 
     Parameters
     ----------
-    synthfiles:  iterable of strings
+    synthfile:  iterable of strings
       Names of the synthfiles to merge
     outsynthfile: name of the output synthfile
 
@@ -4650,7 +4653,7 @@ def merge_synth(synthfiles,outsynthfile=None):
 
     k = 0
     synthfile2 = ''
-    for entry in synthfiles:
+    for entry in synthfile:
 
         h,p,d = read_synth(entry) 
         synthfile2 += entry
@@ -7672,10 +7675,12 @@ def xplsf(synthfile,ppr=5):
 
   vgsynth(synthfile,x,y,wrange=(3600.,9900),ppr=ppr)
 
+  return()
+
 def vgsynth(synthfile,wavelength,fwhm,outsynthfile=None,ppr=5,wrange=None,original=False):
 
   """Variable-width Gaussian convolution
-  This is similar to vgsynth but the FWHM of the Gaussian kernel can change
+  This is similar to gsynth but the FWHM of the Gaussian kernel can change
   with wavelength.
   
   Parameters
@@ -9159,11 +9164,11 @@ def bas_build(synthfile):
             for job in conf[entry][task]:
                 if 'synthfile' not in job:
                   job['synthfile'] = synthfile
-                if task == 'synth_rbf':
+                if task == 'synth_pickle':
                   if 'outsynthfile' in job:
                     pos = job['outsynthfile'].find('_')
                     job['outsynthfile'] = job['outsynthfile'][:pos] + '_' + \
-                                   root + job['outsynthfile'][pos+1:]
+                                   root + '-' + job['outsynthfile'][pos+1:]
                 print('kargs=',job)
                 call(task,**job)
     
