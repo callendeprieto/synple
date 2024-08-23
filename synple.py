@@ -9157,14 +9157,22 @@ def bas_build(synthfile):
         for task in conf[entry]:
             print(entry,task)
             for job in conf[entry][task]:
+                if 'synthfile' not in job:
+                  job['synthfile'] = synthfile
+                if task == 'synth_rbf':
+                  if 'outsynthfile' in job:
+                    pos = job['outsynthfile'].find('_')
+                    job['outsynthfile'] = job['outsynthfile'][:pos] + '_' + \
+                                   root + job['outsynthfile'][pos+1:]
                 print('kargs=',job)
-                call(task,kargs=job)
+                call(task,**job)
     
     return()
 
 def call(func,**kargs):
 
-    func(**kargs)
+    func_to_run = globals()[func]
+    func_to_run(**kargs)
 
     return()
 
