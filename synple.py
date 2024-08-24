@@ -7639,7 +7639,7 @@ def gsynth_old(synthfile,fwhm=0.0,units='km/s',outsynthfile=None,ppr=5,wrange=No
   fin.close()
   fout.close()
 
-def xplsf(synthfile,ppr=5):
+def xplsf(synthfile,outsynthfile=None,ppr=5):
 	
   """Takes an input FERRE grid with sufficient resolution (R>1000)
   and produces an output one with wavelength-dependent resolution
@@ -7650,7 +7650,9 @@ def xplsf(synthfile,ppr=5):
   synthfile: str
     Name of the Input FERRE synthfile 
     Must have R>1000 and a minimum wavelength coverage between 360-990 nm
-    
+  outsynthfile: str
+    Name of the Output FERRE synthfile
+    (default is None)
   ppr: float
     Points per resolution element for the output grid
     
@@ -7673,7 +7675,7 @@ def xplsf(synthfile,ppr=5):
   x = x*10.
   y = y*10.
 
-  vgsynth(synthfile,x,y,wrange=(3600.,9900),ppr=ppr)
+  vgsynth(synthfile,x,y,outsynthfile=outsynthfile,wrange=(3600.,9900),ppr=ppr)
 
   return()
 
@@ -7693,7 +7695,7 @@ def vgsynth(synthfile,wavelength,fwhm,outsynthfile=None,ppr=5,wrange=None,origin
       FWHM of the Gaussian kernel (in A) for convolution
   outsynthfile: str
       name of the output FERRE synth file
-      (default is the same as synth file, but starting with 'n')
+      (default is None, to set the same as synthfile, but starting with 'v')
   ppr: float, optional
       Points per resolution element to sample the convolved spectrum
       (default is 5, set to None to keep the original sampling)
@@ -9164,11 +9166,11 @@ def bas_build(synthfile):
             for job in conf[entry][task]:
                 if 'synthfile' not in job:
                   job['synthfile'] = synthfile
-                if task == 'synth_pickle':
-                  if 'outsynthfile' in job:
-                    pos = job['outsynthfile'].find('_')
-                    job['outsynthfile'] = job['outsynthfile'][:pos] + '_' + \
-                                   root + '-' + job['outsynthfile'][pos+1:]
+                if task == 'pickle_synth':
+                  if 'synthfile' in job:
+                    pos = job['synthfile'].find('_')
+                    job['outsynthfile'] = job['synthfile'][:pos] + '_' + \
+                      root + '-' + job['synthfile'][pos+1:-3] + 'pickle'
                 print('kargs=',job)
                 call(task,**job)
     

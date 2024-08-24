@@ -10,30 +10,38 @@ STIS:
     {'synthfile': 'i_STIS.dat',
       'n': 10000, 'rv': False, 'ebv': True} ]
   bas_perfcheck: [
-    {'synthfile': 'i_STISrbf.dat'},
-    {'synthfile': 'i_STISrbf-EBV.dat'} ]
+    {'synthfile': 'n_STISrbf.dat'},
+    {'synthfile': 'n_STISrbf.dat', 'snr' = 30 },
+    {'synthfile': 'n_STISrbf.dat', 'snr' = 10 },
+    {'synthfile': 'n_STISrbf-EBV.dat'},  
+    {'synthfile': 'n_STISrbf-EBV.dat', 'snr' : 30 },  
+    {'synthfile': 'n_STISrbf-EBV.dat', 'snr' : 10 } ]
   pickle_synth:  [
-    {'synthfile': 'i_STISrbf.dat', 'outsynthfile': 'n_STISrbf.pickle'},
-    {'synthfile': 'i_STISrbf-EBV.dat', 'outsynthfile': 'n_STISrbf-EBV.pickle'} ]
-R1000:
+    {'synthfile': 'n_STISrbf.dat'},
+    {'synthfile': 'n_STISrbf-EBV.dat'} ]
+XP:
   gsynth: [
     {'fwhm': 299.792458, 'units': 'km/s', 'ppr': 3., 'wrange':[3000., 11000.],
      'outsynthfile': 'n_R1000.dat'} ]
   rewrite_synth: [
     {'synthfile': 'n_R1000.dat', 'outsynthfile': 'i_R1000.dat'}]
   xplsf: [
-    {'synthfile': 'i_R1000.dat'} ]
+    {'synthfile': 'i_R1000.dat', 'outsynthfile': 'v_XP.dat'} ]
   synth_rbf:     [
-    {'synthfile': 'v_R1000.dat',
+    {'synthfile': 'v_XP.dat',
       'n': 10000, 'rv': False, 'ebv': False},
-    {'synthfile': 'v_R1000.dat',
+    {'synthfile': 'v_XP.dat',
       'n': 10000, 'rv': False, 'ebv': True} ]
   bas_perfcheck: [
-    {'synthfile': 'v_R1000rbf.dat'},
-    {'synthfile': 'v_R1000rbf-EBV.dat'} ]
+    {'synthfile': 'n_XPrbf.dat'},
+    {'synthfile': 'n_XPrbf.dat', 'snr' : 30 },
+    {'synthfile': 'n_XPrbf.dat', 'snr' : 10 },
+    {'synthfile': 'n_XPrbf-EBV.dat'},
+    {'synthfile': 'n_XPrbf-EBV.dat', 'snr': 30 }, 
+    {'synthfile': 'n_XPrbf-EBV.dat', 'snr': 10 }  ]
   pickle_synth:  [
-    {'synthfile': 'v_R1000rbf.dat', 'outsynthfile': 'v_R1000rbf.pickle'},
-    {'synthfile': 'v_R1000rbf-EBV.dat', 'outsynthfile': 'v_R1000rbf-EBV.pickle'} ]
+    {'synthfile': 'n_XPrbf.dat'},
+    {'synthfile': 'n_XPrbf-EBV.dat'} ]
 LAMOST:
   gsynth: [
     {'fwhm':167., 'units':'km/s', 'ppr':3., 'wrange':[3800., 9000.],
@@ -46,11 +54,15 @@ LAMOST:
     {'synthfile': 'i_LAMOST.dat',
       'n': 10000, 'rv': False, 'ebv': True} ]
   bas_perfcheck: [
-    {'synthfile': 'i_LAMOSTrbf.dat'},
-    {'synthfile': 'i_LAMOSTrbf-EBV.dat'} ]
+    {'synthfile': 'n_LAMOSTrbf.dat'},
+    {'synthfile': 'n_LAMOSTrbf.dat', 'snr': 30 },
+    {'synthfile': 'n_LAMOSTrbf.dat', 'snr': 10 },
+    {'synthfile': 'n_LAMOSTrbf-EBV.dat'},
+    {'synthfile': 'n_LAMOSTrbf-EBV.dat', 'snr': 30 }, 
+    {'synthfile': 'n_LAMOSTrbf-EBV.dat'm 'snr': 10 } ]
   pickle_synth:  [
-    {'synthfile': 'i_LAMOSTrbf.dat', 'outsynthfile': 'n_LAMOSTrbf.pickle'},
-    {'synthfile': 'i_LAMOSTrbf-EBV.dat', 'outsynthfile': 'n_LAMOSTrbf-EBV.pickle'} ]
+    {'synthfile': 'n_LAMOSTrbf.dat'},
+    {'synthfile': 'n_LAMOSTrbf-EBV.dat'} ]
 DESI:
   gsynth: [ 
     {'fwhm': 1.8, 'units': 'A', 'ppr': 3., 'wrange': [3759., 5959], 
@@ -72,8 +84,12 @@ DESI:
     {'synthfile': 'i_BRZ-DESI.dat',
       'n': 10000, 'rv': False, 'ebv': True} ]
   bas_perfcheck: [
-    {'synthfile': 'i_BRZ-DESIrbf.dat'},
-    {'synthfile': 'i_BRZ-DESIrbf-EBV.dat'} ]
+    {'synthfile': 'n_BRZ-DESIrbf.dat'},
+    {'synthfile': 'n_BRZ-DESIrbf.dat', 'snr': 30 },
+    {'synthfile': 'n_BRZ-DESIrbf.dat', 'snr': 10 },
+    {'synthfile': 'n_BRZ-DESIrbf-EBV.dat'},
+    {'synthfile': 'n_BRZ-DESIrbf-EBV.dat', 'snr': 30 }, 
+    {'synthfile': 'n_BRZ-DESIrbf-EBV.dat', 'snr': 10 } ]
   pickle_synth:  [
-    {'synthfile': 'i_BRZ-DESIrbf.dat', 'outsynthfile': 'n_BRZ-DESIrbf.pickle'},
-    {'synthfile': 'i_BRZ-DESIrbf-EBV.dat', 'outsynthfile': 'n_BRZ-DESIrbf-EBV.pickle'} ]
+    {'synthfile': 'n_BRZ-DESIrbf.dat'},
+    {'synthfile': 'n_BRZ-DESIrbf-EBV.dat'} ]
