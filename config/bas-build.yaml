@@ -11,8 +11,8 @@ STIS:
       'n': 10000, 'rv': False, 'ebv': True} ]
   bas_perfcheck: [
     {'synthfile': 'n_STISrbf.dat'},
-    {'synthfile': 'n_STISrbf.dat', 'snr' = 30 },
-    {'synthfile': 'n_STISrbf.dat', 'snr' = 10 },
+    {'synthfile': 'n_STISrbf.dat', 'snr' : 30 },
+    {'synthfile': 'n_STISrbf.dat', 'snr' : 10 },
     {'synthfile': 'n_STISrbf-EBV.dat'},  
     {'synthfile': 'n_STISrbf-EBV.dat', 'snr' : 30 },  
     {'synthfile': 'n_STISrbf-EBV.dat', 'snr' : 10 } ]
