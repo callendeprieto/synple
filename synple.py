@@ -4524,8 +4524,8 @@ def pickle_synth(synthfile,outsynthfile=None):
 	
 	import pickle
 
-        #if outsynthfile is None:
-        #    outsynthfile = synthfile[:-3]+'pickle'
+        if outsynthfile is None:
+            outsynthfile = synthfile[:-3]+'pickle'
 	
 	h, p, d = read_synth(synthfile)
 	file = open(outsynthfile, 'wb')
