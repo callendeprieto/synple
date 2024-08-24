@@ -59,7 +59,7 @@ LAMOST:
     {'synthfile': 'n_LAMOSTrbf.dat', 'snr': 10 },
     {'synthfile': 'n_LAMOSTrbf-EBV.dat'},
     {'synthfile': 'n_LAMOSTrbf-EBV.dat', 'snr': 30 }, 
-    {'synthfile': 'n_LAMOSTrbf-EBV.dat'm 'snr': 10 } ]
+    {'synthfile': 'n_LAMOSTrbf-EBV.dat', 'snr': 10 } ]
   pickle_synth:  [
     {'synthfile': 'n_LAMOSTrbf.dat'},
     {'synthfile': 'n_LAMOSTrbf-EBV.dat'} ]
