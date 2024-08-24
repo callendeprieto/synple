@@ -4517,22 +4517,21 @@ def read_synth(synthfile,nd=False):
     return header,pars,data
     
 def pickle_synth(synthfile,outsynthfile=None):
-	"""
-	Reads a (text) FERRE grid and rewrites it to disk in pickle
-	(binary) format with the extension .pickle
-	"""
-	
-	import pickle
+    """
+    Reads a (text) FERRE grid and rewrites it to disk in pickle
+    (binary) format with the extension .pickle
+    """
+    import pickle
 
-        if outsynthfile is None:
-            outsynthfile = synthfile[:-3]+'pickle'
+    if outsynthfile is None:
+      outsynthfile = synthfile[:-3]+'pickle'
+
+    h, p, d = read_synth(synthfile)
+    file = open(outsynthfile, 'wb')
+    pickle.dump( (h, p, d), file)
+    file.close()
 	
-	h, p, d = read_synth(synthfile)
-	file = open(outsynthfile, 'wb')
-	pickle.dump( (h, p, d), file)
-	file.close()
-	
-	return()
+    return()
     
 def write_synth(synthfile,p,d,hdr=None,irregular=False):
     """
