@@ -8168,15 +8168,22 @@ among the parameters in the synthfile, it will be determined as such,  but
               assert(lenrv == lentarget),'the length of rv should match that of target'
           except ValueError:
               print('rv and target should be both None or both iterables of the same length')
+ 
 
       if ebv is not None:
-          assert(target is not None),'the length of the input ebv should match that of target, but target is None'
-          try:
+          if type(ebv) is int and ebv == 0:
+            pass
+          else:
+            assert(target is not None),'the length of the input ebv should match that of target, but target is None'
+            try:
               lentarget = len(target)
               lenebv = len(ebv)
               assert(lenebv == lentarget),'the length of ebv should match that of target'
-          except ValueError:
+            except ValueError:
               print('ebv and target should be both None or both iterables of the same length')
+      else:
+          if 'EBV' in hd0.values() or 'E(B-V)' in hd0.values():
+            ebv = 0
 
 
               
@@ -8376,14 +8383,17 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
       targetids (e.g. for DESI)
       (default is none)
     rv: iterable of floats
-      this can be an iterable matching the length of target with the RVs to be corrected. 
+      this can be an iterable matching the length of target with the RVs to  
+      be corrected. 
       When equal to None, velocities offsets are not considered.
       (default is None)
     ebv: iterable of floats
       this can be an iterable matching the length of target with the reddening 
- to be corrected. 
-      When equal to None, no reddening correction is applied, excpect for 
- DESI data, for which the SFD values from the DESI files will be used.
+      to be corrected. 
+      When equal to None, no reddening correction is applied, except for 
+      DESI data, for which the SFD values from the DESI files will be used.
+      When equal to 0 (integer!), no reddening correction is applied for 
+      DESI data, or data from any other source
     star: bool
       flag to pre-select only stars for DESI for having any of the 
       following targetting bits set:
@@ -8425,13 +8435,14 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
       except TypeError:
         print('rv must be None or an iterable')
       assert(len(rv) == len(target)),'rv and target must have the same length'
-   
-    if ebv is not None:
-      try:
-        _ = (e for e in ebv)
-      except TypeError:
-        print('ebv must be None or an iterable')
-      assert(len(ebv) == len(target)),'ebv and target must have the same length'
+  
+    if type(ebv) is not int: 
+      if ebv is not None:
+        try:
+          _ = (e for e in ebv)
+        except TypeError:
+          print('ebv must be 0, None,  or an iterable')
+        assert(len(ebv) == len(target)),'ebv and target must have the same length'
 
 
     #data
@@ -8541,10 +8552,18 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
              else:
                vrad = rv
 
-             if ebv is None:
-               red = map1['EBV']
+             if type(ebv) is int and ebv == 0:
+               red = np.zeros(nspec)
+               print('E(B-V)=0 adopted for all the objects')
              else:
-               red = ebv
+               if ebv is None:
+                 red = map1['EBV']
+                 if len(ind) > 0:
+                   red = red[ind]
+                 print('Correcting E(B-V) from SFD map')
+               else:
+                 red = ebv
+                 print('Correcting E(B-V) from values provided by the user')
                             
            #limit the sample to target/star          
            if len(ind) > 0:
@@ -8555,8 +8574,9 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
              map1 = map1[ind] 
 
            #correct reddening
-           print('correcting reddening from SFD maps with a mean E(B-V)=',
-                 np.mean(red),' +/- ', np.std(red))
+           print('Reddening from SFD map has a mean E(B-V)=',
+                 np.mean(map1['EBV']),' +/- ', np.std(map1['EBV']))
+
            for j in range(nspec):
              if np.abs(red[j]) > 1e-7:
                xtmp = np.array(wav1,dtype=float)
@@ -8667,6 +8687,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
       ivr = np.divide(1.,err, where = (err > 0.) )
       wav = wavelengths
       ids = np.array(list(map(str,range(len(frd[:,0])))))
+
 
     return(ids,wav,frd,ivr)
 
