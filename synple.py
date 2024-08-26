@@ -8584,7 +8584,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
                tmp = remove(ccm89(xtmp, red[j] * 3.1, 3.1), ytmp)
                ivar1[j,:] = ivar1[j,:] * (np.divide(ytmp,tmp,where=tmp>0))**2
                flux1[j,:] = tmp
-             
+
 
            if wavelengths is None:
              nfreq = len(wav1)
@@ -8838,7 +8838,7 @@ def plot_spec(x,n,m=None,o=None,xlim=None,ylim=None,nozero=False):
           labels.append('data')
           if m is not None:
             plt.plot(xx[w],m[j,w])
-            lables.append('model')
+            labels.append('model')
         if ylim is None: ylim = (min(n[j,:])*0.95,max(n[j,:])*1.05)
         plt.xlabel('wavelength (nm)')
         plt.ylabel('normalized flux')
