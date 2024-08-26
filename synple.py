@@ -8372,7 +8372,7 @@ def read_arcturus(wrange):
   return(w[ind],f[ind])
 
 
-def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True)
+def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
     """Read and (if wavelengths is given) resample spectral observations
     
     Parameters
