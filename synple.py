@@ -8201,6 +8201,7 @@ among the parameters in the synthfile, it will be determined as such,  but
         mdlfile = file + '.mdl'
         nrdfile = file + '.nrd'
         errfile = file + '.err'
+        wavfile = file + '.wav'
       else:
         if type(outfile) is list:
           assert len(outfile) == 1,'outfile can only be specified when there is a single infile'
@@ -8208,12 +8209,14 @@ among the parameters in the synthfile, it will be determined as such,  but
         mdlfile = outfile + '.mdl'      
         nrdfile = outfile + '.nrd'
         errfile = outfile + '.err'
+        wavfile = outfile + '.wav'
 
       #open output parameter, observed and model file
       opf = open(opffile,'w')
       mdl = open(mdlfile,'w')
       nrd = open(nrdfile,'w')
       err = open(errfile,'w')
+      wav = open(wavfile,'w')
 
       for j in range(nspec):
 
@@ -8266,11 +8269,13 @@ among the parameters in the synthfile, it will be determined as such,  but
         nrd.write(' '.join(map(str,flx))+'\n')
         mdl.write(' '.join(map(str,bflx))+'\n')
         err.write(' '.join(map(str,1./np.sqrt(iva)))+'\n')
+        wav.write(' '.join(map(str,x2))+'\n')
       
       opf.close()
       mdl.close()
       nrd.close()
       err.close()
+      wav.close()
       
     return()
     
