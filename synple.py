@@ -8269,7 +8269,7 @@ among the parameters in the synthfile, it will be determined as such,  but
         nrd.write(' '.join(map(str,flx))+'\n')
         mdl.write(' '.join(map(str,bflx))+'\n')
         err.write(' '.join(map(str,1./np.sqrt(iva)))+'\n')
-        wav.write(' '.join(map(str,x2))+'\n')
+        if j == 0: wav.write(' '.join(map(str,x2))+'\n')
       
       opf.close()
       mdl.close()
@@ -8761,10 +8761,18 @@ def read_desispec(filename,band=None):
 
   return((wavelength,flux,ivar,res,fibermap,header))
 
-def plot_spec(x,n,m=None,o=None,xlim=None,ylim=None,nozero=False):
+def plot_spec(root=None,x=None,n=None,m=None,o=None,xlim=None,ylim=None,nozero=False):
 
-    """Plot one or multiple spectra
-    """
+  """Plot one or multiple spectra
+  """
+
+  if root is not None:
+    xx = np.loadtxt(root+'.wav')
+    n = np.loadtxt(root+'.nrd')
+    m = np.loadtxt(root+'.mdl')
+    o = np.loadtxt(root+'.opf') 
+
+  else:
 
     if type(x) is list: 
       xx = np.hstack(x)
@@ -8777,91 +8785,91 @@ def plot_spec(x,n,m=None,o=None,xlim=None,ylim=None,nozero=False):
 
     if xlim is None: xlim = (min(xx),max(xx))
 
-    nfreq = len(xx)
-    if n.ndim == 1: 
-      nspec = 1
+  nfreq = len(xx)
+  if n.ndim == 1: 
+    nspec = 1
+    plt.clf()
+    labels = []
+    if type(x) is list:
+      for i in range(len(x)):
+        if nozero:
+          w = (n[p[i]:p[i+1]] > 0.)
+        else:
+          w = range(p[i+1]-p[i])
+        plt.plot(xx[p[i]:p[i+1]][w],n[p[i]:p[i+1]][w])
+        labels.append('data')
+        if m is not None: 
+          plt.plot(xx[p[i]:p[i+1]][w],m[p[i]:p[i+1]][w])
+          labels.append('model')
+    else:
+      if nozero:
+        w = (n > 0.)
+      else:
+        w = range(len(x))
+      plt.plot(xx[w],n[w])
+      labels.append('data')
+      if m is not None:
+        plt.plot(xx[w],m[w])
+        labels.append('model')
+    if ylim is None: ylim = (min(n)*0.95,max(n)*1.05)
+    plt.xlabel('wavelength (nm)')
+    plt.ylabel('normalized flux')
+    if o is not None:
+      npar = len(o)-3
+      if npar >= 16: 
+        npar = int(np.sqrt(npar*1.0 - 1.))
+      else:
+        npar = npar// 2
+      plt.title('params: '+' -- '.join(map("{:.2f}".format,o[1:npar+1])))
+    plt.xlim(xlim)
+    plt.ylim(ylim)
+    if m is not None: plt.legend(labels)
+    plt.savefig('fig1.png')
+    plt.show()
+  else:
+    nspec = len(n[:,0])
+    labels = []
+    for j in range(nspec):
       plt.clf()
-      labels = []
       if type(x) is list:
         for i in range(len(x)):
           if nozero:
-            w = (n[p[i]:p[i+1]] > 0.)
+            w = (n[j,p[i]:p[i+1]] > 0.)
           else:
             w = range(p[i+1]-p[i])
-          plt.plot(xx[p[i]:p[i+1]][w],n[p[i]:p[i+1]][w])
+          plt.plot(xx[p[i]:p[i+1]][w],n[j,p[i]:p[i+1]][w])
           labels.append('data')
-          if m is not None: 
-            plt.plot(xx[p[i]:p[i+1]][w],m[p[i]:p[i+1]][w])
+          if m is not None:
+            plt.plot(xx[p[i]:p[i+1]][w],m[j,p[i]:p[i+1]][w])
             labels.append('model')
       else:
         if nozero:
-          w = (n > 0.)
+          w = (n[j,:] > 0.)
         else:
-          w = range(len(x))
-        plt.plot(xx[w],n[w])
+          w = range(len(xx))
+        plt.plot(xx[w],n[j,w])
         labels.append('data')
         if m is not None:
-          plt.plot(xx[w],m[w])
+          plt.plot(xx[w],m[j,w])
           labels.append('model')
-      if ylim is None: ylim = (min(n)*0.95,max(n)*1.05)
+      if ylim is None: ylim = (min(n[j,:])*0.95,max(n[j,:])*1.05)
       plt.xlabel('wavelength (nm)')
       plt.ylabel('normalized flux')
+      plt.xlim(xlim)
+      plt.ylim(ylim)
+      if m is not None: plt.legend(labels)
       if o is not None:
-        npar = len(o)-3
+        npar = len(o[0,:])-3
         if npar >= 16: 
           npar = int(np.sqrt(npar*1.0 - 1.))
         else:
           npar = npar// 2
-        plt.title('params: '+' -- '.join(map("{:.2f}".format,o[1:npar+1])))
-      plt.xlim(xlim)
-      plt.ylim(ylim)
-      if m is not None: plt.legend(labels)
-      plt.savefig('fig1.png')
-      plt.show()
-    else:
-      nspec = len(n[:,0])
-      labels = []
-      for j in range(nspec):
-        plt.clf()
-        if type(x) is list:
-          for i in range(len(x)):
-            if nozero:
-              w = (n[j,p[i]:p[i+1]] > 0.)
-            else:
-              w = range(p[i+1]-p[i])
-            plt.plot(xx[p[i]:p[i+1]][w],n[j,p[i]:p[i+1]][w])
-            labels.append('data')
-            if m is not None:
-              plt.plot(xx[p[i]:p[i+1]][w],m[j,p[i]:p[i+1]][w])
-              labels.append('model')
-        else:
-          if nozero:
-            w = (n[j,:] > 0.)
-          else:
-            w = range(len(x))
-          plt.plot(xx[w],n[j,w])
-          labels.append('data')
-          if m is not None:
-            plt.plot(xx[w],m[j,w])
-            labels.append('model')
-        if ylim is None: ylim = (min(n[j,:])*0.95,max(n[j,:])*1.05)
-        plt.xlabel('wavelength (nm)')
-        plt.ylabel('normalized flux')
-        plt.xlim(xlim)
-        plt.ylim(ylim)
-        if m is not None: plt.legend(labels)
-        if o is not None:
-          npar = len(o[0,:])-3
-          if npar >= 16: 
-            npar = int(np.sqrt(npar*1.0 - 1.))
-          else:
-            npar = npar// 2
-          plt.title('params: '+' -- '.join(map("{:.2f}".format,o[j,1:npar+1])))
+        plt.title('params: '+' -- '.join(map("{:.2f}".format,o[j,1:npar+1])))
 
-        plt.savefig('fig'+str(j+1)+'.png')
+      plt.savefig('fig'+str(j+1)+'.png')
         
 
-    return()
+  return()
 
 
 def vac2air(wavelength):
