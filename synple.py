@@ -8372,7 +8372,7 @@ def read_arcturus(wrange):
   return(w[ind],f[ind])
 
 
-def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
+def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True)
     """Read and (if wavelengths is given) resample spectral observations
     
     Parameters
@@ -8407,6 +8407,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
       Cannot be combined with target; passing a list in target  
       sets star to False 
       (default is True)
+
       
     Returns
     -------
@@ -8617,6 +8618,8 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
            if band == 'B':
              wav = wav1
              frd = flux1
+             wbad = (wav1 >= 4300.) & (wav1 <= 4450.)
+             ivar1[:,wbad] = 0.
              ivr = ivar1
              ids = map1['targetid']
            else:
