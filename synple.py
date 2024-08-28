@@ -8770,10 +8770,10 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xlim=None,ylim=None,nozero=F
   """
 
   if root is not None:
-    xx = np.loadtxt(root+'.wav')
+    xx = np.loadtxt(root+'.wav') / 10.
     n = np.loadtxt(root+'.nrd')
     m = np.loadtxt(root+'.mdl')
-    o = np.loadtxt(root+'.opf') 
+    o = np.loadtxt(root+'.opf',dtype=str) 
 
   else:
 
@@ -8786,7 +8786,7 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xlim=None,ylim=None,nozero=F
     else:
       xx = x/10.
 
-    if xlim is None: xlim = (min(xx),max(xx))
+  if xlim is None: xlim = (min(xx),max(xx))
 
   nfreq = len(xx)
   if n.ndim == 1: 
@@ -8808,7 +8808,7 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xlim=None,ylim=None,nozero=F
       if nozero:
         w = (n > 0.)
       else:
-        w = range(len(x))
+        w = range(len(xx))
       plt.plot(xx[w],n[w])
       labels.append('data')
       if m is not None:
@@ -8823,7 +8823,8 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xlim=None,ylim=None,nozero=F
         npar = int(np.sqrt(npar*1.0 - 1.))
       else:
         npar = npar// 2
-      plt.title('params: '+' -- '.join(map("{:.2f}".format,o[1:npar+1])))
+      plt.title('params: '+' -- '.join(map("{:.2f}".format,np.array(o[1:npar+1],dtype=float))))
+      plt.text(0.5*xlim[0]+0.5*xlim[1],0.75*ylim[0]+0.25*ylim[1],o[0])
     plt.xlim(xlim)
     plt.ylim(ylim)
     if m is not None: plt.legend(labels)
@@ -8867,7 +8868,8 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xlim=None,ylim=None,nozero=F
           npar = int(np.sqrt(npar*1.0 - 1.))
         else:
           npar = npar// 2
-        plt.title('params: '+' -- '.join(map("{:.2f}".format,o[j,1:npar+1])))
+        plt.title('params: '+' -- '.join(map("{:.2f}".format,np.array(o[j,1:npar+1],dtype=float))))
+        plt.text(0.5*xlim[0]+0.5*xlim[1],0.75*ylim[0]+0.25*ylim[1],o[j,0])
 
       plt.savefig('fig'+str(j+1)+'.png')
         
