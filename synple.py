@@ -4709,14 +4709,14 @@ def merge_synth(synthfile,outsynthfile=None):
     -------
     hh: dict
       header of the merged synthfile
-    p: numpy array of floats
+    pp: numpy array of floats
       parameters
     dd: numpy array of floats
       data (fluxes)
     """
 
     k = 0
-    synthfile2 = ''
+    synthfile2 = 'merged_'
     for entry in synthfile:
 
         h,p,d = read_synth(entry) 
