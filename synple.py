@@ -4629,9 +4629,9 @@ def write_synth(synthfile,p,d,hdr=None,irregular=False):
 
     return(None)			
 
-def merge_synth(synthfile,outsynthfile=None):
+def paste_synth(synthfile,outsynthfile=None):
 
-    """Merges various synthfiles with the same parameters but
+    """Pastes various synthfiles with the same parameters but
     different spectral ranges into one synthfile with a multiheader.
 
     Parameters
@@ -4679,7 +4679,7 @@ def merge_synth(synthfile,outsynthfile=None):
     h0 = dict()
     h0['MULTI'] = len(hh)
     h0['ID'] = synthfile2
-    h0['COMMENTS1'] = 'merged with synple.merge_synth'
+    h0['COMMENTS1'] = 'merged with synple.paste_synth'
     h0['N_OF_DIM'] = hh[0]['N_OF_DIM']
     if 'NTOT' in hh[0]:
       h0['NTOT'] = hh[0]['NTOT']
@@ -4692,6 +4692,89 @@ def merge_synth(synthfile,outsynthfile=None):
     write_synth(outsynthfile,p,dd,hdr=hh)
 
     return(hh,p,dd)
+
+
+def merge_synth(synthfile,outsynthfile=None):
+
+    """Merges various synthfiles with the same parameters and
+    the same spectral range/resolution into one irregular grid.
+
+    Parameters
+    ----------
+    synthfile:  iterable of strings
+      Names of the synthfiles to merge
+    outsynthfile: name of the output synthfile
+
+    Returns
+    -------
+    hh: dict
+      header of the merged synthfile
+    p: numpy array of floats
+      parameters
+    dd: numpy array of floats
+      data (fluxes)
+    """
+
+    k = 0
+    synthfile2 = ''
+    for entry in synthfile:
+
+        h,p,d = read_synth(entry) 
+        synthfile2 += entry
+        print('synthfile2=',synthfile2)
+
+        if k == 0:
+          if type(h) is list:
+            hh = h.copy()
+          else:
+            hh = [h]
+            pp = p.copy()
+            dd = d.copy()
+            
+          #track LABELS in the first header  
+          labels = []
+          for key in hh[-1].keys():
+            if key[:5] == 'LABEL':
+              labels.append(hh[-1][key])
+        else:
+          if type(h) is list:
+            for block in h:
+              hh.append(block)
+          else:
+            hh.append(h)
+            
+          #check the LABELS are the same in the rest
+          labels2 = []
+          for key in hh[-1].keys():
+            if key[:5] == 'LABEL':
+              labels2.append(hh[-1][key])
+
+          assert(np.all(np.array(labels) == np.array(labels2))),'The parameters of the file '+entry+ ' do not match those for preceding synthfiles'           
+
+          
+          pp = np.vstack((pp,p))
+          dd = np.vstack((dd,d))	
+
+        
+        k += 1
+
+    h0 = dict()
+    h0['MULTI'] = len(hh)
+    h0['ID'] = synthfile2
+    h0['COMMENTS1'] = 'merged with synple.paste_synth'
+    h0['N_OF_DIM'] = hh[0]['N_OF_DIM']
+    if 'NTOT' in hh[0]:
+      h0['NTOT'] = hh[0]['NTOT']
+    if 'TYPE' in hh[0]: 
+      h0['TYPE'] = hh[0]['TYPE']
+
+    hh.insert(0,h0)
+
+    if outsynthfile is None: outsynthfile = synthfile2 + '.dat'
+    write_synth(outsynthfile,pp,dd,hdr=hh)
+
+    return(hh,pp,dd)
+
 
 
 def fill_synth(d,kernel='thin_plate_spline', neighbors=100):
