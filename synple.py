@@ -8135,7 +8135,7 @@ def vicebas(p, d, flx,iva,npoints=10):
 
 
 def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None, 
-        focus=False, star=True):
+        focus=False, star=True, conti=False):
 
     """Bayesian Algorithm in Synple
     
@@ -8180,6 +8180,10 @@ among the parameters in the synthfile, it will be determined as such,  but
       switch to limit the analysis of DESI spectra to stars. It has no
       effect on other data sets. Activating target disables star.
       (default True)
+
+    conti: bool
+      activates the continuum normalization (see 'continuum' function)
+      (default False)
    
     Returns
     -------
@@ -8224,7 +8228,11 @@ among the parameters in the synthfile, it will be determined as such,  but
     #normalization
     print('normalizing grid...')
     for entry in range(len(d[:,0])):
-        d[entry,:] = d[entry,:] / np.mean(d[entry,:])
+        if conti:
+          cc = continuum(d[entry,:])
+        else:
+          cc = np.mean(d[entry,:])
+        d[entry,:] = d[entry,:] / cc
     
     #sanity check  
     if len(infiles) > 1 and (rv is not None or ebv is not None):
@@ -8315,9 +8323,15 @@ among the parameters in the synthfile, it will be determined as such,  but
           flx = np.interp(xax,xax[www2],flx[www2])
 
         #normalize
-        mflx = np.mean(flx)
-        if mflx == 0.0: mflx = np.median(flx)
-        if mflx == 0.0: mflx = 1.
+        if conti:
+          mflx = continuum(flx)
+          www = (mflx == 0.0)
+          mflx[www] = 1. 
+        else:
+          mflx = np.mean(flx)
+          if mflx == 0.0: mflx = np.median(flx)
+          if mflx == 0.0: mflx = 1.
+
         flx = flx / mflx
         iva = ivr[j,:] * mflx**2
 
