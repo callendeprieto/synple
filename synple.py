@@ -60,7 +60,10 @@ from scipy.signal import savgol_filter
 from scipy.optimize import curve_fit
 from itertools import product
 from astropy.io import fits
-
+import astropy.table as tbl
+import astropy.units as units
+import datetime
+import platform
 
 #configuration
 #synpledir = /home/callende/synple
@@ -9616,6 +9619,322 @@ def rbf_test(synthfile,n=None, kernel='thin_plate_spline', neighbors=100):
         
     return( per[0], per[1], per[2] )
     
+
+def wferrefits(root, path=None):	
+
+  if path is None: path=""
+  proot=os.path.join(path,root)
+  o=glob.glob(proot+".opf")
+
+  
+  xbandfiles = sorted(glob.glob(proot+'-*.wav'))
+  band = []
+  npix = []
+  for entry in xbandfiles:
+    print('entry=',entry)
+    match = re.search('-[\w]*.wav',entry)
+    tag = match.group()[1:-4]
+    if match: band.append(tag.upper())
+    x = loadtxt(proot+'-'+tag+'.wav')
+    npix.append(len(x))
+  
+  print('proot+.wav=',proot+'.wav')  
+  print('xbandfiles=',xbandfiles)
+  x = np.loadtxt(proot+'.wav')
+  if len(npix) == 0: npix.append(len(x))
+
+  mdl=glob.glob(proot+".mdl")
+  err=glob.glob(proot+".err")
+  nrd=glob.glob(proot+".nrd")
+
+ 
+  success=[]
+  targetid=[]
+  srcfile=[]
+  teff=[]
+  logg=[]
+  feh=[]
+  alphafe=[]
+  micro=[]
+  param = []
+  covar=[]
+  snr_med=[]
+  chisq_tot=[]
+  rv_adop=[]
+  rv_err=[]
+  bestgrid = []
+  of=open(o[0],'r')
+
+  k = 1
+
+  for line in of:
+    cells=line.split()
+    #k = int(cells[0])  # the very first line gives the index (1,2...) for the successful grid
+    bestgrid.append(o[k-1])
+    id = cells[0]
+    cells = cells[1:]
+
+    m = len(cells)
+    ndim = m - 3
+    if ndim > 10:
+        ndim = int(np.sqrt(4*ndim+1)-1)
+    ndim = ndim // 2
+    
+    assert (m > 6), 'Error, the file '+o[0]+' has less than 7 columns, which would correspond to ndim=2'
+    par = np.zeros(ndim)
+    cov = np.zeros(ndim*ndim+ndim) 
+    
+    print('ndim=',ndim)
+    print('m=',m)
+    
+    if (ndim == 2):
+      #white dwarfs 2 dimensions: id, 2 par, 2err, 0., med_snr, lchi, 2x2 cov
+      feh.append(-10.)
+      teff.append(float(cells[0]))
+      logg.append(float(cells[1]))
+      alphafe.append(np.nan)
+      micro.append(np.nan)
+
+
+    elif (ndim == 3):
+      #Kurucz grids with 3 dimensions: id, 3 par, 3 err, 0., med_snr, lchi, 3x3 cov
+      #see Allende Prieto et al. (2018, A&A)
+      feh.append(float(cells[1]))
+      teff.append(float(cells[0]))
+      logg.append(float(cells[2]))
+      alphafe.append(np.nan)
+      micro.append(np.nan)
+
+    elif (ndim == 4):
+      #Phoenix grid from Sergey or MARCS grid, with 4 dimensions: id, 4 par, 4err, 0., med_snr, lchi, 4x4 cov
+      feh.append(float(cells[1]))
+      teff.append(float(cells[2]))
+      logg.append(float(cells[3]))
+      alphafe.append(float(cells[0]))
+      micro.append(np.nan)
+   
+
+    elif (ndim == 5):
+      #Kurucz grids with 5 dimensions: id, 5 par, 5 err, 0., med_snr, lchi, 5x5 cov
+      #see Allende Prieto et al. (2018, A&A)
+      feh.append(float(cells[0]))
+      teff.append(float(cells[3]))
+      logg.append(float(cells[4]))
+      alphafe.append(float(cells[1]))
+      micro.append(float(cells[2]))
+
+
+    chisq_tot.append(10.**float(cells[2+2*ndim]))
+    snr_med.append(float(cells[1+2*ndim]))
+    rv_adop.append(float(cells[0+2*ndim]))
+    rv_err.append(0.)
+    par = np.array(cells[0:ndim],dtype=float)
+    cov = np.array(cells[2*ndim:],dtype=float)
+    param.append(par)
+    covar.append(cov)    
+     
+
+
+    if (chisq_tot[-1] < 1.5 and snr_med[-1] > 5.): # chi**2<1.5 and S/N>5
+      success.append(1) 
+    else: success.append(0)
+    tmp = cells[0].split('_')
+    targetid.append(id)
+    srcfile.append(root)
+    #fiber.append(int32(tmp[1]))
+
+  k += 1
+
+  #primary extension
+  hdu0=fits.PrimaryHDU()
+
+  #find out processing date and add it to primary header
+  now = datetime.datetime.fromtimestamp(time.time())
+  nowstr = now.isoformat() 
+  nowstr = nowstr[:nowstr.rfind('.')]
+  hdu0.header['DATE'] = nowstr
+
+  #find out host machine and add info to header
+  try:
+    host=os.environ['HOST']
+  except:
+    host='Unknown'
+  hdu0.header['HOST'] = host
+  #find out OS name/platform
+  osname = os.name 
+  platf = platform.system() + ' '+ platform.release()
+  hdu0.header['OS'] = osname
+  hdu0.header['PLATFORM'] = platf
+
+  #keep track of the number of targets processed and the time it took
+  nspec = len(targetid)
+  hdu0.header['NSPEC'] = nspec
+
+  
+  hdulist = [hdu0]
+
+  #sptab extension
+  cols = {}
+  cols['SUCCESS'] = success
+  cols['TARGETID'] = targetid
+  cols['SRCFILE'] = srcfile
+  cols['BESTGRID'] = bestgrid
+  cols['TEFF'] = np.array(teff)*units.K
+  cols['LOGG'] = np.array(logg)
+  cols['FEH'] = np.array(feh)
+  cols['ALPHAFE'] = np.array(alphafe) 
+  cols['LOG10MICRO'] = np.array(micro)
+  cols['PARAM'] = np.array(param)
+  cols['COVAR'] = np.array(covar)
+  cols['CHISQ_TOT'] = np.array(chisq_tot)
+  cols['SNR_MED'] = np.array(snr_med)
+  cols['RV_ADOP'] = np.array(rv_adop)*units.km/units.s
+  cols['RV_ERR'] = np.array(rv_err)*units.km/units.s
+
+  colcomm = {
+  'success': 'Bit indicating whether the code has likely produced useful results',
+  'TARGETID': 'DESI targetid',
+  'SRCFILE': 'DESI data file',
+  'BESTGRID': 'Model grid that produced the best fit',
+  'TEFF': 'Effective temperature (K)',
+  'LOGG': 'Surface gravity (g in cm/s**2)',
+  'FEH': 'Metallicity [Fe/H] = log10(N(Fe)/N(H)) - log10(N(Fe)/N(H))sun' ,
+  'ALPHAFE': 'Alpha-to-iron ratio [alpha/Fe]',
+  'LOG10MICRO': 'Log10 of Microturbulence (km/s)',
+  'PARAM': 'Array of atmospheric parameters ([Fe/H], [a/Fe], log10micro, Teff,logg)',
+  'COVAR': 'Covariance matrix for ([Fe/H], [a/Fe], log10micro, Teff,logg)',
+  'ELEM': 'Elemental abundance ratios to hydrogen [elem/H]',
+  'ELEM_ERR': 'Uncertainties in the elemental abundance ratios',
+  'CHISQ_TOT': 'Total chi**2',
+  'SNR_MED': 'Median signal-to-ratio',
+  'RV_ADOP': 'Adopted Radial Velocity (km/s)',
+  'RV_ERR': 'Uncertainty in the adopted Radial Velocity (km/s)'
+  }      
+
+  
+  table = tbl.Table(cols)
+  hdu=fits.BinTableHDU(table,name = 'SPTAB')
+  #hdu.header['EXTNAME']= ('SPTAB', 'Stellar Parameter Table')
+  k = 0
+  for entry in colcomm.keys():
+    print(entry) 
+    hdu.header['TCOMM'+"{:03d}".format(k+1)] = colcomm[entry]
+    k+=1
+  hdulist.append(hdu)
+
+  #aux extension
+  p = ['[Fe/H]','[a/Fe]','log10micro','Teff','logg']
+  cols = {}
+  colcomm = {}
+  cols['p'] = [p]
+  colcomm['p'] = 'PARAM tags'
+  #cols['ip']= [dict(zip(p,arange(len(p))))]
+  #colcomm['ip']= 'Indices for PARAM tags'
+  
+  table = tbl.Table(cols)
+  hdu=fits.BinTableHDU(table,name = 'AUX')
+
+  k = 0
+  for entry in colcomm.keys():
+    print(entry) 
+    hdu.header['TCOMM'+"{:03d}".format(k+1)] = colcomm[entry]
+    k+=1
+  hdulist.append(hdu)
+
+
+  #hdul=fits.HDUList(hdulist)
+  #hdul.writeto('sptab_'+root+'.fits')
+
+  #now we handle the extensions with the fluxes  
+
+  edata=np.loadtxt(err[0])
+  if (len(mdl) > 0): 
+    mdata=np.loadtxt(mdl[0])
+  if (len(nrd) > 0): 
+    odata=np.loadtxt(nrd[0])
+
+
+  i = 0
+  j1 = 0
+
+
+  if len(xbandfiles) > 0:
+    for entry in band:
+      j2 = j1 + npix[i] 
+      print(entry,i,npix[i],j1,j2)
+      #colx = fits.Column(name='wavelength',format='e8', array=array(x[j1:j2]))
+      #coldefs = fits.ColDefs([colx])
+      #hdu = fits.BinTableHDU.from_columns(coldefs)
+      hdu = fits.ImageHDU(name=entry+'_WAVELENGTH', data=x[j1:j2])
+      hdulist.append(hdu)
+      
+      cols = {}
+      colcomm = {}
+      if odata.ndim == 2: tdata = odata[:,j1:j2]
+      else: tdata = odata[j1:j2][None,:]
+      cols['obs'] = tdata
+      colcomm['obs'] = 'Observed spectra as fit'
+      if edata.ndim == 2: tdata = edata[:,j1:j2]
+      else: tdata = edata[j1:j2][None,:]
+      cols['err'] = tdata
+      colcomm['err'] = 'Error in spectra as fit'
+      if (len(mdl) > 0): 
+        if mdata.ndim == 2: tdata = mdata[:,j1:j2]
+        else: tdata = mdata[j1:j2][None,:]
+        cols['flx'] = tdata
+        colcomm['flx'] = 'Absolute flux for best-fitting model'      
+      
+
+      table = tbl.Table(cols)
+      hdu=fits.BinTableHDU(table,name = entry+'_MODEL')
+      k = 0
+      for entry in colcomm.keys():
+        print(entry) 
+        hdu.header['TCOMM'+"{:03d}".format(k+1)] = colcomm[entry]
+        k+=1
+      hdulist.append(hdu)
+      i += 1
+      j1 = j2      
+      
+  else:
+    print('single wavelength entry!')
+    #colx = fits.Column(name='wavelength',format='e8', array=array(x[j1:j2]))
+    #coldefs = fits.ColDefs([colx])
+    #hdu = fits.BinTableHDU.from_columns(coldefs)
+    hdu = fits.ImageHDU(name='WAVELENGTH', data=x)
+    hdulist.append(hdu)
+      
+    cols = {}
+    colcomm = {}
+    if odata.ndim == 2: tdata = odata[:,:]
+    else: tdata = odata[:][None,:]
+    cols['obs'] = tdata
+    colcomm['obs'] = 'Observed spectra as fit'
+    if edata.ndim == 2: tdata = edata[:,:]
+    else: tdata = edata[:][None,:]
+    cols['err'] = tdata
+    colcomm['err'] = 'Error in spectra as fit'
+    if (len(mdl) > 0): 
+      if mdata.ndim == 2: tdata = mdata[:,:]
+      else: tdata = mdata[:][None,:]
+      cols['flx'] = tdata
+      colcomm['flx'] = 'Absolute flux for best-fitting model'      
+      
+
+    table = tbl.Table(cols)
+    hdu=fits.BinTableHDU(table,name = 'MODEL')
+    k = 0
+    for entry in colcomm.keys():
+      print(entry) 
+      hdu.header['TCOMM'+"{:03d}".format(k+1)] = colcomm[entry]
+      k+=1
+    hdulist.append(hdu)
+
+
+  hdul=fits.HDUList(hdulist)
+  hdul.writeto('test_'+root+'.fits')
+  
+  return None
     
     
 def fparams(root,synthfile=None,figure=None):
