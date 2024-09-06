@@ -52,9 +52,9 @@ MILES:
   bas_perfcheck: [
     {'synthfile': 'n_MILESrbf.dat'},
     {'synthfile': 'n_MILESrbf.dat', 'snr' : 30 },
-    {'synthfile': 'n_MILESrbf.dat', 'snr' : 10 },
+    {'synthfile': 'n_MILESrbf.dat', 'snr' : 10 } ]
   pickle_synth:  [
-    {'synthfile': 'n_MILESrbf.dat'},
+    {'synthfile': 'n_MILESrbf.dat'} ]
 XP:
   gsynth: [
     {'fwhm': 299.792458, 'units': 'km/s', 'ppr': 3., 'wrange':[3000., 11000.],
