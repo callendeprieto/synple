@@ -48,7 +48,7 @@ MILES:
     {'synthfile': 'n_MILES.dat', 'outsynthfile': 'i_MILES.dat'}]
   synth_rbf:     [
     {'synthfile': 'i_MILES.dat',
-      'n': 10000, 'rv': False, 'ebv': False},
+      'n': 10000, 'rv': False, 'ebv': False} ]
   bas_perfcheck: [
     {'synthfile': 'n_MILESrbf.dat'},
     {'synthfile': 'n_MILESrbf.dat', 'snr' : 30 },
