@@ -40,6 +40,21 @@ STIS-NICMOS:
   pickle_synth:  [
     {'synthfile': 'n_STIS-NICMOSrbf.dat'},
     {'synthfile': 'n_STIS-NICMOSrbf-EBV.dat'} ]
+MILES:
+  gsynth: [
+    {'fwhm': 2.5, 'units': 'A', 'ppr': 3., 'wrange': [3510.,7400.],
+     'outsynthfile': 'n_MILES.dat' }]
+  rewrite_synth: [
+    {'synthfile': 'n_MILES.dat', 'outsynthfile': 'i_MILES.dat'}]
+  synth_rbf:     [
+    {'synthfile': 'i_MILES.dat',
+      'n': 10000, 'rv': False, 'ebv': False},
+  bas_perfcheck: [
+    {'synthfile': 'n_MILESrbf.dat'},
+    {'synthfile': 'n_MILESrbf.dat', 'snr' : 30 },
+    {'synthfile': 'n_MILESrbf.dat', 'snr' : 10 },
+  pickle_synth:  [
+    {'synthfile': 'n_MILESrbf.dat'},
 XP:
   gsynth: [
     {'fwhm': 299.792458, 'units': 'km/s', 'ppr': 3., 'wrange':[3000., 11000.],
