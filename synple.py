@@ -10185,6 +10185,49 @@ def desimask(desi_target):
   return(bits)
 
 
+def mwsmask(mws_target):
+
+  """Returns targetting classes from MWS_TARGET bits in the FIBERMAP
+  extension of DESI data files
+  """
+  mask = [('MWS_BROAD', 0, 1),
+ ('MWS_WD', 1, 2),
+ ('MWS_NEARBY', 2, 4),
+ ('MWS_BROAD_NORTH', 4, 16),
+ ('MWS_BROAD_SOUTH', 5, 32),
+ ('MWS_BHB', 6, 64),
+ ('MWS_MAIN_BLUE', 8, 256),
+ ('MWS_MAIN_BLUE_NORTH', 9, 512),
+ ('MWS_MAIN_BLUE_SOUTH', 10, 1024),
+ ('MWS_MAIN_RED', 11, 2048),
+ ('MWS_MAIN_RED_NORTH', 12, 4096),
+ ('MWS_MAIN_RED_SOUTH', 13, 8192),
+ ('MWS_FAINT_BLUE', 14, 16384),
+ ('MWS_FAINT_BLUE_NORTH', 15, 32768),
+ ('MWS_FAINT_BLUE_SOUTH', 16, 65536),
+ ('MWS_FAINT_RED', 17, 131072),
+ ('MWS_FAINT_RED_NORTH', 18, 262144),
+ ('MWS_FAINT_RED_SOUTH', 19, 524288),
+ ('GAIA_STD_FAINT', 33, 8589934592),
+ ('GAIA_STD_WD', 34, 17179869184),
+ ('GAIA_STD_BRIGHT', 35, 34359738368),
+ ('BACKUP_DIB', 57, 144115188075855872),
+ ('BACKUP_GIANT_LOP', 58, 288230376151711744),
+ ('BACKUP_GIANT', 59, 576460752303423488),
+ ('BACKUP_BRIGHT', 60, 1152921504606846976),
+ ('BACKUP_FAINT', 61, 2305843009213693952),
+ ('BACKUP_VERY_FAINT', 62, 4611686018427387904)]
+
+  bits = []
+  target = mws_target
+  for entry in reversed(mask):
+    if target - entry[2] >= 0: 
+      target = target - entry[2]
+      bits.append(entry[0])
+
+
+  return(bits)
+
 
 if __name__ == "__main__":
 
