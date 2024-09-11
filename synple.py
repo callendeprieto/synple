@@ -8383,7 +8383,8 @@ among the parameters in the synthfile, it will be determined as such,  but
 def identify_instrument(infile):
 	
     """Identify the instrument that produced infile
-       LAMOST, DESI, NGSL(STIS)/CALSPEC, MILES
+       LAMOST, DESI, NGSL(STIS)/CALSPEC, Gaia XP, MILES, INT/IDS-R900V, 
+       GTC/OSIRIS-R2500U
        
     Parameters
     ----------
@@ -8414,6 +8415,12 @@ def identify_instrument(infile):
             if 'INSTRUME' in head:
                 if head['TELESCOP'] == 'HST' and head['INSTRUME'][:4] == 'STIS':
                     instr = 'STIS'  
+            if head['TELESCOP'][:3] == 'INT' and head['INSTRUME'][:3] == 'IDS' and \
+               head['CAMERA'][:3] == '235' and head['GRATNAME'][:5] == 'R900V':
+               instr = 'INT-R900V'
+            if head['TELESCOP'][:3] == 'GTC' and head['INSTRUME'][:6] == 'OSIRIS' and \
+             head['GRISM'][:6] == 'R2500U':
+               instr = 'OSIRIS-R2500U'
         else:
             if 'MAPKEY' in head:
                 if head['MAPKEY'] == 'calspec':
@@ -8811,7 +8818,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
         else:
           assert(len(rv) == 1),'rv must be None or an iterable'
           rv = rv[0]
-          assert(type(rv) is float or type(rv) is int),'rv must be None or an interable with a single float/int'
+          assert(type(rv) is float or type(rv) is int),'rv must be None or an iterable with a single float/int'
           vrad = float(rv)
           
 			 
@@ -8823,6 +8830,89 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
           frd = np.interp(wavelengths,wav,flux)
           ivr = np.interp(wavelengths,wav,ivar)
           wav = wavelengths
+
+      elif instr == "IDS-R900V":
+        fi = fits.open(infile)
+        head = fi[0].header
+        s = fi[0].data
+        flux = s
+        wav = np.arange(len(s))*head['CD1_1']+head['CRVAL1']
+        lenwav = len(wav)        
+        print('Warning: IDS files do not include uncertainties')
+        print('         assuming S/N = 20!')
+        err = flux * 0.05
+        ivar = np.divide(1.,err**2, where = (err > 0.) )
+        if 'OBJECT' in head:
+          ids = np.array([head['OBJECT']])
+        else:
+          ids = np.array([infile])
+        
+        if target is not None:
+          assert(type(target[0]) is int or type(target[0]) is long),'target must be None or an int/long'
+          assert(len(target) == 1),'target can only have one element for single-target IDS files'
+          if(target[0] != 0):
+              print('target needs to be 0 in order to read the one and only IDS spectrum in the input file')
+              return(None,None,None,None)
+          
+        if rv is None: 
+          vrad = 0.0
+        else:
+          assert(len(rv) == 1),'rv must be None or an iterable'
+          rv = rv[0]
+          assert(type(rv) is float or type(rv) is int),'rv must be None or an iterable with a single float/int'
+          vrad = float(rv)
+          
+			 
+        if wavelengths is None:
+          frd = np.interp(wav,wav*(1. + vrad/clight),flux)
+          ivr = np.interp(wav,wav*(1. + vrad/clight),ivar)
+        else:
+          lenx = len(wavelengths)
+          frd = np.interp(wavelengths,wav,flux)
+          ivr = np.interp(wavelengths,wav,ivar)
+          wav = wavelengths
+
+      elif instr == "OSIRIS-R2500U":
+        fi = fits.open(infile)
+        head = fi[0].header
+        s = fi[0].data
+        flux = s
+        wav = np.arange(len(s))*head['CD1_1']+head['CRVAL1']
+        lenwav = len(wav)        
+        print('Warning: OSIRIS files do not include uncertainties')
+        print('         assuming S/N = 20!')
+        err = flux * 0.05
+        ivar = np.divide(1.,err**2, where = (err > 0.) )
+        if 'OBJECT' in head:
+          ids = np.array([head['OBJECT']])
+        else:
+          ids = np.array([infile])
+        
+        if target is not None:
+          assert(type(target[0]) is int or type(target[0]) is long),'target must be None or an int/long'
+          assert(len(target) == 1),'target can only have one element for single-target OSIRIS files'
+          if(target[0] != 0):
+              print('target needs to be 0 in order to read the one and only OSIRIS spectrum in the input file')
+              return(None,None,None,None)
+          
+        if rv is None: 
+          vrad = 0.0
+        else:
+          assert(len(rv) == 1),'rv must be None or an iterable'
+          rv = rv[0]
+          assert(type(rv) is float or type(rv) is int),'rv must be None or an iterable with a single float/int'
+          vrad = float(rv)
+          
+			 
+        if wavelengths is None:
+          frd = np.interp(wav,wav*(1. + vrad/clight),flux)
+          ivr = np.interp(wav,wav*(1. + vrad/clight),ivar)
+        else:
+          lenx = len(wavelengths)
+          frd = np.interp(wavelengths,wav,flux)
+          ivr = np.interp(wavelengths,wav,ivar)
+          wav = wavelengths
+
                   
     else: 
 

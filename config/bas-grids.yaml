@@ -2,5 +2,7 @@ LAMOST: n_sc1-lamostrbf.pickle
 DESI: n_sc1-BRZdesirbf.pickle
 STIS: n_sc1-stisrbf.pickle
 MILES: n_sc1-MILESrbf.pickle
+INT-R900V: n_sc1-INT-R900Vrbf.pickle
+OSIRIS-R2500U: n_sc1-OSIRIS-R2500Urbf.pickle
 CALSPEC: n_sc1-stisrbf.pickle
 XP: n_sc1-xprbf.pickle

@@ -55,6 +55,36 @@ MILES:
     {'synthfile': 'n_MILESrbf.dat', 'snr' : 10 } ]
   pickle_synth:  [
     {'synthfile': 'n_MILESrbf.dat'} ]
+IDS-R900V:
+  gsynth: [
+    {'fwhm': 1.89, 'units': 'A', 'ppr': 3., 'wrange': [3760.,5180.],
+     'outsynthfile': 'n_IDS-R900V.dat' }]
+  rewrite_synth: [
+    {'synthfile': 'n_IDS-R900V.dat', 'outsynthfile': 'i_IDS-R900V.dat'}]
+  synth_rbf:     [
+    {'synthfile': 'i_IDS-R900V.dat',
+      'n': 10000, 'rv': False, 'ebv': False} ]
+  bas_perfcheck: [
+    {'synthfile': 'n_IDS-R900Vrbf.dat'},
+    {'synthfile': 'n_IDS-R900Vrbf.dat', 'snr' : 30 },
+    {'synthfile': 'n_IDS-R900Vrbf.dat', 'snr' : 10 } ]
+  pickle_synth:  [
+    {'synthfile': 'n_IDS-R900Vrbf.dat'} ]
+OSIRIS-R2500U:
+  gsynth: [
+    {'fwhm': 1.55, 'units': 'A', 'ppr': 3., 'wrange': [3500.,4600.],
+     'outsynthfile': 'n_OSIRIS-R2500U.dat' }]
+  rewrite_synth: [
+    {'synthfile': 'n_OSIRIS-R2500U.dat', 'outsynthfile': 'i_OSIRIS-R2500U.dat'}]
+  synth_rbf:     [
+    {'synthfile': 'i_OSIRIS-R2500U.dat',
+      'n': 10000, 'rv': False, 'ebv': False} ]
+  bas_perfcheck: [
+    {'synthfile': 'n_OSIRIS-R2500Urbf.dat'},
+    {'synthfile': 'n_OSIRIS-R2500Urbf.dat', 'snr' : 30 },
+    {'synthfile': 'n_OSIRIS-R2500Urbf.dat', 'snr' : 10 } ]
+  pickle_synth:  [
+    {'synthfile': 'n_OSIRIS-R2500Urbf.dat'} ]
 XP:
   gsynth: [
     {'fwhm': 299.792458, 'units': 'km/s', 'ppr': 3., 'wrange':[3000., 11000.],
