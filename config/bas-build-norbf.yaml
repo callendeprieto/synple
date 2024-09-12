@@ -1,0 +1,92 @@
+STIS:
+  gsynth: [
+    {'fwhm': 600., 'units': 'km/s', 'ppr': 3., 'wrange': [3000.,9900.],
+     'outsynthfile': 'n_STIS.dat' }]
+  bas_perfcheck: [
+    {'synthfile': 'n_STIS.dat'},
+    {'synthfile': 'n_STIS.dat', 'snr' : 30 },
+    {'synthfile': 'n_STIS.dat', 'snr' : 10 }  ]
+  pickle_synth:  [
+    {'synthfile': 'n_STIS.dat'} ]
+STIS-NICMOS:
+  gsynth: [
+    {'fwhm': 600., 'units': 'km/s', 'ppr': 3., 'wrange': [3000.,29900.],
+     'outsynthfile': 'n_STIS-NICMOS.dat' }]
+  bas_perfcheck: [
+    {'synthfile': 'n_STIS-NICMOS.dat'},
+    {'synthfile': 'n_STIS-NICMOS.dat', 'snr' : 30 },
+    {'synthfile': 'n_STIS-NICMOS.dat', 'snr' : 10 } ]
+  pickle_synth:  [
+    {'synthfile': 'n_STIS-NICMOS.dat'} ]
+MILES:
+  gsynth: [
+    {'fwhm': 2.5, 'units': 'A', 'ppr': 3., 'wrange': [3510.,7400.],
+     'outsynthfile': 'n_MILES.dat' }]
+  bas_perfcheck: [
+    {'synthfile': 'n_MILES.dat'},
+    {'synthfile': 'n_MILES.dat', 'snr' : 30 },
+    {'synthfile': 'n_MILES.dat', 'snr' : 10 } ]
+  pickle_synth:  [
+    {'synthfile': 'n_MILES.dat'} ]
+IDS-R900V:
+  gsynth: [
+    {'fwhm': 1.89, 'units': 'A', 'ppr': 3., 'wrange': [3760.,5180.],
+     'outsynthfile': 'n_IDS-R900V.dat' }]
+  bas_perfcheck: [
+    {'synthfile': 'n_IDS-R900V.dat'},
+    {'synthfile': 'n_IDS-R900V.dat', 'snr' : 30 },
+    {'synthfile': 'n_IDS-R900V.dat', 'snr' : 10 } ]
+  pickle_synth:  [
+    {'synthfile': 'n_IDS-R900V.dat'} ]
+OSIRIS-R2500U:
+  gsynth: [
+    {'fwhm': 1.55, 'units': 'A', 'ppr': 3., 'wrange': [3500.,4600.],
+     'outsynthfile': 'n_OSIRIS-R2500U.dat' }]
+  bas_perfcheck: [
+    {'synthfile': 'n_OSIRIS-R2500U.dat'},
+    {'synthfile': 'n_OSIRIS-R2500U.dat', 'snr' : 30 },
+    {'synthfile': 'n_OSIRIS-R2500U.dat', 'snr' : 10 } ]
+  pickle_synth:  [
+    {'synthfile': 'n_OSIRIS-R2500U.dat'} ]
+XP:
+  gsynth: [
+    {'fwhm': 299.792458, 'units': 'km/s', 'ppr': 3., 'wrange':[3000., 11000.],
+     'outsynthfile': 'n_R1000.dat'} ]
+  xplsf: [
+    {'synthfile': 'i_R1000.dat', 'outsynthfile': 'v_XP.dat'} ]
+  bas_perfcheck: [
+    {'synthfile': 'v_XP.dat'},
+    {'synthfile': 'v_XP.dat', 'snr' : 30 },
+    {'synthfile': 'v_XP.dat', 'snr' : 10 } ]
+  pickle_synth:  [
+    {'synthfile': 'v_XP.dat'} ]
+LAMOST:
+  gsynth: [
+    {'fwhm':167., 'units':'km/s', 'ppr':3., 'wrange':[3800., 9000.],
+     'outsynthfile': 'n_LAMOST.dat'} ]
+  bas_perfcheck: [
+    {'synthfile': 'n_LAMOST.dat'},
+    {'synthfile': 'n_LAMOST.dat', 'snr': 30 },
+    {'synthfile': 'n_LAMOST.dat', 'snr': 10 } ]
+  pickle_synth:  [
+    {'synthfile': 'n_LAMOST.dat'} ]
+DESI:
+  gsynth: [ 
+    {'fwhm': 1.8, 'units': 'A', 'ppr': 3., 'wrange': [3759., 5959], 
+    'outsynthfile': 'n_B-DESI.dat'},  
+    {'fwhm': 1.8, 'units': 'A', 'ppr': 3., 'wrange': [5635., 7750.],
+    'outsynthfile': 'n_R-DESI.dat'},   
+    {'fwhm': 1.8, 'units': 'A', 'ppr': 3., 'wrange': [7445., 9843.],
+    'outsynthfile': 'n_Z-DESI.dat'} ]
+  paste_synth: [ 
+    {'synthfile': ['n_B-DESI.dat','n_R-DESI.dat','n_Z-DESI.dat'],
+     'outsynthfile': 'n_BRZ-DESI.dat'} ]
+  synth_rbf:  [ 
+    {'synthfile': 'n_BRZ-DESI.dat', 
+      'n': 10000, 'rv': False, 'ebv': False} ]
+  bas_perfcheck: [
+    {'synthfile': 'n_BRZ-DESI.dat'},
+    {'synthfile': 'n_BRZ-DESI.dat', 'snr': 30 },
+    {'synthfile': 'n_BRZ-DESI.dat', 'snr': 10 } ]
+  pickle_synth:  [
+    {'synthfile': 'n_BRZ-DESI.dat'} ]
