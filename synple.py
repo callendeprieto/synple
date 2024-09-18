@@ -8366,8 +8366,9 @@ among the parameters in the synthfile, it will be determined as such,  but
         if focus:
           eres[eres < 1e-17] = 1e-17 # avoid division by zero
           w = ( (abs(p2-res)/eres).max(1) < 3. )
-          res, eres, cov, bflx = cebas( p2[w,:], d2[w,:], flx, iva )
-          lchi = np.log10( np.sum((bflx-flx)**2 * iva) / (len(bflx) - len(res)) )
+          if len(np.where(w)[0]) > 0:
+            res, eres, cov, bflx = cebas( p2[w,:], d2[w,:], flx, iva )
+            lchi = np.log10( np.sum((bflx-flx)**2 * iva) / (len(bflx) - len(res)) )
           print('focus selected ',len(np.where(w)[0]), 'points, giving a reduced lchi =',lchi)
       
         opf.write(str(ids[j])+' '+' '.join(map(str,res))+' '+
@@ -8990,10 +8991,10 @@ def read_desispec(filename,band=None):
   header: dict
     very first header of the file
 
-  fibermap: structure
+  fibermap: structure  (.data from the FIBERMAP extension)
     fibermap 
     
-  scores: structure
+  scores: structure  (.data from the SCORES extension)
     scores
     
     
@@ -9028,7 +9029,7 @@ def read_desispec(filename,band=None):
     fibermap=hdu['FIBERMAP'].data
     scores=hdu['FIBERMAP'].data
 
-  return((wavelength,flux,ivar,res, header, fibermap,scores))
+  return((wavelength,flux,ivar,res,header,fibermap,scores))
 
 def plot_spec(root=None,x=None,n=None,m=None,o=None,xlim=None,ylim=None,nozero=False):
 
@@ -9557,7 +9558,9 @@ def bas_perfcheck(synthfile,n=1000,snr=1.e6,
               edgemargin=edgemargin)
     bas_test(checksynthfile,snr=snr)
     print('running ... ','bas(',checksynthfile[2:-4],'synthfile=',synthfile,')')
+    now = time.time()
     bas(checksynthfile[2:-4],synthfile=synthfile,focus=focus)
+    print('this run took ',time.time()-now,' seconds')
     result = fparams(checksynthfile[2:-4],synthfile=synthfile,
                      figure=checksynthfile[2:-4]+'-n'+str(n)+'-snr'+str(snr)+'.png')
 
@@ -10432,7 +10435,7 @@ def wtabmodfits(root, path=None):
 
 
   hdul=fits.HDUList(hdulist)
-  hdul.writeto('sptab_'+root+'.fits')
+  hdul.writeto(os.path.join(path,'sptab_'+root+'.fits'))
   
   #now spmod
   hdulist = [hdu0]
@@ -10530,7 +10533,7 @@ def wtabmodfits(root, path=None):
     hdulist.append(hdu)
 
   hdul=fits.HDUList(hdulist)
-  hdul.writeto('spmod_'+root+'.fits')  
+  hdul.writeto(os.path.join(path,'spmod_'+root+'.fits')) 
   
   return None
 
