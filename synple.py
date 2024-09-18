@@ -8281,7 +8281,7 @@ among the parameters in the synthfile, it will be determined as such,  but
 
 
               
-      ids, x2, frd, ivr = read_spec(file,wavelengths=x,target=target,rv=rv, 
+      ids, x2, frd, ivr, xtr = read_spec(file,wavelengths=x,target=target,rv=rv, 
                                     ebv=ebv, star=star)
       lenx2 = len(x2)
       if ivr.ndim == 1: 
@@ -8296,6 +8296,8 @@ among the parameters in the synthfile, it will be determined as such,  but
         nrdfile = file + '.nrd'
         errfile = file + '.err'
         wavfile = file + '.wav'
+        fmpfile = file + '.fmp.fits'
+        scrfile = file + '.scr.fits'
       else:
         if type(outfile) is list:
           assert len(outfile) == 1,'outfile can only be specified when there is a single infile'
@@ -8304,6 +8306,8 @@ among the parameters in the synthfile, it will be determined as such,  but
         nrdfile = outfile + '.nrd'
         errfile = outfile + '.err'
         wavfile = outfile + '.wav'
+        fmpfile = outfile + '.fmp.fits'
+        scrfile = outfile + '.scr.fits'
 
       #open output parameter, observed and model file
       opf = open(opffile,'w')
@@ -8377,8 +8381,18 @@ among the parameters in the synthfile, it will be determined as such,  but
       err.close()
       wav.close()
       
+      if instr == 'DESI':
+        head, fibermap, scores = xtr
+        fmp = tbl.Table(fibermap)
+        hdu0 = fits.BinTableHDU(fmp)
+        hdu0.writeto(fmpfile)
+        scr = tbl.Table(scores)
+        hdu0 = fits.BinTableHDU(scr)
+        hdu0.writeto(scrfile)
+
+      
     return()
-    
+   
     
 def identify_instrument(infile):
 	
@@ -8535,6 +8549,10 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
     ivr: numpy array of floats
       inverse variance for frd (same size as frd)
       
+    xtr: tuple of objects
+      the first element is usually a header dictionary
+      for DESI it also contains fibermap and scores structures
+      
     """
 
     from extinction import apply,remove,ccm89
@@ -8598,6 +8616,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
           assert(type(rv[0]) is float or type(rv[0]) is int),'rv must be None or an interable with a single float/int'
           vrad = float(rv[0])
 			 
+        xtr = (head)
         if wavelengths is None:
           frd = np.interp(wav,wav*(1. + vrad/clight),flux)
           ivr = np.interp(wav,wav*(1. + vrad/clight),ivar)
@@ -8617,7 +8636,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
 
          i = 0
          for band in ('B','R','Z'):
-           wav1,flux1,ivar1,res1,map1,head1 = read_desispec(infile,band)
+           wav1,flux1,ivar1,res1,head1,map1,scores1 = read_desispec(infile,band)
            wav1 = vac2air(wav1)
 
            if band == 'B': #check if there is a 'target' or 'star' preselection
@@ -8688,6 +8707,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
              ivar1 = ivar1[ind,:]
              res1 = res1[ind,:,:]
              map1 = map1[ind] 
+             scores1 = scores1[ind]
 
            #correct reddening
            print('Reddening from SFD map has a mean E(B-V)=',
@@ -8731,7 +8751,8 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
              wbad = (wav1 >= 4300.) & (wav1 <= 4450.)
              ivar1[:,wbad] = 0.
              ivr = ivar1
-             ids = map1['targetid']
+             ids = map1['targetid']             
+             xtr = (head1, map1, scores1)
            else:
              wav = np.concatenate((wav,wav1))
              frd = np.concatenate((frd,flux1),axis=1)
@@ -8780,7 +8801,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
           assert(type(rv) is float or type(rv) is int),'rv must be None or an interable with a single float/int'
           vrad = float(rv)
           
-			 
+        xtr = (head)
         if wavelengths is None:
           frd = np.interp(wav,wav*(1. + vrad/clight),flux)
           ivr = np.interp(wav,wav*(1. + vrad/clight),ivar)
@@ -8821,7 +8842,8 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
           assert(type(rv) is float or type(rv) is int),'rv must be None or an iterable with a single float/int'
           vrad = float(rv)
           
-			 
+
+        xtr = (head)
         if wavelengths is None:
           frd = np.interp(wav,wav*(1. + vrad/clight),flux)
           ivr = np.interp(wav,wav*(1. + vrad/clight),ivar)
@@ -8862,7 +8884,8 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
           assert(type(rv) is float or type(rv) is int),'rv must be None or an iterable with a single float/int'
           vrad = float(rv)
           
-			 
+
+        xtr = (head)
         if wavelengths is None:
           frd = np.interp(wav,wav*(1. + vrad/clight),flux)
           ivr = np.interp(wav,wav*(1. + vrad/clight),ivar)
@@ -8903,7 +8926,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
           assert(type(rv) is float or type(rv) is int),'rv must be None or an iterable with a single float/int'
           vrad = float(rv)
           
-			 
+        xtr = (head)
         if wavelengths is None:
           frd = np.interp(wav,wav*(1. + vrad/clight),flux)
           ivr = np.interp(wav,wav*(1. + vrad/clight),ivar)
@@ -8929,9 +8952,9 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
       ivr = np.divide(1.,err, where = (err > 0.) )
       wav = wavelengths
       ids = np.array(list(map(str,range(len(frd[:,0])))))
+      xtr = (dict())
 
-
-    return(ids,wav,frd,ivr)
+    return(ids,wav,frd,ivr,xtr)
 
 
 def read_desispec(filename,band=None):
@@ -8960,11 +8983,15 @@ def read_desispec(filename,band=None):
   res: structure
     resolution matrix for DESI
     
+  header: dict
+    very first header of the file
+
   fibermap: structure
     fibermap 
     
-  header: dict
-    very first header of the file
+  scores: structure
+    scores
+    
     
   """
 
@@ -8979,6 +9006,7 @@ def read_desispec(filename,band=None):
     res=hdu[band+'_RESOLUTION'].data  #resolution matrix (multiple spectra)
     #bintable=hdu['BINTABLE'].data  #bintable with info (incl. mag, ra_obs, dec_obs)
     fibermap=hdu['FIBERMAP'].data
+    scores=hdu['SCORES'].data
 
   if filename.find('spPlate') > -1: #SDSS/BOSS
     header=hdu['PRIMARY'].header
@@ -8994,9 +9022,9 @@ def read_desispec(filename,band=None):
     res=hdu[4].data  #FWHM array (multiple spectra)
     #bintable=hdu['BINTABLE'].data  #bintable with info (incl. mag, ra, dec)
     fibermap=hdu['FIBERMAP'].data
+    scores=hdu['FIBERMAP'].data
 
-
-  return((wavelength,flux,ivar,res,fibermap,header))
+  return((wavelength,flux,ivar,res, header, fibermap,scores))
 
 def plot_spec(root=None,x=None,n=None,m=None,o=None,xlim=None,ylim=None,nozero=False):
 
@@ -9755,6 +9783,27 @@ def rbf_test(synthfile,n=None, kernel='thin_plate_spline', neighbors=100):
     
 
 def wferrefits(root, path=None):	
+	
+  """Packs FERRE output into a FITS file
+  
+  
+  Parameters
+  ----------
+  root: str
+      name of the root for input/output FERRE/BAS files 
+      with extensions .opf, .wav, .nrd, .mdl
+
+  path: string
+      path to files
+      (default is None, and the code looks for the FERRE files 
+      in the current folder)
+ 
+  Returns
+  -------  
+      A FITS files with the data, with the same root
+      and a fits extension
+      
+  """
 
   if path is None: path=""
   proot=os.path.join(path,root)
@@ -9799,12 +9848,10 @@ def wferrefits(root, path=None):
   bestgrid = []
   of=open(o[0],'r')
 
-  k = 1
 
   for line in of:
     cells=line.split()
-    #k = int(cells[0])  # the very first line gives the index (1,2...) for the successful grid
-    bestgrid.append(o[k-1])
+    bestgrid.append(o[0])
     id = cells[0]
     cells = cells[1:]
 
@@ -9833,9 +9880,9 @@ def wferrefits(root, path=None):
     elif (ndim == 3):
       #Kurucz grids with 3 dimensions: id, 3 par, 3 err, 0., med_snr, lchi, 3x3 cov
       #see Allende Prieto et al. (2018, A&A)
-      feh.append(float(cells[1]))
+      feh.append(float(cells[2]))
       teff.append(float(cells[0]))
-      logg.append(float(cells[2]))
+      logg.append(float(cells[1]))
       alphafe.append(np.nan)
       micro.append(np.nan)
 
@@ -9861,7 +9908,7 @@ def wferrefits(root, path=None):
     chisq_tot.append(10.**float(cells[2+2*ndim]))
     snr_med.append(float(cells[1+2*ndim]))
     rv_adop.append(float(cells[0+2*ndim]))
-    rv_err.append(0.)
+    rv_err.append(np.nan)
     par = np.array(cells[0:ndim],dtype=float)
     cov = np.array(cells[2*ndim:],dtype=float)
     param.append(par)
@@ -9872,12 +9919,9 @@ def wferrefits(root, path=None):
     if (chisq_tot[-1] < 1.5 and snr_med[-1] > 5.): # chi**2<1.5 and S/N>5
       success.append(1) 
     else: success.append(0)
-    tmp = cells[0].split('_')
     targetid.append(id)
     srcfile.append(root)
     #fiber.append(int32(tmp[1]))
-
-  k += 1
 
   #primary extension
   hdu0=fits.PrimaryHDU()
@@ -9957,23 +10001,21 @@ def wferrefits(root, path=None):
   hdulist.append(hdu)
 
   #aux extension
-  p = ['[Fe/H]','[a/Fe]','log10micro','Teff','logg']
-  cols = {}
-  colcomm = {}
-  cols['p'] = [p]
-  colcomm['p'] = 'PARAM tags'
-  #cols['ip']= [dict(zip(p,arange(len(p))))]
-  #colcomm['ip']= 'Indices for PARAM tags'
+  #p = ['[Fe/H]','[a/Fe]','log10micro','Teff','logg']
+  #cols = {}
+  #colcomm = {}
+  #cols['p'] = [p]
+  #colcomm['p'] = 'PARAM tags'
   
-  table = tbl.Table(cols)
-  hdu=fits.BinTableHDU(table,name = 'AUX')
+  #table = tbl.Table(cols)
+  #hdu=fits.BinTableHDU(table,name = 'AUX')
 
-  k = 0
-  for entry in colcomm.keys():
-    print(entry) 
-    hdu.header['TCOMM'+"{:03d}".format(k+1)] = colcomm[entry]
-    k+=1
-  hdulist.append(hdu)
+  #k = 0
+  #for entry in colcomm.keys():
+  #  print(entry) 
+  #  hdu.header['TCOMM'+"{:03d}".format(k+1)] = colcomm[entry]
+  #  k+=1
+  #hdulist.append(hdu)
 
 
   #hdul=fits.HDUList(hdulist)
@@ -10066,10 +10108,458 @@ def wferrefits(root, path=None):
 
 
   hdul=fits.HDUList(hdulist)
-  hdul.writeto('test_'+root+'.fits')
+  hdul.writeto(root+'.fits')
   
   return None
+  
+def wtabmodfits(root, path=None):
+	
+  """Write out DESI MWS SP pipeline output
+
+  Parameters
+  ----------
+  root: str
+      name of the root for input/output FERRE/BAS files 
+      with extensions .opf, .wav, .nrd, .mdl
+
+  path: string
+      path to files
+      (default is None, and the code looks for the FERRE/BAS files 
+      in the current folder)
+ 
+  Returns
+  -------  
+      An SPTAB file with the parameters, and an SPMOD with the spectra      
+  
+  """
+  
+  if path is None: path=""
+  proot=os.path.join(path,root)
+
+  o=glob.glob(proot+".opf")
+
+  xbandfiles = sorted(glob.glob(proot+'-*.wav'))
+  band = []
+  npix = []
+  for entry in xbandfiles:
+    print('entry=',entry)
+    match = re.search('-[\w]*.wav',entry)
+    tag = match.group()[1:-4]
+    if match: band.append(tag.upper())
+    x = loadtxt(proot+'-'+tag+'.wav')
+    npix.append(len(x))
+  
+  print('proot+.wav=',proot+'.wav')  
+  print('xbandfiles=',xbandfiles)
+  x = np.loadtxt(proot+'.wav')
+  if len(npix) == 0: npix.append(len(x))
     
+  m=glob.glob(proot+".mdl")
+  e=glob.glob(proot+".err")
+  n=glob.glob(proot+".nrd")
+
+  fmp=glob.glob(proot+".fmp.fits")
+  scr=glob.glob(proot+".scr.fits")
+ 
+  if len(fmp) > 0:
+    ff=fits.open(fmp[0])
+    fibermap=ff[1]
+
+  if len(scr) > 0:
+    fs=fits.open(scr[0])
+    scores=fs[1]
+ 
+  success=[]
+  targetid=[]
+  target_ra=[]
+  target_dec=[]
+  ref_id=[]
+  ref_cat=[]
+  srcfile=[]
+  bestgrid=[]
+  teff=[]
+  logg=[]
+  feh=[]
+  alphafe=[]
+  micro=[]
+  param=[]
+  covar=[]
+  elem=[]
+  elem_err=[]
+  snr_med=[]
+  chisq_tot=[]
+  rv_adop=[]
+  rv_err=[]
+
+  of=open(o[0],'r')
+    
+  for line in of:
+	  
+    cells=line.split()
+    #k = int(cells[0])  # the very first line gives the index (1,2...) for the successful grid
+    bestgrid.append(o[0])
+    id = cells[0]
+    cells = cells[1:]
+
+    ncells = len(cells)
+    ndim = ncells - 3
+    if ndim > 10:
+        ndim = int(np.sqrt(4*ndim+1)-1)
+    ndim = ndim // 2
+    
+    assert (ncells > 6), 'Error, the file '+o[0]+' has less than 7 columns, which would correspond to ndim=2'
+    par = np.zeros(ndim)
+    #cov = np.zeros(ndim*ndim+ndim) 
+    cov = np.zeros((5,5))
+        
+    print('ndim=',ndim)
+    print('ncells=',ncells)
+
+
+    if (ndim == 2):
+      #white dwarfs 2 dimensions: id, 2 par, 2err, 0., med_snr, lchi, 2x2 cov
+      feh.append(-10.)
+      teff.append(float(cells[0]))
+      logg.append(float(cells[1]))
+      alphafe.append(np.nan)
+      micro.append(np.nan)
+
+
+    elif (ndim == 3):
+      #synple grids with Teff, logg and [Fe/H]
+      feh.append(float(cells[2]))
+      teff.append(float(cells[0]))
+      logg.append(float(cells[1]))
+      alphafe.append(np.nan)
+      micro.append(np.nan)
+
+    elif (ndim == 4):
+      #Teff, logg, [Fe/H] and [a/Fe]
+      feh.append(float(cells[2]))
+      teff.append(float(cells[0]))
+      logg.append(float(cells[1]))
+      alphafe.append(float(cells[3]))
+      micro.append(np.nan)
+   
+    elif (ndim == 5):
+      #Teff, logg, [Fe/H], [a/Fe] and ?
+      #see Allende Prieto et al. (2018, A&A)
+      feh.append(float(cells[2]))
+      teff.append(float(cells[0]))
+      logg.append(float(cells[1]))
+      alphafe.append(float(cells[3]))
+      micro.append(np.nan)
+
+
+    chisq_tot.append(10.**float(cells[2+2*ndim]))
+    snr_med.append(float(cells[1+2*ndim]))
+    rv_adop.append(float(cells[0+2*ndim]))
+    rv_err.append(np.nan)
+    par = np.array(cells[0:ndim],dtype=float)
+    cov = np.array(cells[2*ndim:],dtype=float)
+    param.append(par)
+    covar.append(cov)
+    
+    targetid.append(np.int64(id))
+    srcfile.append(root)
+
+    if (chisq_tot[-1] < 1.5 and snr_med[-1] > 5.): # chi**2<1.5 and S/N>5
+      success.append(1) 
+    else: success.append(0)
+
+
+
+  #add info copied from fibermap
+  nspec = len(targetid)
+  try:
+    #targetid=fibermap.data['targetid']
+    target_ra=fibermap.data['target_ra']
+    target_dec=fibermap.data['target_dec']
+    ref_id=fibermap.data['ref_id']
+    ref_cat=fibermap.data['ref_cat']
+  except NameError:
+    target_ra=np.zeros(nspec)
+    target_dec=np.zeros(nspec)
+    ref_id=np.zeros(nspec,dtype=int64)
+    ref_cat=np.array(["" for x in range(nspec)])
+
+  #primary extension
+  hdu0=fits.PrimaryHDU()
+
+  #find out processing date and add it to primary header
+  now = datetime.datetime.fromtimestamp(time.time())
+  nowstr = now.isoformat() 
+  nowstr = nowstr[:nowstr.rfind('.')]
+  hdu0.header['DATE'] = nowstr
+  #hdu0.header['FCONFIG'] = config
+
+  #find out host machine and add info to header
+  try:
+    host=os.environ['HOST']
+  except:
+    host='Unknown'
+  hdu0.header['HOST'] = host
+  #find out OS name/platform
+  osname = os.name 
+  platf = platform.system() + ' '+ platform.release()
+  hdu0.header['OS'] = osname
+  hdu0.header['PLATFORM'] = platf
+
+  #keep track of the number of targets processed and the time it took
+  hdu0.header['NSPEC'] = nspec
+  #ftiming = get_ferre_timings(proot)
+  #hdu0.header['FTIME'] = ftiming
+  #stiming = get_slurm_timings(proot)
+  #hdu0.header['STIME'] = stiming
+  #ncores = get_slurm_cores(proot)
+  #hdu0.header['NCORES'] = ncores
+
+  #get versions and enter then in primary header
+  ver = get_versions()
+  for entry in ver.keys(): hdu0.header[entry] = ver[entry]
+  
+  hdulist = [hdu0]
+
+  #sptab extension
+  cols = {}
+  cols['SUCCESS'] = success
+  cols['TARGETID'] = targetid
+  cols['TARGET_RA'] = target_ra
+  cols['TARGET_DEC'] = target_dec
+  cols['REF_ID'] = ref_id
+  cols['REF_CAT'] = ref_cat
+  cols['SRCFILE'] = srcfile
+  cols['BESTGRID'] = bestgrid
+  cols['TEFF'] = np.array(teff)*units.K
+  cols['LOGG'] = np.array(logg)
+  cols['FEH'] = np.array(feh)
+  cols['ALPHAFE'] = np.array(alphafe) 
+  cols['LOG10MICRO'] = np.array(micro)
+  cols['PARAM'] = np.vstack ( (teff, logg, feh, alphafe, micro) ).T
+  cols['COVAR'] = np.array(covar)  #.reshape(len(success),5,5)
+  #cols['ELEM'] = np.array(elem)
+  #cols['ELEM_ERR'] = np.array(elem_err)
+  cols['CHISQ_TOT'] = np.array(chisq_tot)
+  cols['SNR_MED'] = np.array(snr_med)
+  cols['RV_ADOP'] = np.array(rv_adop)*units.km/units.s
+  cols['RV_ERR'] = np.array(rv_err)*units.km/units.s
+
+  colcomm = {
+  'success': 'Bit indicating whether the code has likely produced useful results',
+  'TARGETID': 'DESI targetid',
+  'TARGET_RA': 'Target Right Ascension (deg) -- details in FIBERMAP',
+  'TARGET_DEC': 'Target Declination (deg) -- details in FIBERMAP',
+  'REF_ID': 'Astrometric cat refID (Gaia SOURCE_ID)',
+  'REF_CAT': 'Astrometry reference catalog',
+  'SRCFILE': 'DESI data file',
+  'BESTGRID': 'Model grid that produced the best fit',
+  'TEFF': 'Effective temperature (K)',
+  'LOGG': 'Surface gravity (g in cm/s**2)',
+  'FEH': 'Metallicity [Fe/H] = log10(N(Fe)/N(H)) - log10(N(Fe)/N(H))sun' ,
+  'ALPHAFE': 'Alpha-to-iron ratio [alpha/Fe]',
+  'LOG10MICRO': 'Log10 of Microturbulence (km/s)',
+  'PARAM': 'Array of atmospheric parameters ([Fe/H], [a/Fe], log10micro, Teff,logg)',
+  'COVAR': 'Covariance matrix for ([Fe/H], [a/Fe], log10micro, Teff,logg)',
+  #'ELEM': 'Elemental abundance ratios to hydrogen [elem/H]',
+  #'ELEM_ERR': 'Uncertainties in the elemental abundance ratios',
+  'CHISQ_TOT': 'Total chi**2',
+  'SNR_MED': 'Median signal-to-ratio',
+  'RV_ADOP': 'Adopted Radial Velocity (km/s)',
+  'RV_ERR': 'Uncertainty in the adopted Radial Velocity (km/s)'
+  }      
+
+  
+  table = tbl.Table(cols)
+  hdu=fits.BinTableHDU(table,name = 'SPTAB')
+  #hdu.header['EXTNAME']= ('SPTAB', 'Stellar Parameter Table')
+  k = 0
+  for entry in colcomm.keys():
+    print(entry) 
+    hdu.header['TCOMM'+"{:03d}".format(k+1)] = colcomm[entry]
+    k+=1
+  hdulist.append(hdu)
+
+  #fibermap extension
+  if len(fmp) > 0:
+    hdu=fits.BinTableHDU.from_columns(fibermap, name='FIBERMAP')
+    hdulist.append(hdu)
+    ff.close()
+
+  #scores extension
+  if len(scr) > 0:
+    hdu=fits.BinTableHDU.from_columns(scores, name='SCORES')
+    hdulist.append(hdu)
+    fs.close()
+
+  #aux extension
+  #p = ['[Fe/H]','[a/Fe]','log10micro','Teff','logg']
+  #if 'elem' in conf: e = conf['elem']
+  #cols = {}
+  #colcomm = {}
+  #cols['p'] = [p]
+  #colcomm['p'] = 'PARAM tags'
+  #if 'elem' in conf:
+  #  cols['e'] = [e]
+  #  colcomm['e']= 'ELEM tags'
+  
+  #table = tbl.Table(cols)
+  #hdu=fits.BinTableHDU(table,name = 'AUX')
+
+  #k = 0
+  #for entry in colcomm.keys():
+  #  print(entry) 
+  #  hdu.header['TCOMM'+"{:03d}".format(k+1)] = colcomm[entry]
+  #  k+=1
+  #hdulist.append(hdu)
+
+
+  hdul=fits.HDUList(hdulist)
+  hdul.writeto('sptab_'+root+'.fits')
+  
+  #now spmod
+  hdulist = [hdu0]
+ 
+
+  edata=np.loadtxt(e[0])
+  mdata=np.loadtxt(m[0])
+  odata=np.loadtxt(n[0])
+  
+  i = 0
+  j1 = 0
+
+  if len(xbandfiles) > 0:
+    for entry in band:
+      j2 = j1 + npix[i] 
+      print(entry,i,npix[i],j1,j2)
+      #colx = fits.Column(name='wavelength',format='e8', array=array(x[j1:j2]))
+      #coldefs = fits.ColDefs([colx])
+      #hdu = fits.BinTableHDU.from_columns(coldefs)
+      hdu = fits.ImageHDU(name=entry+'_WAVELENGTH', data=x[j1:j2])
+      hdulist.append(hdu)
+    
+      cols = {}
+      colcomm = {}
+      if odata.ndim == 2: tdata = odata[:,j1:j2]
+      else: tdata = odata[j1:j2][None,:]
+      cols['obs'] = tdata
+      colcomm['obs'] = 'Observed spectra as fit'
+      if edata.ndim == 2: tdata = edata[:,j1:j2]
+      else: tdata = edata[j1:j2][None,:]
+      cols['err'] = tdata
+      colcomm['err'] = 'Error in spectra as fit'
+      if mdata.ndim == 2: tdata = mdata[:,j1:j2]
+      else: tdata = mdata[j1:j2][None,:]
+      cols['fit'] = tdata
+      colcomm['fit'] = 'Best-fitting model'
+
+      table = tbl.Table(cols)
+      hdu=fits.BinTableHDU(table,name = entry+'_MODEL')
+      k = 0
+      for entry in colcomm.keys():
+        print(entry) 
+        hdu.header['TCOMM'+"{:03d}".format(k+1)] = colcomm[entry]
+        k+=1
+      hdulist.append(hdu)
+      i += 1
+      j1 = j2
+      
+  else:
+	  
+    print('single wavelength entry!')
+    #colx = fits.Column(name='wavelength',format='e8', array=array(x[j1:j2]))
+    #coldefs = fits.ColDefs([colx])
+    #hdu = fits.BinTableHDU.from_columns(coldefs)
+    hdu = fits.ImageHDU(name='WAVELENGTH', data=x)
+    hdulist.append(hdu)
+      
+    cols = {}
+    colcomm = {}
+    if odata.ndim == 2: tdata = odata[:,:]
+    else: tdata = odata[:][None,:]
+    cols['obs'] = tdata
+    colcomm['obs'] = 'Observed spectra as fit'
+    if edata.ndim == 2: tdata = edata[:,:]
+    else: tdata = edata[:][None,:]
+    cols['err'] = tdata
+    colcomm['err'] = 'Error in spectra as fit'
+    if mdata.ndim == 2: tdata = mdata[:,:]
+    else: tdata = mdata[:][None,:]
+    cols['fit'] = tdata
+    colcomm['fit'] = 'Best-fitting model'      
+      
+
+    table = tbl.Table(cols)
+    hdu=fits.BinTableHDU(table,name = 'MODEL')
+    k = 0
+    for entry in colcomm.keys():
+      print(entry) 
+      hdu.header['TCOMM'+"{:03d}".format(k+1)] = colcomm[entry]
+      k+=1
+    hdulist.append(hdu)
+	  
+
+  if len(fmp) > 0:
+    ff=fits.open(fmp[0])
+    fibermap=ff[1]
+    hdu=fits.BinTableHDU.from_columns(fibermap, name='FIBERMAP')
+    #hdu.header['EXTNAME']='FIBERMAP'
+    hdulist.append(hdu)
+
+  if len(scr) > 0:
+    ff=fits.open(scr[0])
+    scores=ff[1]
+    hdu=fits.BinTableHDU.from_columns(scores, name='SCORES')
+    hdulist.append(hdu)
+
+  hdul=fits.HDUList(hdulist)
+  hdul.writeto('spmod_'+root+'.fits')  
+  
+  return None
+
+#get dependencies versions, shamelessly copied from rvspec (Koposov's code)
+def get_dep_versions():
+    """
+    Get Packages versions
+    """
+    
+    import importlib
+  
+    packages = [
+        'numpy', 'astropy', 'matplotlib', 'scipy',
+        'yaml'
+    ]
+    # Ideally you need to check that the list here matches the requirements.txt
+    ret = {}
+    for curp in packages:
+        ret[curp[:8]] = importlib.import_module(curp).__version__
+    ret['python'] = str.split(sys.version, ' ')[0]
+    return ret
+
+
+
+#find out versions 
+def get_versions():
+
+  ver = get_dep_versions()
+  ver['synple'] = 0
+  log1file = glob.glob("*.log_01")
+  fversion = 'unknown'
+  if len(log1file) < 1:
+    print("Warning: cannot find any *.log_01 file in the working directory")
+  else:
+    l1 = open(log1file[0],'r')
+    #while 1:
+    #  line = l1.readline()
+    for line in l1:
+      if 'f e r r e' in line:
+        entries = line.split()
+        fversion = entries[-1][1:]
+        break
+    l1.close()
+    ver['ferre'] = fversion
+
+  return(ver)
+
     
 def fparams(root,synthfile=None,figure=None):
     """"Evaluates the agreement between input/output parameters in 
