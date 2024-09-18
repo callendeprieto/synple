@@ -10725,10 +10725,11 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
      " import os; os.environ['OMP_NUM_THREADS'] = str(nthreads) ; "+ \
      " os.environ['OPENBLAS_NUM_THREADS'] = str(nthreads) ;"  + \
      " os.environ['MKL_NUM_THREADS'] = str(nthreads) ; " + \
-     " from synple import bas; " + \
+     " from synple import bas, wtabmodfits; " + \
      " bas(\'" + entry + "\'," + \
      " outfile=\'" + outfile + "\'," + \
-     " synthfile=" + str(synthfile1) + ", star= " + str(star) + \
+     " synthfile=" + str(synthfile1) + ", star= " + str(star) + "); " + \
+     " wtabmodfits(\'" + outfile + "'" + \
      ")\"" + "\n"
 
     s.write(command)
