@@ -8219,15 +8219,7 @@ among the parameters in the synthfile, it will be determined as such,  but
     else:
       hd0 = hd
 
-    #focus
-    if focus:
-      p2 = p
-      d2 = d
-      nmod = len(p[:,0])
-      irnd = np.array(np.random.random_sample(int(nmod*0.1))*nmod,dtype=int)
-      p = p[irnd,:]
-      d = d[irnd,:]
-    
+
     #normalization
     print('normalizing grid...')
     for entry in range(len(d[:,0])):
@@ -8236,6 +8228,17 @@ among the parameters in the synthfile, it will be determined as such,  but
         else:
           cc = np.mean(d[entry,:])
         d[entry,:] = d[entry,:] / cc
+
+
+    if focus:
+      p2 = p
+      d2 = d
+      nmod = len(p[:,0])
+      irnd = np.array(np.random.random_sample(int(nmod*0.1))*nmod,dtype=int)
+      p = p[irnd,:]
+      d = d[irnd,:]
+
+
     
     #sanity check  
     if len(infiles) > 1 and (rv is not None or ebv is not None):
@@ -8281,7 +8284,7 @@ among the parameters in the synthfile, it will be determined as such,  but
 
 
               
-      ids, x2, frd, ivr, xtr = read_spec(file,wavelengths=x,target=target,rv=rv, 
+      ids, x2, frd, ivr, xtr = read_spec(file,wavelengths=x,target=target,rv=rv,
                                     ebv=ebv, star=star)
       lenx2 = len(x2)
       if ivr.ndim == 1: 
@@ -8361,10 +8364,11 @@ among the parameters in the synthfile, it will be determined as such,  but
           print('reduced lchi =',lchi)
 
         if focus:
-          w = ( (abs(p-res)/eres).max(1) < 3. )
-          res, eres, cov, bflx = cebas( p[w,:], d[w,:], flx, iva )
+          eres[eres < 1e-17] = 1e-17 # avoid division by zero
+          w = ( (abs(p2-res)/eres).max(1) < 3. )
+          res, eres, cov, bflx = cebas( p2[w,:], d2[w,:], flx, iva )
           lchi = np.log10( np.sum((bflx-flx)**2 * iva) / (len(bflx) - len(res)) )
-          print('focus reduced lchi =',lchi)
+          print('focus selected ',len(np.where(w)[0]), 'points, giving a reduced lchi =',lchi)
       
         opf.write(str(ids[j])+' '+' '.join(map(str,res))+' '+
             ' '.join(map(str,eres))+' '+
@@ -9501,7 +9505,7 @@ def rewrite_synth(synthfile,outsynthfile=None):
 
 
 def bas_perfcheck(synthfile,n=1000,snr=1.e6,
-    kernel='thin_plate_spline', neighbors=100, focus=False):
+    kernel='thin_plate_spline', neighbors=100, focus=False, edgemargin=0.05):
 
     """Carry out a full performance check using bas on a synthetic grid
 
@@ -9525,6 +9529,10 @@ def bas_perfcheck(synthfile,n=1000,snr=1.e6,
       subsampled version of the grid is used to identify first where   
       the optimal solution is, and then perform an focused analysis
       in that region (a +/- 3 sigma volume) 
+   edgemargin: float
+      fraction from the min/max values of the input parameters to exclude
+      from the range to sample
+      (default 0.05 -- exclude 5% from the edges)
 
 
     Returns
@@ -9545,7 +9553,8 @@ def bas_perfcheck(synthfile,n=1000,snr=1.e6,
 
     checksynthfile=synthfile+'-check.dat'
     synth_rbf(synthfile,outsynthfile=checksynthfile,n=n,
-              rv=False,ebv=False,kernel=kernel,neighbors=neighbors)
+              rv=False,ebv=False,kernel=kernel,neighbors=neighbors, 
+              edgemargin=edgemargin)
     bas_test(checksynthfile,snr=snr)
     print('running ... ','bas(',checksynthfile[2:-4],'synthfile=',synthfile,')')
     bas(checksynthfile[2:-4],synthfile=synthfile,focus=focus)
@@ -9594,7 +9603,7 @@ def bas_test(synthfile,snr=1.e6):
         
 
 def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
-              kernel='thin_plate_spline', neighbors=100):
+              kernel='thin_plate_spline', neighbors=100, edgemargin=0.0):
 
     """Creates an irregular FERRE grid from a pre-existing regular or 
        irregular one
@@ -9623,6 +9632,12 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
       Number of nearest neighbors used to compute the interpolation coefficients
       for each grid point
 
+    edgemargin: float
+      fraction from the min/max values of the input parameters to exclude
+      from the range to sample
+      (default 0.0 -- use the full range) 
+       
+
       
     Returns
     -------
@@ -9645,7 +9660,10 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
     if n is None: n = ntot
     
     for i in range(ndim):
-        vals = np.random.random_sample(n)*(np.max(p[:,i])-np.min(p[:,i])) + np.min(p[:,i])
+
+        amin = np.min(p[:,i])*(1.0+edgemargin)
+        amax = np.max(p[:,i])*(1.0-edgemargin)
+        vals = np.random.random_sample(n)*(amax-amin) + amin
         if i == 0: 
             p2 = vals
         else:	
