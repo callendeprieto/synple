@@ -10078,8 +10078,8 @@ def wferrefits(root, path=None):
       if (len(mdl) > 0): 
         if mdata.ndim == 2: tdata = mdata[:,j1:j2]
         else: tdata = mdata[j1:j2][None,:]
-        cols['flx'] = tdata
-        colcomm['flx'] = 'Absolute flux for best-fitting model'      
+        cols['fit'] = tdata
+        colcomm['fit'] = 'Best-fitting model'      
       
 
       table = tbl.Table(cols)
@@ -10114,8 +10114,8 @@ def wferrefits(root, path=None):
     if (len(mdl) > 0): 
       if mdata.ndim == 2: tdata = mdata[:,:]
       else: tdata = mdata[:][None,:]
-      cols['flx'] = tdata
-      colcomm['flx'] = 'Absolute flux for best-fitting model'      
+      cols['fit'] = tdata
+      colcomm['fit'] = 'Best-fitting model'      
       
 
     table = tbl.Table(cols)
