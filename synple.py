@@ -9031,6 +9031,7 @@ def read_desispec(filename,band=None):
 
   return((wavelength,flux,ivar,res,header,fibermap,scores))
 
+
 def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,nozero=None,res=False):
 
   """Plot one or multiple spectra
@@ -9102,7 +9103,11 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,noze
       else:
         npar = npar// 2
       plt.title('params: '+' -- '.join(map("{:.2f}".format,np.array(o[1:npar+1],dtype=float))))
-      plt.text(0.5*xrange[0]+0.5*xrange[1],0.75*yrange[0]+0.25*yrange[1],o[0])
+      xtext = 0.5*xrange[0]+0.5*xrange[1]
+      ytext = 0.75*yrange[0]+0.25*yrange[1]
+      ycurve = np.interp(xtext,xx[w],n[w])
+      if abs(ycurve-ytext) < 0.5: ytext = ytext*1.2
+      plt.text(xtext,ytext,o[0])
     plt.xlim(xrange)
     plt.ylim(yrange)
     if m is not None: plt.legend(labels)
@@ -9134,21 +9139,16 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,noze
           w = np.ones(nfreq,dtype=bool)
       
         if xx.ndim  == 1:
-          plt.plot(xx[w],n[j,w])
+          xx2 = xx[w]
         else:
-          plt.plot(xx[j,w],n[j,w])
+          xx2 = xx[j,w].transpose()
+        plt.plot(xx2,n[j,w])
         labels.append('data')
         if m is not None:
-          if xx.ndim == 1:
-            plt.plot(xx[w],m[j,w])
-          else:
-            plt.plot(xx[j,w],m[j,w])
+          plt.plot(xx2,m[j,w])
           labels.append('model')
         if res:
-          if xx.ndim == 1:
-            plt.plot(xx[w],m[j,w]-n[j,w])
-          else:
-            plt.plot(xx[j,w],m[j,w]-n[j,w])
+          plt.plot(xx2,m[j,w]-n[j,w])
           labels.append('residuals')
       if yrange is None: 
         yrange2 = [np.min(n[j,:])*0.95,np.max(n[j,:])*1.05]
@@ -9167,7 +9167,12 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,noze
         else:
           npar = npar// 2
         plt.title('params: '+' -- '.join(map("{:.2f}".format,np.array(o[j,1:npar+1],dtype=float))))
-        plt.text(0.5*xrange[0]+0.5*xrange[1],0.75*yrange2[0]+0.25*yrange2[1],o[j,0])
+        xtext = 0.5*xrange[0]+0.5*xrange[1]
+        ytext = 0.75*yrange2[0]+0.25*yrange2[1]
+        ycurve = np.interp(xtext,xx2,n[j,w])
+        if abs(ycurve-ytext) < 0.5: ytext = 0.25*yrange2[0]+0.75*yrange2[1]
+        plt.text(xtext,ytext,o[j,0])
+
 
       plt.savefig('fig'+str(j+1)+'.png')
         
