@@ -5214,8 +5214,8 @@ def tags(s, minew=10., normalized=True):
   plt.clf()
   plt.ion()
   plt.plot(x,y)
-  plt.xlim([min(x),max(x)])
-  plt.ylim([min(y)*0.1,max(y)*1.1])
+  plt.xlim([np.min(x),np.max(x)])
+  plt.ylim([np.min(y)*0.1,np.max(y)*1.1])
   plt.xlabel('wavelength (A)')
   plt.ylabel(ylabel)
 
@@ -9031,7 +9031,7 @@ def read_desispec(filename,band=None):
 
   return((wavelength,flux,ivar,res,header,fibermap,scores))
 
-def plot_spec(root=None,x=None,n=None,m=None,o=None,xlim=None,ylim=None,nozero=False):
+def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,nozero=None,res=False):
 
   """Plot one or multiple spectra
   """
@@ -9053,9 +9053,13 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xlim=None,ylim=None,nozero=F
     else:
       xx = x/10.
 
-  if xlim is None: xlim = (min(xx),max(xx))
+  if xrange is None: 
+    xrange = ( np.min(xx), np.max(xx) )
 
-  nfreq = len(xx)
+  if xx.ndim == 1:
+    nfreq = len(xx)
+  else:
+    nfreq = len(xx[0,:])
   if n.ndim == 1: 
     nspec = 1
     plt.clf()
@@ -9071,6 +9075,9 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xlim=None,ylim=None,nozero=F
         if m is not None: 
           plt.plot(xx[p[i]:p[i+1]][w],m[p[i]:p[i+1]][w])
           labels.append('model')
+        if res:
+          plt.plot(xx[p[i]:p[i+1]][w],m[p[i]:p[i+1]][w]-n[p[i]:p[i+1]][w])
+          labels.append('residuals')
     else:
       if nozero:
         w = (n > 0.)
@@ -9081,7 +9088,11 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xlim=None,ylim=None,nozero=F
       if m is not None:
         plt.plot(xx[w],m[w])
         labels.append('model')
-    if ylim is None: ylim = (min(n)*0.95,max(n)*1.05)
+      if res:
+        plt.plot(xx[w],m[w]-n[w])
+        labels.append('residuals')
+    if yrange is None: yrange = (np.min(n)*0.95,np.max(n)*1.05)
+    if res: yrange[0] = np.min(m[w]-n[w])*1.05
     plt.xlabel('wavelength (nm)')
     plt.ylabel('normalized flux')
     if o is not None:
@@ -9091,9 +9102,9 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xlim=None,ylim=None,nozero=F
       else:
         npar = npar// 2
       plt.title('params: '+' -- '.join(map("{:.2f}".format,np.array(o[1:npar+1],dtype=float))))
-      plt.text(0.5*xlim[0]+0.5*xlim[1],0.75*ylim[0]+0.25*ylim[1],o[0])
-    plt.xlim(xlim)
-    plt.ylim(ylim)
+      plt.text(0.5*xrange[0]+0.5*xrange[1],0.75*yrange[0]+0.25*yrange[1],o[0])
+    plt.xlim(xrange)
+    plt.ylim(yrange)
     if m is not None: plt.legend(labels)
     plt.savefig('fig1.png')
     plt.show()
@@ -9107,27 +9118,47 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xlim=None,ylim=None,nozero=F
           if nozero:
             w = (n[j,p[i]:p[i+1]] > 0.)
           else:
-            w = range(p[i+1]-p[i])
+            w = np.ones(p[i+1]-p[i],dtype=bool)
           plt.plot(xx[p[i]:p[i+1]][w],n[j,p[i]:p[i+1]][w])
           labels.append('data')
           if m is not None:
             plt.plot(xx[p[i]:p[i+1]][w],m[j,p[i]:p[i+1]][w])
             labels.append('model')
+          if res:
+            plt.plot(xx[p[i]:p[i+1]][w],m[j,p[i]:p[i+1]][w]-n[j,p[i]:p[i+1]][w])
+            labels.append('residuals')
       else:
         if nozero:
           w = (n[j,:] > 0.)
         else:
-          w = range(len(xx))
-        plt.plot(xx[w],n[j,w])
+          w = np.ones(nfreq,dtype=bool)
+      
+        if xx.ndim  == 1:
+          plt.plot(xx[w],n[j,w])
+        else:
+          plt.plot(xx[j,w],n[j,w])
         labels.append('data')
         if m is not None:
-          plt.plot(xx[w],m[j,w])
+          if xx.ndim == 1:
+            plt.plot(xx[w],m[j,w])
+          else:
+            plt.plot(xx[j,w],m[j,w])
           labels.append('model')
-      if ylim is None: ylim = (min(n[j,:])*0.95,max(n[j,:])*1.05)
+        if res:
+          if xx.ndim == 1:
+            plt.plot(xx[w],m[j,w]-n[j,w])
+          else:
+            plt.plot(xx[j,w],m[j,w]-n[j,w])
+          labels.append('residuals')
+      if yrange is None: 
+        yrange2 = [np.min(n[j,:])*0.95,np.max(n[j,:])*1.05]
+      else:
+        yrange2 = yrange
+      if res: yrange2[0] = np.min(m[j,w]-n[j,w])*1.05
       plt.xlabel('wavelength (nm)')
       plt.ylabel('normalized flux')
-      plt.xlim(xlim)
-      plt.ylim(ylim)
+      plt.xlim(xrange)
+      plt.ylim(yrange2)
       if m is not None: plt.legend(labels)
       if o is not None:
         npar = len(o[0,:])-3
@@ -9136,7 +9167,7 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xlim=None,ylim=None,nozero=F
         else:
           npar = npar// 2
         plt.title('params: '+' -- '.join(map("{:.2f}".format,np.array(o[j,1:npar+1],dtype=float))))
-        plt.text(0.5*xlim[0]+0.5*xlim[1],0.75*ylim[0]+0.25*ylim[1],o[j,0])
+        plt.text(0.5*xrange[0]+0.5*xrange[1],0.75*yrange2[0]+0.25*yrange2[1],o[j,0])
 
       plt.savefig('fig'+str(j+1)+'.png')
         
