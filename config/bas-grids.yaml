@@ -5,3 +5,5 @@ MILES: n_sc2-MILESrbf.pickle
 OSIRIS-R2500U: n_sc2-OSIRIS-R2500Urbf.pickle
 STIS-NICMOS:  n_sc2-STIS-NICMOSrbf.pickle
 XP: n_sc2-XPrbf.pickle
+CALSPEC: n_sc2-STISrbf.pickle 
+STIS: n_sc2-STISrbf.pickle

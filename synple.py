@@ -8138,7 +8138,7 @@ def vicebas(p, d, flx,iva,npoints=10):
 
 
 def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None, 
-        focus=False, star=True, conti=False):
+        focus=False, star=True, conti=False, wrange=None):
 
     """Bayesian Algorithm in Synple
     
@@ -8187,6 +8187,10 @@ among the parameters in the synthfile, it will be determined as such,  but
     conti: bool
       activates the continuum normalization (see 'continuum' function)
       (default False)
+
+    wrange: 2-element iterable
+      spectral range to use in the fittings
+      (default None, and sets wrange to the values of the adopted grid)
    
     Returns
     -------
@@ -8219,7 +8223,13 @@ among the parameters in the synthfile, it will be determined as such,  but
     else:
       hd0 = hd
 
-
+    if wrange is not None:
+      assert(len(wrange) == 2),'wrange must be a 2-element array' 
+      w = (x >= wrange[0]) & (x <= wrange[1])
+      d = d[:,w]
+      x = x[w]
+      lenx = len(x)
+      
     #normalization
     print('normalizing grid...')
     for entry in range(len(d[:,0])):
