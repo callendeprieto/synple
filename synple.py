@@ -10706,7 +10706,9 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
   """ Prepare a DESI data for parallel processing
   """
 
+  
   python_path1=os.environ['HOME']+"/synple"
+  pwd=os.path.abspath(os.curdir)
 
   try:
     host=os.environ['HOST']
@@ -10763,7 +10765,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
       s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
       s.write("module load python"+"\n")
 
-    
+    s.write("cd "+pwd+"\n\n")
 
     command="python3 -c \"import sys; " + \
      " sys.path.insert(0, '"+python_path1 + "'); " + \
