@@ -10,7 +10,8 @@ GUNZIP = `which gunzip`
 #general line lists
 #STANDARD =  gfall08oct17hix.19 kmol2019.20  #original
 #STANDARD =  gfATO.19 gfMOL.20		     #gfMOL.20 reduced with redulis/gfelim>-8)
-STANDARD =  gfATO.19 gfMOLsun.20 gfTiO.20 H2O-8.20 #TiO and H2O from EXOMOL(gfelim>-8)
+#STANDARD =  gfATO.19 gfMOLsun.20 gfTiO.20 H2O-8.20 #TiO and H2O from EXOMOL(gfelim>-8)
+STANDARD =  gfATOc.19 gfMOLsun.20 gfTiO.20 H2O-8.20 #TiO and H2O from EXOMO    L(gfelim>-8); gfATOc has updated quantum numbers for the OI IR triplet 
 
 #isotopic ratios more typical of a red giant (after 1st dredge up)
 GIANT = gfMOLgiant.20 # to replace gfMOLsun (also reduced with redulis/gfelim>-8)

@@ -5579,7 +5579,7 @@ def write5(teff,logg,abu, atom='ap18', ofile='fort.5', inlte=0, atommode=None, a
     f.write("   7    0     89     0     0     0    ' N 1' 'data/n1.t'  \n")
     f.write("   7    1     51     0     0     0    ' N 2' 'data/n2.t'  \n")
     f.write("   7    2     1      1     0     0    ' N 3' ' '  \n")
-    f.write("   8    0     54     0      0    0    ' O 1' 'data/o1.t'  \n")
+    f.write("   8    0     54     0      0    0    ' O 1' 'data/o1c.t'  \n")
     f.write("   8    1     74     0      0    0    ' O 2' 'data/o2.t'  \n")
     f.write("   8    2     1      1      0    0    ' O 3' ' '  \n")
     f.write("  11    0     32     0     0     0    'Na 1' 'data/na1.t'  \n")
