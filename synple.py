@@ -9102,7 +9102,7 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,noze
       if res:
         plt.plot(xx[w],m[w]-n[w])
         labels.append('residuals')
-    if yrange is None: yrange = (np.min(n)*0.95,np.max(n)*1.05)
+    if yrange is None: yrange = [np.min(n)*0.95,np.max(n)*1.05]
     if res: yrange[0] = np.min(m[w]-n[w])*1.05
     plt.xlabel('wavelength (nm)')
     plt.ylabel('normalized flux')
