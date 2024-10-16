@@ -8304,23 +8304,18 @@ among the parameters in the synthfile, it will be determined as such,  but
       print('nspec in bas:',nspec)
 
       if outfile is None:
-        opffile = file + '.opf'
-        mdlfile = file + '.mdl'
-        nrdfile = file + '.nrd'
-        errfile = file + '.err'
-        wavfile = file + '.wav'
-        fmpfile = file + '.fmp.fits'
-        scrfile = file + '.scr.fits'
+        outfile = file
       else:
         if type(outfile) is list:
           assert len(outfile) == 1,'outfile can only be specified when there is a single infile'
-        opffile = outfile + '.opf'
-        mdlfile = outfile + '.mdl'      
-        nrdfile = outfile + '.nrd'
-        errfile = outfile + '.err'
-        wavfile = outfile + '.wav'
-        fmpfile = outfile + '.fmp.fits'
-        scrfile = outfile + '.scr.fits'
+
+      opffile = outfile + '.opf'
+      mdlfile = outfile + '.mdl'      
+      nrdfile = outfile + '.nrd'
+      errfile = outfile + '.err'
+      wavfile = outfile + '.wav'
+      fmpfile = outfile + '.fmp.fits'
+      scrfile = outfile + '.scr.fits'
 
       #open output parameter, observed and model file
       opf = open(opffile,'w')
