@@ -8815,6 +8815,18 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
           rv = rv[0]
           assert(type(rv) is float or type(rv) is int),'rv must be None or an interable with a single float/int'
           vrad = float(rv)
+
+        if type(ebv) is int and ebv == 0:
+            red = 0.0
+            print('E(B-V)=0 adopted')
+        else:
+            if ebv is None:
+                red = 0.0
+                print('E(B-V)=0 adopted')
+            else:
+                red = ebv
+                print('Correcting E(B-V) using the value provided by the user')
+
           
         xtr = (head)
         if wavelengths is None:
