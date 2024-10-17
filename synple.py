@@ -298,13 +298,21 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     if dd == 'data':
       for entry in isdf:
         assert (os.path.isfile(os.path.join(dd,entry))), 'Cannot find the data file:'+dd+'/'+entry     
-        
+    #dd2 = ''
+    #hdd2, dd2 = os.path.split(madaffile)
+    #if hdd2 == '': hdd2 = '..'
+    #os.symlink(os.path.join(hdd2,madaffile),'./fort.5')      
+  #else:
+  
+  write5(teff,logg,abu,atom,inlte=inlte,
+           atommode=atommode,atominfo=atominfo) #abundance/opacity file
+
+  write8(teff,logg,nd,atmos,atmostype)          #model atmosphere
+
 
   #link the data folder (synspec data + default tlusty model atoms)
   if dd != 'data': os.symlink(modelatomdir,'./data')          #data directory  
 
-  write5(teff,logg,abu,atom,inlte=inlte,atommode=atommode,atominfo=atominfo)   #abundance/opacity file  
-  write8(teff,logg,nd,atmos,atmostype)                    #model atmosphere
 
   #set iprin to 2 to ouput lineids from synspec
   if tag: lineid = True
@@ -5504,6 +5512,11 @@ def write5(teff,logg,abu, atom='ap18', ofile='fort.5', inlte=0, atommode=None, a
 
   assert (atom == 'hhm' or atom == 'ap18' or atom == 'yo19' or atom == 'test'), 'atom must be one of: hhm/ap18/yo19/test!'
   ex = np.ones(natom)
+
+  #tlusty models provide atommode and atominfo that override the defaults for atom and ex
+  if atommode is not None: ex[:len(atommode)] = np.array(atommode)
+  if atominfo is not None: atom = 'own' 
+
   if atom == 'hhm' : 
     zex = [1]  #atomic numbers of elements included explicitly (contributing cont. opacity)
   elif atom == 'yo19':
@@ -5512,12 +5525,10 @@ def write5(teff,logg,abu, atom='ap18', ofile='fort.5', inlte=0, atommode=None, a
     zex = [1,26]
   elif atom == 'ap18': 
     zex = [1,2,6,7,8,11,12,13,14,20,26]
+  else:
+    zex = []
 
   for i in zex: ex[i-1] = 2
-
-  #tlusty models provide atommode and atominfo that override the defaults for atom and ex
-  if atommode is not None: ex = np.array(atommode)
-  if atominfo is not None: atom = 'own'
 
   for i in range(natom):
     f.write(' %2d %e %i %s\n' %  (ex[i], abu[i], 0, '  ! ' +symbol[i]) )
