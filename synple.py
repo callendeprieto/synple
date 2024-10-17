@@ -8218,13 +8218,13 @@ among the parameters in the synthfile, it will be determined as such,  but
 
 
               
-      ids, x2, frd, ivr, xtr = read_spec(file,wavelengths=x,target=target,rv=rv,
+      ids, x2, obs, ivr, xtr = read_spec(file,wavelengths=x,target=target,rv=rv,
                                     ebv=ebv, star=star)
       lenx2 = len(x2)
       if ivr.ndim == 1: 
-        frd = frd.reshape((1,lenx2))
+        obs = obs.reshape((1,lenx2))
         ivr = ivr.reshape((1,lenx2))
-      nspec = len(frd[:,0])
+      nspec = len(obs[:,0])
       print('nspec in bas:',nspec)
 
       if outfile is None:
@@ -8260,7 +8260,7 @@ among the parameters in the synthfile, it will be determined as such,  but
         print('spectrum ',j,' of ',nspec,' in ',file)
         
         #clean the data
-        spec = frd[j,:]
+        spec = obs[j,:]
         www = np.where(np.isnan(spec))[0]
         #print('www:',www)
         if len(www) > 0:
@@ -8278,6 +8278,7 @@ among the parameters in the synthfile, it will be determined as such,  but
           if mspec == 0.0: mspec = np.median(spec)
           if mspec == 0.0: mspec = 1.
 
+        if absolut: rawspec = spec.copy()
         spec = spec / mspec
         ivar = ivr[j,:] * mspec**2
 
@@ -8307,8 +8308,9 @@ among the parameters in the synthfile, it will be determined as such,  but
             lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - len(res)) )
           print('focus selected ',len(np.where(w)[0]), 'points, giving a reduced lchi =',lchi)
 
-        rawspec = spec.copy()
-        abbmod  = bmod.copy() 
+        if absolut:
+          den = np.sum(weights)
+          abbmod = np.matmul(weights,da)/den
       
         opf.write(str(ids[j])+' '+' '.join(map(str,res))+' '+
             ' '.join(map(str,eres))+' '+
