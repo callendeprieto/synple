@@ -5531,7 +5531,8 @@ def write5(teff,logg,abu, atom='ap18', ofile='fort.5', inlte=0, atommode=None, a
   for i in zex: ex[i-1] = 2
 
   for i in range(natom):
-    f.write(' %2d %e %i %s\n' %  (ex[i], abu[i], 0, '  ! ' +symbol[i]) )
+    f.write(' %2d %e %i %s\n' %  (np.abs(ex[i]), 
+				  abu[i], 0, '  ! ' +symbol[i]) )
 
   for i in range(3): f.write("* \n")
   
