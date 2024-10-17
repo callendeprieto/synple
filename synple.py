@@ -7990,7 +7990,7 @@ def cebas(p,d,flx,iva):
       as many rows as spectra in the array d
       
     d: 2D numpy array of floats
-      spectra table with as many columns as frequencies in the spectdra
+      spectra table with as many columns as frequencies in the spectra
       and as many rows as spectra
       
     flx: 1D numpy array of floats
@@ -8010,8 +8010,11 @@ def cebas(p,d,flx,iva):
     cov: numpy array of floats
       top half of the covariance matrix for the best-fitting parameters
       
-    bflx: numpy arry of floats
+    bflx: numpy array of floats
       best-fitting model (same size as flx)
+
+    weights: numpy array of floats
+      likelihood for the model grid, with as many elements as rows in p and d 
       
     """
 
@@ -8048,109 +8051,11 @@ def cebas(p,d,flx,iva):
         
     print('res=',res,'eres=',eres)
       
-    return(res,eres,cov,bflx)
-
-def vicebas(p, d, flx,iva,npoints=10):
-
-    """Visualization-oriented version of cebas
-    
-    Parameters
-    ----------
-   p: 2D numpy array of floats
-      parameter table with as many columns as parameters and
-      as many rows as spectra in the array d
-
-    d: 2D numpy array of floats
-      spectra table with as many columns as frequencies in the spectdra
-      and as many rows as spectra
-
-    flx: 1D numpy array of floats
-      observed spectrum, sampled with the same wavelengths as the grid 
-    
-    iva: 1D numpy array of float
-      inverse variance for the observed spectrum
-    
-    Returns
-    -------
-    res: numpy array of floats
-      best-fitting parameters (as many entries as columns in p)
-      
-    eres: numpy array of floats
-      uncertainties for the best-fitting parameters
-    
-    cov: numpy array of floats
-      top half of the covariance matrix for the best-fitting parameters
-      
-    bflx: numpy arry of floats
-      best-fitting model (same size as flx)
-      
-    """
-
-    from scipy.interpolate import RBFInterpolator
-
-    chi = np.sum((d-flx)**2 * iva,-1)
-    beta = np.median(chi) / 1490. / 5.
-    #print('min/max/median chi=',np.min(chi),np.max(chi),np.median(chi))
-    #print('beta=',beta)
-    while np.exp(-np.min(chi)/2./beta) <= 0.0:
-      beta = beta * 2.
-      #print('-- new beta=',beta)
-
-    #parameters
-    ndim = len(p[0,:])
-    res = np.zeros(ndim)
-    eres = np.zeros(ndim)
-    cov = np.zeros(ndim*(ndim+1)//2)
-    likeli = np.exp(-chi/2./beta)
-    den = np.sum(likeli)
-    #print('den=',den)
-    k = 0
-    for i in range(ndim):
-        #parameters
-        res[i] = np.sum( likeli * p[:,i])/den
-        
-        #uncertainties
-        for j in range(ndim-i):
-          cov[k] = np.sum( likeli * (p[:,i] - res[i]) * (p[:,j+i] - res[j+i]) )/den
-          if j == 0: eres[i] = np.sqrt(cov[k])
-          k = k + 1
-      
-    #best-fitting model
-    bflx = np.matmul(likeli,d)/den
-    #bflx = [0.0,0.0]
-
-    pmin = p.min(0)
-    ptp  = p.ptp(0)
-    p2 = (p - pmin) / ptp
-    c= RBFInterpolator(p2, d, kernel='thin_plate_spline', neighbors=100 )
-
-    rres = np.tile(res,npoints**2).reshape((ndim,npoints**2))
-
-    for i in range(ndim):
-      for j in range(ndim-1):
-        xx = np.linspace(pmin[i],pmin[i]+ptp[i],npoints)
-        yy = np.linspace(pmin[j+1],pmin[j+1]+ptp[j+1],npoints)
-        xxyy = np.array(list(product(*(xx,yy))))
-        #get a regular grid of parameters for dimensions i and j+1
-        #while going through the solution on the rest of the dimensions
-        par = rres
-        par[i,:] = xxyy[:,0]
-        par[j+1,:] = xxyy[:,1]
-        data = rbf_apply(c, pmin, ptp, par.transpose())
-        chi = np.sum((data-flx)**2 * iva,-1).reshape((npoints,npoints))
-        likeli = np.exp(-chi/2./beta)
-        print(likeli.shape)
-        plt.imshow(likeli)
-        plt.show()
-        
-        
-    print('res=',res,'eres=',eres)
-      
-    return(res,eres,cov,bflx)
+    return(res,eres,cov,bflx,likeli)
 
 
 def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None, 
-        focus=False, star=True, conti=False, wrange=None):
+        focus=False, star=True, conti=False, absolut=False, wrange=None):
 
     """Bayesian Algorithm in Synple
     
@@ -8198,7 +8103,13 @@ among the parameters in the synthfile, it will be determined as such,  but
 
     conti: bool
       activates the continuum normalization (see 'continuum' function)
+      NOTE that the default is dividing the input/model fluxes in each 
+      spectrum by their mean value
       (default False)
+
+    absolut: bool
+      activates the output of the absolute fluxes for the best-fitting 
+      model (.flx file) and the input (unnormalized) fluxes (.frd file)
 
     wrange: 2-element iterable
       spectral range to use in the fittings
@@ -8244,6 +8155,7 @@ among the parameters in the synthfile, it will be determined as such,  but
       
     #normalization
     print('normalizing grid...')
+    if absolut: da = d.copy() # da keeps a copy of the original grid
     for entry in range(len(d[:,0])):
         if conti:
           cc = continuum(d[entry,:])
@@ -8328,6 +8240,9 @@ among the parameters in the synthfile, it will be determined as such,  but
       wavfile = outfile + '.wav'
       fmpfile = outfile + '.fmp.fits'
       scrfile = outfile + '.scr.fits'
+      if absolut:
+        frdfile = outfile + '.frd'
+        flxfile = outfile + '.flx'
 
       #open output parameter, observed and model file
       opf = open(opffile,'w')
@@ -8335,66 +8250,76 @@ among the parameters in the synthfile, it will be determined as such,  but
       nrd = open(nrdfile,'w')
       err = open(errfile,'w')
       wav = open(wavfile,'w')
+      if absolut:
+        frd = open(frdfile,'w')
+        flx = open(flxfile,'w')
+          
 
       for j in range(nspec):
 
         print('spectrum ',j,' of ',nspec,' in ',file)
         
         #clean the data
-        flx = frd[j,:]
-        www = np.where(np.isnan(flx))[0]
+        spec = frd[j,:]
+        www = np.where(np.isnan(spec))[0]
         #print('www:',www)
         if len(www) > 0:
-          www2 = np.where(not np.isnan(flx))[0]
+          www2 = np.where(not np.isnan(spec))[0]
           xax = np.arange(lenx2)
-          flx = np.interp(xax,xax[www2],flx[www2])
+          flx = np.interp(xax,xax[www2],spec[www2])
 
         #normalize
         if conti:
-          mflx = continuum(flx)
-          www = (mflx == 0.0)
-          mflx[www] = 1. 
+          mspec = continuum(spec)
+          www = (mspec == 0.0)
+          mspec[www] = 1. 
         else:
-          mflx = np.mean(flx)
-          if mflx == 0.0: mflx = np.median(flx)
-          if mflx == 0.0: mflx = 1.
+          mspec = np.mean(spec)
+          if mspec == 0.0: mspec = np.median(spec)
+          if mspec == 0.0: mspec = 1.
 
-        flx = flx / mflx
-        iva = ivr[j,:] * mflx**2
+        spec = spec / mspec
+        ivar = ivr[j,:] * mspec**2
 
         #analyze
-        res, eres, cov, bflx = cebas( p, d, flx, iva )
-        lchi = np.log10( np.sum((bflx-flx)**2 * iva) / (len(bflx) - len(res)) )
+        res, eres, cov, bmod, weights = cebas( p, d, spec, ivar )
+        lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - len(res)) )
         print('reduced lchi =',lchi)
                 
         vrad = 0.0
         if rv is None and 'RV' not in hd0.values() and instr0 is not None:
-          vrad, evrad = xxc(x2,flx,iva,x2,bflx)
+          vrad, evrad = xxc(x2,spec,ivar,x2,bmod)
           print('RV = ',vrad,' km/s')
         
           #correct RV and reanalyze
-          flx = np.interp(x2, x2 * (1. - vrad/clight), flx)
-          iva = np.interp(x2, x2 * (1. - vrad/clight), iva)
-          res, eres, cov, bflx = cebas( p, d, flx, iva )
+          spec = np.interp(x2, x2 * (1. - vrad/clight), spec)
+          ivar = np.interp(x2, x2 * (1. - vrad/clight), ivar)
+          res, eres, cov, bmod, weights = cebas( p, d, spec, ivar )
           
-          lchi = np.log10( np.sum((bflx-flx)**2 * iva) / (len(bflx) - len(res)) )
+          lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - len(res)) )
           print('reduced lchi =',lchi)
 
         if focus:
           eres[eres < 1e-17] = 1e-17 # avoid division by zero
           w = ( (abs(p2-res)/eres).max(1) < 3. )
           if len(np.where(w)[0]) > 0:
-            res, eres, cov, bflx = cebas( p2[w,:], d2[w,:], flx, iva )
-            lchi = np.log10( np.sum((bflx-flx)**2 * iva) / (len(bflx) - len(res)) )
+            res, eres, cov, bmod, weights = cebas( p2[w,:], d2[w,:], spec, ivar )
+            lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - len(res)) )
           print('focus selected ',len(np.where(w)[0]), 'points, giving a reduced lchi =',lchi)
+
+        rawspec = spec.copy()
+        abbmod  = bmod.copy() 
       
         opf.write(str(ids[j])+' '+' '.join(map(str,res))+' '+
             ' '.join(map(str,eres))+' '+
-            str(vrad)+' '+str(np.median(flx*np.sqrt(iva)))+' '+
+            str(vrad)+' '+str(np.median(spec*np.sqrt(ivar)))+' '+
             str(lchi)+' '+' '.join(map(str,cov))+'\n')
-        nrd.write(' '.join(map(str,flx))+'\n')
-        mdl.write(' '.join(map(str,bflx))+'\n')
-        err.write(' '.join(map(str,1./np.sqrt(iva)))+'\n')
+        nrd.write(' '.join(map(str,spec))+'\n')
+        mdl.write(' '.join(map(str,bmod))+'\n')
+        err.write(' '.join(map(str,1./np.sqrt(ivar)))+'\n')
+        if absolut:
+            frd.write(' '.join(map(str,rawspec))+'\n')
+            flx.write(' '.join(map(str,abbmod))+'\n')
         if j == 0: wav.write(' '.join(map(str,x2))+'\n')
       
       opf.close()
@@ -8402,6 +8327,9 @@ among the parameters in the synthfile, it will be determined as such,  but
       nrd.close()
       err.close()
       wav.close()
+      if absolut:
+        frd.close()
+        flx.close()
       
       if instr == 'DESI':
         head, fibermap, scores = xtr
