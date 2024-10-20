@@ -8227,7 +8227,7 @@ among the parameters in the synthfile, it will be determined as such,  but
       nspec = len(obs[:,0])
       print('nspec in bas:',nspec)
 
-      if outfile is None:
+      if outfile is None or len(infiles) > 1:
         outfile = file
       else:
         if type(outfile) is list:
@@ -8311,6 +8311,7 @@ among the parameters in the synthfile, it will be determined as such,  but
         if absolut:
           den = np.sum(weights)
           abbmod = np.matmul(weights,da)/den
+
       
         opf.write(str(ids[j])+' '+' '.join(map(str,res))+' '+
             ' '.join(map(str,eres))+' '+
@@ -8324,6 +8325,8 @@ among the parameters in the synthfile, it will be determined as such,  but
             flx.write(' '.join(map(str,abbmod))+'\n')
         if j == 0: wav.write(' '.join(map(str,x2))+'\n')
       
+
+      print('closing opf file:',opffile)
       opf.close()
       mdl.close()
       nrd.close()
