@@ -8191,30 +8191,9 @@ among the parameters in the synthfile, it will be determined as such,  but
       else:
           assert(instr == instr0),'all the input files must be from the same instrument'
       
-      if rv is not None:
-          assert(target is not None),'the length of the input rv should match that of target, but target is None'
-          try:
-              lentarget = len(target)
-              lenrv = len(rv)
-              assert(lenrv == lentarget),'the length of rv should match that of target'
-          except ValueError:
-              print('rv and target should be both None or both iterables of the same length')
- 
-
       if ebv is not None:
-          if type(ebv) is int and ebv == 0:
-            pass
-          else:
-            assert(target is not None),'the length of the input ebv should match that of target, but target is None'
-            try:
-              lentarget = len(target)
-              lenebv = len(ebv)
-              assert(lenebv == lentarget),'the length of ebv should match that of target'
-            except ValueError:
-              print('ebv and target should be both None or both iterables of the same length')
-      else:
-          if 'EBV' in hd0.values() or 'E(B-V)' in hd0.values():
-            ebv = 0
+        if 'EBV' in hd0.values() or 'E(B-V)' in hd0.values():
+          ebv = 0
 
 
               
@@ -8521,17 +8500,18 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
     if rv is not None:
       try:
         _ = (e for e in rv)
+        if target is not None:
+          assert(len(rv) == len(target)),'rv and target must have the same length when both are input'
       except TypeError:
-        print('rv must be None or an iterable')
-      assert(len(rv) == len(target)),'rv and target must have the same length'
+        pass
   
-    if type(ebv) is not int: 
-      if ebv is not None:
-        try:
-          _ = (e for e in ebv)
-        except TypeError:
-          print('ebv must be 0, None,  or an iterable')
-        assert(len(ebv) == len(target)),'ebv and target must have the same length'
+    if ebv is not None:
+      try:
+        _ = (e for e in ebv)
+        if target is not None:
+          assert(len(ebv) == len(target)),'ebv and target must have the same length when both are input'
+      except TypeError:
+        pass
 
 
     #data
@@ -8551,35 +8531,11 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
           ids = np.array([head['OBJNAME']])
         else:
           ids = np.array([infile])
-        
-        if target is not None:
-          assert(type(target[0]) is int or type(target[0]) is long),'target must be None or an int/long'
-          assert(len(target) == 1),'target can only have one element for single-target LAMOST files'
-          if target[0] < 10000:
-               if(target[0] != 0): 
-                   print('target needs to be 0 in order to read the one and only LAMOST spectrum in the input file')
-                   return(None,None,None,None)
-          else:
-               if (target[0] != long(head['OBJNAME'])):
-                   print('target needs to be '+head['OBJNAME']+' in order to read the one and only LAMOST spectrum in the input file')
-                   return(None,None,None,None)				    
 
-        if rv is None: 
-          vrad = 0.0
-        else:
-          assert(len(rv) == 1),'rv can have only one element for single-target LAMOST files'
-          assert(type(rv[0]) is float or type(rv[0]) is int),'rv must be None or an interable with a single float/int'
-          vrad = float(rv[0])
-			 
-        xtr = (head)
-        if wavelengths is None:
-          frd = np.interp(wav,wav*(1. + vrad/clight),flux)
-          ivr = np.interp(wav,wav*(1. + vrad/clight),ivar)
-        else:
-          lenx = len(wavelengths)
-          frd = np.interp(wavelengths,wav,flux)
-          ivr = np.interp(wavelengths,wav,ivar)
-          wav = wavelengths
+        assert(target is None),'target must be None for single-target LAMOST files'
+ 
+        xtr = (head) 
+        wav, frd, ivr = single_target_prep(wav, flux, ivar, rv, ebv, wavelengths=wavelengths)
 
       elif instr == 'DESI':
          if wavelengths is not None and type(wavelengths) is not list:
@@ -8741,42 +8697,11 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
         else:
           ids = np.array([infile])
         
-        if target is not None:
-          assert(type(target[0]) is int or type(target[0]) is long),'target must be None or an int/long'
-          assert(len(target) == 1),'target can only have one element for single-target STIS files'
-          if(target[0] != 0):
-              print('target needs to be 0 in order to read the one and only STIS spectrum in the input file')
-              return(None,None,None,None)
-          
-        if rv is None: 
-          vrad = 0.0
-        else:
-          assert(len(rv) == 1),'rv must be None or an iterable'
-          rv = rv[0]
-          assert(type(rv) is float or type(rv) is int),'rv must be None or an interable with a single float/int'
-          vrad = float(rv)
-
-        if type(ebv) is int and ebv == 0:
-            red = 0.0
-            print('E(B-V)=0 adopted')
-        else:
-            if ebv is None:
-                red = 0.0
-                print('E(B-V)=0 adopted')
-            else:
-                red = ebv
-                print('Correcting E(B-V) using the value provided by the user')
-
+        assert(target is None),'target must be None for STIS data (1 target per file)'
           
         xtr = (head)
-        if wavelengths is None:
-          frd = np.interp(wav,wav*(1. + vrad/clight),flux)
-          ivr = np.interp(wav,wav*(1. + vrad/clight),ivar)
-        else:
-          lenx = len(wavelengths)
-          frd = np.interp(wavelengths,wav,flux)
-          ivr = np.interp(wavelengths,wav,ivar)
-          wav = wavelengths
+        wav, frd, ivr = single_target_prep(wav, flux, ivar, rv, ebv, wavelengths=wavelengths)
+        
 
       elif instr == "MILES":
         fi = fits.open(infile)
@@ -8793,32 +8718,11 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
           ids = np.array([head['OBJECT']])
         else:
           ids = np.array([infile])
-        
-        if target is not None:
-          assert(type(target[0]) is int or type(target[0]) is long),'target must be None or an int/long'
-          assert(len(target) == 1),'target can only have one element for single-target MILES files'
-          if(target[0] != 0):
-              print('target needs to be 0 in order to read the one and only MILES spectrum in the input file')
-              return(None,None,None,None)
-          
-        if rv is None: 
-          vrad = 0.0
-        else:
-          assert(len(rv) == 1),'rv must be None or an iterable'
-          rv = rv[0]
-          assert(type(rv) is float or type(rv) is int),'rv must be None or an iterable with a single float/int'
-          vrad = float(rv)
-          
+
+        assert(target is None),'target must be None for INT-IDS/MILES data (1 target per file)'
 
         xtr = (head)
-        if wavelengths is None:
-          frd = np.interp(wav,wav*(1. + vrad/clight),flux)
-          ivr = np.interp(wav,wav*(1. + vrad/clight),ivar)
-        else:
-          lenx = len(wavelengths)
-          frd = np.interp(wavelengths,wav,flux)
-          ivr = np.interp(wavelengths,wav,ivar)
-          wav = wavelengths
+        wav, frd, ivr = single_target_prep(wav, flux, ivar, rv, ebv, wavelengths=wavelengths)
 
       elif instr == "IDS-R900V":
         fi = fits.open(infile)
@@ -8835,32 +8739,11 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
           ids = np.array([head['OBJECT']])
         else:
           ids = np.array([infile])
-        
-        if target is not None:
-          assert(type(target[0]) is int or type(target[0]) is long),'target must be None or an int/long'
-          assert(len(target) == 1),'target can only have one element for single-target IDS files'
-          if(target[0] != 0):
-              print('target needs to be 0 in order to read the one and only IDS spectrum in the input file')
-              return(None,None,None,None)
-          
-        if rv is None: 
-          vrad = 0.0
-        else:
-          assert(len(rv) == 1),'rv must be None or an iterable'
-          rv = rv[0]
-          assert(type(rv) is float or type(rv) is int),'rv must be None or an iterable with a single float/int'
-          vrad = float(rv)
-          
+
+        assert(target is None),'target must be None for INT-IDS data (1 target per file)'
 
         xtr = (head)
-        if wavelengths is None:
-          frd = np.interp(wav,wav*(1. + vrad/clight),flux)
-          ivr = np.interp(wav,wav*(1. + vrad/clight),ivar)
-        else:
-          lenx = len(wavelengths)
-          frd = np.interp(wavelengths,wav,flux)
-          ivr = np.interp(wavelengths,wav,ivar)
-          wav = wavelengths
+        wav, frd, ivr = single_target_prep(wav, flux, ivar, rv, ebv, wavelengths=wavelengths)
 
       elif instr == "OSIRIS-R2500U":
         fi = fits.open(infile)
@@ -8877,31 +8760,11 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
           ids = np.array([head['OBJECT']])
         else:
           ids = np.array([infile])
+
+        assert(target is None),'target must be None for GTC-OSIRIS data (1 target per file)'
         
-        if target is not None:
-          assert(type(target[0]) is int or type(target[0]) is long),'target must be None or an int/long'
-          assert(len(target) == 1),'target can only have one element for single-target OSIRIS files'
-          if(target[0] != 0):
-              print('target needs to be 0 in order to read the one and only OSIRIS spectrum in the input file')
-              return(None,None,None,None)
-          
-        if rv is None: 
-          vrad = 0.0
-        else:
-          assert(len(rv) == 1),'rv must be None or an iterable'
-          rv = rv[0]
-          assert(type(rv) is float or type(rv) is int),'rv must be None or an iterable with a single float/int'
-          vrad = float(rv)
-          
         xtr = (head)
-        if wavelengths is None:
-          frd = np.interp(wav,wav*(1. + vrad/clight),flux)
-          ivr = np.interp(wav,wav*(1. + vrad/clight),ivar)
-        else:
-          lenx = len(wavelengths)
-          frd = np.interp(wavelengths,wav,flux)
-          ivr = np.interp(wavelengths,wav,ivar)
-          wav = wavelengths
+        wav, frd, ivr =  single_target_prep(wav, flux, ivar, rv, ebv, wavelengths=wavelengths)
 
                   
     else: 
@@ -8922,6 +8785,49 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
       xtr = (dict())
 
     return(ids,wav,frd,ivr,xtr)
+
+
+def single_target_prep(wav,flux,ivar,rv,ebv,wavelengths=None):
+
+    from extinction import apply,remove,ccm89
+
+    if rv is None:
+      vrad = 0.0
+    else:
+      try:
+        _ = (e for e in rv)
+        assert (len(rv) == 1),'rv must have a single value for LAMOST files with a single spectrum'
+        vrad = float(rv[0])
+      except TypeError:
+        vrad = float(rv)
+
+    if ebv is None:
+      red = 0.0
+    else:
+      try:
+        _ = (e for e in ebv)
+        assert (len(ebv) == 1),'ebv must be have a single value for LAMOST files with a single spectrum'
+        red = float(ebv[0])
+      except TypeError:
+        red = float(ebv)
+
+    if np.abs(red) > 1e-7:
+      xtmp = np.array(wav,dtype=float)
+      ytmp = np.array(flux,dtype=float)
+      tmp = remove(ccm89(xtmp, red * 3.1, 3.1), ytmp)
+      ivar = ivar * (np.divide(ytmp,tmp,where=tmp>0))**2
+      flux = tmp
+
+    if wavelengths is None:
+      frd = np.interp(wav,wav*(1. + vrad/clight),flux)
+      ivr = np.interp(wav,wav*(1. + vrad/clight),ivar)
+    else:
+      lenx = len(wavelengths)
+      frd = np.interp(wavelengths,wav,flux)
+      ivr = np.interp(wavelengths,wav,ivar)
+      wav = wavelengths
+
+    return(wav,frd,ivr)
 
 
 def read_desispec(filename,band=None):
