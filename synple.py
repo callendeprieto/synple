@@ -8690,7 +8690,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
           err = flux * 0.05
         if 'SYSERROR' in s.names: err = flux*0.000001 + err + s['SYSERROR']
         ivar4 = np.divide(1.,err**2, where = (err**2 > 0.) ,dtype = np.float128)
-        ivar = np.float64(ivar)
+        ivar = np.float64(ivar4)
         if 'TARGETID' in head:
           ids = np.array([head['TARGETID']])
         elif 'TARGNAME' in head:
@@ -8715,7 +8715,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
         print('         assuming S/N = 20!')
         err = flux * 0.05
         ivar4 = np.divide(1.,err**2, where = (err**2 > 0.) ,dtype = np.float128)
-        ivar = np.float64(ivar)
+        ivar = np.float64(ivar4)
 
 
         if 'OBJECT' in head:
@@ -8739,7 +8739,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
         print('         assuming S/N = 20!')
         err = flux * 0.05
         ivar4 = np.divide(1.,err**2, where = (err**2 > 0.) ,dtype = np.float128)
-        ivar = np.float64(ivar)
+        ivar = np.float64(ivar4)
 
         if 'OBJECT' in head:
           ids = np.array([head['OBJECT']])
@@ -8762,7 +8762,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
         print('         assuming S/N = 20!')
         err = flux * 0.05
         ivar4 = np.divide(1.,err**2, where = (err**2 > 0.) ,dtype = np.float128)
-        ivar = np.float64(ivar)
+        ivar = np.float64(ivar4)
 
         if 'OBJECT' in head:
           ids = np.array([head['OBJECT']])
