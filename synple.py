@@ -4403,8 +4403,8 @@ def head_synth(synthfile):
 def lambda_synth(synthfile):
     multi_header=head_synth(synthfile)
     if np.ndim(multi_header) == 0: multi_header=[multi_header]
+    x = None
     xx=[]
-    j=0
     for header in multi_header:
       if 'WAVE' in header:
         tmp=header['WAVE'].split()
@@ -4415,11 +4415,17 @@ def lambda_synth(synthfile):
         if header['LOGW']:
           if int(header['LOGW']) == 1: x=10.**x
           if int(header['LOGW']) == 2: x=np.exp(x)   
-        j=j+1
-        xx.append(x)
       if 'WAVELENGTHS' in header:
         x = np.array(header['WAVELENGTHS'].split(),dtype=float)
-        xx.append(x)
+       
+      if x is not None:
+        if len(xx) == 0:
+          xx.append(x)
+        else:
+          if (np.size(x) != np.size(xx)):
+            xx.append(x)
+          else: 
+            if ((xx-x).max() > 0.): xx.append(x)
 
     if len(xx)>1: x=xx[:]
 
@@ -4772,7 +4778,7 @@ def merge_synth(synthfile,outsynthfile=None):
     h0 = dict()
     h0['MULTI'] = len(hh)
     h0['ID'] = synthfile2
-    h0['COMMENTS1'] = 'merged with synple.paste_synth'
+    h0['COMMENTS1'] = 'merged with synple.merge_synth'
     h0['N_OF_DIM'] = hh[0]['N_OF_DIM']
     if 'NTOT' in hh[0]:
       h0['NTOT'] = hh[0]['NTOT']
@@ -8268,6 +8274,8 @@ among the parameters in the synthfile, it will be determined as such,  but
                 
         vrad = 0.0
         if rv is None and 'RV' not in hd0.values() and instr0 is not None:
+
+          print('type(x2) is ',type(x2))
           vrad, evrad = xxc(x2,spec,ivar,x2,bmod)
           print('RV = ',vrad,' km/s')
         
