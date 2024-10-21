@@ -8688,8 +8688,12 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
           print('Warning: cannot find the statistical error in the file from HST')
           print('         assuming S/N = 20!')
           err = flux * 0.05
-        if 'SYSERROR' in s.names: err = err + s['SYSERROR']
-        ivar = np.divide(1.,err**2, where = (err > 0.) )
+        if 'SYSERROR' in s.names: err = flux*0.000001 + err + s['SYSERROR']
+        print(err.min(),err.max())
+        emean = err.mean()
+        err = err / emean
+        ivar = np.divide(1.,err**2, where = (err**2 > 0.) )
+        ivar = ivar / emean**2
         if 'TARGETID' in head:
           ids = np.array([head['TARGETID']])
         elif 'TARGNAME' in head:
@@ -8713,7 +8717,11 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
         print('Warning: MILES files do not include uncertainties')
         print('         assuming S/N = 20!')
         err = flux * 0.05
-        ivar = np.divide(1.,err**2, where = (err > 0.) )
+        emean = err.mean()
+        err = err / emean
+        ivar = np.divide(1.,err**2, where = (err**2 > 0.) )
+        ivar = ivar / emean**2
+
         if 'OBJECT' in head:
           ids = np.array([head['OBJECT']])
         else:
@@ -8734,7 +8742,11 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
         print('Warning: IDS files do not include uncertainties')
         print('         assuming S/N = 20!')
         err = flux * 0.05
-        ivar = np.divide(1.,err**2, where = (err > 0.) )
+        emean = err.mean()
+        err = err / emean
+        ivar = np.divide(1.,err**2, where = (err**2 > 0.) )
+        ivar = ivar / emean**2
+
         if 'OBJECT' in head:
           ids = np.array([head['OBJECT']])
         else:
@@ -8755,7 +8767,11 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
         print('Warning: OSIRIS files do not include uncertainties')
         print('         assuming S/N = 20!')
         err = flux * 0.05
-        ivar = np.divide(1.,err**2, where = (err > 0.) )
+        emean = err.mean()
+        err = err / emean
+        ivar = np.divide(1.,err**2, where = (err**2 > 0.) )
+        ivar = ivar / emean**2
+
         if 'OBJECT' in head:
           ids = np.array([head['OBJECT']])
         else:
