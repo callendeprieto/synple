@@ -4422,7 +4422,7 @@ def lambda_synth(synthfile):
         if len(xx) == 0:
           xx.append(x)
         else:
-          if (np.size(x) != np.size(xx)):
+          if (np.size(x) != len(xx)):
             xx.append(x)
           else: 
             if ((xx-x).max() > 0.): xx.append(x)
@@ -8093,30 +8093,27 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       RVs will be determined as such, but otherwise RVs are derived by the routine xxc.
       (default is None)
     ebv: iterable
-      this can be an iterable matching the length of target with the E(B-V) values to be corrected prior to the analysis. If equal to None, if E(B-V) is 
-among the parameters in the synthfile, it will be determined as such,  but 
- otherwise, only for DESI, it will be read from infile and corrected for
+      this can be an iterable matching the length of target with the E(B-V) values 
+      to be corrected prior to the analysis. If equal to None, if E(B-V) is 
+      among the parameters in the synthfile, it will be determined as such,  but 
+      otherwise, only for DESI, it will be read from infile and corrected for
     focus: bool
       switch to activate a two-step algorithm in which a coarsely 
       subsampled version of the grid is used to identify first where  
       the optimal solution is, and then perform an focused analysis
       in that region (a +/- 3 sigma volume)
-
     star: bool
       switch to limit the analysis of DESI spectra to stars. It has no
       effect on other data sets. Activating target disables star.
       (default True)
-
     conti: bool
       activates the continuum normalization (see 'continuum' function)
       NOTE that the default is dividing the input/model fluxes in each 
       spectrum by their mean value
       (default False)
-
     absolut: bool
       activates the output of the absolute fluxes for the best-fitting 
       model (.flx file) and the input (unnormalized) fluxes (.frd file)
-
     wrange: 2-element iterable
       spectral range to use in the fittings
       (default None, and sets wrange to the values of the adopted grid)
