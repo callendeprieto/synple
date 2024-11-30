@@ -8794,7 +8794,10 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
       err = (np.loadtxt(errfile,dtype=float)**2)
       ivr = np.divide(1.,err, where = (err > 0.) )
       wav = wavelengths
-      ids = np.array(list(map(str,range(len(frd[:,0])))))
+      if frd.ndim == 1:
+        ids = np.array([0])
+      else:
+        ids = np.array(list(map(str,range(len(frd[:,0])))))
       xtr = (dict())
 
     return(ids,wav,frd,ivr,xtr)
