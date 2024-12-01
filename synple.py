@@ -7278,9 +7278,9 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
 
   """
   
-  from extinction import apply,ccm89
   from synple import vgconv
   import numpy as np
+  if np.max(ebv) > 0.0: from extinction import apply,ccm89 
   clight = 299792.458
 
   if outsynthfile is None: 
