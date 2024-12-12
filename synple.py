@@ -10605,6 +10605,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
     infile = parts[-1]
     folder = ('/'.join(parts[-5:-1]))
     tpath = os.path.join(path_to_output,folder)
+
     os.makedirs(tpath,exist_ok=True) 
 
     minutes = 4000*seconds_per_target/60.
@@ -10651,7 +10652,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
      " bas(\'" + entry + "\'," + \
      " outfile=\'" + outfile + "\'," + \
      " synthfile=" + str(synthfile1) + ", star= " + str(star) + "); " + \
-     " wtabmodfits(\'" + outfile + "'" + \
+     " wtabmodfits(\'" + root + "'" + ", path= " + tpath + \
      ")\"" + "\n"
 
     s.write(command)
