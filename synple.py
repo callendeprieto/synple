@@ -3173,48 +3173,58 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
  
                         if os.path.isfile(file):
                               print('first successful calculation is for idir=',idir)
-                              assert os.path.isfile(file), 'Cannot find model '+file 
-                              wave, flux = np.loadtxt(file, unpack=True)
-                              if wrange is None: 
-                                minwave = np.min(wave)
-                                maxwave = np.max(wave)
-                              else:
-                                minwave = wrange[0]
-                                maxwave = wrange[1]
+                              #assert os.path.isfile(file), 'Cannot find model '+file 
 
-                              if dw is None:
-                                dw = np.median(np.diff(wave))
+                              try:
+                                wave, flux = np.loadtxt(file, unpack=True)
+                                if wrange is None: 
+                                  minwave = np.min(wave)
+                                  maxwave = np.max(wave)
+                                else:
+                                  minwave = wrange[0]
+                                  maxwave = wrange[1]
+
+                                if dw is None:
+                                  dw = np.median(np.diff(wave))
                         
-                              nfreq = np.floor((maxwave - minwave)/dw + 1)
+                                nfreq = np.floor((maxwave - minwave)/dw + 1)
  
-                              if logw == 0:
-                                x = minwave + np.arange(nfreq)*dw
-                              elif logw == 1:
-                                minwave = np.log10(minwave)
-                                dw = dw/(np.max(wave)+np.min(wave))*2./np.log(10.)
-                                x = minwave + np.arange(nfreq)*dw
-                                x = 10.**x
-                              elif logw == 2:
-                                minwave = np.log(minwave)
-                                dw = dw/(np.max(wave)+np.min(wave))*2.
-                                x = minwave + np.arange(nfreq)*dw
-                                x = np.exp(x)
-                              else:
-                                print('Error: logw can only be 0, 1 or 2')
-                                sys.exit()
+                                if logw == 0:
+                                  x = minwave + np.arange(nfreq)*dw
+                                elif logw == 1:
+                                  minwave = np.log10(minwave)
+                                  dw = dw/(np.max(wave)+np.min(wave))*2./np.log(10.)
+                                  x = minwave + np.arange(nfreq)*dw
+                                  x = 10.**x
+                                elif logw == 2:
+                                  minwave = np.log(minwave)
+                                  dw = dw/(np.max(wave)+np.min(wave))*2.
+                                  x = minwave + np.arange(nfreq)*dw
+                                  x = np.exp(x)
+                                else:
+                                  print('Error: logw can only be 0, 1 or 2')
+                                  sys.exit()
 
-                              hdr['SYNTHFILE_INTERNAL'] = "'"+synthfile+"'"
-                              hdr['ID'] = "'"+synthfile[2:]+"'"
-                              hdr['NPIX'] = str(int(nfreq))
-                              hdr['WAVE'] = str(minwave) + ' ' + str(dw)
-                              hdr['LOGW'] = str(int(logw))
-                              if fwhm > 0.0:
-                                hdr['RESOLUTION'] = str(np.min(x)/np.max(fwhm))
-                              f.write(' &SYNTH\n')
-                              for entry in hdr: f.write(' '+entry + ' = ' + hdr[entry] + '\n')
-                              f.write(' /\n')
-                              break_out = True
-                              break
+                                hdr['SYNTHFILE_INTERNAL'] = "'"+synthfile+"'"
+                                hdr['ID'] = "'"+synthfile[2:]+"'"
+                                hdr['NPIX'] = str(int(nfreq))
+                                hdr['WAVE'] = str(minwave) + ' ' + str(dw)
+                                hdr['LOGW'] = str(int(logw))
+                                if fwhm > 0.0:
+                                  hdr['RESOLUTION'] = str(np.min(x)/np.max(fwhm))
+                                f.write(' &SYNTH\n')
+                                for entry in hdr: f.write(' '+entry + ' = ' + hdr[entry] + '\n')
+                                f.write(' /\n')
+                                break_out = True
+                                break
+
+                              except OSError:
+                                if ignore_missing_models == False:
+                                  print('Error reading file ',file,' ... aborting!')
+                                  sys.exit(1)
+                                else:
+                                  print('Error reading file:', file,' ... skipping it ...')
+                                  continue 
   
                               
   assert nfreq > 0, 'could not find a single successful calculation in this grid'
@@ -3246,7 +3256,14 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
                               file = os.path.join(dir,outconv)
  
                               if os.path.isfile(file):
-                                wave, flux = np.loadtxt(file, unpack=True)
+                                try:
+                                  wave, flux = np.loadtxt(file, unpack=True)
+                                except OSError:
+                                  if ignore_missing_models == False:
+                                    print('Cannot read model ',file,' ... aborting!')
+                                    sys.exit(1)
+                                  else:
+                                    wave, flux = (np.array([np.min(x),np.max(x)]), np.array([0.0, 0.0])) 
                               else:
                                 if ignore_missing_models == False:
                                   assert os.path.isfile(file), 'Cannot find model '+file                  
@@ -10652,7 +10669,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
      " bas(\'" + entry + "\'," + \
      " outfile=\'" + outfile + "\'," + \
      " synthfile=" + str(synthfile1) + ", star= " + str(star) + "); " + \
-     " wtabmodfits(\'" + root + "'" + ", path= " + tpath + \
+     " wtabmodfits(\'" + root + "'" + ", path= '" + tpath + "\'" + \
      ")\"" + "\n"
 
     s.write(command)
