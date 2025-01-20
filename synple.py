@@ -1862,7 +1862,7 @@ def build_exomol(isosum_folder='isosum_data'):
 
       #create folder
       try:
-        folder = os.path.join('exomol2',molecule)
+        folder = os.path.join('linelists',molecule)
         os.mkdir(folder)
         print('created folder ',folder)
       except OSError:
@@ -1908,8 +1908,8 @@ def build_exomol(isosum_folder='isosum_data'):
 
       #write the R0 file
       fh = open(os.path.join(folder,'R0'),'w')
-      fh.write('#awk '+"'"+'{print "wget "$0}'+"'"+' download.list  |sh \n')
-      fh.write('#bunzip *bz2 \n')
+      fh.write('awk '+"'"+'{print "wget "$0}'+"'"+' download.list  |sh \n')
+      fh.write('bunzip *bz2 \n')
       fh.write('ln -s -f ../xprog/isotops . \n')
       fh.write('../xprog/isosum.exe < '+molecule+'.5 > '+molecule+'.log \n')
       fh.write('cp fort.10 '+molecule+'.pf \n')
