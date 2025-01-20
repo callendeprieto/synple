@@ -7,8 +7,8 @@ FTP = ftp://carlos:allende@ftp.ll.iac.es/atlases/
 WGET = `which wget`
 
 #general line lists
-#STANDARD =  ardata.fits iag-nir.fits  iag-vis.fits  solarfluxintwl.fits  ardata-ReadMe.txt  iag-ReadMe.txt   solarfluxintwl-ReadMe.txt
-STANDARD = solarfluxintwl.fits solarfluxintwl-ReadMe.txt
+STANDARD =  ardata.fits iag-nir.fits  iag-vis.fits  solarfluxintwl.fits  ardata-ReadMe.txt  iag-ReadMe.txt   solarfluxintwl-ReadMe.txt
+#STANDARD = solarfluxintwl.fits solarfluxintwl-ReadMe.txt
 
 
 all: 
