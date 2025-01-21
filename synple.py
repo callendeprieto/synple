@@ -1848,15 +1848,26 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
 
 def build_exomol(isosum_folder='isosum_data'):
 
+#   code to build linelists from exomol data using Ivan Hubeny's scripts
+
     isosum_files = sorted(glob.glob(os.path.join(isosum_folder,'*.5')))
 
-    for entry in isosum_files[:1]:
+    for entry in isosum_files:
       print(entry,'build_exomol_diatomic(entry)')
       fh = open(entry,'r')
       zs = fh.readline()
       print('first line of ',entry,'=',zs)
       fh.close()
       data = np.loadtxt(entry, skiprows=1, dtype=str)
+      if data.ndim == 1: 
+        niso = 1
+      elif data.ndim == 2:
+        niso = data.shape[0]
+      else:
+        print('error!! the isosum data in ',entry,' does not conform to expectations')
+        continue 
+ 
+      
       tmp = os.path.split(entry)
       molecule = tmp[-1][:-2]
 
@@ -1871,14 +1882,20 @@ def build_exomol(isosum_folder='isosum_data'):
       #write the .5 file
       fh = open(os.path.join(folder,molecule+'.5'),'w')
       fh.write(zs)
-      for i in range(data.shape[0]):
-          fh.write('  '+' '.join(data[i,:])+'\n')
+      if niso == 1:
+          fh.write('  '+' '.join(data)+'\n')
+      else:
+          for i in range(niso):
+              fh.write('  '+' '.join(data[i,:])+'\n')
       fh.close()
 
       #write the download.list file
       fh = open(os.path.join(folder,'download.list'),'w')
-      for i in range(data.shape[0]):
-          cad = data[i,2][1:-4]
+      for i in range(niso):
+          if niso == 1:
+              cad = data[2][1:-4]
+          else:
+              cad = data[i,2][1:-4]
           parts = cad.split('__')
           iso = parts[0]
           tag = parts[1]
@@ -1898,36 +1915,43 @@ def build_exomol(isosum_folder='isosum_data'):
       zz.reverse()
       zzs = float(''.join(zz))
       zz = zs.split()
-      for i in range(data.shape[0]):
+      for i in range(niso):
           fh = open(os.path.join(folder,'cc'+str(i+1)+'.5'),'w')
           fh.write(str(zzs)+" '"+molecule+"'"+'\n')
-          fh.write(' '.join([zz[0],data[i,0],zz[1],data[i,1]])+'\n')
-          fh.write(data[i,2][:-4]+"'"+'\n')
+          if niso == 1:
+              fh.write(' '.join([zz[0],data[0],zz[1],data[1]])+'\n')
+              fh.write(data[2][:-4]+"'"+'\n')
+          else:
+              fh.write(' '.join([zz[0],data[i,0],zz[1],data[i,1]])+'\n')
+              fh.write(data[i,2][:-4]+"'"+'\n')
           fh.write('100  100000  -9.0\n')
           fh.close()
 
       #write the R0 file
       fh = open(os.path.join(folder,'R0'),'w')
       fh.write('awk '+"'"+'{print "wget "$0}'+"'"+' download.list  |sh \n')
-      fh.write('bunzip *bz2 \n')
-      fh.write('ln -s -f ../xprog/isotops . \n')
-      fh.write('../xprog/isosum.exe < '+molecule+'.5 > '+molecule+'.log \n')
+      fh.write('bunzip2 *bz2 \n')
+      fh.write('ln -s -f ../../xprog/isotops . \n')
+      fh.write('../../xprog/isosum.exe < '+molecule+'.5 > '+molecule+'.log \n')
       fh.write('cp fort.10 '+molecule+'.pf \n')
       fh.close()
+      os.chmod(os.path.join(folder,'R0') ,0o755)
 
       #write the R1 file
       fh = open(os.path.join(folder,'R1'),'w')
-      for i in range(data.shape[0]):
+      for i in range(niso):
           fh.write('echo building cc'+str(i+1)+'.list \n')
-          fh.write('../xprog/list.exe <cc'+str(i+1)+'.5 >cc'+str(i+1)+'.log \n')
-          fh.write('../xprog/reverse.exe <fort.10 >cc'+str(i+1)+'.list \n')
+          fh.write('../../xprog/list.exe <cc'+str(i+1)+'.5 >cc'+str(i+1)+'.log \n')
+          fh.write('../../xprog/reverse.exe <fort.10 >cc'+str(i+1)+'.list \n')
           if i > 0:
               fh.write('echo  merging cc'+str(i)+'.list and cc'+str(i+1)+'.list \n')
               fh.write('ln -s -f cc'+str(i)+'.list fort.10 \n')
-              fh.write('../xprog/merge.exe <cc'+str(i+1)+'.list >cc'+str(i)+str(i+1)+'.log \n')
+              fh.write('../../xprog/merge.exe <cc'+str(i+1)+'.list >cc'+str(i)+str(i+1)+'.log \n')
               fh.write('mv fort.11 cc'+str(i+1)+'.list \n')
 
       fh.write('mv cc'+str(i+1)+'.list '+molecule+'.list \n') 
+      fh.close()
+      os.chmod(os.path.join(folder,'R1'),0o755)
 
     return()
 
