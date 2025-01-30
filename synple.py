@@ -8007,7 +8007,7 @@ def vgsynth(synthfile,wavelength,fwhm,outsynthfile=None,ppr=5,wrange=None,origin
 def fit(xdata, ydata, modelfile, params, bounds,  
         vmicro=1.0, abu=None, vrot=0.0, fwhm=0.0, vmacro=0.0,
         dw=None, strength=1e-4, linelist=linelist0, atom='ap18',
-        steprot=0.0, stepfwhm=0.0, lte=None, method='Powell'):
+        steprot=0.0, stepfwhm=0.0, lte=None, method='Powell', tol = 0.001):
   
   """
   Fitting a piece of the spectrum to find the optimal value of one or
@@ -8048,7 +8048,7 @@ def fit(xdata, ydata, modelfile, params, bounds,
 
   res = minimize(fun, np.array(parvalues), 
                  ( xdata, ydata, parnames, others), method=method ,
-                 bounds = bounds )                 
+                 bounds = bounds, tol = tol )                 
   
   print('res=',res)
   return(res)
