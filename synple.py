@@ -8498,7 +8498,7 @@ def identify_instrument(infile):
                     instr = 'STIS'  
             if head['TELESCOP'][:3] == 'INT' and head['INSTRUME'][:3] == 'IDS' and \
                head['CAMERA'][:3] == '235' and head['GRATNAME'][:5] == 'R900V':
-               instr = 'INT-R900V'
+               instr = 'IDS-R900V'
             if head['TELESCOP'][:3] == 'GTC' and head['INSTRUME'][:6] == 'OSIRIS' and \
              head['GRISM'][:6] == 'R2500U':
                instr = 'OSIRIS-R2500U'
