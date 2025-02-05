@@ -7131,6 +7131,58 @@ def elements(reference=None):
 
   return (symbol,mass,sol)
 
+def xyzmass(abu):
+
+  """computing the mass fractions for hydrogen, helium and metals X,Y,Z
+  """
+
+  symbol, mass, sol = elements()
+
+  total = sum(np.array(mass)*np.array(abu))
+
+  x = mass[0]*abu[0]/total
+  y = mass[1]*abu[1]/total
+  z = np.sum(np.array(mass[2:])*np.array(abu[2:])/total)
+
+  return(x,y,z)
+
+
+def keepz(abu,zs,dex):
+
+  """finds out the array of abundances that keeps the abundance changes in
+     the array dex for the elements with the atomic number zs
+     and at the same time keeps the metal mass fraction
+     constant by modifying the metal abundances
+  """
+
+  assert (len(zs) == len(dex)),'zs and dex must have the same number of elements'
+
+  abu1 = abu.copy()
+  i = 0
+  for entry in zs:
+    abu1[entry-1] = abu[entry-1] + dex[i]
+    i = i + 1
+
+  x0, y0, z0 = xyzmass(abu)
+  x1, y1, z1 = xyzmass(abu1)
+  print(z0,z1)
+  diff = np.array(abu1[zs]) - np.array(abu[zs])
+  zr = np.abs(z1/z0)
+  abu1[2:] = abu[2:]/zr 
+  diff1 = np.array(abu1[zs]) - np.array(abu[zs])
+
+  while np.max(diff1 - diff) > 0.0001:
+    print(np.max(diff1 - diff))
+    x1, y1, z1 = xyzmass(abu1)
+    zr = np.abs(z1/z0)
+    abu1[2:] = abu[2:]/zr
+    diff1 = np.array(abu1) - np.array(abu)
+
+  return()
+      
+
+
+  
 
 def lgconv(xinput, yinput, fwhm, ppr=None):
 
