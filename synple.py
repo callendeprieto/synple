@@ -8241,7 +8241,7 @@ def cebas(p,d,flx,iva):
 
 
 def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None, 
-        focus=False, star=True, conti=False, absolut=False, wrange=None):
+        focus=False, star=True, conti=0, absolut=False, wrange=None):
 
     """Bayesian Algorithm in Synple
     
@@ -8286,11 +8286,12 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       switch to limit the analysis of DESI spectra to stars. It has no
       effect on other data sets. Activating target disables star.
       (default True)
-    conti: bool
-      activates the continuum normalization (see 'continuum' function)
-      NOTE that the default is dividing the input/model fluxes in each 
+    conti: int
+      conti > 0 activates the continuum normalization (see 'continuum' function)
+      by a running mean with a width of  'conti'
+      NOTE that the default (0) is dividing the input/model fluxes in each 
       spectrum by their mean value
-      (default False)
+      (default 0)
     absolut: bool
       activates the output of the absolute fluxes for the best-fitting 
       model (.flx file) and the input (unnormalized) fluxes (.frd file)
@@ -8340,8 +8341,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
     print('normalizing grid...')
     if absolut: da = d.copy() # da keeps a copy of the original grid
     for entry in range(len(d[:,0])):
-        if conti:
-          cc = continuum(d[entry,:])
+        if conti > 0:
+          cc = continuum(d[entry,:],window_length=conti)
         else:
           cc = np.mean(d[entry,:])
         d[entry,:] = d[entry,:] / cc
@@ -8431,8 +8432,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           flx = np.interp(xax,xax[www2],spec[www2])
 
         #normalize
-        if conti:
-          mspec = continuum(spec)
+        if conti > 0:
+          mspec = continuum(spec, window_length=conti)
           www = (mspec == 0.0)
           mspec[www] = 1. 
         else:
