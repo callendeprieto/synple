@@ -6390,7 +6390,7 @@ def read_madaf(madaffile,startdir=None):
     nonstdarr = ns.readlines()
     ns.close()
     for entry in nonstdarr:
-      entries = entry.replace('\n','').split(',')
+      entries = entry.replace(',\n','').split(',')
       for piece in entries:
         sides = piece.split('=')
         nonstd[sides[0].replace(' ','')]= sides[1].replace(' ','')
@@ -6403,17 +6403,25 @@ def read_madaf(madaffile,startdir=None):
   if 'VTB' in nonstd: vmicro = float(nonstd['VTB'])
 
   line = f.readline()
+  while line[0] == '*':
+    line = f.readline()
   line = f.readline()
+  while line[0] == '*':
+    line = f.readline()
   entries = line.split()
   natoms = int(entries[0])
 
   symbol, mass, sol = elements() 
   abu = dict()
-  for i in range(natoms):
+
+  line = f.readline()
+  while line[0] == '*':
     line = f.readline()
+  for i in range(natoms):
     entries = line.split()
     #abu.append( float(entries[1]) )
     abu[symbol[i]] = float(entries[1])
+    line = f.readline()
 
   if i < 98: 
     for j in range(98-i):
