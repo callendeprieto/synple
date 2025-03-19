@@ -6316,9 +6316,9 @@ def read_tlusty_model(modelfile,startdir=None):
   if (numpar < 0): atmos['n'] = atm [:,3]
   if (numpop > 0): 
     if modelfile[-2] == ".":
-      atmos['pop'] = atm [:,4:]
+      atmos['pop'] = atm [:,3:]
     else:
-      atmos['dep'] = atm [:,4:]
+      atmos['dep'] = atm [:,3:]
 
   return (teff,logg,vmicro,list(abu.values()),nd,atmos)
 
@@ -6528,26 +6528,32 @@ def read_tlusty_extras(modelfile,startdir=None):
     nonstdarr = ns.readlines()
     ns.close()
     for entry in nonstdarr:
-      entries = entry.replace('\n','').split(',')
+      entries = entry.replace(',\n','').split(',')
       for piece in entries:
         sides = piece.split('=')
         nonstd[sides[0].replace(' ','')]= sides[1].replace(' ','')
 
-
   line = f.readline()
+  while line[0] == '*':
+    line = f.readline()
   line = f.readline()
+  while line[0] == '*':
+    line = f.readline()
   entries = line.split()
   natoms = int(entries[0])
-  
+
+  line = f.readline()
+  while line[0] == '*':
+    line = f.readline()
   atommode = []
   for i in range(natoms):
-    line = f.readline()
     entries = line.split()
     atommode.append(int(entries[0]))
+    line = f.readline()
 
   atominfo = []
   #keep reading until you find 'dat' to identify data directory 
-  line = f.readline()
+  #line = f.readline()
   while True: 
     atominfo.append(line)
     if '.dat' in line: break
