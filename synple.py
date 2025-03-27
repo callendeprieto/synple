@@ -305,12 +305,8 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     #os.symlink(os.path.join(hdd2,madaffile),'./fort.5')      
   #else:
 
-  print('creating fort.5')
-  
   write5(teff,logg,abu,atom,inlte=inlte,
            atommode=atommode,atominfo=atominfo) #abundance/opacity file
-
-  print('creating fort.8')
 
   write8(teff,logg,nd,atmos,atmostype)          #model atmosphere
 
