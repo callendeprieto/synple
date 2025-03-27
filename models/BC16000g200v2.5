@@ -1,0 +1,108 @@
+16000. 2.0
+ F  F              ! LTE,  LTGRAY
+ 'BC16000g200v2.nst'             ! name of file containing non-standard flags
+*
+* frequencies
+*
+ 2000
+*
+* atom for atoms   
+*
+ 30                 ! NATOMS
+* mode abn modpf
+    2   0.      0       ! H
+    2   0.      0       ! He
+    0   0.      0
+    0   0.      0
+    0   0.      0
+    2  -2.      0  ! C
+    2  -2.      0  ! N
+    2  -2.      0  ! O
+    1  -2.      0
+    2  -2.      0  ! Ne
+    1  -2.      0
+    2  -2.      0  ! Mg
+    2  -2.      0  ! Al
+    2  -2.      0  ! Si
+    1  -2.      0
+    2  -2.      0  ! S
+    1  -2.      0
+    1  -2.      0
+    1  -2.      0
+    1  -2.      0
+    1  -2.      0
+    1  -2.      0
+    1  -2.      0
+    1  -2.      0
+    1  -2.      0
+    2  -2.      0  ! Fe
+    1  -2.      0
+    1  -2.      0
+    1  -2.      0
+    1  -2.      0
+*
+* atom for ions
+*
+*iat   iz   nlevs  ilast ilvlin  nonstd typion  filei
+*
+   1    0     9      0      0      0    ' H 1' 'atom/h1.dat'
+   1    1     1      1      0      0    ' H 2' ' '
+   2    0    24      0      0      0    'He 1' 'atom/he1.dat'
+   2    1    20      0      0      0    'He 2' 'atom/he2.dat'
+   2    2     1      1      0      0    'He 3' ' '
+   6    0    40      0      0      0    ' C 1' 'atom/c1_28+12lev.dat'
+   6    1    22      0      0      0    ' C 2' 'atom/c2_17+5lev.dat'
+   6    2    46      0      0      0    ' C 3' 'atom/c3_34+12lev.dat'
+   6    3    25      0      0      0    ' C 4' 'atom/c4_21+4lev.dat'
+   6    4     1      1      0      0    ' C 5' ' '
+   7    0    34      0      0      0    ' N 1' 'atom/n1_27+7lev.dat'
+   7    1    42      0      0      0    ' N 2' 'atom/n2_32+10lev.dat'
+   7    2    32      0      0      0    ' N 3' 'atom/n3_25+7lev.dat'
+   7    3    48      0      0      0    ' N 4' 'atom/n4_34+14lev.dat'
+   7    4    16      0      0      0    ' N 5' 'atom/n5_10+6lev.dat'
+   7    5     1      1      0      0    ' N 6' ' '
+   8    0    33      0      0      0    ' O 1' 'atom/o1_23+10lev.dat'
+   8    1    48      0      0      0    ' O 2' 'atom/o2_36+12lev.dat'
+   8    2    41      0      0      0    ' O 3' 'atom/o3_28+13lev.dat'
+   8    3    39      0      0      0    ' O 4' 'atom/o4_31+8lev.dat'
+   8    4     6      0      0      0    ' O 5' 'atom/o5_34+6lev.dat'
+   8    5     1      1      0      0    ' O 6' ' '
+  10    0    35      0      0      0    'Ne 1' 'atom/ne1_23+12lev.dat'
+  10    1    32      0      0      0    'Ne 2' 'atom/ne2_23+9lev.dat'
+  10    2    34      0      0      0    'Ne 3' 'atom/ne3_22+12lev.dat'
+  10    3    12      0      0      0    'Ne 4' 'atom/ne4_10+2lev.dat'
+  10    4     1      1      0      0    'Ne 5' ' '
+  12    1    25      0      0      0    'Mg 2' 'atom/mg2_21+4lev.dat'
+  12    2     1      1      0      0    'Mg 3' ' '
+  13    1    29      0      0      0    'Al 2' 'atom/al2_20+9lev.dat'
+  13    2    23      0      0      0    'Al 3' 'atom/al3_19+4lev.dat'
+  13    3     1      1      0      0    'Al 4' ' '
+  14    1    40      0      0      0    'Si 2' 'atom/si2_36+4lev.dat'
+  14    2    30      0      0      0    'Si 3' 'atom/si3_24+6lev.dat'
+  14    3    23      0      0      0    'Si 4' 'atom/si4_19+4lev.dat'
+  14    4     1      1      0      0    'Si 5' ' '
+  16    1    33      0      0      0    ' S 2' 'atom/s2_23+10lev.dat'
+  16    2    41      0      0      0    ' S 3' 'atom/s3_29+12lev.dat'
+  16    3    38      0      0      0    ' S 4' 'atom/s4_33+5lev.dat'
+  16    4    25      0      0      0    ' S 5' 'atom/s5_20+5lev.dat'
+  16    5     1      1      0      0    ' S 6' ' '
+  26    1    36      0      0     -1    'Fe 2' 'atom/fe2v.dat'
+   0    0                                      'atom/gf2601.gam'
+                                               'atom/gf2601.lin'
+                                               'atom/fe2p_14+11lev.rap'
+  26    2    50      0      0     -1    'Fe 3' 'atom/fe3v.dat'
+   0    0                                      'atom/gf2602.gam'
+                                               'atom/gf2602.lin'
+                                               'atom/fe3p_22+7lev.rap'
+  26    3    43      0      0     -1    'Fe 4' 'atom/fe4v.dat'
+   0    0                                      'atom/gf2603.gam'
+                                               'atom/gf2603.lin'
+                                               'atom/fe4p_21+11lev.rap'
+  26    4    42      0      0     -1    'Fe 5' 'atom/fe5v.dat'
+   0    0                                      'atom/gf2604.gam'
+                                               'atom/gf2604.lin'
+                                               'atom/fe5p_19+11lev.rap'
+  26    5     1      1      0      0    'Fe 6' ' '
+   0    0     0     -1      0      0    '    ' ' '
+*
+* end

@@ -304,9 +304,13 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     #if hdd2 == '': hdd2 = '..'
     #os.symlink(os.path.join(hdd2,madaffile),'./fort.5')      
   #else:
+
+  print('creating fort.5')
   
   write5(teff,logg,abu,atom,inlte=inlte,
            atommode=atommode,atominfo=atominfo) #abundance/opacity file
+
+  print('creating fort.8')
 
   write8(teff,logg,nd,atmos,atmostype)          #model atmosphere
 
@@ -1911,9 +1915,12 @@ def build_exomol(isosum_folder='isosum_data'):
       fh.close()
 
       #write the cc?.5 files
-      zz = zs.split()
-      zz.reverse()
-      zzs = float(''.join(zz))
+      zzo = np.array(np.sort(np.array(zs.split(),dtype=int)),dtype=str)
+      if int(zzo[1]) < 10: zzo[1] = '0'+zzo[1]
+      if molecule[-1] == '+':
+          zzs = zzo[0]+zzo[1]+'.01'
+      else:
+          zzs = zzo[0]+zzo[1]+'.00'
       zz = zs.split()
       for i in range(niso):
           fh = open(os.path.join(folder,'cc'+str(i+1)+'.5'),'w')
@@ -5815,8 +5822,54 @@ def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8'):
         if (i+1) % 5 != 0: f.write('\n')
         for i in range(nd):
           f.write( '%f %e %e %e \n' % (atmos['t'][i], atmos['ne'][i], atmos['rho'][i], atmos['n'][i] ) )  
-    else:
-      pass
+
+    else: # n not included, only t, ne and rho given
+      if ('pop' in atmos.dtype.names):   # explicit (usually NLTE) populations
+        numpop = len(atmos['pop'][0]) 
+        sformat = '  %f %e %e '
+        i = 5
+        for entry in atmos['pop'][0]: 
+           sformat = sformat + ' %e'
+           if i % 6 == 0: sformat = sformat + '  \n'
+           i = i + 1
+        sformat = sformat + ' \n' 
+        f.write(" "+str(nd)+" "+str(3+numpop)+"\n")
+        for i in range(nd):
+          f.write(' %e ' % atmos['dm'][i])
+          if (i+1) % 5 == 0: f.write('\n')
+        if (i+1) % 5 != 0: f.write('\n')
+        for i in range(nd):
+          sdata = [atmos['t'][i], atmos['ne'][i], atmos['rho'][i] ]
+          for j in range(numpop):
+            sdata.append(atmos['pop'][i][j])
+          f.write( sformat % tuple(sdata) )                 
+      elif ('dep' in atmos.dtype.names): # NLTE departure coefficients
+        numpop = len(atmos['dep'][0]) 
+        sformat = '  %f %e %e '
+        i = 5
+        for entry in atmos['dep'][0]: 
+           sformat = sformat + ' %e'
+           if i % 6 == 0: sformat = sformat + '  \n'
+           i = i + 1
+        format = sformat + ' \n' 
+        f.write(" "+str(nd)+" "+str(3+numpop)+"\n")
+        for i in range(nd):
+          f.write(' %e ' % atmos['dm'][i])
+          if (i+1) % 5 == 0: f.write('\n')
+        if (i+1) % 5 != 0: f.write('\n')
+        for i in range(nd):
+          sdata = [atmos['t'][i], atmos['ne'][i], atmos['rho'][i] ]
+          for j in range(numpop):
+            sdata.append(atmos['dep'][i][j])
+          f.write( sformat % tuple(sdata) )         
+      else:                              # LTE
+        f.write(" "+str(nd)+" "+str(3)+"\n")
+        for i in range(nd):
+          f.write(' %e ' % atmos['dm'][i])
+          if (i+1) % 5 == 0: f.write('\n')
+        if (i+1) % 5 != 0: f.write('\n')
+        for i in range(nd):
+          f.write( '%f %e %e \n' % (atmos['t'][i], atmos['ne'][i], atmos['rho'][i] ) )  
 
   else:
 
