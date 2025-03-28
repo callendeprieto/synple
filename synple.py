@@ -6558,12 +6558,16 @@ def read_tlusty_extras(modelfile,startdir=None):
   nonstdfile0 = nonstdfile  
   if nonstdfile != '':
     if not os.path.isabs(nonstdfile): 
-      mf = os.path.join(startdir,nonstdfile)
+      md = startdir
+      mf = os.path.join(md,nonstdfile)
       if os.path.isfile(mf): 
         nonstdfile = mf
       else:
-        mf = os.path.join(modeldir,nonstdfile)
+        md = modeldir
+        mf = os.path.join(md,nonstdfile)
         nonstdfile = mf
+    else:
+      md = os.path.split(nonstdfile)[0]
 
     assert (os.path.exists(nonstdfile)), 'The non-std parameter file indicated in the tlusty model, '+nonstdfile0+', is not present' 
 
@@ -6616,11 +6620,11 @@ def read_tlusty_extras(modelfile,startdir=None):
   datadir0 = datadir
   if datadir != '':
     if not os.path.isabs(datadir): 
-      mf = os.path.join(startdir,datadir)
+      mf = os.path.join(md,datadir)
       if os.path.exists(mf): 
         datadir = mf
       else:
-        mf = os.path.join(synpledir,datadir)
+        mf = os.path.join(synpledir,'data',datadir)
         datadir = mf
 
   #continue reading the rest of the file into atominfo
