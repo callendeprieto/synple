@@ -5757,13 +5757,19 @@ def write5(teff,logg,abu, atom='ap18', ofile='fort.5', inlte=0, atommode=None, a
   f.close()
 
 
-def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8'):
+def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8', 
+           kvmicro=2.0, kabu=None,ktitle='written by synple/write8'):
 
   """Writes the model atmosphere for synspec
 
      MARCS models can be passed in 'Tlusty' (default, after read with 
            read_marcs_models2) or 'Kurucz' format
-     Phoenix and Kurucz models are passed to synspec formatted as 'Kurucz'
+     Phoenix and Kurucz models are passed to synspec formatted as 'kurucz'
+
+     kvmicro (microturbulence in km/s), kabu (abundance array), and ktitle 
+     (informative text to be added to the header)
+     are optional and only used when atmostype is 'kurucz'
+   
 
   """
 
@@ -5877,16 +5883,128 @@ def write8(teff, logg, nd, atmos, atmostype, ofile='fort.8'):
       for i in range(nd):
         f.write( '%f %e %e %e \n' % (atmos['t'][i], atmos['ne'][i], atmos['rho'][i], atmos['rho'][i]/atmos['mmw'][i]/1.67333e-24 + atmos['ne'][i] ) )
 
-    else:
-      f.write( 'TEFF %7.0f  GRAVITY %7.5f  LTE \n' % (teff, logg) )
-      for i in range(21): f.write('\n')
-      f.write( 'READ DECK6%3i RHOX,T,P,XNE \n' % nd )
-      for i in range(nd): 
-        f.write( '%e %f %e %e \n' % (atmos['dm'][i], atmos['t'][i], atmos['p'][i], atmos['ne'][i]) )
+    else: #Kurucz format
+        f.write( 'TEFF %7.0f  GRAVITY %7.5f  LTE \n' % (teff, logg) )
+        if kabu is None:
+            for i in range(21): f.write('\n')
+        else:
+
+            abu2 = np.array(kabu,dtype=float)
+            ntotalovernh = np.sum(abu2)
+            abu2 = abu2 / ntotalovernh
+            abu2[2:] = np.log10(abu2[2:])
+   
+            f.write( 'TITLE %30s\n' % (ktitle) )
+            opflags='1 1 1 1 1 1 1 1 1 1 1 1 1 0 1 0 0 0 0 0' 
+            f.write( ' OPACITY IFOP %s\n' % opflags)
+            f.write( ' CONVECTION ON   1.25 TURBULENCE OFF  0.00  0.00  0.00  0.00\n')
+            f.write ('ABUNDANCE SCALE  %8.5f ABUNDANCE CHANGE 1%8.5f 2 %8.5f\n' % (1.00000,abu2[0],abu2[1]) )
+            for i in np.arange(16):
+                dd = np.zeros(12)
+                sixs = np.arange(6, dtype=int)
+                dd[np.array(sixs * 2, dtype=int)] = 3 + 6*i + sixs
+                dd[np.array(sixs * 2 + 1, dtype=int)] = np.array(abu2,dtype=float)[np.array( 2 + 6*i + sixs, dtype=int)]
+                f.write( ' ABUNDANCE CHANGE %2i %6.2f %2i %6.2f %2i %6.2f %2i %6.2f %2i %6.2f %2i %6.2f\n' % tuple(dd) )
+#endfor
+
+            dd = np.zeros(2)
+            dd[0] = 3 + 6*16
+            dd[1] = abu2[2 + 6*16]
+            f.write(' ABUNDANCE CHANGE %2i %6.2f\n' % tuple(dd) )
+
+        if kvmicro is None:
+            f.write( 'READ DECK6%3i RHOX,T,P,XNE\n' % nd )
+            for i in range(nd):
+                f.write( '%e %f %e %e\n' % (atmos['dm'][i], atmos['t'][i], atmos['p'][i], atmos['ne'][i]) )
+
+        else:
+            f.write( 'READ DECK6%3i RHOX,T,P,XNE,ZERO,ZERO,VTURB\n' % nd )
+            for i in range(nd): 
+                f.write( '%e %f %e %e %8.2e %8.2e %8.2e\n' % (atmos['dm'][i], atmos['t'][i], atmos['p'][i], atmos['ne'][i], 0.0, 0.0, kvmicro*1e5) )
       
   f.close()
 
   return()
+
+
+def write_innterpol_model(filename,feh,cfe,afe,teff,logg,array,
+                          vmicro=2.0,title='iNNterpolated model'): 
+
+   """
+   write a model atmosphere from iNNterpol to disk 
+
+   Parameters
+   ----------
+   filename: str
+     name of the file to contail the model atmosphere
+
+   feh: float
+     metallicity [Fe/H]    
+     
+   cfe: float
+     carbon to iron abundance [C/Fe]
+
+   afe: float
+     alpha-element to iron abundance [alpha/Fe]
+
+   teff: float
+     effective temperature (K)
+
+   logg: float
+     surface gravity (log10 of the surface gravity in cm/s2)
+
+   array: numpy array of floats
+     atmospheric structure with as many rows as layers and 4 columns
+     corresponding to the log10 of column mass, temperature, gas pressure and 
+     electron density. This array is exactly what iNNterpol returns.
+     see https://github.com/cwestend/iNNterpol
+
+   vmicro: float
+     microturbulence (km/s)
+     (default is 2.)
+
+   title: str
+     explanatory text to be added to the header
+
+   Returns
+   -------    
+
+   no output, it creates a text file with a Kurucz-formatted model atmosphere
+
+   """
+
+   #we start by repeating the top layer, since it was dropped for 
+   #building the iNNterpol NNs and it will again be dropped by Synspec 
+
+   array = np.vstack( (array[0,:], array) )
+
+   nd = len(array[:,0])
+
+   atmos = np.zeros(nd, dtype={'names':('dm', 't', 'p','ne'),
+                          'formats':('f', 'f', 'f','f')})
+
+   array = 10.**array
+
+   atmos['dm'] = array[:,0]
+   atmos['t'] = array[:,1]
+   atmos['p'] = array[:,2]
+   atmos['ne'] = array[:,3]
+
+   symbol, mass, abu = elements()
+   if np.abs(feh) > 0.: abu[2:] = abu[2:] * 10.**feh
+   if np.abs(cfe) > 0.: abu[5] = abu[5] * 10.**cfe
+   if np.abs(afe) > 0.: 
+       #O, Ne, Mg, Si, S, Ca, and Ti.
+       for item in [8,10,12,14,16,20,22]:
+           abu[item-1] = abu[item-1] * 10.**afe
+
+
+   write8(teff,logg,nd,atmos,'kurucz',ofile=filename,
+          kvmicro=vmicro,kabu=abu,
+          ktitle=title)
+    
+   return()
+
 
 
 def read10(file='fort.10'):

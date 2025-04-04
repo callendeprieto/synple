@@ -11056,6 +11056,7 @@ c  502 FORMAT(/////////////////////10X,I3)
          AN=P/TEMP(ID)/BOLK
          DENS(ID)=WMM(ID)*(AN-ELEC(ID))
          WRITE(6,601) ID,DM(ID),TEMP(ID),ELEC(ID),DENS(ID)
+         WRITE(*,*) ID,DM(ID),TEMP(ID),ELEC(ID),DENS(ID)
          T=TEMP(ID)
          IF(IFMOL.GT.0.AND.T.LT.TMOLIM) THEN
 c           AN=TOTN(ID)
