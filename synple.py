@@ -4765,7 +4765,10 @@ def write_synth(synthfile,p,d,hdr=None,irregular=False):
       fout.write(' &SYNTH\n')
       for entry in block: 
         value = block[entry]
-        fout.write(' '+entry + ' = ' + str(value) + '\n')
+        if any(char.isalpha() for char in value):
+          fout.write(' '+entry + ' = ' + "'" + str(value) + "'" + '\n')
+        else:
+          fout.write(' '+entry + ' = ' + str(value) + '\n')
       fout.write(' /\n')
 
     #now the data	
