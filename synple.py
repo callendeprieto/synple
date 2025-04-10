@@ -9119,9 +9119,6 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
           sys.exit(1)
         wav = np.arange(len(s))*head['CD1_1']+head['CRVAL1']
         lenwav = len(wav)        
-        print('Warning: IDS files do not include uncertainties')
-        print('         assuming S/N = 20!')
-        err = flux * 0.05
         ivar4 = np.divide(1.,err**2, where = (err**2 > 0.) ,dtype = np.float128)
         ivar = np.float64(ivar4)
 
