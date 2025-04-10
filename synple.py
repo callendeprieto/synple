@@ -9106,7 +9106,17 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
         fi = fits.open(infile)
         head = fi[0].header
         s = fi[0].data
-        flux = s
+        if s.ndim == 1:
+          flux = s
+          print('Warning: the input IDS file does not include uncertainties')
+          print('         assuming S/N = 20!')
+          err = flux * 0.05
+        elif s.num == 3:
+          flux = s[0,1,:]
+          err = s[3,1,:]
+        else:
+          print('Error: we cannot hundle this type of IDS file')
+          sys.exit(1)
         wav = np.arange(len(s))*head['CD1_1']+head['CRVAL1']
         lenwav = len(wav)        
         print('Warning: IDS files do not include uncertainties')
