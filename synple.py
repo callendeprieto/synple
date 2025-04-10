@@ -9112,8 +9112,8 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
           print('         assuming S/N = 20!')
           err = flux * 0.05
         elif s.ndim == 3:
-          flux = s[0,1,:]
-          err = s[3,1,:]
+          flux = s[0,0,:]
+          err = s[3,0,:]
         else:
           print('Error: we cannot hundle this type of IDS file')
           sys.exit(1)
