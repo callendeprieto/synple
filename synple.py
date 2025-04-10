@@ -9117,7 +9117,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
         else:
           print('Error: we cannot hundle this type of IDS file')
           sys.exit(1)
-        wav = np.arange(len(s))*head['CD1_1']+head['CRVAL1']
+        wav = np.arange(len(flux))*head['CD1_1']+head['CRVAL1']
         lenwav = len(wav)        
         ivar4 = np.divide(1.,err**2, where = (err**2 > 0.) ,dtype = np.float128)
         ivar = np.float64(ivar4)
