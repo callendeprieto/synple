@@ -9111,7 +9111,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
           print('Warning: the input IDS file does not include uncertainties')
           print('         assuming S/N = 20!')
           err = flux * 0.05
-        elif s.num == 3:
+        elif s.ndim == 3:
           flux = s[0,1,:]
           err = s[3,1,:]
         else:
