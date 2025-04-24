@@ -416,13 +416,17 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
         nsamples = int((wrange[1] - wrange[0])/dw) + 1
         wave3 = np.arange(nsamples)*dw + wrange[0]
       cont = np.interp(wave3, wave2, flux2)
-      flux = np.interp(wave3, wave, flux)
+      #flux = np.interp(wave3, wave, flux)
+      tck = interpolate.splrep(wave,flux)
+      flux = interpolate.splev(wave3,tck)
       if intensity:
         nmu = 10
         inte2 = np.zeros((nsamples,nmu))
         continte2 = np.zeros((nsamples,nmu))
         for entry in range(nmu): 
-          inte2[:,entry] = np.interp(wave3, wave, inte[:,entry])
+          #inte2[:,entry] = np.interp(wave3, wave, inte[:,entry])
+          tck = interpolate.splrep(wave,inte[:,entry])
+          inte2[:,entry] = interpolate.splev(wave3, tck)
           continte2[:,entry] = np.interp(wave3, wave, continte[:,entry])
         inte = inte2
         continte = continte2
@@ -5015,8 +5019,6 @@ def rbf_get(synthfile, kernel='thin_plate_spline', neighbors=100):
 
   """
 
-  from scipy.interpolate import RBFInterpolator
-
 
   h, p, d = read_synth(synthfile)
 
@@ -5031,8 +5033,8 @@ def rbf_get(synthfile, kernel='thin_plate_spline', neighbors=100):
 
   
   print('deriving interpolation coefficients...')
-  #c= RBFInterpolator(iarr, d, kernel=kernel, neighbors = neighbors )
-  c= RBFInterpolator(p2, d, kernel=kernel, neighbors = neighbors )
+  #c= interpolate.RBFInterpolator(iarr, d, kernel=kernel, neighbors = neighbors )
+  c= interpolate.RBFInterpolator(p2, d, kernel=kernel, neighbors = neighbors )
 
   return(c, pmin, ptp)
 
@@ -5056,7 +5058,6 @@ def rbf_apply(c,pmin,ptp,par):
    should correspond to the parameters 
   """
 
-  from scipy.interpolate import RBFInterpolator
 	
   #map the parameters from physical to indices
   par2 = par.copy()
