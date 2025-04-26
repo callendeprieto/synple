@@ -10569,7 +10569,10 @@ def wtabmodfits(root, path=None):
       micro.append(np.nan)
 
 
-    chisq_tot.append(10.**float(cells[2+2*ndim]))
+    if float(cells[2+2*ndim]) < 300.:
+        chisq_tot.append(10.**float(cells[2+2*ndim]))
+    else:
+        chisq_tot.append(np.nan)
     snr_med.append(float(cells[1+2*ndim]))
     rv_adop.append(float(cells[0+2*ndim]))
     rv_err.append(np.nan)
