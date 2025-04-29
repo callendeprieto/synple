@@ -8351,7 +8351,7 @@ def fun(parvalues, *args ):
   return(chi)
 
 
-def cebas(p,d,flx,iva):
+def cebas(p,d,flx,iva,prior=None,filter=None):
 
     """Contrast-Expansion for BAS
     Evaluates the chi-squared between an observed spectrum
@@ -8371,8 +8371,17 @@ def cebas(p,d,flx,iva):
     flx: 1D numpy array of floats
       observed spectrum 
     
-    iva: 1D numpy array of float
+    iva: 1D numpy array of floats
       inverse variance for the observed spectrum
+
+    prior: 1D numpy array of floats
+      prior probability distribution, same size as rows in p
+      (default is None, for a flat prior)
+
+    filter: 1D numpy array of floats
+      weights to give to the different frequencies in the spectrum when
+      computing the merit function
+      (default is None, for flat weights)
     
     Returns
     -------
@@ -8393,7 +8402,12 @@ def cebas(p,d,flx,iva):
       
     """
 
-    chi = np.sum((d-flx)**2 * iva,-1)
+    if filter is None:
+      chi = np.sum((d-flx)**2 * iva,-1)
+    else:
+      assert np.abs(1.-np.sum(filter)) < 1e-10,'sum(filter) must be 1.'
+      chi = np.sum((d-flx)**2 * iva * filter,-1)
+
     beta = np.median(chi) / 1490. / 5.
     #print('min/max/median chi=',np.min(chi),np.max(chi),np.median(chi))
     #print('beta=',beta)
@@ -8407,6 +8421,9 @@ def cebas(p,d,flx,iva):
     eres = np.zeros(ndim)
     cov = np.zeros(ndim*(ndim+1)//2)
     likeli = np.exp(-chi/2./beta)
+    if prior is not None:
+      assert np.abs(1.-np.sum(prior)) < 1e-10,'sum(prior) must be 1.'
+      likeli = likeli * prior
     den = np.sum(likeli)
     #print('den=',den)
     k = 0
@@ -8430,7 +8447,8 @@ def cebas(p,d,flx,iva):
 
 
 def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None, 
-        focus=False, star=True, conti=0, absolut=False, wrange=None):
+        star=True, conti=0, absolut=False, wrange=None, 
+        focus=False, nail=[]):
 
     """Bayesian Algorithm in Synple
     
@@ -8466,11 +8484,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       to be corrected prior to the analysis. If equal to None, if E(B-V) is 
       among the parameters in the synthfile, it will be determined as such,  but 
       otherwise, only for DESI, it will be read from infile and corrected for
-    focus: bool
-      switch to activate a two-step algorithm in which a coarsely 
-      subsampled version of the grid is used to identify first where  
-      the optimal solution is, and then perform an focused analysis
-      in that region (a +/- 3 sigma volume)
     star: bool
       switch to limit the analysis of DESI spectra to stars. It has no
       effect on other data sets. Activating target disables star.
@@ -8487,6 +8500,17 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
     wrange: 2-element iterable
       spectral range to use in the fittings
       (default None, and sets wrange to the values of the adopted grid)
+    focus: bool
+      switch to activate a two-step algorithm in which a coarsely
+      subsampled version of the grid is used to identify first where
+      the optimal solution is, and then perform an focused analysis
+      in that region (a +/- 3 sigma volume)
+    nail: list
+      list of labels corresponding to the parameters to 'nail', that is
+      to rederive in a second pass holding fixed all other parameters, 
+      after the first global fit of all the parameters. This may be useful
+      for chemical elements which impact on limited spectral windows
+      (default is no parameter to nail, so an empty list)
    
     Returns
     -------
@@ -8512,6 +8536,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
     #models    
     hd, p, d = read_synth(synthfile)      
+    if len(nail) > 0: 
+      pnorm = (p - p.min(0))/(p.max(0)-p.min(0))
     x = lambda_synth(synthfile)
     lenx = len(x)
     if type(hd) is list:
@@ -8661,6 +8687,45 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             res, eres, cov, bmod, weights = cebas( p2[w,:], d2[w,:], spec, ivar )
             lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - len(res)) )
           print('focus selected ',len(np.where(w)[0]), 'points, giving a reduced lchi =',lchi)
+
+        if len(nail) > 0:
+          ndim = len(p[0,:])
+          ndim2 = int(hd0['N_OF_DIM'])
+          assert ndim == ndim2,'error: inconsistency in ndim'
+          resnorm1 = (res - p.min(0)) / (p.max(0) - p.min(0))
+          lind1 = np.abs(resnorm1 - pnorm).sum(1).argmin()
+          print('pars for flux1:',p[lind1])
+          flux1 = d[lind1,:]
+          if conti == 0:
+            flux1 = continuum(flux1)
+          weights0 = weights/np.sum(weights) 
+          for i in range(ndim): 
+            par = hd0['LABEL('+str(i+1)+')']
+            if par in nail:
+              #determine weights appropriate for par from response in the grid
+              resnorm2 = resnorm1 
+              resnorm2[i] = resnorm2[i] + 0.25
+              if resnorm2[i] > 1.0:
+                resnorm2[i] = resnorm2[i] - 0.5
+              lind2 = np.abs(resnorm2 - pnorm).sum(1).argmin()
+              print('pars for flux2:',p[lind2])
+              flux2 = d[lind2,:]
+              if conti == 0:
+                flux2 = continuum(flux2)
+              sens = np.abs(flux2 - flux1)/flux1
+              print('np.sum(sens)=',np.sum(sens))
+              sens = sens/np.sum(sens)
+              #plt.plot(x,sens)
+              #plt.show()
+              if focus:
+                res2, eres2, cov2, bmod2, weights2 = cebas(
+                p2[w,:], d2[w,:], spec, ivar, prior=weights0, filter=sens ) 
+              else:
+                res2, eres2, cov2, bmod2, weights2 = cebas(
+                p, d, spec, ivar, prior=weights0, filter=sens )
+
+              res[i] = res2[i]
+              eres[i] = eres2[i]
 
         if absolut:
           den = np.sum(weights)
@@ -9803,7 +9868,8 @@ def rewrite_synth(synthfile,outsynthfile=None):
 
 
 def bas_perfcheck(synthfile,n=1000,snr=1.e6,
-    kernel='thin_plate_spline', neighbors=100, focus=False, edgemargin=0.05):
+    kernel='thin_plate_spline', neighbors=100, conti=0, focus=False, 
+    nail=[],edgemargin=0.05):
 
     """Carry out a full performance check using bas on a synthetic grid
 
@@ -9822,6 +9888,12 @@ def bas_perfcheck(synthfile,n=1000,snr=1.e6,
     neighbors: int
        Number of nearest neighbors used to compute the interpolation
        coefficients for each grid point
+    conti: int
+      conti > 0 activates the continuum normalization (see 'continuum' function)      
+      by a running mean with a width of  'conti'
+      NOTE that the default (0) is dividing the input/model fluxes in each
+      spectrum by their mean value
+      (default 0)
     focus: bool
       switch to activate a two-step algorithm in which a coarsely 
       subsampled version of the grid is used to identify first where   
@@ -9856,7 +9928,8 @@ def bas_perfcheck(synthfile,n=1000,snr=1.e6,
     bas_test(checksynthfile,snr=snr)
     print('running ... ','bas(',checksynthfile[2:-4],'synthfile=',synthfile,')')
     now = time.time()
-    bas(checksynthfile[2:-4],synthfile=synthfile,focus=focus)
+    bas(checksynthfile[2:-4],synthfile=synthfile,conti=conti,
+        focus=focus,nail=nail)
     print('this run took ',time.time()-now,' seconds')
     result = fparams(checksynthfile[2:-4],synthfile=synthfile,
                      figure=checksynthfile[2:-4]+'-n'+str(n)+'-snr'+str(snr)+'.png')
