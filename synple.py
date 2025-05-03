@@ -8703,10 +8703,13 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             par = hd0['LABEL('+str(i+1)+')']
             if par in nail:
               #determine weights appropriate for par from response in the grid
-              resnorm2 = resnorm1 
-              resnorm2[i] = resnorm2[i] + 0.25
+              resnorm2 = resnorm1.copy() 
+              while (resnorm2 - resnorm1).max() < 1e-10:
+                resnorm2[i] = resnorm2[i] + 0.25
               if resnorm2[i] > 1.0:
-                resnorm2[i] = resnorm2[i] - 0.5
+                resnorm2 = resnorm1.copy()
+                while np.abs(resnorm1 - resnorm2).max() < 1e-10:
+                  resnorm2[i] = resnorm2[i] - 0.25
               lind2 = np.abs(resnorm2 - pnorm).sum(1).argmin()
               print('pars for flux2:',p[lind2])
               flux2 = d[lind2,:]
@@ -8714,6 +8717,9 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
                 flux2 = continuum(flux2)
               sens = np.abs(flux2 - flux1)/flux1
               print('np.sum(sens)=',np.sum(sens))
+              if np.sum(sens) < 1e-10:
+                print('Warning: failed to determine sensitivity to '+par)
+                sens[:] = 1
               sens = sens/np.sum(sens)
               #plt.plot(x,sens)
               #plt.show()
