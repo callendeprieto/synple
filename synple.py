@@ -8697,7 +8697,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           print('pars for flux1:',p[lind1])
           flux1 = d[lind1,:]
           if conti == 0:
-            flux1 = continuum(flux1)
+            flux1 = flux1/continuum(flux1)
           weights0 = weights/np.sum(weights) 
           for i in range(ndim): 
             par = hd0['LABEL('+str(i+1)+')']
@@ -8714,14 +8714,15 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               print('pars for flux2:',p[lind2])
               flux2 = d[lind2,:]
               if conti == 0:
-                flux2 = continuum(flux2)
+                flux2 = flux2/continuum(flux2)
               sens = np.abs(flux2 - flux1)/flux1
               print('np.sum(sens)=',np.sum(sens))
               if np.sum(sens) < 1e-10:
                 print('Warning: failed to determine sensitivity to '+par)
                 sens[:] = 1
               sens = sens/np.sum(sens)
-              #plt.plot(x,sens)
+              #plt.plot(x,flux1,x,flux2)
+              #plt.plot(x,sens/sens.max())
               #plt.show()
               if focus:
                 res2, eres2, cov2, bmod2, weights2 = cebas(
@@ -10212,7 +10213,7 @@ def wferrefits(root, path=None):
   npix = []
   for entry in xbandfiles:
     print('entry=',entry)
-    match = re.search('-[\w]*.wav',entry)
+    match = re.search('-*.wav',entry)
     tag = match.group()[1:-4]
     if match: band.append(tag.upper())
     x = loadtxt(proot+'-'+tag+'.wav')
@@ -10540,7 +10541,7 @@ def wtabmodfits(root, path=None):
   npix = []
   for entry in xbandfiles:
     print('entry=',entry)
-    match = re.search('-[\w]*.wav',entry)
+    match = re.search('-*.wav',entry)
     tag = match.group()[1:-4]
     if match: band.append(tag.upper())
     x = loadtxt(proot+'-'+tag+'.wav')
