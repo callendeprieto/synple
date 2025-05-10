@@ -9760,6 +9760,43 @@ polyorder : int
     return(savgol_filter(x, window_length, polyorder))	
 
 
+
+def cmedian(array,width=None,percentile=0.5):
+  """copy of my IDL routine by the same name
+
+  Parameters
+  ---------
+  array - numpy array   
+    input data
+  width - int        
+    width over which the median filter is applied
+  percentile -- float
+    percentile to use in the filter
+    (default is 0.5, 50% percentile, i.e. the median) 
+
+  Returns
+  -------
+  result: array after applying the median filter
+  """
+
+  nel=len(array)
+  if width is None: width=nel
+  assert width <= nel,'CMEDIAN: Error -- width must be < len(array)!'
+
+  if width == nel: 
+        nop=len(array)
+        result=np.sort(array)[np.floor(nop*percentile)]
+  else:
+        result=array.copy()
+        result[:]=0.
+        for i in range(nel):
+                data=array[np.max([i-width//2,0]):np.min([i+width//2,nel-1])+1]
+                nop=len(data)
+                result[i]=np.sort(data)[int(np.floor(nop*percentile))]
+
+  return(result)
+
+
 def xxc(x1,y1,iva1,x2,y2, maxv = 1000., plot=False):
 	
     """Determines the velocity offset to apply to the template
@@ -10579,6 +10616,7 @@ def wtabmodfits(root, path=None):
   logg=[]
   feh=[]
   alphafe=[]
+  cfe=[]
   micro=[]
   param=[]
   covar=[]
@@ -10608,7 +10646,7 @@ def wtabmodfits(root, path=None):
     assert (ncells > 6), 'Error, the file '+o[0]+' has less than 7 columns, which would correspond to ndim=2'
     par = np.zeros(ndim)
     #cov = np.zeros(ndim*ndim+ndim) 
-    cov = np.zeros((5,5))
+    cov = np.zeros((4,4))
         
     print('ndim=',ndim)
     print('ncells=',ncells)
@@ -10620,6 +10658,7 @@ def wtabmodfits(root, path=None):
       teff.append(float(cells[0]))
       logg.append(float(cells[1]))
       alphafe.append(np.nan)
+      cfe.append(np.nan)
       micro.append(np.nan)
 
 
@@ -10629,14 +10668,16 @@ def wtabmodfits(root, path=None):
       teff.append(float(cells[0]))
       logg.append(float(cells[1]))
       alphafe.append(np.nan)
+      cfe.append(np.nan)
       micro.append(np.nan)
 
     elif (ndim == 4):
       #Teff, logg, [Fe/H] and [a/Fe]
-      feh.append(float(cells[2]))
-      teff.append(float(cells[0]))
-      logg.append(float(cells[1]))
-      alphafe.append(float(cells[3]))
+      feh.append(float(cells[0]))
+      teff.append(float(cells[2]))
+      logg.append(float(cells[3]))
+      alphafe.append(np.nan))
+      cfe.append(float(cells[1]))
       micro.append(np.nan)
    
     elif (ndim == 5):
@@ -10646,6 +10687,7 @@ def wtabmodfits(root, path=None):
       teff.append(float(cells[0]))
       logg.append(float(cells[1]))
       alphafe.append(float(cells[3]))
+      cfe.append(np.nan)
       micro.append(np.nan)
 
 
@@ -10735,6 +10777,7 @@ def wtabmodfits(root, path=None):
   cols['LOGG'] = np.array(logg)
   cols['FEH'] = np.array(feh)
   cols['ALPHAFE'] = np.array(alphafe) 
+  cols['CFE'] = nparray(cfe)
   cols['LOG10MICRO'] = np.array(micro)
   cols['PARAM'] = np.vstack ( (teff, logg, feh, alphafe, micro) ).T
   cols['COVAR'] = np.array(covar)  #.reshape(len(success),5,5)
@@ -10758,9 +10801,10 @@ def wtabmodfits(root, path=None):
   'LOGG': 'Surface gravity (g in cm/s**2)',
   'FEH': 'Metallicity [Fe/H] = log10(N(Fe)/N(H)) - log10(N(Fe)/N(H))sun' ,
   'ALPHAFE': 'Alpha-to-iron ratio [alpha/Fe]',
+  'CFE: carbon-to-iron ratio [C/Fe]',
   'LOG10MICRO': 'Log10 of Microturbulence (km/s)',
   'PARAM': 'Array of atmospheric parameters ([Fe/H], [a/Fe], log10micro, Teff,logg)',
-  'COVAR': 'Covariance matrix for ([Fe/H], [a/Fe], log10micro, Teff,logg)',
+  'COVAR': 'Covariance matrix for ([Fe/H], [C/Fe], Teff,logg)',
   #'ELEM': 'Elemental abundance ratios to hydrogen [elem/H]',
   #'ELEM_ERR': 'Uncertainties in the elemental abundance ratios',
   'CHISQ_TOT': 'Total chi**2',
