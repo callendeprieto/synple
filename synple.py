@@ -10676,7 +10676,7 @@ def wtabmodfits(root, path=None):
       feh.append(float(cells[0]))
       teff.append(float(cells[2]))
       logg.append(float(cells[3]))
-      alphafe.append(np.nan))
+      alphafe.append(np.nan)
       cfe.append(float(cells[1]))
       micro.append(np.nan)
    
