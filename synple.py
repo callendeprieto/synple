@@ -10801,7 +10801,7 @@ def wtabmodfits(root, path=None):
   'LOGG': 'Surface gravity (g in cm/s**2)',
   'FEH': 'Metallicity [Fe/H] = log10(N(Fe)/N(H)) - log10(N(Fe)/N(H))sun' ,
   'ALPHAFE': 'Alpha-to-iron ratio [alpha/Fe]',
-  'CFE: carbon-to-iron ratio [C/Fe]',
+  'CFE': 'carbon-to-iron ratio [C/Fe]',
   'LOG10MICRO': 'Log10 of Microturbulence (km/s)',
   'PARAM': 'Array of atmospheric parameters ([Fe/H], [a/Fe], log10micro, Teff,logg)',
   'COVAR': 'Covariance matrix for ([Fe/H], [C/Fe], Teff,logg)',
