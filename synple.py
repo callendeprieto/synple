@@ -10664,11 +10664,11 @@ def wtabmodfits(root, path=None):
 
     elif (ndim == 3):
       #synple grids with Teff, logg and [Fe/H]
-      feh.append(float(cells[2]))
-      teff.append(float(cells[0]))
-      logg.append(float(cells[1]))
+      feh.append(float(cells[0]))
+      teff.append(float(cells[2]))
+      logg.append(float(cells[3]))
       alphafe.append(np.nan)
-      cfe.append(np.nan)
+      cfe.append(float(cells[1])
       micro.append(np.nan)
 
     elif (ndim == 4):
