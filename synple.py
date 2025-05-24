@@ -6678,9 +6678,10 @@ def read_tlusty_extras(modelfile,startdir=None):
   nonstdfile = entries[0][1:-1]
 
   nonstdfile0 = nonstdfile  
+  md = startdir
   if nonstdfile != '':
     if not os.path.isabs(nonstdfile): 
-      md = startdir
+      #md = startdir
       mf = os.path.join(md,nonstdfile)
       if os.path.isfile(mf): 
         nonstdfile = mf
@@ -7670,7 +7671,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
     if "N_P" in line: n_p = np.array(line.split()[2:],dtype=int)
     if "STEPS" in line: steps = np.array(line.split()[2:],dtype=float)
     if "LLIMITS" in line: llimits = np.array(line.split()[2:],dtype=float)
-    if "LABEL" in line: labels.append(line.split()[-1][1:-1])
+    if "LABEL" in line: labels.append(line.split()[-1])
     if "NPIX" in line: npix = int(line.split()[2])
     if "N_OF_DIM" in line: ndim = int(line.split()[2])
     if "WAVE" in line: wave = np.array(line.split()[2:],dtype=float)
@@ -7792,8 +7793,10 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
     if units == 'km/s':
       print('min(fwhm)=',np.min(fwhms))
       xx,yy = vgconv(x,y,np.min(fwhms),ppr=ppr)
+      logw = 1
     else:
       xx,yy = lgconv(x,y,np.min(fwhms),ppr=ppr)
+      logw = 0
   else:
     print('Warning -- fwhm <= 1.e-7, no convolution will be performed, ppr will be ignored')
     xx = x
@@ -7826,27 +7829,28 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
         continue
     if "NPIX" in line: line = " NPIX = "+str(len(xx))+"\n"
     if "WAVE" in line: 
-      if units == 'km/s': 
+      if logw == 1: 
         line = " WAVE = "+str(np.log10(xx[0]))+" "+str(np.log10(xx[1])-np.log10(xx[0]))+"\n"
+      elif logw == 2:
+        line = " WAVE = "+str(np.log(xx[0]))+" "+str(np.log(xx[1])-np.log      (xx[0]))+"\n"
       else:
         line = " WAVE = "+str(xx[0])+" "+str(xx[1]-xx[0])+"\n"
     if "LOGW" in line: 
-      if units == 'km/s':
-        line = " LOGW = 1 \n"
-      else:
-        line = " LOGW = 0 \n"
+        line = " LOGW = "+str(logw)+" \n"
     if "RESOLUTION" in line: 
-        if units == 'km/s': 
+        if np.min(fwhms) > 1.e-7 and units == 'km/s': 
             line = " RESOLUTION = "+str(clight/np.sqrt(clight**2/resolution**2 + np.min(fwhms)**2))+"\n"
-        else:
+        elif np.min(fwhms) > 1.e-7 and units == 'A':
             line = " RESOLUTION = "+str(np.mean(xx)/np.sqrt(np.mean(xx)**2/resolution**2 + np.min(fwhms)**2))+"\n"
+        else:
+            line = " RESOLUTION = "+str(resolution)+"\n"
     if line[1] != "/": fout.write(line)
 
   try: resolution
   except NameError: 
-        if units == 'km/s': 
+        if np.min(fwhms) > 1.e-7 and units == 'km/s': 
              line = " RESOLUTION = "+str(clight/np.min(fwhms))+"\n"
-        else:
+        elif np.min(fwhms) > 1.e-7 and units == 'A':
              line = " RESOLUTION = "+str(np.mean(wrange)/np.min(fwhms))+"\n"
         fout.write(line)
 
@@ -8704,13 +8708,15 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             if par in nail:
               #determine weights appropriate for par from response in the grid
               resnorm2 = resnorm1.copy() 
-              while (resnorm2 - resnorm1).max() < 1e-10:
-                resnorm2[i] = resnorm2[i] + 0.25
-              if resnorm2[i] > 1.0:
-                resnorm2 = resnorm1.copy()
-                while np.abs(resnorm1 - resnorm2).max() < 1e-10:
-                  resnorm2[i] = resnorm2[i] - 0.25
-              lind2 = np.abs(resnorm2 - pnorm).sum(1).argmin()
+              print('lind1=',lind1)
+              print('pnorm[lind1]=',pnorm[lind1])
+              print('np.delete(pnorm[lind1],i)=',np.delete(pnorm[lind1],i))
+              lind2 = np.abs(np.delete(pnorm[lind1],i) - np.delete(pnorm,i,axis=1)).sum(1).argsort()[1]
+              print('lind2=',lind2)
+              print('pars for flux2:',p[lind2])
+              linds = np.abs(np.delete(pnorm[lind1],i) - np.delete(pnorm,i,axis=1)).sum(1).argsort()[:10]
+              lind2 = np.abs(pnorm[lind1][i] - pnorm[linds][i]).sum(1).argsort()[-1]
+              print('lind2=',lind2)
               print('pars for flux2:',p[lind2])
               flux2 = d[lind2,:]
               if conti == 0:
@@ -8720,10 +8726,12 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               if np.sum(sens) < 1e-10:
                 print('Warning: failed to determine sensitivity to '+par)
                 sens[:] = 1
+              else:
+                sens[(sens < continuum(sens) + 2.*np.std(sens))] = 0.0
               sens = sens/np.sum(sens)
-              #plt.plot(x,flux1,x,flux2)
-              #plt.plot(x,sens/sens.max())
-              #plt.show()
+              plt.plot(x,flux1,x,flux2)
+              plt.plot(x,sens/sens.max())
+              plt.show()
               if focus:
                 res2, eres2, cov2, bmod2, weights2 = cebas(
                 p2[w,:], d2[w,:], spec, ivar, prior=weights0, filter=sens ) 
