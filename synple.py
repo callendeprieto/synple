@@ -8710,12 +8710,15 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               resnorm2 = resnorm1.copy() 
               print('lind1=',lind1)
               print('pnorm[lind1]=',pnorm[lind1])
-              print('np.delete(pnorm[lind1],i)=',np.delete(pnorm[lind1],i))
-              lind2 = np.abs(np.delete(pnorm[lind1],i) - np.delete(pnorm,i,axis=1)).sum(1).argsort()[1]
-              print('lind2=',lind2)
-              print('pars for flux2:',p[lind2])
+              #get the closet 10 models in the parameters other than i
               linds = np.abs(np.delete(pnorm[lind1],i) - np.delete(pnorm,i,axis=1)).sum(1).argsort()[:10]
-              lind2 = np.abs(pnorm[lind1][i] - pnorm[linds][i]).sum(1).argsort()[-1]
+              #print('linds=',linds)
+              #and select the farthest in parameter i to compute derivatives
+              ii = np.arange(ndim)
+              ii = np.delete(ii,i) 
+              #print('i,ii=',i,ii)
+              lind2 = np.abs(np.delete(pnorm[lind1],ii) - np.delete(pnorm[linds],ii,axis=1)).sum(1).argsort()[-1]
+              lind2 = linds[lind2]
               print('lind2=',lind2)
               print('pars for flux2:',p[lind2])
               flux2 = d[lind2,:]
@@ -8727,17 +8730,27 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
                 print('Warning: failed to determine sensitivity to '+par)
                 sens[:] = 1
               else:
-                sens[(sens < continuum(sens) + 2.*np.std(sens))] = 0.0
+                sens[(sens < continuum(sens) + 3.*np.std(sens))] = 0.0
               sens = sens/np.sum(sens)
-              plt.plot(x,flux1,x,flux2)
-              plt.plot(x,sens/sens.max())
-              plt.show()
+              #plt.plot(x,flux1,x,flux2)
+              #plt.plot(x,sens/sens.max())
+              #plt.plot(x,continuum(sens)/sens.max(),
+              #          x,(continuum(sens)+2.*np.std(sens))/sens.max(),
+              #          x,(continuum(sens)+3.*np.std(sens))/sens.max(),
+              #plt.show()
               if focus:
                 res2, eres2, cov2, bmod2, weights2 = cebas(
                 p2[w,:], d2[w,:], spec, ivar, prior=weights0, filter=sens ) 
               else:
                 res2, eres2, cov2, bmod2, weights2 = cebas(
                 p, d, spec, ivar, prior=weights0, filter=sens )
+
+              if np.isnan(res2).any():
+                print('nan detected!, min-max of sens is',sens.min(),sens.max())
+                print('weights0=',weights0)
+                print('sens=',sens)
+                print('spec=',spec)
+                print('ivar=',ivar)
 
               res[i] = res2[i]
               eres[i] = eres2[i]
