@@ -81,9 +81,6 @@ DESI:
   paste_synth: [ 
     {'synthfile': ['n_B-DESI.dat','n_R-DESI.dat','n_Z-DESI.dat'],
      'outsynthfile': 'n_BRZ-DESI.dat'} ]
-  synth_rbf:  [ 
-    {'synthfile': 'n_BRZ-DESI.dat', 
-      'n': 10000, 'rv': False, 'ebv': False} ]
   bas_perfcheck: [
     {'synthfile': 'n_BRZ-DESI.dat'},
     {'synthfile': 'n_BRZ-DESI.dat', 'snr': 30 },
