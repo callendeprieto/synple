@@ -32,6 +32,8 @@ XP:
   gsynth: [
     {'fwhm': 299.792458, 'units': 'km/s', 'ppr': 3., 'wrange':[3000., 11000.],
      'outsynthfile': 'n_R1000.dat'} ]
+  rewrite_synth: [
+    {'synthfile': 'n_R1000.dat', 'outsynthfile': 'i_R1000.dat'}]
   xplsf: [
     {'synthfile': 'i_R1000.dat', 'outsynthfile': 'v_XP.dat'} ]
   pickle_synth:  [
