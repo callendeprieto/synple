@@ -9880,9 +9880,9 @@ def xxc(x1,y1,iva1,x2,y2, maxv = 1000., plot=False):
     return(delta,edelta)
  
  
-def bas_build(synthfile):
+def bas_build(synthfile,config='bas-build.haml'):
 
-    conf = load_conf(config='bas-build.yaml',confdir=confdir)
+    conf = load_conf(config=config,confdir=confdir)
 
     ending = synthfile.find('.dat') 
     if ending < -1: 
