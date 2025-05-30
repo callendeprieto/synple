@@ -9147,11 +9147,19 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
         wav = s['WAVELENGTH']
         wav = vac2air(wav)
         lenwav = len(wav)
-        flux = s['FLUX']
+        if 'FLUX' in s.names:
+          flux = s['FLUX']
+        elif 'Scattered Light, Slit Offcenter, and Dust Corrected' in s.names:
+          flux = s['Scattered Light, Slit Offcenter, and Dust Corrected']
+        else:
+          print('Error: cannot read the input file -- does not contain the expected flux entries')
+          sys.exit(1)
         if 'STATERROR' in s.names:
           err = s['STATERROR']
         elif 'STATERR' in s.names:
           err = s['STATERR']
+        elif 'Error_scattered_slit_dust' in s.names:
+          err = s['Error_scattered_slit_dust']
         else:
           print('Warning: cannot find the statistical error in the file from HST')
           print('         assuming S/N = 20!')
