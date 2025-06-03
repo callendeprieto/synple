@@ -6780,6 +6780,52 @@ def read_tlusty_extras(modelfile,startdir=None):
   return (madaffile, nonstdfile, nonstd, numpar, datadir, inlte, atommode, atominfo)
 
 
+def rsnap(file):
+  """Reading an ASSET-format (Lars) 3D snapshot
+  """
+
+  f=open(file,'r')
+  entries=['']
+  go=True
+  while go:
+    line=f.readline()
+    entries=line.split()
+    print(line)
+    if (entries[0][:3] == 'SNAP'): snap=int(entries[1])
+    if (entries[0][:2] == 'NX'): nx=int(entries[1])
+    if (entries[0][:2] == 'NY'): ny=int(entries[1])
+    if (entries[0][:2] == 'NZ'): nz=int(entries[1])
+    if (entries[0] == 'GRIDDATA-X'): go=False
+
+  x=np.zeros(nx,dtype=float)
+  y=np.zeros(ny,dtype=float)
+  z=np.zeros(nz,dtype=float)
+  t=np.zeros((nx,ny,nz),dtype=float)
+  rho=np.zeros((nx,ny,nz),dtype=float)
+  v=np.zeros((3,nx,ny,nz),dtype=float) 
+  for i in range(nx): x[i]=float(f.readline())
+  line=f.readline()
+  for j in range(ny): y[j]=float(f.readline())
+  line=f.readline()
+  for k in range(nz): z[k]=float(f.readline())
+  line=f.readline()
+  print('reading data ...')
+  for i in range(nx):
+    for j in range(ny):
+      for k in range(nz):
+        line=f.readline()
+        entries=line.split()
+        #print(line)
+        #print(i,j,k,entries[0])
+        t[i,j,k] = float(entries[0])
+        rho[i,j,k] = float(entries[1])
+        v[:,i,j,k] = np.array(entries[2:],dtype=float)
+
+
+  return x,y,z,t,rho,v
+
+       
+
 def read_phoenix_model(modelfile):
 
   """Reads a FITS Phoenix model atmospheres
@@ -8409,6 +8455,7 @@ def cebas(p,d,flx,iva,prior=None,filter=None):
     if filter is None:
       chi = np.sum((d-flx)**2 * iva,-1)
     else:
+      print('np.sum(filter)=',np.sum(filter))
       assert np.abs(1.-np.sum(filter)) < 1e-10,'sum(filter) must be 1.'
       chi = np.sum((d-flx)**2 * iva * filter,-1)
 
@@ -8736,7 +8783,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               #plt.plot(x,sens/sens.max())
               #plt.plot(x,continuum(sens)/sens.max(),
               #          x,(continuum(sens)+2.*np.std(sens))/sens.max(),
-              #          x,(continuum(sens)+3.*np.std(sens))/sens.max(),
+              #          x,(continuum(sens)+3.*np.std(sens))/sens.max())
               #plt.show()
               if focus:
                 res2, eres2, cov2, bmod2, weights2 = cebas(
