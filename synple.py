@@ -101,7 +101,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
     steprot=0.0, stepfwhm=0.0,  intensity=False, lineid=False, tag=False,  \
     clean=True, save=False, synfile=None, \
-    lte=None, compute=True, tmpdir=None):
+    lte=False, compute=True, tmpdir=None):
 
   """Computes a synthetic spectrum
 
@@ -189,7 +189,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       class of Phoenix models used here are always LTE models. Tlusty models
       can be LTE or NLTE, and this keyword will ignore the populations and compute
       assuming LTE for a input NLTE Tlusty model.
-      (default None)
+      (default False)
   compute: bool
       set to False to skip the actual synspec run, triggering clean=False
       (default True)
@@ -1587,7 +1587,7 @@ def mkflt(dltfile,wavelengths,blocks=[],fwhm=0.0,unit='km/s',outdir='.'):
 def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
     vmicro=None, vrot=0.0, fwhm=0.0, vmacro=0.0,  \
     linelist=linelist0, atom='ap18', \
-    steprot=0.0, stepfwhm=0.0,  clean=True, save=None, lte=True, 
+    steprot=0.0, stepfwhm=0.0,  clean=True, save=None, lte=False, 
     nchem=1, **kargs):
 
   """Sets up a directory tree for computing synthetic spectra for a list of files in 
@@ -8391,7 +8391,7 @@ def fun(parvalues, *args ):
     linelist=linelist, atom=atom, vrot=vrot, fwhm=fwhm, vmacro=vmacro, \
     steprot=steprot, stepfwhm=stepfwhm,  intensity=False, \
     lineid=False, tag=False,  \
-    clean=True, save=False, synfile=None, lte=None, compute=True, tmpdir=None)
+    clean=True, save=False, synfile=None, lte=False, compute=True, tmpdir=None)
 
   chi = np.sum( (ydata - np.interp(xdata, out[0], out[1]/out[2]) )**2)
   
