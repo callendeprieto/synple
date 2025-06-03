@@ -2681,7 +2681,7 @@ def collect_marcs(modeldir=modeldir, tteff=None, tlogg=None, \
                     filename = (sformat % (a1,teff,logg,code,feh,afe,cfe,nfe,ofe,rfe,sfe) )
 
                     if files_in_folders:
-                      folder = ("mod_z%+.2f" % (feh) )
+                      folder = ("???_z%+.2f" % (feh) )
                     else:
                       folder = ''
 
