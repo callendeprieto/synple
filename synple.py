@@ -6461,7 +6461,9 @@ def read_tlusty_model(modelfile,startdir=None):
 
   atm = np.reshape(atm, (nd,abs(numpar)) )
 
+  addone = 0
   if (numpar < 0):  # 4th column is number density n
+    addone = 1
     if (numpop > 0): # explicit (usually NLTE) populations
       if modelfile[-2] == ".":  # NLTE populations or departure coefficients
         tp = np.dtype([('dm', 'f'), ('t','f'), ('ne','f'), ('rho','f'), ('n','f'), ('pop', 'f', (numpop))])
@@ -6487,9 +6489,9 @@ def read_tlusty_model(modelfile,startdir=None):
   if (numpar < 0): atmos['n'] = atm [:,3]
   if (numpop > 0): 
     if modelfile[-2] == ".":
-      atmos['pop'] = atm [:,3:]
+      atmos['pop'] = atm [:,3+addone:]
     else:
-      atmos['dep'] = atm [:,3:]
+      atmos['dep'] = atm [:,3+addone:]
 
   return (teff,logg,vmicro,list(abu.values()),nd,atmos)
 
