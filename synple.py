@@ -8476,7 +8476,10 @@ def cebas(p,d,flx,iva,prior=None,filter=None):
     likeli = np.exp(-chi/2./beta)
     if prior is not None:
       assert np.abs(1.-np.sum(prior)) < 1e-10,'sum(prior) must be 1.'
-      likeli = likeli * prior
+      if np.sum(likeli*prior) > 0.:
+        likeli = likeli * prior
+      else:
+        'warning: prior and likelihood are not compatible'
     den = np.sum(likeli)
     #print('den=',den)
     k = 0
@@ -8779,7 +8782,13 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
                 print('Warning: failed to determine sensitivity to '+par)
                 sens[:] = 1
               else:
-                sens[(sens < continuum(sens) + 3.*np.std(sens))] = 0.0
+                w = range(len(sens))
+                ns = 3
+                sens[(sens < continuum(sens) + ns * np.std(sens))] = 0.0
+                while np.sum(sens) < 1e-10: 
+                  ns = ns - 1
+                  sens = np.abs(flux2 - flux1)/flux1
+                  sens[(sens < continuum(sens) + ns * np.std(sens))] = 0.0
               sens = sens/np.sum(sens)
               #plt.plot(x,flux1,x,flux2)
               #plt.plot(x,sens/sens.max())
@@ -8800,6 +8809,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
                 print('sens=',sens)
                 print('spec=',spec)
                 print('ivar=',ivar)
+                stop
 
               res[i] = res2[i]
               eres[i] = eres2[i]
@@ -9989,9 +9999,8 @@ def rewrite_synth(synthfile,outsynthfile=None):
 
 
 
-def bas_perfcheck(synthfile,n=1000,snr=1.e6,
-    kernel='thin_plate_spline', neighbors=100, conti=0, focus=False, 
-    nail=[],edgemargin=0.05):
+def bas_perfcheck(synthfile,n=100,snr=1.e6,
+    conti=0, focus=False, nail=[], interpol=False, edgemargin=0.05):
 
     """Carry out a full performance check using bas on a synthetic grid
 
@@ -10001,17 +10010,12 @@ def bas_perfcheck(synthfile,n=1000,snr=1.e6,
       Name of the input synth file
     n: int
       Number of mock spectra to produce for the test
-      (default is 1000)
+      (default is 100)
     snr: float
       Signal to noise ratio for the mock spectra
       (default is 1.e6)
-    kernel: string
-      Type of RBF function (linear, thin_plate_spline, cubic, gaussian ...)
-    neighbors: int
-       Number of nearest neighbors used to compute the interpolation
-       coefficients for each grid point
     conti: int
-      conti > 0 activates the continuum normalization (see 'continuum' function)      
+      conti > 0 activates the continuum normalization (see 'continuum' function)
       by a running mean with a width of  'conti'
       NOTE that the default (0) is dividing the input/model fluxes in each
       spectrum by their mean value
@@ -10021,9 +10025,13 @@ def bas_perfcheck(synthfile,n=1000,snr=1.e6,
       subsampled version of the grid is used to identify first where   
       the optimal solution is, and then perform an focused analysis
       in that region (a +/- 3 sigma volume) 
+   interpol: bool
+      switch to derive the testing data from RBF interpolation instead of
+      simply extracting from the actual grid
+      (default False)
    edgemargin: float
       fraction from the min/max values of the input parameters to exclude
-      from the range to sample
+      from the range to sample -- ony valid when interpol is True
       (default 0.05 -- exclude 5% from the edges)
 
 
@@ -10043,21 +10051,43 @@ def bas_perfcheck(synthfile,n=1000,snr=1.e6,
       else:
         ntot = 0
 
-    checksynthfile=synthfile+'-check.dat'
-    synth_rbf(synthfile,outsynthfile=checksynthfile,n=n,
-              rv=False,ebv=False,kernel=kernel,neighbors=neighbors, 
-              edgemargin=edgemargin)
-    bas_test(checksynthfile,snr=snr)
-    print('running ... ','bas(',checksynthfile[2:-4],'synthfile=',synthfile,')')
+    testsynthfile=synthfile+'-test.dat'
+
+    if interpol:
+      #interpolation to generate mock data for test
+      trainsynthfile=synthfile
+      synth_rbf(synthfile,outsynthfile=testsynthfile,n=n,
+                rv=False,ebv=False,kernel='thin_plate_spline',neighbors=100, 
+                edgemargin=edgemargin)
+
+    else:
+      #straight test using part of the grid sample
+      hd, p, d = read_synth(synthfile) 
+      trainsynthfile=synthfile+'-train.dat'
+      rng = np.random.default_rng()
+      testing = rng.choice(ntot, size=n, replace=False)    
+      training = list(set(range(ntot)) - set(testing))
+      testing_hd = hd.copy()
+      testing_hd['NTOT'] = n
+      training_hd = hd.copy()
+      training_hd['NTOT'] = ntot - n
+      write_synth(testsynthfile,p[testing,:],d[testing,:],testing_hd)
+      write_synth(trainsynthfile,p[training,:],d[training,:],training_hd)
+
+    bas_test(testsynthfile,snr=snr)
+    print('running ... ','bas(',testsynthfile[2:-4],'synthfile=',trainsynthfile,')')
     now = time.time()
-    bas(checksynthfile[2:-4],synthfile=synthfile,conti=conti,
+    bas(testsynthfile[2:-4],synthfile=trainsynthfile,conti=conti,
         focus=focus,nail=nail)
+
+
     print('this run took ',time.time()-now,' seconds')
-    result = fparams(checksynthfile[2:-4],synthfile=synthfile,
-                     figure=checksynthfile[2:-4]+'-n'+str(n)+'-snr'+str(snr)+'.png')
+    result = fparams(testsynthfile[2:-4],synthfile=trainsynthfile,
+                     figure=testsynthfile[2:-4]+'-n'+str(n)+'-snr'+str(snr)+'.png')
 
 
-    fh = open('-'.join((synthfile,str(n),kernel,str(neighbors),'bas_perfcheck.dat')),'w')
+
+    fh = open('-'.join((synthfile,str(n),'bas_perfcheck.dat')),'w')
     fh.write(str(n)+' '+str(ntot)+' '+' '.join(map(str,np.concatenate(result)))+'\n')
     fh.close()
     
