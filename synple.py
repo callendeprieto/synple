@@ -11114,7 +11114,7 @@ def get_versions():
   return(ver)
 
     
-def fparams(root,synthfile=None,figure=None):
+def fparams(root,synthfile=None,figure=None,condition=None):
     """"Evaluates the agreement between input/output parameters in 
     FERRE (root.ipf and root.opf) files
     
@@ -11127,7 +11127,13 @@ def fparams(root,synthfile=None,figure=None):
     figure: str
       name for the output file with a summary figure (usually a png file)
      (default is None, and the plot is only shown on the screen)
-      
+    condition: str
+      condition to limit the sample. Conditions on the true (ipf) parameters
+      should be specified on v and conditions on the derived (opf) parameters
+      should be specified on o. For example, to limit the true parameters to 
+      have values of the first dimension larger than 100 condition should be
+      '(v[:,0] > 100)'
+      (default is None) 
     Returns
     -------
     result: numpy array of floats
@@ -11154,6 +11160,10 @@ def fparams(root,synthfile=None,figure=None):
     ndim = int(h['N_OF_DIM'])
     v = np.loadtxt(root + '.ipf',usecols=np.arange(ndim)+1)
     o = np.loadtxt(root + '.opf',usecols=np.arange(ndim)+1)
+    if condition is not None:
+      w = eval(condition)
+      v = v[w,:]
+      o = o[w,:]
     result = np.percentile(o-v,[15.85,50.,84.15],axis=0)
 
 
