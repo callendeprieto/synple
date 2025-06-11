@@ -10042,6 +10042,7 @@ def bas_perfcheck(synthfile,n=100,snr=1.e6,
     
     """
     hd = head_synth(synthfile)
+    if type(hd) is list: hd = hd[1]
     if 'NTOT' in hd: 
       ntot = int(hd['NTOT'])
     else:
@@ -10068,9 +10069,17 @@ def bas_perfcheck(synthfile,n=100,snr=1.e6,
       testing = rng.choice(ntot, size=n, replace=False)    
       training = list(set(range(ntot)) - set(testing))
       testing_hd = hd.copy()
-      testing_hd['NTOT'] = n
       training_hd = hd.copy()
-      training_hd['NTOT'] = ntot - n
+      if type(hd) is list:
+        for entry in testing_hd:
+          entry['NTOT'] = n
+      else:
+        testing_hd['NTOT'] = n
+      if type(hd) is list:
+        for entry in training_hd:
+          entry['NTOT'] = ntot - n
+      else:
+        training_hd['NTOT'] = ntot - n
       write_synth(testsynthfile,p[testing,:],d[testing,:],testing_hd)
       write_synth(trainsynthfile,p[training,:],d[training,:],training_hd)
 
