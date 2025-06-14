@@ -4511,8 +4511,10 @@ def head_synth(synthfile):
         file=open(synthfile,'r')
         line=file.readline()
         header={}
+        nlines=1
         while (1):
             line=file.readline()
+            nlines+=1
             part=line.split('=')
             if (len(part) < 2): 
               meta=meta+1
@@ -4523,14 +4525,18 @@ def head_synth(synthfile):
                 if (meta > 0): multi_header.append(header)
                 header={}
                 line=file.readline()
+                nlines+=1
             else:
               k=part[0].strip()
               v=part[1].strip()
-              header[k]=v
+              header[k]=v.strip("'")
               if k == 'MULTI': 
                 multi=int(v)
                 multi_header=[]
-        if (multi > 1): header=multi_header
+        if (multi > 1): 
+          header=multi_header
+
+        file.close()
 
     return header
 
@@ -10053,6 +10059,18 @@ def bas_perfcheck(synthfile,n=100,snr=1.e6,
         ntot = 0
 
     testsynthfile=synthfile+'-test.dat'
+
+    if 'TYPE' in hd:
+      if hd['TYPE'] == 'irregular':
+        if interpol == False:
+          print('Warning: interpol must be True in bas_perfcheck for regular grids')
+        interpol = True
+
+    if 'type' in hd:
+      if hd['type'] == 'irregular':
+        if interpol == False:
+          print('Warning: interpol must be True in bas_perfcheck for regular grids')
+        interpol = True 
 
     if interpol:
       #interpolation to generate mock data for test
