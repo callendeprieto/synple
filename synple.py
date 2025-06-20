@@ -9953,7 +9953,7 @@ def xxc(x1,y1,iva1,x2,y2, maxv = 1000., plot=False):
     return(delta,edelta)
  
  
-def bas_build(synthfile,config='bas-build.haml'):
+def bas_build(synthfile,config='bas-build.yaml'):
 
     conf = load_conf(config=config,confdir=confdir)
 
