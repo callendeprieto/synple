@@ -9622,14 +9622,13 @@ def vac2air(wavelength):
        
     Based on Ciddor (1996). Copied literally from the IDL Astro library
     """
-    if type(wavelength) is list or type(wavelength) is float or type(wavelength) is tuple:
-        wavelength = np.array(wavelength)
-    g = (wavelength >= 2000.)
-    sigma2 = (1e4/wavelength[g])**2
+    wavelength2 = np.array(wavelength)
+    g = (wavelength2 >= 2000.)
+    sigma2 = (1e4/wavelength2[g])**2
     fact = 1. +  5.792105e-2/(238.0185 - sigma2) + 1.67917e-3/( 57.362 - sigma2)
-    wavelength[g] = wavelength[g]/fact
+    wavelength2[g] = wavelength2[g]/fact
 
-    return(wavelength)
+    return(wavelength2)
     
 def xc(y1,y2, npoints=None, gaus=False, plot=False):
     """Determines a pixel offset between two arrays by 
