@@ -1750,7 +1750,7 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
         idir = idir + 1
         dir = ( "hyd%07d" % (idir) )
         print(type(str(idir)),type(dir),type(entry),type(str(vmicro1)))
-        cadena = str(idir)+' folder='+dir+' model='+entry+' vmicro='+str(vmicro1)
+        cadena = str(idir)+' folder='+dir+' model='+str(entry)+' vmicro='+str(vmicro1)
         iel = 0
         for el in symbols:
            cadena = cadena + ' ['+el+'/Fe]='+str(chems[el][ichem]) + ' '
