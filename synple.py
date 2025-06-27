@@ -8463,13 +8463,16 @@ def cebas(p,d,flx,iva,prior=None,filter=None):
     if filter is None:
       chi = np.sum((d-flx)**2 * iva,-1)
     else:
-      print('np.sum(filter)=',np.sum(filter))
+      #print('np.sum(filter)=',np.sum(filter))
       assert np.abs(1.-np.sum(filter)) < 1e-10,'sum(filter) must be 1.'
       chi = np.sum((d-flx)**2 * iva * filter,-1)
 
     beta = np.median(chi) / 1490. / 5.
-    #print('min/max/median chi=',np.min(chi),np.max(chi),np.median(chi))
-    #print('beta=',beta)
+    print('beta=',beta)
+    print('len(chi)=',len(chi))
+    print('min/max/median chi=',chi.min(),chi.max(),np.median(chi))
+    print('beta=',beta)
+    print('chi.shape=',chi.shape)
     while np.exp(-np.min(chi)/2./beta) <= 0.0:
       beta = beta * 2.
       #print('-- new beta=',beta)
@@ -8598,8 +8601,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
     #models    
     hd, p, d = read_synth(synthfile)      
-    if len(nail) > 0: 
-      pnorm = (p - p.min(0))/(p.max(0)-p.min(0))
     x = lambda_synth(synthfile)
     lenx = len(x)
     if type(hd) is list:
@@ -8745,15 +8746,20 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         if focus:
           eres[eres < 1e-17] = 1e-17 # avoid division by zero
           w = ( (abs(p2-res)/eres).max(1) < 3. )
-          if len(np.where(w)[0]) > 0:
+          if len(np.where(w)[0]) > 1:
             res, eres, cov, bmod, weights = cebas( p2[w,:], d2[w,:], spec, ivar )
-            lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - len(res)) )
+            lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / 
+                                   (len(bmod) - len(res)) )
+          else:
+            w = range(len(p[:,0]))
+
           print('focus selected ',len(np.where(w)[0]), 'points, giving a reduced lchi =',lchi)
 
         if len(nail) > 0:
           ndim = len(p[0,:])
           ndim2 = int(hd0['N_OF_DIM'])
           assert ndim == ndim2,'error: inconsistency in ndim'
+          pnorm = (p - p.min(0)) / (p.max(0)-p.min(0))
           resnorm1 = (res - p.min(0)) / (p.max(0) - p.min(0))
           lind1 = np.abs(resnorm1 - pnorm).sum(1).argmin()
           print('pars for flux1:',p[lind1])
@@ -8761,13 +8767,14 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           if conti == 0:
             flux1 = flux1/continuum(flux1)
           weights0 = weights/np.sum(weights) 
+
           for i in range(ndim): 
             par = hd0['LABEL('+str(i+1)+')']
             if par in nail:
               #determine weights appropriate for par from response in the grid
               resnorm2 = resnorm1.copy() 
-              print('lind1=',lind1)
-              print('pnorm[lind1]=',pnorm[lind1])
+              #print('lind1=',lind1)
+              #print('pnorm[lind1]=',pnorm[lind1])
               #get the closet 10 models in the parameters other than i
               linds = np.abs(np.delete(pnorm[lind1],i) - np.delete(pnorm,i,axis=1)).sum(1).argsort()[:10]
               #print('linds=',linds)
@@ -8777,18 +8784,17 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               #print('i,ii=',i,ii)
               lind2 = np.abs(np.delete(pnorm[lind1],ii) - np.delete(pnorm[linds],ii,axis=1)).sum(1).argsort()[-1]
               lind2 = linds[lind2]
-              print('lind2=',lind2)
+              #print('lind2=',lind2)
               print('pars for flux2:',p[lind2])
               flux2 = d[lind2,:]
               if conti == 0:
                 flux2 = flux2/continuum(flux2)
               sens = np.abs(flux2 - flux1)/flux1
-              print('np.sum(sens)=',np.sum(sens))
+              #print('np.sum(sens)=',np.sum(sens))
               if np.sum(sens) < 1e-10:
                 print('Warning: failed to determine sensitivity to '+par)
                 sens[:] = 1
               else:
-                w = range(len(sens))
                 ns = 3
                 sens[(sens < continuum(sens) + ns * np.std(sens))] = 0.0
                 while np.sum(sens) < 1e-10: 
@@ -8802,12 +8808,16 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               #          x,(continuum(sens)+2.*np.std(sens))/sens.max(),
               #          x,(continuum(sens)+3.*np.std(sens))/sens.max())
               #plt.show()
+
               if focus:
-                res2, eres2, cov2, bmod2, weights2 = cebas(
-                p2[w,:], d2[w,:], spec, ivar, prior=weights0, filter=sens ) 
+                p3 = p2[w,:]
+                d3 = d2[w,:]
               else:
-                res2, eres2, cov2, bmod2, weights2 = cebas(
-                p, d, spec, ivar, prior=weights0, filter=sens )
+                p3 = p
+                d3 = d
+  
+              res2, eres2, cov2, bmod2, weights2 = cebas( p3, 
+                    d3, spec, ivar, prior = weights0, filter=sens )
 
               if np.isnan(res2).any():
                 print('nan detected!, min-max of sens is',sens.min(),sens.max())
@@ -8816,7 +8826,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
                 print('spec=',spec)
                 print('ivar=',ivar)
                 stop
-
+  
               res[i] = res2[i]
               eres[i] = eres2[i]
 
