@@ -8468,11 +8468,6 @@ def cebas(p,d,flx,iva,prior=None,filter=None):
       chi = np.sum((d-flx)**2 * iva * filter,-1)
 
     beta = np.median(chi) / 1490. / 5.
-    print('beta=',beta)
-    print('len(chi)=',len(chi))
-    print('min/max/median chi=',chi.min(),chi.max(),np.median(chi))
-    print('beta=',beta)
-    print('chi.shape=',chi.shape)
     while np.exp(-np.min(chi)/2./beta) <= 0.0:
       beta = beta * 2.
       #print('-- new beta=',beta)
@@ -8762,7 +8757,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           pnorm = (p - p.min(0)) / (p.max(0)-p.min(0))
           resnorm1 = (res - p.min(0)) / (p.max(0) - p.min(0))
           lind1 = np.abs(resnorm1 - pnorm).sum(1).argmin()
-          print('pars for flux1:',p[lind1])
+          #print('pars for flux1:',p[lind1])
           flux1 = d[lind1,:]
           if conti == 0:
             flux1 = flux1/continuum(flux1)
@@ -8785,7 +8780,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               lind2 = np.abs(np.delete(pnorm[lind1],ii) - np.delete(pnorm[linds],ii,axis=1)).sum(1).argsort()[-1]
               lind2 = linds[lind2]
               #print('lind2=',lind2)
-              print('pars for flux2:',p[lind2])
+              #print('pars for flux2:',p[lind2])
               flux2 = d[lind2,:]
               if conti == 0:
                 flux2 = flux2/continuum(flux2)
