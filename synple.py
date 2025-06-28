@@ -2743,6 +2743,9 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
   ignore_missing_models: bool
     set to True to avoid stopping when a model is missing,
     in which case a None is entered in the returning list
+  ext: string
+    extension of the files to look for
+    (default value is ='mod')
  
   Returns
   -------
@@ -2821,8 +2824,13 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
                     if cfe >= 0.: ccode='p'
                     if feh >= 0.: mcode='p'
 
-                    sformat = "t%05ig%3.1fm%s%02ic%s%02io%s%02i."+ext
-                    filename = (sformat % (teff,logg,mcode,ceil(abs(feh)*10.),ccode,cfe*10.,acode,ceil(abs(afe)*10.)))
+                    #file  format for ksplit
+                    #sformat = "t%05ig%3.1fm%s%02ic%s%02io%s%02i."+ext
+                    #filename = (sformat % (teff,logg,mcode,ceil(abs(feh)*10.),ccode,cfe*10.,acode,ceil(abs(afe)*10.)))
+
+                    #file format for the APOGEE Kurucz models
+                    sformat = "m%s%02ic%s%02io%s%02i/am%s%02ic%s%02io%s%02      it%ig%02iv20."+ext
+                    filename = (sformat % (mcode,ceil(abs(feh)*10.),ccode,ceil(abs(cfe)*10.),acode,ceil(abs(afe)*10.),mcode,ceil(abs(feh)*10.),ccode,cfe*10.,acode,ceil(abs(afe)*10.),teff,logg*10))
 
                     file = glob.glob(os.path.join(modeldir,filename))
                     print(filename,file)
