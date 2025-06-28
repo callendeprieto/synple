@@ -2829,7 +2829,7 @@ def collect_kurucz(modeldir=modeldir, tteff=None, tlogg=None, tfeh=(1,0.0,0.0), 
                     #filename = (sformat % (teff,logg,mcode,ceil(abs(feh)*10.),ccode,cfe*10.,acode,ceil(abs(afe)*10.)))
 
                     #file format for the APOGEE Kurucz models
-                    sformat = "m%s%02ic%s%02io%s%02i/am%s%02ic%s%02io%s%02      it%ig%02iv20."+ext
+                    sformat = "m%s%02ic%s%02io%s%02i/am%s%02ic%s%02io%s%02it%ig%02iv20."+ext
                     filename = (sformat % (mcode,ceil(abs(feh)*10.),ccode,ceil(abs(cfe)*10.),acode,ceil(abs(afe)*10.),mcode,ceil(abs(feh)*10.),ccode,cfe*10.,acode,ceil(abs(afe)*10.),teff,logg*10))
 
                     file = glob.glob(os.path.join(modeldir,filename))
