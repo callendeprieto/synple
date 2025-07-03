@@ -9472,7 +9472,7 @@ def read_desispec(filename,band=None):
   return((wavelength,flux,ivar,res,header,fibermap,scores))
 
 
-def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,nozero=None,res=False):
+def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,nozero=None,res=False,interactive=True):
 
   """Plot one or multiple spectra
   """
@@ -9552,7 +9552,7 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,noze
     plt.ylim(yrange)
     if m is not None: plt.legend(labels)
     plt.savefig('fig1.png')
-    plt.show()
+    if interactive: plt.show()
   else:
     nspec = len(n[:,0])
     labels = []
@@ -9615,6 +9615,7 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,noze
 
 
       plt.savefig('fig'+str(j+1)+'.png')
+      if interactive: plt.show()
         
 
   return()
@@ -11236,7 +11237,7 @@ def fparams(root,synthfile=None,figure=None,condition=None):
 
 
 def desida(path_to_data='healpix',path_to_output='sp_output',
-           synthfile=None, seconds_per_target=2.,star=True):
+           synthfile=None, seconds_per_target=2.,star=True,focus=False):
 
   """ Prepare a DESI data for parallel processing
   """
@@ -11312,7 +11313,8 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
      " from synple import bas, wtabmodfits; " + \
      " bas(\'" + entry + "\'," + \
      " outfile=\'" + outfile + "\'," + \
-     " synthfile=" + str(synthfile1) + ", star= " + str(star) + "); " + \
+     " synthfile=" + str(synthfile1) + ", star= " + str(star) + ", focus= " + \
+     str(focus) + "); " + \
      " wtabmodfits(\'" + root + "'" + ", path= '" + tpath + "\'" + \
      ")\"" + "\n"
 
