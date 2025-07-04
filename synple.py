@@ -5041,7 +5041,7 @@ def rbf_get(synthfile, kernel='thin_plate_spline', neighbors=100):
   #iarr = getaa(n_p)
 
   pmin = p.min(0)
-  ptp  = p.ptp(0)
+  ptp  = np.ptp(p,0) #p.ptp(0)
 
   p2 = (p - pmin) / ptp
 
