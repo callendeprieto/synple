@@ -11326,6 +11326,85 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
 
   return()
 
+def desiget(ra=None,dec=None,radius=30.,targetids=[],user=None,password=None):
+
+  """Calls DESI inspector to retrieve a FITS with the spectra in a field or 
+  for a list of targets
+
+  Parameters
+  ----------
+  ra: float
+    Right ascension (deg)
+  dec: float
+    Declination (deg)
+  radius: float
+    Search radius (arcseconds)
+    (default: 30)
+  targetids: list
+    List of DESI targetids
+  user: str
+    DESI user
+  password: str
+    DESI password 
+
+  Returns
+  -------
+  A FITS file with DESI spectra for the targets within the search field
+  or multiple FITS files with the specified target lists
+
+  """
+
+  success = True
+
+  if ra is not None and dec is not None:
+ 
+    url = "http://inspector.desi.lbl.gov/dr1/spectra/radec/"+str(ra)+","+str(dec)+","+str(radius)+"?format=fits" 
+
+    try: 
+      download_file(url,local_filename="spectra-RA"+str(ra)+"-DEC"+str(dec)+"-"+str(radius)+".fits", user=user, password=password)
+    except IOError:
+      success = False
+      print("Error: cannot download any data")
+ 
+  else: 
+    for target in targetids:
+      url = "https://inspector.desi.lbl.gov/dr1/spectra/"+str(target)+"?format=fits"
+      try:
+        download_file(url,local_filename="spectra-"+str(target)+".fits", user=user, password=password)
+      except IOError:
+        success = False
+        print("Error: cannot download any data")
+
+  return(success)
+
+#download a file over the net
+#adapted from https://stackoverflow.com/questions/16694907/download-large-file-in-python-with-requests/16696317#16696317
+def download_file(url,local_filename=None, user=None, password=None):
+
+    import requests
+    from requests.auth import HTTPBasicAuth
+
+    if local_filename is None: local_filename = url.split('/')[-1]
+    if user is None or password is None:
+        with requests.get(url, stream=True) as r:
+            r.raise_for_status()
+            with open(local_filename, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    # If you have chunk encoded response uncomment if
+                    # and set chunk_size parameter to None.
+                    #if chunk:
+                    f.write(chunk)
+    else:
+        with requests.get(url, stream=True, auth = HTTPBasicAuth(user,password)) as r:
+            r.raise_for_status()
+            with open(local_filename, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    # If you have chunk encoded response uncomment if
+                    # and set chunk_size parameter to None.
+                    #if chunk:
+                    f.write(chunk)
+    return local_filename
+
 
 def desimask(desi_target):
 
