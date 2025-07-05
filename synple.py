@@ -4889,6 +4889,11 @@ def merge_synth(synthfile,outsynthfile=None):
     for entry in synthfile:
 
         h,p,d = read_synth(entry) 
+        x = lambda_synth(entry)
+        n = len(d[:,0])
+        print('d.shape=',d.shape)
+        print('len(x)=',len(x))
+
         synthfile2 += entry
         print('synthfile2=',synthfile2)
 
@@ -4899,6 +4904,15 @@ def merge_synth(synthfile,outsynthfile=None):
             hh = [h]
             pp = p.copy()
             dd = d.copy()
+
+          xx = x.copy()
+          npix = len(d[0,:])
+          if type(x) is list:
+            nnpix1 = 0
+            nnpix = [nnpix1]
+            for xblock in x:
+              nnpix1 = nnpix1 + len(xblock)
+              nnpix.append(nnpix1)
             
           #track LABELS in the first header  
           labels = []
@@ -4918,11 +4932,38 @@ def merge_synth(synthfile,outsynthfile=None):
             if key[:5] == 'LABEL':
               labels2.append(hh[-1][key])
 
-          assert(np.all(np.array(labels) == np.array(labels2))),'The parameters of the file '+entry+ ' do not match those for preceding synthfiles'           
 
+          assert(np.all(np.array(labels[0:len(labels2)]) == np.array(labels2))),'The parameters of the file '+entry+ ' do not match those for preceding synthfiles'           
+
+
+          d2 = np.zeros((n,npix))
+          if type(x) is list:
+            for j in range(n):
+              ii = 0
+              nnpix2 = [0]
+              for xblock in x:
+                nnpix2.append(len(x))
+                print(d2.shape,xx[ii].shape,xblock.shape,d.shape)
+                d2[j,nnpix[ii]:nnpix[ii+1]] = np.interp(xx[ii],xblock,d[j,nnpix2[ii]:nnpix2[ii+1]])
+                ii = ii + 1
+
+          else:
+            for j in range(n):
+              d2[j,:] = np.interp(xx,x,d[j,:])
+
+          if len(pp[0,:]) > len(p[0,:]):
+            p2 = np.zeros((n,len(pp[0,:])))  
+            p2[:,:] = np.nan
+            p2[:,:len(p[0,:])] = p[:,:]
+          elif len(pp[0,:]) == len(p[0,:]):
+            p2 = p
+          else:
+            print('Error: the grid with the largest number of parameters should be placed first in the input list to merge_synth')
+            sysexit(1)
+            
           
-          pp = np.vstack((pp,p))
-          dd = np.vstack((dd,d))	
+          pp = np.vstack((pp,p2))
+          dd = np.vstack((dd,d2))	
 
         
         k += 1
