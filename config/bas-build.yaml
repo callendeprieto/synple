@@ -40,6 +40,36 @@ STIS-NICMOS:
   pickle_synth:  [
     {'synthfile': 'n_STIS-NICMOSrbf.dat'},
     {'synthfile': 'n_STIS-NICMOSrbf-EBV.dat'} ]
+DESI:
+  gsynth: [ 
+    {'fwhm': 1.8, 'units': 'A', 'ppr': 3., 'wrange': [3759., 5959], 
+    'outsynthfile': 'n_B-DESI.dat'},  
+    {'fwhm': 1.8, 'units': 'A', 'ppr': 3., 'wrange': [5635., 7750.],
+    'outsynthfile': 'n_R-DESI.dat'},   
+    {'fwhm': 1.8, 'units': 'A', 'ppr': 3., 'wrange': [7445., 9843.],
+    'outsynthfile': 'n_Z-DESI.dat'} ]
+  rewrite_synth: [
+    {'synthfile': 'n_B-DESI.dat', 'outsynthfile': 'i_B-DESI.dat'}, 
+    {'synthfile': 'n_R-DESI.dat', 'outsynthfile': 'i_R-DESI.dat'},
+    {'synthfile': 'n_Z-DESI.dat', 'outsynthfile': 'i_Z-DESI.dat'}]
+  paste_synth: [ 
+    {'synthfile': ['i_B-DESI.dat','i_R-DESI.dat','i_Z-DESI.dat'],
+     'outsynthfile': 'i_BRZ-DESI.dat'} ]
+  synth_rbf:  [ 
+    {'synthfile': 'i_BRZ-DESI.dat', 
+      'n': 10000, 'rv': False, 'ebv': False}, 
+    {'synthfile': 'i_BRZ-DESI.dat',
+      'n': 10000, 'rv': False, 'ebv': True} ]
+  bas_perfcheck: [
+    {'synthfile': 'n_BRZ-DESIrbf.dat'},
+    {'synthfile': 'n_BRZ-DESIrbf.dat', 'snr': 30 },
+    {'synthfile': 'n_BRZ-DESIrbf.dat', 'snr': 10 },
+    {'synthfile': 'n_BRZ-DESIrbf-EBV.dat'},
+    {'synthfile': 'n_BRZ-DESIrbf-EBV.dat', 'snr': 30 }, 
+    {'synthfile': 'n_BRZ-DESIrbf-EBV.dat', 'snr': 10 } ]
+  pickle_synth:  [
+    {'synthfile': 'n_BRZ-DESIrbf.dat'},
+    {'synthfile': 'n_BRZ-DESIrbf-EBV.dat'} ]
 MILES:
   gsynth: [
     {'fwhm': 2.5, 'units': 'A', 'ppr': 3., 'wrange': [3510.,7400.],
@@ -129,33 +159,3 @@ LAMOST:
   pickle_synth:  [
     {'synthfile': 'n_LAMOSTrbf.dat'},
     {'synthfile': 'n_LAMOSTrbf-EBV.dat'} ]
-DESI:
-  gsynth: [ 
-    {'fwhm': 1.8, 'units': 'A', 'ppr': 3., 'wrange': [3759., 5959], 
-    'outsynthfile': 'n_B-DESI.dat'},  
-    {'fwhm': 1.8, 'units': 'A', 'ppr': 3., 'wrange': [5635., 7750.],
-    'outsynthfile': 'n_R-DESI.dat'},   
-    {'fwhm': 1.8, 'units': 'A', 'ppr': 3., 'wrange': [7445., 9843.],
-    'outsynthfile': 'n_Z-DESI.dat'} ]
-  rewrite_synth: [
-    {'synthfile': 'n_B-DESI.dat', 'outsynthfile': 'i_B-DESI.dat'}, 
-    {'synthfile': 'n_R-DESI.dat', 'outsynthfile': 'i_R-DESI.dat'},
-    {'synthfile': 'n_Z-DESI.dat', 'outsynthfile': 'i_Z-DESI.dat'}]
-  paste_synth: [ 
-    {'synthfile': ['i_B-DESI.dat','i_R-DESI.dat','i_Z-DESI.dat'],
-     'outsynthfile': 'i_BRZ-DESI.dat'} ]
-  synth_rbf:  [ 
-    {'synthfile': 'i_BRZ-DESI.dat', 
-      'n': 10000, 'rv': False, 'ebv': False}, 
-    {'synthfile': 'i_BRZ-DESI.dat',
-      'n': 10000, 'rv': False, 'ebv': True} ]
-  bas_perfcheck: [
-    {'synthfile': 'n_BRZ-DESIrbf.dat'},
-    {'synthfile': 'n_BRZ-DESIrbf.dat', 'snr': 30 },
-    {'synthfile': 'n_BRZ-DESIrbf.dat', 'snr': 10 },
-    {'synthfile': 'n_BRZ-DESIrbf-EBV.dat'},
-    {'synthfile': 'n_BRZ-DESIrbf-EBV.dat', 'snr': 30 }, 
-    {'synthfile': 'n_BRZ-DESIrbf-EBV.dat', 'snr': 10 } ]
-  pickle_synth:  [
-    {'synthfile': 'n_BRZ-DESIrbf.dat'},
-    {'synthfile': 'n_BRZ-DESIrbf-EBV.dat'} ]
