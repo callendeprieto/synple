@@ -4570,9 +4570,14 @@ def lambda_synth(synthfile):
       if x is not None:
         if len(xx) == 0:
           xx.append(x)
+          x1 = x.copy()
         else:
           if (np.size(x) != len(xx)):
-            xx.append(x)
+            if 'MERGED' in header:
+              x = x1.copy()
+            else:
+              xx.append(x)
+              x1 = x.copy()
           else: 
             if ((xx-x).max() > 0.): xx.append(x)
 
@@ -4922,8 +4927,10 @@ def merge_synth(synthfile,outsynthfile=None):
         else:
           if type(h) is list:
             for block in h:
+              block['MERGED'] = True
               hh.append(block)
           else:
+            h['MERGED'] = True
             hh.append(h)
             
           #check the LABELS are the same in the rest
@@ -4953,7 +4960,7 @@ def merge_synth(synthfile,outsynthfile=None):
 
           if len(pp[0,:]) > len(p[0,:]):
             p2 = np.zeros((n,len(pp[0,:])))  
-            p2[:,:] = np.nan
+            p2[:,:] = -10.
             p2[:,:len(p[0,:])] = p[:,:]
           elif len(pp[0,:]) == len(p[0,:]):
             p2 = p
