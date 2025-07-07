@@ -4949,8 +4949,9 @@ def merge_synth(synthfile,outsynthfile=None):
               ii = 0
               nnpix2 = [0]
               for xblock in x:
-                nnpix2.append(len(x))
+                nnpix2.append(len(xblock))
                 print(d2.shape,xx[ii].shape,xblock.shape,d.shape)
+                print('-->',xblock.shape,nnpix2)
                 d2[j,nnpix[ii]:nnpix[ii+1]] = np.interp(xx[ii],xblock,d[j,nnpix2[ii]:nnpix2[ii+1]])
                 ii = ii + 1
 
@@ -10121,17 +10122,20 @@ def bas_perfcheck(synthfile,n=100,snr=1.e6,
 
     testsynthfile=synthfile+'-test.dat'
 
-    if 'TYPE' in hd:
-      if hd['TYPE'] == 'irregular':
+    if 'TYPE' in hd: 
+      if hd['TYPE'] != 'irregular':
         if interpol == False:
           print('Warning: interpol must be True in bas_perfcheck for regular grids')
         interpol = True
-
-    if 'type' in hd:
-      if hd['type'] == 'irregular':
+    elif 'type' in hd:
+      if hd['type'] != 'irregular':
         if interpol == False:
           print('Warning: interpol must be True in bas_perfcheck for regular grids')
         interpol = True 
+    else:
+      if interpol == False:
+        print('Warning: interpol must be True in bas_perfcheck for regular grids')
+        interpol = True
 
     if interpol:
       #interpolation to generate mock data for test
