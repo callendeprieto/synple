@@ -8565,7 +8565,7 @@ def cebas(p,d,flx,iva,prior=None,filter=None):
 
 def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None, 
         star=True, conti=0, absolut=False, wrange=None, 
-        focus=False, nail=[]):
+        focus=False, nail=[], ferre=False):
 
     """Bayesian Algorithm in Synple
     
@@ -8635,6 +8635,14 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
     best-fitting parameters (.opf) and best-fitting models (.mdl).
     
     """
+
+    #check that focus or nail are not activated with ferre
+    if ferre and focus:
+      print('Error: focus is not compatible with ferre')
+      sys.exit(0)
+    if ferre and nail:
+      print('Error: nail is not compatible with ferre')
+      sys.exit(0)
     
     if type(infile) is list:
         infiles = infile
@@ -8655,6 +8663,17 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
     hd, p, d = read_synth(synthfile)      
     x = lambda_synth(synthfile)
     lenx = len(x)
+    ndim = len(p[0,:])
+
+    #check that ferre is not activated with an irregular grid
+    if 'TYPE' in hd:
+      if hd['TYPE'] == 'irregular' and ferre:
+        print('Error: FERRE cannot (yet) handle irregular grids')
+    elif 'type' in hd:
+      if hd['type'] == 'irregular' and ferre:
+        print('Error: FERRE cannot (yet) handle irregular grids')
+
+
     if type(hd) is list:
       hd0 = hd[1]
     else:
@@ -8733,9 +8752,12 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       wavfile = outfile + '.wav'
       fmpfile = outfile + '.fmp.fits'
       scrfile = outfile + '.scr.fits'
-      if absolut:
+      if absolut or ferre:
         frdfile = outfile + '.frd'
+      if absolut:
         flxfile = outfile + '.flx'
+      if ferre:
+        ipffile = outfile + '.spf'
 
       #open output parameter, observed and model file
       opf = open(opffile,'w')
@@ -8743,9 +8765,12 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       nrd = open(nrdfile,'w')
       err = open(errfile,'w')
       wav = open(wavfile,'w')
-      if absolut:
+      if absolut or ferre:
         frd = open(frdfile,'w')
+      if absolut:
         flx = open(flxfile,'w')
+      if ferre:
+        ipf = open(ipffile,'w')
           
 
       for j in range(nspec):
@@ -8754,6 +8779,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         
         #clean the data
         spec = obs[j,:]
+        ivar = ivr[j,:]
         www = np.where(np.isnan(spec))[0]
         #print('www:',www)
         if len(www) > 0:
@@ -8771,13 +8797,15 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           if mspec == 0.0: mspec = np.median(spec)
           if mspec == 0.0: mspec = 1.
 
-        if absolut: rawspec = spec.copy()
+        if absolut or ferre:
+          rawspec = spec.copy()
+          rawivar = ivar.copy()
         spec = spec / mspec
-        ivar = ivr[j,:] * mspec**2
+        ivar = ivar * mspec**2
 
         #analyze
         res, eres, cov, bmod, weights = cebas( p, d, spec, ivar )
-        lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - len(res)) )
+        lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - ndim) )
         print('reduced lchi =',lchi)
                 
         vrad = 0.0
@@ -8788,12 +8816,15 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           print('RV = ',vrad,' km/s')
         
           #correct RV and reanalyze
-          spec = np.interp(x2, x2 * (1. - vrad/clight), spec)
-          ivar = np.interp(x2, x2 * (1. - vrad/clight), ivar)
-          res, eres, cov, bmod, weights = cebas( p, d, spec, ivar )
-          
-          lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - len(res)) )
-          print('reduced lchi =',lchi)
+          if ferre:
+            spec = np.interp(x2, x2 * (1. - vrad/clight), rawspec)
+            ivar = np.interp(x2, x2 * (1. - vrad/clight), rawivar)
+          else:
+            spec = np.interp(x2, x2 * (1. - vrad/clight), spec)
+            ivar = np.interp(x2, x2 * (1. - vrad/clight), ivar)
+            res, eres, cov, bmod, weights = cebas( p, d, spec, ivar )
+            lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - ndim))
+            print('reduced lchi =',lchi)
 
         if focus:
           eres[eres < 1e-17] = 1e-17 # avoid division by zero
@@ -8801,14 +8832,13 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           if len(np.where(w)[0]) > 1:
             res, eres, cov, bmod, weights = cebas( p2[w,:], d2[w,:], spec, ivar )
             lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / 
-                                   (len(bmod) - len(res)) )
+                                   (len(bmod) - ndim) )
           else:
             w = range(len(p[:,0]))
 
           print('focus selected ',len(np.where(w)[0]), 'points, giving a reduced lchi =',lchi)
 
         if len(nail) > 0:
-          ndim = len(p[0,:])
           ndim2 = int(hd0['N_OF_DIM'])
           assert ndim == ndim2,'error: inconsistency in ndim'
           pnorm = (p - p.min(0)) / (p.max(0)-p.min(0))
@@ -8894,9 +8924,12 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         nrd.write(' '.join(map(str,spec))+'\n')
         mdl.write(' '.join(map(str,bmod))+'\n')
         err.write(' '.join(map(str,1./np.sqrt(ivar)))+'\n')
-        if absolut:
+        if absolut or ferre:
             frd.write(' '.join(map(str,rawspec))+'\n')
+        if absolut:
             flx.write(' '.join(map(str,abbmod))+'\n')
+        if ferre:
+            ipf.write(str(ids[j])+' '+' '.join(map(str,np.zeros(ndim)))+'\n')
         if j == 0: wav.write(' '.join(map(str,x2))+'\n')
       
 
@@ -8906,10 +8939,37 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       nrd.close()
       err.close()
       wav.close()
-      if absolut:
+      if absolut or ferre:
         frd.close()
+      if absolut:
         flx.close()
-      
+      if ferre:
+        ipf.close()
+
+      if ferre:
+        nml = dict()
+        nml['NDIM'] = ndim
+        nml['NOV'] = ndim
+        nml['INDV'] = ' '.join(map(str,1 + np.arange(ndim)))
+        nml['SYNTHFILE(1)'] = synthfile
+        nml['PFILE'] = ipffile
+        nml['FFILE'] = frdfile
+        nml['ERFILE'] = errfile
+        nml['OPFILE'] = opffile
+        nml['OFFILE'] = mdlfile
+        nml['SFFILE'] = nrdfile
+        nml['ALGOR'] = 5
+        nml['COVPRINT'] = 1
+        if conti > 0:
+          nml['CONT'] = 3
+          nml['NCONT'] = conti
+        else:
+          nml['CONT'] = 1
+          nml['NCONT'] = 0
+        write_nml(nml,nmlfile='input.nml')
+        ferrerun()
+        
+
       if instr == 'DESI':
         head, fibermap, scores = xtr
         fmp = tbl.Table(fibermap)
@@ -8980,6 +9040,32 @@ def identify_instrument(infile):
         grid = conf[instr]
                 
     return(instr,grid)
+
+#write out a FERRE control hash to an input.nml file
+def write_nml(nml,nmlfile='input.nml',path=None):
+    if path is None: path='./'
+    f=open(os.path.join(path,nmlfile),'w')
+    f.write('&LISTA\n') 
+    for item in nml.keys():
+        value = nml[item]
+        if any(char.isalpha() for char in str(value)):
+          f.write(str(item) + ' = ' + "'" + str(value) + "'" + '\n')
+        else:
+          f.write(str(item) + ' = ' + str(value) + '\n')
+    f.write(" /\n")
+    f.close()
+    return None
+
+#run FERRE
+def ferrerun(path=None):
+    if path is None: path="./"
+    pwd=os.path.abspath(os.curdir)
+    os.chdir(path)
+    ferre=os.path.join(os.environ['HOME'],"ferre/src/a.out")
+    code = subprocess.call(ferre)
+    os.chdir(pwd)
+    return code
+
 
 def read_knoao2005(wrange):
  
@@ -9987,7 +10073,6 @@ def xxc(x1,y1,iva1,x2,y2, maxv = 1000., plot=False):
     edelta: float
       uncertainty in delta
     """
-
     lenx1 = len(x1)
     dv = np.diff(x1).mean()/x1.mean()*clight / 10.
     nv = int(2*maxv/dv)
@@ -10068,7 +10153,8 @@ def rewrite_synth(synthfile,outsynthfile=None):
 
 
 def bas_perfcheck(synthfile,n=100,snr=1.e6,
-    conti=0, focus=False, nail=[], interpol=False, edgemargin=0.05):
+    conti=0, focus=False, nail=[], interpol=False, 
+    edgemargin=0.05, ferre=False):
 
     """Carry out a full performance check using bas on a synthetic grid
 
@@ -10170,7 +10256,7 @@ def bas_perfcheck(synthfile,n=100,snr=1.e6,
     print('running ... ','bas(',testsynthfile[2:-4],'synthfile=',trainsynthfile,')')
     now = time.time()
     bas(testsynthfile[2:-4],synthfile=trainsynthfile,conti=conti,
-        focus=focus,nail=nail)
+        focus=focus,nail=nail,ferre=ferre)
 
 
     print('this run took ',time.time()-now,' seconds')
