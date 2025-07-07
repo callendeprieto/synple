@@ -4538,7 +4538,7 @@ def head_synth(synthfile):
               k=part[0].strip()
               v=part[1].strip()
               header[k]=v.strip("'")
-              if k == 'MULTI': 
+              if k == 'MULTI' and multi == 0: 
                 multi=int(v)
                 multi_header=[]
         if (multi > 1): 
@@ -4653,7 +4653,7 @@ def read_synth(synthfile,nd=False):
               k=part[0].strip()
               v=part[1].strip()
               header[k]=v.strip("'")
-              if k == 'MULTI': 
+              if k == 'MULTI' and multi == 0: 
                 multi=int(v)
                 multi_header=[]
         if (multi > 1): 
@@ -4899,7 +4899,7 @@ def merge_synth(synthfile,outsynthfile=None):
         print('d.shape=',d.shape)
         print('len(x)=',len(x))
 
-        synthfile2 += entry
+        synthfile2 += '-'+entry.replace('/','')
         print('synthfile2=',synthfile2)
 
         if k == 0:
@@ -4907,8 +4907,9 @@ def merge_synth(synthfile,outsynthfile=None):
             hh = h.copy()
           else:
             hh = [h]
-            pp = p.copy()
-            dd = d.copy()
+
+          pp = p.copy()
+          dd = d.copy()
 
           xx = x.copy()
           npix = len(d[0,:])
@@ -4947,11 +4948,11 @@ def merge_synth(synthfile,outsynthfile=None):
           if type(x) is list:
             for j in range(n):
               ii = 0
-              nnpix2 = [0]
+              nnpix1 = 0
+              nnpix2 = [nnpix1]
               for xblock in x:
-                nnpix2.append(len(xblock))
-                print(d2.shape,xx[ii].shape,xblock.shape,d.shape)
-                print('-->',xblock.shape,nnpix2)
+                nnpix1 = nnpix1 + len(xblock)
+                nnpix2.append(nnpix1)
                 d2[j,nnpix[ii]:nnpix[ii+1]] = np.interp(xx[ii],xblock,d[j,nnpix2[ii]:nnpix2[ii+1]])
                 ii = ii + 1
 
