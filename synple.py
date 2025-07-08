@@ -5003,7 +5003,7 @@ def merge_synth(synthfile,outsynthfile=None):
 
 
 
-def fill_synth(d,kernel='thin_plate_spline', neighbors=100):
+def fill_synth(d,kernel='linear', neighbors=100):
     """
     Completes data rows with zeros interpolating using RBF from 
     non-zero rows 
@@ -5068,7 +5068,7 @@ def getaa(n_p, dtype=int):
   
     return(aa)
 
-def rbf_get(synthfile, kernel='thin_plate_spline', neighbors=100):
+def rbf_get(synthfile, kernel='linear', neighbors=100):
   """Computes RBF coefficients for interpolation in an input FERRE grid
   Parameters
   ----------
@@ -10235,7 +10235,7 @@ def bas_perfcheck(synthfile,n=100,snr=1.e6,
       #interpolation to generate mock data for test
       trainsynthfile=synthfile
       synth_rbf(synthfile,outsynthfile=testsynthfile,n=n,
-                rv=False,ebv=False,kernel='thin_plate_spline',neighbors=100, 
+                rv=False,ebv=False 
                 edgemargin=edgemargin)
 
     else:
@@ -10314,7 +10314,7 @@ def bas_test(synthfile,snr=1.e6):
         
 
 def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
-              kernel='thin_plate_spline', neighbors=100, edgemargin=0.0):
+              kernel='linear', neighbors=100, edgemargin=0.0):
 
     """Creates an irregular FERRE grid from a pre-existing regular or 
        irregular one
@@ -10452,7 +10452,7 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
     
     return
 
-def rbf_test(synthfile,n=None, kernel='thin_plate_spline', neighbors=100):
+def rbf_test(synthfile,n=None, kernel='linear', neighbors=100):
     """Creates an irregular FERRE grid using RBF interpolation on a 
        pre-existing regular or irregular one, and from that one the
        interpolation is repeated to return to the original/input grid
