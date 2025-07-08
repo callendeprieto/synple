@@ -1671,6 +1671,8 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
        steps, the lower limits and the stepsize for elemental variations [X/Fe]
        e.g. Na=(9,-0.2,0.05), ...
        All entries must be pairs or triplets.
+       Multiple elements can be varied in sync by using a composite keyword
+       in which elements are separated by '_', e.g. O_Ne_Mg_Si_Ca_Ti=(0.0,0.5).
 
 
   Returns
@@ -1799,7 +1801,12 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
                 atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
               iel = 0 
               for el in symbols:
-                abu1[zatom[el]-1] = abu1[zatom[el]-1] * 10.**chems[el][ichem]
+                if '_' in el:
+                  els = el.split('_')
+                  for elo in els:
+                    abu1[zatom[elo]-1] = abu1[zatom[elo]-1] * 10.**chems[el][ichem]
+                else:
+                  abu1[zatom[el]-1] = abu1[zatom[el]-1] * 10.**chems[el][ichem]
                 iel += 1
 
 
