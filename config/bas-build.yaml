@@ -9,9 +9,9 @@ STIS:
       'n': 10000, 'rv': False, 'ebv': False},
     {'synthfile': 'i_STIS.dat',
       'n': 10000, 'rv': False, 'ebv': True},
-    {'synthfile': 'i_STIS.dat', 'outsynthfile': 'n_50kSTISrbf.dat'},
+    {'synthfile': 'i_STIS.dat', 'outsynthfile': 'n_50kSTISrbf.dat',
       'n': 50000, 'rv': False, 'ebv': False},
-    {'synthfile': 'i_STIS.dat', 'outsynthfile': 'n_50kSTISrbf-EBV.dat'
+    {'synthfile': 'i_STIS.dat', 'outsynthfile': 'n_50kSTISrbf-EBV.dat',
       'n': 50000, 'rv': False, 'ebv': True} ]
   bas_perfcheck: [
     {'synthfile': 'n_STISrbf.dat'},
