@@ -10235,7 +10235,7 @@ def bas_perfcheck(synthfile,n=100,snr=1.e6,
       #interpolation to generate mock data for test
       trainsynthfile=synthfile
       synth_rbf(synthfile,outsynthfile=testsynthfile,n=n,
-                rv=False,ebv=False 
+                rv=False,ebv=False, 
                 edgemargin=edgemargin)
 
     else:
