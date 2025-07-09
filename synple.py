@@ -3996,15 +3996,16 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
   return(hdr)
 
   
-def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,   
+def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,  
            vmicro=None, vrot=0.0, fwhm=0.0, vmacro=0.0, 
            wrange=None, dw=None, logw=0, ignore_missing_models=False,**elem):
 
 
 
   """Collects the synthetic spectra part of an irregular grid. 
-   To track changes in Teff, logg and [Fe/H] one can activate the booleans teff,
-   logg and feh. To track changes in other elements additional booleans (e.g. Ca=True)
+   To track changes in Teff, logg, [Fe/H], [alpha/Fe], or [C/Fe] one can 
+   activate the booleans teff, logg, feh, afe or cfe, respectively.
+   To track changes in other elements additional booleans (e.g. Ca=True)
    can be made active at the end of the parameter list (**element). 
    The wavelength sampling can be chosen (the spectral range must be limited 
    to the range of the computations), but the default is to take it from the first model.
@@ -4019,6 +4020,10 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
     Activate to track this parameter
   feh: boolean
     Activate to track this parameter
+  afe: boolean
+    Activate to track this parameter ([alpha/Fe])
+  cfe: boolean
+    Activate to track this parameter ([C/Fe])
   vmicro: float, optional, can be an iterable
       microturbulence (km/s) 
       (default is taken from the model atmosphere: 'model')
@@ -4084,6 +4089,8 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
   if teff: pars.append('teff')
   if logg: pars.append('logg')
   if feh: pars.append('feh')
+  if afe: pars.append('afe')
+  if cfe: pars.append('cfe')
   if nvmicro > 1: pars.append('vmicro')
   for entry in elem.keys():
     pars.append('['+entry+'/H]')
@@ -4218,6 +4225,8 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
                     imode, iprin, inmod, inlte, hydprf, wrange, cutoff, \
                          strength, dw, molls, vmicro1 = read55(os.path.join(entry,'fort.55'))
                     feh2 = np.log10(abu['Fe']) - np.log10(solabu['Fe'])
+                    afe2 = np.log10(abu['O']) - np.log10(solabu['O'])
+                    cfe2 = np.log10(abu['C']) - np.log10(solabu['C'])
 	                  
                     print(teff2,logg2,feh2,vmicro1,vmicro2)
 
@@ -4225,6 +4234,8 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
                     if teff: pars.append(teff2)
                     if logg: pars.append(logg2)
                     if feh: pars.append(feh2)
+                    if afe: pars.append(afe2)
+                    if cfe2: pars.append(cfe2)
                     if nvmicro > 1: pars.append(vmicro1)
                     for el in elem.keys():
                       pars.append(np.log10(abu[el]) - np.log10(solabu[el]) )
