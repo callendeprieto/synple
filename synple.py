@@ -8823,6 +8823,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         ivar = ivar * mspec**2
 
         #analyze
+        #dgpu = cp.array(d) 
         res, eres, cov, bmod, weights = cebas( p, d, spec, ivar )
         lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - ndim) )
         print('reduced lchi =',lchi)
@@ -10969,21 +10970,21 @@ def wtabmodfits(root, path=None):
 
     elif (ndim == 3):
       #synple grids with Teff, logg and [Fe/H]
-      feh.append(float(cells[0]))
-      teff.append(float(cells[2]))
-      logg.append(float(cells[3]))
+      feh.append(float(cells[2]))
+      teff.append(float(cells[0]))
+      logg.append(float(cells[1]))
       alphafe.append(np.nan)
-      cfe.append(float(cells[1]))
+      cfe.append(np.nan)
       micro.append(np.nan)
 
     elif (ndim == 4):
       #Teff, logg, [Fe/H] and [a/Fe]
-      feh.append(float(cells[0]))
-      teff.append(float(cells[2]))
-      logg.append(float(cells[3]))
-      alphafe.append(np.nan)
-      cfe.append(float(cells[1]))
-      micro.append(np.nan)
+      feh.append(float(cells[2]))
+      teff.append(float(cells[0]))
+      logg.append(float(cells[1]))
+      alphafe.append(float(cells[3]))
+      cfe.append(float(cells[4]))
+      micro.append(1.5)
    
     elif (ndim == 5):
       #Teff, logg, [Fe/H], [a/Fe] and ?
