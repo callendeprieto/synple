@@ -1713,6 +1713,7 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
   chems = dict() # abundance variations [X/Fe]
   symbols = [] #elemental symbols X
   for entry in list(map(str,kargs.keys())): symbols.append(entry)
+  rng = np.random.default_rng()
   iel = 0
   for entry in kargs.values():
     print(entry)
@@ -1724,7 +1725,7 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
         zatom[symbol[i]] = i + 1
     assert(len(entry) == 2 or len(entry) == 3),'kargs entries must have 2 (irregular grids with random values) or 3 (regular grids) entries'
     if len(entry) == 2:
-      chems[symbols[iel]] = np.random.random_sample(nchem)*(entry[1]-entry[0])+entry[0]
+      chems[symbols[iel]] = rng.random(nchem)*(entry[1]-entry[0])+entry[0]
     else:
       chems[symbols[iel]] = np.arange(entry[0])*entry[2]+entry[1]
       n_p.append(entry[0])
@@ -4445,18 +4446,19 @@ def create_irregular_kurucz(n,pteff=None, plogg =None, \
        as many pairs as necessary, for other elemental variations [X/Fe]
        e.g. Na=(-0.2,0.2), Al=(-0.5, 0.2), ...
     """
-    
+   
+    rng = np.random.default_rng() 
 							      
-    teff = np.random.random_sample(n)*(pteff[1]-pteff[0])+pteff[0]
-    logg = np.random.random_sample(n)*(plogg[1]-plogg[0])+plogg[0]
-    feh = np.random.random_sample(n)*(pfeh[1]-pfeh[0])+pfeh[0]
-    micro = np.random.random_sample(n)*(pmicro[1]-pmicro[0])+pmicro[0]
+    teff = rng.random(n)*(pteff[1]-pteff[0])+pteff[0]
+    logg = rng.random(n)*(plogg[1]-plogg[0])+plogg[0]
+    feh = rng.random(n)*(pfeh[1]-pfeh[0])+pfeh[0]
+    micro = rng.random(n)*(pmicro[1]-pmicro[0])+pmicro[0]
     pars = np.vstack ((teff,logg,feh,micro))
     tags = ['teff', 'logg', 'METALS','MICRO'] 
     for entry in list(map(str,kargs.keys())): tags.append(entry)
     for entry in kargs.values(): 
         print(entry)
-        newpar = np.random.random_sample(n)*(entry[1]-entry[0])+entry[0]
+        newpar = rng.random(n)*(entry[1]-entry[0])+entry[0]
         pars = np.vstack ((pars, newpar))
 	    
     for i in range(len(pars[0,:])):
@@ -8720,7 +8722,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       p2 = p
       d2 = d
       nmod = len(p[:,0])
-      irnd = np.array(np.random.random_sample(int(nmod*0.1))*nmod,dtype=int)
+      rng = np.random.default_rng(107)
+      irnd = np.array(rng.random(int(nmod*0.1))*nmod,dtype=int)
       p = p[irnd,:]
       d = d[irnd,:]
 
@@ -10381,12 +10384,14 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
     ntot = len(p[:,0])
 
     if n is None: n = ntot
+
+    rng = np.random.default_rng()
     
     for i in range(ndim):
 
         amin = np.min(p[:,i])*(1.0+edgemargin)
         amax = np.max(p[:,i])*(1.0-edgemargin)
-        vals = np.random.random_sample(n)*(amax-amin) + amin
+        vals = rng.random(n)*(amax-amin) + amin
         if i == 0: 
             p2 = vals
         else:	
@@ -10405,7 +10410,7 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
           h0 = h2  
         rvmax = 1000.
         if 'RESOLUTION' in h0: rvmax = clight/float(h0['RESOLUTION'])
-        vals = np.random.random_sample(n)*2*rvmax - rvmax
+        vals = rng.random(n)*2*rvmax - rvmax
         p2 = np.vstack((p2,vals))
         ndim2 += 1
         if type(h2) is list:
@@ -10415,7 +10420,7 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
             h2['LABEL('+str(ndim+ndim2)+')'] = "'RV'"  
     if ebv:	
         ebvmax = 0.25 # mag
-        vals = np.random.random_sample(n)*ebvmax 
+        vals = rng.random(n)*ebvmax 
         p2 = np.vstack((p2,vals))
         ndim2 += 1
         if type(h2) is list:
