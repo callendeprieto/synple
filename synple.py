@@ -8599,7 +8599,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       or a string with wildcards (*?[]) that expand into multiple files,
       or a list of files
     synthfile: str
-      name of the model grid
+      name of the model grid, or a tuple (x, h,p,d) with the grid data 
+      -- use h,p,d = read_synth(file) ; x = lambda_synth(file)
       (default is None and the code attempts to choose the appropriate
       grid according to the source of the input data)      
     outfile: str
@@ -8675,14 +8676,24 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               infiles = [infile]
 
     instr, default_synthfile = identify_instrument(infiles[0])
-    if synthfile is None: synthfile = default_synthfile
     print('data appear to be from ',instr)
-    print('adopting synthfile ',synthfile)
     instr0 = instr
 
     #models    
-    hd, p, d = read_synth(synthfile)      
-    x = lambda_synth(synthfile)
+    if synthfile is None: 
+      synthfile = default_synthfile
+      print('adopting synthfile ',synthfile)
+    elif type(synthfile) is str:
+      hd, p, d = read_synth(synthfile)      
+      x = lambda_synth(synthfile)
+      print('adopting synthfile ',synthfile)
+    elif type(synthfile) is tuple:
+      assert (len(synthfile) == 4),'when synthfile is a tuple it must contain the grid data (x,h,p,d)'
+      x, hd, p, d = synthfile
+    else:
+      print('Error: synthfile must be a file name, a tuple with the grid data (x,h,p,d) or None')
+      sys.exit(1)
+ 
     lenx = len(x)
     ndim = len(p[0,:])
 
