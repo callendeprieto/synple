@@ -3998,7 +3998,7 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
 
   
 def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,  
-           vmicro=None, vrot=0.0, fwhm=0.0, vmacro=0.0, 
+           cfe=True, vmicro=None, vrot=0.0, fwhm=0.0, vmacro=0.0, 
            wrange=None, dw=None, logw=0, ignore_missing_models=False,**elem):
 
 
