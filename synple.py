@@ -9058,6 +9058,8 @@ def identify_instrument(infile):
             if head['TELESCOP'][:3] == 'GTC' and head['INSTRUME'][:6] == 'OSIRIS' and \
              head['GRISM'][:6] == 'R2500U':
                instr = 'OSIRIS-R2500U'
+            if head['TELESCOP'][:8] == 'Mercator' and head['INSTRUME'][:6] == 'HERMES':
+               instr = 'Mercator-HERMES'
         else:
             if 'MAPKEY' in head:
                 if head['MAPKEY'] == 'calspec':
@@ -9071,7 +9073,10 @@ def identify_instrument(infile):
     if instr is None:
         grid = None
     else:            
-        grid = conf[instr]
+        if instr in conf:
+          grid = conf[instr]
+        else:
+          grid = None
                 
     return(instr,grid)
 
@@ -9501,6 +9506,30 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
 
         assert(target is None),'target must be None for GTC-OSIRIS data (1 target per file)'
         
+        xtr = (head)
+        wav, frd, ivr =  single_target_prep(wav, flux, ivar, rv, ebv, wavelengths=wavelengths)
+
+      elif instr == "Mercator-HERMES":
+        fi = fits.open(infile)
+        head = fi[0].header
+        s = fi[0].data
+        flux = s
+        wav = np.arange(len(s))*head['CD1_1']+head['CRVAL1']
+        wav = np.exp(wav)
+        lenwav = len(wav)
+        print('Warning: Mercator-HERMES files do not include uncertainties')
+        print('         assuming S/N = 20!')
+        err = flux * 0.05
+        ivar4 = np.divide(1.,err**2, where = (err**2 > 0.) ,dtype = np.float128)
+        ivar = np.float64(ivar4)
+
+        if 'OBJECT' in head:
+          ids = np.array([head['OBJECT']])
+        else:
+          ids = np.array([infile])
+
+        assert(target is None),'target must be None for Mercator-HERMES data (1 target per file)'
+
         xtr = (head)
         wav, frd, ivr =  single_target_prep(wav, flux, ivar, rv, ebv, wavelengths=wavelengths)
 
