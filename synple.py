@@ -3298,7 +3298,7 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
                         dir = ( "hyd%07d" % (j) )
 
                         iconv = 1
-                        if vrot < 1e-7 and  fwhm < 1e-7 and vmacro < 1e-7:
+                        if np.min(vrot) < 1e-7 and  np.min(fwhm) < 1e-7 and np.min(vmacro) < 1e-7:
                           outconv = "fort.7" 
                         else:
                           outconv = ("%07dfort.7" % (iconv) )
@@ -3382,7 +3382,7 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
 								
                               iconv = iconv + 1
 
-                              if vrot < 1e-7 and  fwhm < 1e-7 and vmacro < 1e-7:
+                              if np.min(vrot) < 1e-7 and  np.min(fwhm) < 1e-7 and np.min(vmacro) < 1e-7:
                                 outconv = "fort.7"
                               else:
                                 outconv = ("%07dfort.7" % (iconv) )
@@ -4143,7 +4143,7 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
                     ntot = ntot + 1
 
                     iconv = 1
-                    if vrot < 1e-7 and  fwhm < 1e-7 and vmacro < 1e-7:
+                    if np.min(vrot) < 1e-7 and  np.min(fwhm) < 1e-7 and np.min(vmacro) < 1e-7:
                       outconv = "fort.7"
                     else:
                       outconv = ("%07dfort.7" % (iconv) )
@@ -4246,7 +4246,7 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
                         for vmacro1 in vmacros:
 								
                           iconv = iconv + 1
-                          if vrot < 1e-7 and  fwhm < 1e-7 and vmacro < 1e-7:
+                          if np.min(vrot) < 1e-7 and  np.min(fwhm) < 1e-7 and np.min(vmacro) < 1e-7:
                             outconv = "fort.7"
                           else:
                             outconv = ("%07dfort.7" % (iconv) )
