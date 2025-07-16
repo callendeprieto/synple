@@ -4239,7 +4239,14 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
                     if cfe2: pars.append(cfe2)
                     if nvmicro > 1: pars.append(vmicro1)
                     for el in elem.keys():
-                      pars.append(np.log10(abu[el]) - np.log10(solabu[el]) )
+                      if '_' in el:
+                        els = el.split('_')
+                        elo = els[0]
+                      else:
+                        elo = el
+                      pars.append(np.log10(abu[elo]) - np.log10(solabu[elo]) )
+
+
                     iconv = 0
                     for vrot1 in vrots:
                       for fwhm1 in fwhms:
