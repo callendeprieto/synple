@@ -8813,7 +8813,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         flx = open(flxfile,'w')
       if ferre:
         ipf = open(ipffile,'w')
-          
+         
 
       for j in range(nspec):
 
@@ -8976,6 +8976,13 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         if j == 0: wav.write(' '.join(map(str,x2))+'\n')
       
 
+        outdata = [ids[j]]+list(res)+list(eres)+ \
+                  [vrad]+[np.median(spec*np.sqrt(ivar))]+[lchi]
+        if j == 0:
+          bigres = np.array(outdata,dtype=str)
+        else:
+          bigres = np.hstack((bigres,np.array(outdata,dtype=str)))
+
       print('closing opf file:',opffile)
       opf.close()
       mdl.close()
@@ -9023,7 +9030,36 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         hdu0.writeto(scrfile)
 
       
-    return()
+    return(bigres)
+
+
+def ebv_bas(infile, ebvmax=0.09, nebv=10, 
+        synthfile=None, outfile=None, target=None, rv=None, 
+        star=True, conti=0, absolut=False, wrange=None, 
+        focus=False, nail=[], ferre=False):
+
+     """Wrapping bas to explore multiple values of E(B-V)
+     """
+
+     ebvstep = ebvmax/(nebv-1)
+     ebvs = np.arange(nebv)*ebvstep
+
+     i = 0
+     for entry in ebvs:
+       res = bas(infile, synthfile=synthfile, outfile=outfile, target=target, 
+        rv=rv, ebv=entry,
+        star=star, conti=conti, absolut=absolut, wrange=wrange, 
+        focus=focus, nail=nail, ferre=ferre)
+
+
+       if i == 0:
+         res2 = res
+       else:
+         res2 = np.vstack((res2,res))
+       i = i + 1
+
+     return(res2)
+ 
    
     
 def identify_instrument(infile):
