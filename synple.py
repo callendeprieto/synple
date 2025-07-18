@@ -6840,7 +6840,7 @@ def read_tlusty_extras(modelfile,startdir=None):
       if os.path.exists(mf): 
         datadir = mf
       else:
-        mf = os.path.join(synpledir,'data',datadir)
+        mf = os.path.join(synpledir,datadir)
         datadir = mf
 
   #continue reading the rest of the file into atominfo
@@ -6850,7 +6850,7 @@ def read_tlusty_extras(modelfile,startdir=None):
     atominfo.append(line)
     line = f.readline()
 
-    assert (os.path.exists(datadir)), 'The datadir indicated in the tlusty model, '+datadir0+', is not present' 
+    assert (os.path.exists(datadir)), 'The datadir indicated in the tlusty model ,'+datadir+', is not present' 
 
 
   f.close()
@@ -8689,6 +8689,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
     #models    
     if synthfile is None: 
       synthfile = default_synthfile
+      hd, p, d = read_synth(synthfile)
+      x = lambda_synth(synthfile)
       print('adopting synthfile ',synthfile)
     elif type(synthfile) is str:
       hd, p, d = read_synth(synthfile)      
