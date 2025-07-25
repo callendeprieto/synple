@@ -9033,7 +9033,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
     return(bigres)
 
 
-def ebv_bas(infile, ebvmax=0.09, nebv=10, 
+def ebv_bas(infile, ebvstep=0.01, nebv=10, 
         synthfile=None, outfile=None, target=None, rv=None, 
         star=True, conti=0, absolut=False, wrange=None, 
         focus=False, nail=[], ferre=False):
@@ -9041,7 +9041,6 @@ def ebv_bas(infile, ebvmax=0.09, nebv=10,
      """Wrapping bas to explore multiple values of E(B-V)
      """
 
-     ebvstep = ebvmax/(nebv-1)
      ebvs = np.arange(nebv)*ebvstep
 
      i = 0
@@ -11077,14 +11076,13 @@ def wtabmodfits(root, path=None):
       micro.append(1.5)
    
     elif (ndim == 5):
-      #Teff, logg, [Fe/H], [a/Fe] and ?
-      #see Allende Prieto et al. (2018, A&A)
+      #Teff, logg, [Fe/H], [a/Fe] and [C/Fe]
       feh.append(float(cells[2]))
       teff.append(float(cells[0]))
       logg.append(float(cells[1]))
       alphafe.append(float(cells[3]))
-      cfe.append(np.nan)
-      micro.append(np.nan)
+      cfe.append(float(cells[4]))
+      micro.append(1.5)
 
 
     if float(cells[2+2*ndim]) < 300.:
