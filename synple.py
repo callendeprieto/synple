@@ -11202,15 +11202,15 @@ def wtabmodfits(root, path=None):
   cols['FEH'] = np.array(feh)
   cols['ALPHAFE'] = np.array(alphafe) 
   cols['CFE'] = np.array(cfe)
-  cols['LOG10MICRO'] = np.array(micro)
-  cols['PARAM'] = np.vstack ( (teff, logg, feh, alphafe, micro) ).T
+  cols['MICRO'] = np.array(micro)
+  cols['PARAM'] = np.vstack ( (teff, logg, feh, alphafe, cfe) ).T
   cols['COVAR'] = np.array(covar)  #.reshape(len(success),5,5)
   #cols['ELEM'] = np.array(elem)
   #cols['ELEM_ERR'] = np.array(elem_err)
   cols['CHISQ_TOT'] = np.array(chisq_tot)
   cols['SNR_MED'] = np.array(snr_med)
-  cols['RV_ADOP'] = np.array(rv_adop)*units.km/units.s
-  cols['RV_ERR'] = np.array(rv_err)*units.km/units.s
+  cols['VRAD'] = np.array(vrad)*units.km/units.s
+  cols['VRAD_ERR'] = np.array(vrad_err)*units.km/units.s
 
   colcomm = {
   'success': 'Bit indicating whether the code has likely produced useful results',
@@ -11227,14 +11227,14 @@ def wtabmodfits(root, path=None):
   'ALPHAFE': 'Alpha-to-iron ratio [alpha/Fe]',
   'CFE': 'carbon-to-iron ratio [C/Fe]',
   'LOG10MICRO': 'Log10 of Microturbulence (km/s)',
-  'PARAM': 'Array of atmospheric parameters ([Fe/H], [a/Fe], log10micro, Teff,logg)',
-  'COVAR': 'Covariance matrix for ([Fe/H], [C/Fe], Teff,logg)',
+  'PARAM': 'Array of atmospheric parameters (Teff, logg, [Fe/H], [alpha/Fe], [C/Fe])',
+  'COVAR': 'Covariance matrix for (Teff, logg, [Fe/H], [alpha/Fe], [C/Fe])',
   #'ELEM': 'Elemental abundance ratios to hydrogen [elem/H]',
   #'ELEM_ERR': 'Uncertainties in the elemental abundance ratios',
   'CHISQ_TOT': 'Total chi**2',
   'SNR_MED': 'Median signal-to-ratio',
-  'RV_ADOP': 'Adopted Radial Velocity (km/s)',
-  'RV_ERR': 'Uncertainty in the adopted Radial Velocity (km/s)'
+  'VRAD': 'Adopted Radial Velocity (km/s)',
+  'VRAD_ERR': 'Uncertainty in the adopted Radial Velocity (km/s)'
   }      
 
   
