@@ -51,13 +51,13 @@ DESI:
       'n': 10000, 'rv': False, 'ebv': False},
     {'synthfile': 'i_BRZ-DESI.dat',
       'n': 10000, 'rv': False, 'ebv': True},
-    {'synthfile': 'i_BRZ-DESI.dat', 'outhsynthfile': 'n_50kBRZ-DESIrbf.dat',
+    {'synthfile': 'i_BRZ-DESI.dat', 'outsynthfile': 'n_50kBRZ-DESIrbf.dat',
       'n': 50000, 'rv': False, 'ebv': False}, 
-    {'synthfile': 'i_BRZ-DESI.dat', 'outhsynthfile': 'n_50kBRZ-DESIrbf-EBV.dat',
+    {'synthfile': 'i_BRZ-DESI.dat', 'outsynthfile': 'n_50kBRZ-DESIrbf-EBV.dat',
       'n': 50000, 'rv': False, 'ebv': True}, 
-    {'synthfile': 'i_BRZ-DESI.dat', 'outhsynthfile': 'n_5kBRZ-DESIrbf.dat',
+    {'synthfile': 'i_BRZ-DESI.dat', 'outsynthfile': 'n_5kBRZ-DESIrbf.dat',
       'n': 5000, 'rv': False, 'ebv': False},
-    {'synthfile': 'i_BRZ-DESI.dat', 'outhsynthfile': 'n_5kBRZ-DESIrbf-EBV.dat',
+    {'synthfile': 'i_BRZ-DESI.dat', 'outsynthfile': 'n_5kBRZ-DESIrbf-EBV.dat',
       'n': 5000, 'rv': False, 'ebv': True} ]
   bas_perfcheck: [
     {'synthfile': 'n_BRZ-DESIrbf.dat'},
