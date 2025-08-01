@@ -51,10 +51,14 @@ DESI:
       'n': 10000, 'rv': False, 'ebv': False},
     {'synthfile': 'i_BRZ-DESI.dat',
       'n': 10000, 'rv': False, 'ebv': True},
-    {'synthfile': 'i_50kBRZ-DESI.dat', 
+    {'synthfile': 'i_BRZ-DESI.dat', 'outhsynthfile': 'n_50kBRZ-DESIrbf.dat',
       'n': 50000, 'rv': False, 'ebv': False}, 
-    {'synthfile': 'i_50kBRZ-DESI.dat',
-      'n': 50000, 'rv': False, 'ebv': True} ]
+    {'synthfile': 'i_BRZ-DESI.dat', 'outhsynthfile': 'n_50kBRZ-DESIrbf-EBV.dat',
+      'n': 50000, 'rv': False, 'ebv': True}, 
+    {'synthfile': 'i_BRZ-DESI.dat', 'outhsynthfile': 'n_5kBRZ-DESIrbf.dat',
+      'n': 5000, 'rv': False, 'ebv': False},
+    {'synthfile': 'i_BRZ-DESI.dat', 'outhsynthfile': 'n_5kBRZ-DESIrbf-EBV.dat',
+      'n': 5000, 'rv': False, 'ebv': True} ]
   bas_perfcheck: [
     {'synthfile': 'n_BRZ-DESIrbf.dat'},
     {'synthfile': 'n_BRZ-DESIrbf.dat', 'snr': 30 },
@@ -67,12 +71,20 @@ DESI:
     {'synthfile': 'n_50kBRZ-DESIrbf.dat', 'snr': 10 },
     {'synthfile': 'n_50kBRZ-DESIrbf-EBV.dat'},
     {'synthfile': 'n_50kBRZ-DESIrbf-EBV.dat', 'snr': 30 },
-    {'synthfile': 'n_50kBRZ-DESIrbf-EBV.dat', 'snr': 10 } ]
+    {'synthfile': 'n_50kBRZ-DESIrbf-EBV.dat', 'snr': 10 }, 
+    {'synthfile': 'n_5kBRZ-DESIrbf.dat'},
+    {'synthfile': 'n_5kBRZ-DESIrbf.dat', 'snr': 30 },
+    {'synthfile': 'n_5kBRZ-DESIrbf.dat', 'snr': 10 },
+    {'synthfile': 'n_5kBRZ-DESIrbf-EBV.dat'},
+    {'synthfile': 'n_5kBRZ-DESIrbf-EBV.dat', 'snr': 30 },
+    {'synthfile': 'n_5kBRZ-DESIrbf-EBV.dat', 'snr': 10 } ]
   pickle_synth:  [
     {'synthfile': 'n_BRZ-DESIrbf.dat'},
     {'synthfile': 'n_BRZ-DESIrbf-EBV.dat'}, 
     {'synthfile': 'n_50kBRZ-DESIrbf.dat'},
-    {'synthfile': 'n_50kBRZ-DESIrbf-EBV.dat'} ]
+    {'synthfile': 'n_50kBRZ-DESIrbf-EBV.dat'}, 
+    {'synthfile': 'n_5kBRZ-DESIrbf.dat'},
+    {'synthfile': 'n_5kBRZ-DESIrbf-EBV.dat'} ]
 MILES:
   gsynth: [
     {'fwhm': 2.5, 'units': 'A', 'ppr': 3., 'wrange': [3510.,7400.],
