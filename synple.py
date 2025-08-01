@@ -11535,7 +11535,10 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
 
  
   infiles = list(glob.iglob(os.path.join(path_to_data,'**',
-            'coadd*fits'), recursive=True)) 
+            'coadd*fits'), recursive=True))  + \
+            list(glob.iglob(os.path.join(path_to_data,'**',
+            'spectra*fits'), recursive=True))   
+
 
   folders = []
   for entry in infiles:
