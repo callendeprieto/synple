@@ -10681,7 +10681,7 @@ def wferrefits(root, path=None):
 
   for line in of:
     cells=line.split()
-    bestgrid.append(o[0])
+    bestgrid.append('Single')
     id = cells[0]
     cells = cells[1:]
 
@@ -11013,14 +11013,19 @@ def wtabmodfits(root, path=None):
   alphafe=[]
   cfe=[]
   micro=[]
+  teff_err=[]
+  logg_err=[]
+  feh_err=[]
+  alphafe_err=[]
+  cfe_err=[]
   param=[]
   covar=[]
   elem=[]
   elem_err=[]
   snr_med=[]
   chisq_tot=[]
-  rv_adop=[]
-  rv_err=[]
+  vrad=[]
+  vrad_err=[]
 
   of=open(o[0],'r')
     
@@ -11028,7 +11033,7 @@ def wtabmodfits(root, path=None):
 	  
     cells=line.split()
     #k = int(cells[0])  # the very first line gives the index (1,2...) for the successful grid
-    bestgrid.append(o[0])
+    bestgrid.append('Single')
     id = cells[0]
     cells = cells[1:]
 
@@ -11055,6 +11060,12 @@ def wtabmodfits(root, path=None):
       alphafe.append(np.nan)
       cfe.append(np.nan)
       micro.append(np.nan)
+      feh_err.append(np.nan)
+      teff_err.append(float(cells[2]))
+      logg_err.append(float(cells[3]))
+      alphafe_err.append(np.nan)
+      cfe_err.append(np.nan)
+
 
 
     elif (ndim == 3):
@@ -11065,6 +11076,12 @@ def wtabmodfits(root, path=None):
       alphafe.append(np.nan)
       cfe.append(np.nan)
       micro.append(np.nan)
+      feh_err.append(float(cells[5]))
+      teff_err.append(float(cells[3]))
+      logg_err.append(float(cells[4]))
+      alphafe_err.append(np.nan)
+      cfe_err.append(np.nan)
+
 
     elif (ndim == 4):
       #Teff, logg, [Fe/H] and [a/Fe]
@@ -11074,6 +11091,12 @@ def wtabmodfits(root, path=None):
       alphafe.append(float(cells[3]))
       cfe.append(float(cells[4]))
       micro.append(1.5)
+      feh_err.append(float(cells[6]))
+      teff_err.append(float(cells[4]))
+      logg_err.append(float(cells[5]))
+      alphafe_err.append(float(cells[7]))
+      cfe_err.append(np.nan)
+
    
     elif (ndim == 5):
       #Teff, logg, [Fe/H], [a/Fe] and [C/Fe]
@@ -11083,6 +11106,11 @@ def wtabmodfits(root, path=None):
       alphafe.append(float(cells[3]))
       cfe.append(float(cells[4]))
       micro.append(1.5)
+      feh_err.append(float(cells[6]))
+      teff_err.append(float(cells[4]))
+      logg_err.append(float(cells[5]))
+      alphafe_err.append(float(cells[7]))
+      cfe_err.append(float(cells[8]))
 
 
     if float(cells[2+2*ndim]) < 300.:
@@ -11090,10 +11118,10 @@ def wtabmodfits(root, path=None):
     else:
         chisq_tot.append(np.nan)
     snr_med.append(float(cells[1+2*ndim]))
-    rv_adop.append(float(cells[0+2*ndim]))
-    rv_err.append(np.nan)
+    vrad.append(float(cells[0+2*ndim]))
+    vrad_err.append(np.nan)
     par = np.array(cells[0:ndim],dtype=float)
-    cov = np.array(cells[2*ndim:],dtype=float)
+    cov = np.array(cells[3+2*ndim:],dtype=float)
     param.append(par)
     covar.append(cov)
     
