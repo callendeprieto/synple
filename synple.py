@@ -4637,7 +4637,6 @@ def read_synth(synthfile,nd=False):
    2D array with the grid data and dimentions product(N_P) x NPIX
    (multidimensional if the grid has more than 1 parameters and 
     the boolean ND is set to True)
-  
 
     """
 
