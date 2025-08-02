@@ -11633,15 +11633,18 @@ def desiget(ra=None,dec=None,radius=30.,targetids=[],user=None,password=None):
 
   """
 
+  filename = None
   success = True
 
   if ra is not None and dec is not None:
  
-    url = "http://inspector.desi.lbl.gov/dr1/spectra/radec/"+str(ra)+","+str(dec)+","+str(radius)+"?format=fits" 
+    url = "http://inspector.desi.lbl.gov/dr1/spectra/radec/"+str(ra)+","+str(dec)+","+str(radius)+"?format=fits?" 
 
     try: 
-      download_file(url,local_filename="spectra-RA"+str(ra)+"-DEC"+str(dec)+"-"+str(radius)+".fits", user=user, password=password)
+      filename = "spectra-RA"+str(ra)+"-DEC"+str(dec)+"-"+str(radius)+".fits"
+      download_file(url,local_filename=filename, user=user, password=password)
     except IOError:
+      filename = None
       success = False
       print("Error: cannot download any data")
  
@@ -11649,12 +11652,14 @@ def desiget(ra=None,dec=None,radius=30.,targetids=[],user=None,password=None):
     for target in targetids:
       url = "https://inspector.desi.lbl.gov/dr1/spectra/"+str(target)+"?format=fits"
       try:
-        download_file(url,local_filename="spectra-"+str(target)+".fits", user=user, password=password)
+        filename = "spectra-"+str(target)+".fits"
+        download_file(url,local_filename=filename, user=user, password=password)
       except IOError:
+        filename = None
         success = False
         print("Error: cannot download any data")
 
-  return(success)
+  return(filename)
 
 #download a file over the net
 #adapted from https://stackoverflow.com/questions/16694907/download-large-file-in-python-with-requests/16696317#16696317
