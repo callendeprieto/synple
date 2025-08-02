@@ -11605,7 +11605,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
 
   return()
 
-def desiget(ra=None,dec=None,radius=30.,targetids=[],user=None,password=None):
+def desiget(ra=None,dec=None,radius=30.,targetids=[],da='dr1',user=None,password=None):
 
   """Calls DESI inspector to retrieve a FITS with the spectra in a field or 
   for a list of targets
@@ -11633,28 +11633,33 @@ def desiget(ra=None,dec=None,radius=30.,targetids=[],user=None,password=None):
 
   """
 
+  filename = None
   success = True
 
   if ra is not None and dec is not None:
  
-    url = "http://inspector.desi.lbl.gov/dr1/spectra/radec/"+str(ra)+","+str(dec)+","+str(radius)+"?format=fits" 
+    url = "http://inspector.desi.lbl.gov/"+str(da)+"/spectra/radec/"+str(ra)+","+str(dec)+","+str(radius)+"?format=fits" 
 
     try: 
-      download_file(url,local_filename="spectra-RA"+str(ra)+"-DEC"+str(dec)+"-"+str(radius)+".fits", user=user, password=password)
+      filename = "spectra-RA"+str(ra)+"-DEC"+str(dec)+"-"+str(radius)+".fits"
+      download_file(url,local_filename=filename, user=user, password=password)
     except IOError:
+      filename = None
       success = False
       print("Error: cannot download any data")
  
   else: 
     for target in targetids:
-      url = "https://inspector.desi.lbl.gov/dr1/spectra/"+str(target)+"?format=fits"
+      filename = "spectra-"+str(target)+".fits"
+      url = "https://inspector.desi.lbl.gov/"+str(da)+"/spectra/"+str(target)+"?format=fits"
       try:
-        download_file(url,local_filename="spectra-"+str(target)+".fits", user=user, password=password)
+        download_file(url,local_filename=filename, user=user, password=password)
       except IOError:
+        filename = None
         success = False
         print("Error: cannot download any data")
 
-  return(success)
+  return(filename)
 
 #download a file over the net
 #adapted from https://stackoverflow.com/questions/16694907/download-large-file-in-python-with-requests/16696317#16696317
