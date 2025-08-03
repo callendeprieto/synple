@@ -11513,7 +11513,8 @@ def fparams(root,synthfile=None,figure=None,condition=None):
 
 
 def desida(path_to_data='healpix',path_to_output='sp_output',
-           synthfile=None, seconds_per_target=2.,star=True,focus=False):
+           synthfile=None, seconds_per_target=2.,star=True,focus=False,
+           conti=0):
 
   """ Prepare a DESI data for parallel processing
   """
@@ -11593,7 +11594,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
      " bas(\'" + entry + "\'," + \
      " outfile=\'" + outfile + "\'," + \
      " synthfile=" + str(synthfile1) + ", star= " + str(star) + ", focus= " + \
-     str(focus) + "); " + \
+     str(focus) + ", conti= " + str(conti) + "); " + \
      " wtabmodfits(\'" + root + "'" + ", path= '" + tpath + "\'" + \
      ")\"" + "\n"
 
@@ -11605,7 +11606,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
 
   return()
 
-def desiget(ra=None,dec=None,radius=30.,targetids=[],user=None,password=None):
+def desiget(ra=None,dec=None,radius=30.,targetids=[],da='dr1',user=None,password=None):
 
   """Calls DESI inspector to retrieve a FITS with the spectra in a field or 
   for a list of targets
@@ -11650,7 +11651,8 @@ def desiget(ra=None,dec=None,radius=30.,targetids=[],user=None,password=None):
  
   else: 
     for target in targetids:
-      url = "https://inspector.desi.lbl.gov/dr1/spectra/"+str(target)+"?format=fits"
+      filename = "spectra-"+str(target)+".fits"
+      url = "https://inspector.desi.lbl.gov/"+str(da)+"/spectra/"+str(target)+"?format=fits"
       try:
         filename = "spectra-"+str(target)+".fits"
         download_file(url,local_filename=filename, user=user, password=password)
