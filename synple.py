@@ -11639,7 +11639,7 @@ def desiget(ra=None,dec=None,radius=30.,targetids=[],da='dr1',user=None,password
 
   if ra is not None and dec is not None:
  
-    url = "http://inspector.desi.lbl.gov/dr1/spectra/radec/"+str(ra)+","+str(dec)+","+str(radius)+"?format=fits?" 
+    url = "http://inspector.desi.lbl.gov/"+str(da)+"/spectra/radec/"+str(ra)+","+str(dec)+","+str(radius)+"?format=fits?" 
 
     try: 
       filename = "spectra-RA"+str(ra)+"-DEC"+str(dec)+"-"+str(radius)+".fits"
