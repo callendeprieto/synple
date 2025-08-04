@@ -4991,8 +4991,11 @@ def merge_synth(synthfile,outsynthfile=None):
             p2 = np.zeros((n,len(pp[0,:])))  
             p2[:,:] = -10.
             #DB white dwarfs get a -15. so we can distinguish them from DAs
-            if h['ID'][0:2] == 'db':
-              p2[:,:] = -15.
+            if type(h) is list:
+              if h[0]['ID'][0:2] == 'db':
+            else:
+              if h['ID'][0:2] == 'db':
+                p2[:,:] = -15.
             p2[:,:len(p[0,:])] = p[:,:]
           elif len(pp[0,:]) == len(p[0,:]):
             p2 = p
