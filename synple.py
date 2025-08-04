@@ -4993,6 +4993,7 @@ def merge_synth(synthfile,outsynthfile=None):
             #DB white dwarfs get a -15. so we can distinguish them from DAs
             if type(h) is list:
               if h[0]['ID'][0:2] == 'db':
+                p2[:,:] = -15.
             else:
               if h['ID'][0:2] == 'db':
                 p2[:,:] = -15.
