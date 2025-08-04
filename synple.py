@@ -4918,6 +4918,7 @@ def merge_synth(synthfile,outsynthfile=None):
     k = 0
     synthfile2 = 'merged_'
     for entry in synthfile:
+    print('synthfile=',entry)
 
         h,p,d = read_synth(entry) 
         x = lambda_synth(entry)
