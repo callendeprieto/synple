@@ -1,23 +1,3 @@
-STIS:
-  gsynth: [
-    {'fwhm': 600., 'units': 'km/s', 'ppr': 3., 'wrange': [3000.,9900.],
-     'outsynthfile': 'n_STIS.dat' }]
-  rewrite_synth: [
-    {'synthfile': 'n_STIS.dat', 'outsynthfile': 'i_STIS.dat'}]
-  synth_rbf:     [
-    {'synthfile': 'i_STIS.dat',
-      'n': 10000, 'rv': False, 'ebv': False},
-    {'synthfile': 'i_STIS.dat',
-      'n': 10000, 'rv': False, 'ebv': True},
-    {'synthfile': 'i_STIS.dat', 'outsynthfile': 'n_50kSTISrbf.dat',
-      'n': 50000, 'rv': False, 'ebv': False},
-    {'synthfile': 'i_STIS.dat', 'outsynthfile': 'n_5kSTISrbf.dat',
-      'n': 5000, 'rv': False, 'ebv': False} ]
-  pickle_synth:  [
-    {'synthfile': 'n_STISrbf.dat'},
-    {'synthfile': 'n_STISrbf-EBV.dat'},
-    {'synthfile': 'n_50kSTISrbf.dat'},
-    {'synthfile': 'n_5kSTISrbf.dat'} ]
 DESI:
   gsynth: [ 
     {'fwhm': 1.8, 'units': 'A', 'ppr': 3., 'wrange': [3759., 5959], 
@@ -41,12 +21,32 @@ DESI:
     {'synthfile': 'i_BRZ-DESI.dat', 'outsynthfile': 'n_50kBRZ-DESIrbf.dat',
       'n': 50000, 'rv': False, 'ebv': False}, 
     {'synthfile': 'i_BRZ-DESI.dat', 'outsynthfile': 'n_5kBRZ-DESIrbf.dat',
-      'n': 5000, 'rv': False, 'ebv': False},
+      'n': 5000, 'rv': False, 'ebv': False} ]
   pickle_synth:  [
     {'synthfile': 'n_BRZ-DESIrbf.dat'},
     {'synthfile': 'n_BRZ-DESIrbf-EBV.dat'}, 
     {'synthfile': 'n_50kBRZ-DESIrbf.dat'},
-    {'synthfile': 'n_5kBRZ-DESIrbf.dat'},
+    {'synthfile': 'n_5kBRZ-DESIrbf.dat'} ]
+STIS:
+  gsynth: [
+    {'fwhm': 600., 'units': 'km/s', 'ppr': 3., 'wrange': [3000.,9900.],
+     'outsynthfile': 'n_STIS.dat' }]
+  rewrite_synth: [
+    {'synthfile': 'n_STIS.dat', 'outsynthfile': 'i_STIS.dat'}]
+  synth_rbf:     [
+    {'synthfile': 'i_STIS.dat',
+      'n': 10000, 'rv': False, 'ebv': False},
+    {'synthfile': 'i_STIS.dat',
+      'n': 10000, 'rv': False, 'ebv': True},
+    {'synthfile': 'i_STIS.dat', 'outsynthfile': 'n_50kSTISrbf.dat',
+      'n': 50000, 'rv': False, 'ebv': False},
+    {'synthfile': 'i_STIS.dat', 'outsynthfile': 'n_5kSTISrbf.dat',
+      'n': 5000, 'rv': False, 'ebv': False} ]
+  pickle_synth:  [
+    {'synthfile': 'n_STISrbf.dat'},
+    {'synthfile': 'n_STISrbf-EBV.dat'},
+    {'synthfile': 'n_50kSTISrbf.dat'},
+    {'synthfile': 'n_5kSTISrbf.dat'} ]
 MILES:
   gsynth: [
     {'fwhm': 2.5, 'units': 'A', 'ppr': 3., 'wrange': [3510.,7400.],
