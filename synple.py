@@ -4355,7 +4355,7 @@ def create_regular_kurucz(tteff=None, tlogg =None, \
     n_p = [tteff[0],tlogg[0], tfeh[0], tafe[0], tmicro[0]]
     llimits = [tteff[1], tlogg[1], tfeh[1], tafe[1], tmicro[1]]
     steps  = [tteff[2], tlogg[2] , tfeh[2], tafe[2], tmicro[2]]
-    tags = ['teff', 'logg', 'METALS', 'ALPHAS, 'MICRO'] 
+    tags = ['teff', 'logg', 'METALS', 'ALPHAS', 'MICRO'] 
     alphas = ['O', 'Ne', 'Mg', 'Si', 'S', 'Ca', 'Ti']
     if (tafe[0] > 1 and tie_afe):
       print('Error: either tafe has more than one element or 'tie_afe' is True')
