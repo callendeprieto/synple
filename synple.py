@@ -4314,13 +4314,15 @@ def mkhdr_irregular(pars):
   
 #create a regular grid of Kurucz model atmospheres
 def create_regular_kurucz(tteff=None, tlogg =None, \
-                          tfeh = (1,0.0,0.0), tmicro = (1, 1.0, 0.0), \
+                          tfeh = (1,0.0,0.0), tafe = (1,0.0,0.0), 
+                          tmicro = (1, 1.0, 0.0), \
                           tie_afe=False, **kargs):
 							  
     """Creates scripts to compute a regular grid of Kurucz models using Sbordone's version 
     of ATLAS9. The model grid is defined by triads of various parameters.  Each triad has 
     three values (n, llimit, step) that define an array x = np.range(n)*step + llimit. 
-    Triads in teff (tteff) and logg (tlogg) are mandatory. Triads in [Fe/H] (tfeh) and 
+    Triads in teff (tteff) and logg (tlogg) are mandatory. Triads in [Fe/H] 
+    (tfeh) , [alpha/Fe] (tafe) and 
     microturbulence (tmicro) are optional since arrays with just one 0.0 are included by 
     default. Any other chemical element can be added with additional triads, e.g. to 
     vary sodium with 3 values [Na/Fe] = -0.2, 0.0 and +0.2 one would add a parameter
@@ -4334,6 +4336,8 @@ def create_regular_kurucz(tteff=None, tlogg =None, \
       logg triad (n, llimit, step)
     tfeh: tuple
       [Fe/H] triad
+    tafe: tuple
+      [a/Fe] triad
     tmicro: tuple
        microturbulence triad
     tie_afe: boolean
@@ -4348,10 +4352,15 @@ def create_regular_kurucz(tteff=None, tlogg =None, \
     """
     
 							  
-    n_p = [tteff[0],tlogg[0], tfeh[0], tmicro[0]]
-    llimits = [tteff[1], tlogg[1], tfeh[1], tmicro[1]]
-    steps  = [tteff[2], tlogg[2] , tfeh[2], tmicro[2]]
-    tags = ['teff', 'logg', 'METALS','MICRO'] 
+    n_p = [tteff[0],tlogg[0], tfeh[0], tafe[0], tmicro[0]]
+    llimits = [tteff[1], tlogg[1], tfeh[1], tafe[1], tmicro[1]]
+    steps  = [tteff[2], tlogg[2] , tfeh[2], tafe[2], tmicro[2]]
+    tags = ['teff', 'logg', 'METALS', 'ALPHAS, 'MICRO'] 
+    alphas = ['O', 'Ne', 'Mg', 'Si', 'S', 'Ca', 'Ti']
+    if (tafe[0] > 1 and tie_afe):
+      print('Error: either tafe has more than one element or 'tie_afe' is True')
+      sys.exit(0)
+
 
     for entry in list(map(str,kargs.keys())): tags.append(entry)
     for entry in kargs.values(): 
@@ -4391,20 +4400,26 @@ def create_regular_kurucz(tteff=None, tlogg =None, \
          sst = ('%+.3f   ' % (aa[i,j]*steps[j]+llimits[j]) )
          comm = comm + sst
        for j in range(len(tags)-2):
-         sst = ('%+.3f   ' % (aa[i,j+2]*steps[j+2]+llimits[j+2]) )
-         comm = comm + tags[j+2] + '=' + sst
-         if tie_afe and tags[j+2] == "METALS":
-           feh = aa[i,j+2]*steps[j+2]+llimits[j+2]
-           if feh <= -1.5: 
-             afe = 0.5
-           elif feh >= 0.:
-             afe = 0.0
-           else:
-             afe = -1./3. * feh
-           alphas = ['O', 'Ne','Mg', 'Si', 'S', 'Ca', 'Ti']
+         if tags[j+2] == "ALPHAS":
+           afe = aa[i,j+2]*steps[j+2]+llimits[j+2]
            for entry in alphas:
              sst = ('%+.3f   ' % (afe) )
              comm = comm + entry + '=' + sst
+         else:
+           sst = ('%+.3f   ' % (aa[i,j+2]*steps[j+2]+llimits[j+2]) )
+           comm = comm + tags[j+2] + '=' + sst
+           if tie_afe and tags[j+2] == "METALS":
+             feh = aa[i,j+2]*steps[j+2]+llimits[j+2]
+             if feh <= -1.5: 
+               afe = 0.5
+             elif feh >= 0.:
+               afe = 0.0
+             else:
+               afe = -1./3. * feh
+             for entry in alphas:
+               sst = ('%+.3f   ' % (afe) )
+               comm = comm + entry + '=' + sst
+
  
        print(sst)
        print(comm)
