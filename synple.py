@@ -4358,7 +4358,7 @@ def create_regular_kurucz(tteff=None, tlogg =None, \
     tags = ['teff', 'logg', 'METALS', 'ALPHAS', 'MICRO'] 
     alphas = ['O', 'Ne', 'Mg', 'Si', 'S', 'Ca', 'Ti']
     if (tafe[0] > 1 and tie_afe):
-      print('Error: either tafe has more than one element or 'tie_afe' is True')
+      print('Error: either tafe has more than one element or tie_afe is True')
       sys.exit(0)
 
 
