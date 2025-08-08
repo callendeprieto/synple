@@ -2489,6 +2489,8 @@ def grid_builder(config,  modeldir=modeldir):
        os.mkdir(entry)
        os.chdir(entry)
        if 'vmicro' in conf[entry]:  vmicro = float(conf[entry]['vmicro']) 
+       tteff = tuple(map(float,conf[entry]['tteff'].split()))
+       tlogg = tuple(map(float,conf[entry]['tlogg'].split())) 
        if 'tfeh' in conf[entry]:
          tfeh  = tuple(map(float,conf[entry]['tfeh'].split()))
        else:
@@ -2503,8 +2505,8 @@ def grid_builder(config,  modeldir=modeldir):
          tcfe = (1,0.0,0.0)
        if conf[entry]['type'] == 'marcs':
           files = collect_marcs(modeldir=os.path.join(modeldir,'marcs'), 
-                   tteff = tuple(map(float,conf[entry]['tteff'].split())),
-                   tlogg = tuple(map(float,conf[entry]['tlogg'].split())), 
+                   tteff = tteff,
+                   tlogg = tlogg, 
                    tfeh  = tfeh,
                    tafe  = tafe,
                    tcfe  = tcfe,
@@ -2512,8 +2514,8 @@ def grid_builder(config,  modeldir=modeldir):
                    ext = 'mod.gz')                   
        elif conf[entry]['type'] == 'kurucz':
           files = collect_kurucz(modeldir=os.path.join(modeldir,'kurucz'), 
-                   tteff = tuple(map(float,conf[entry]['tteff'].split())),
-                   tlogg = tuple(map(float,conf[entry]['tlogg'].split())), 
+                   tteff = tteff,
+                   tlogg = tlogg, 
                    tfeh  = tfeh,
                    tafe  = tafe,
                    tcfe  = tcfe,
@@ -2525,7 +2527,13 @@ def grid_builder(config,  modeldir=modeldir):
                              
        polysyn(files, wrange = wrange, vmicro = vmicro )
     
-       merge_slurm_parallel(ext='job', nmerge=nmerge, ncpu=ncpu)
+       #merge_slurm_parallel(ext='job', nmerge=nmerge, ncpu=ncpu)
+
+       frun = open('run.py','w')
+       frun.write("from synple import mkgrid\n\n")
+       frun.write( "mkgrid('%s',tteff = (%4i,%.2f,%.2f), tlogg = (%4i,%.2f,%.2f), tfeh = (%4i,%.2f,%.2f), tafe = (%4i,%.2f,%.2f), tcfe = (%4i,%.2f,%.2f) )\n" % (entry+'.dat',tteff[0],tteff[1],tteff[2],tlogg[0],tlogg[1],tlogg[2],tfeh[0],tfeh[1],tfeh[2],tafe[0],tafe[1],tafe[2],tcfe[0],tcfe[1],tcfe[2]) )
+       frun.write( "bas_build('%s')\n" % (entry+'.dat') )
+       frun.close()
                    
        os.chdir('..')
        
