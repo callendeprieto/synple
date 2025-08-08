@@ -65,6 +65,12 @@ import astropy.table as tbl
 import astropy.units as units
 import datetime
 import platform
+import importlib.util
+if importlib.util.find_spec('cupy') is None:
+  print("cupy is not installed")
+else:
+  import cupy as cp
+
 
 #configuration
 #synpledir = /home/callende/synple
@@ -8635,10 +8641,106 @@ def cebas(p,d,flx,iva,prior=None,filter=None):
       
     return(res,eres,cov,bflx,likeli)
 
+def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
+
+    """Contrast-Expansion for BAS
+    Evaluates the chi-squared between an observed spectrum
+    (flx, with inverse variance iva) and an entire model grid  (p,d)
+    to determine the best-fitting parameters and model
+    
+    Parameters
+    ----------
+    p: 2D numpy array of floats 
+      parameter table with as many columns as parameters and
+      as many rows as spectra in the array d
+      
+    d: 2D numpy array of floats
+      spectra table with as many columns as frequencies in the spectra
+      and as many rows as spectra
+      
+    flx: 1D numpy array of floats
+      observed spectrum 
+    
+    iva: 1D numpy array of floats
+      inverse variance for the observed spectrum
+
+    prior: 1D numpy array of floats
+      prior probability distribution, same size as rows in p
+      (default is None, for a flat prior)
+
+    filter: 1D numpy array of floats
+      weights to give to the different frequencies in the spectrum when
+      computing the merit function
+      (default is None, for flat weights)
+    
+    Returns
+    -------
+    res: numpy array of floats
+      best-fitting parameters (as many entries as columns in p)
+      
+    eres: numpy array of floats
+      uncertainties for the best-fitting parameters
+    
+    cov: numpy array of floats
+      top half of the covariance matrix for the best-fitting parameters
+      
+    bflx: numpy array of floats
+      best-fitting model (same size as flx)
+
+    weights: numpy array of floats
+      likelihood for the model grid, with as many elements as rows in p and d 
+      
+    """
+
+    if filter is None:
+      chi = cp.sum((d-flx)**2 * iva,-1)
+    else:
+      #print('cp.sum(filter)=',cp.sum(filter))
+      assert cp.abs(1.-cp.sum(filter)) < 1e-10,'sum(filter) must be 1.'
+      chi = cp.sum((d-flx)**2 * iva * filter,-1)
+
+    beta = cp.median(chi) / 1490. / 5.
+    while cp.exp(-cp.min(chi)/2./beta) <= 0.0:
+      beta = beta * 2.
+      #print('-- new beta=',beta)
+
+    #parameters
+    ndim = len(p[0,:])
+    res = cp.zeros(ndim)
+    eres = cp.zeros(ndim)
+    cov = cp.zeros(ndim*(ndim+1)//2)
+    likeli = cp.exp(-chi/2./beta)
+    if prior is not None:
+      assert cp.abs(1.-cp.sum(prior)) < 1e-10,'sum(prior) must be 1.'
+      if cp.sum(likeli*prior) > 0.:
+        likeli = likeli * prior
+      else:
+        'warning: prior and likelihood are not compatible'
+    den = cp.sum(likeli)
+    #print('den=',den)
+    k = 0
+    for i in range(ndim):
+        #parameters
+        res[i] = cp.sum( likeli * p[:,i])/den
+        
+        #uncertainties
+        for j in range(ndim-i):
+          cov[k] = cp.sum( likeli * (p[:,i] - res[i]) * (p[:,j+i] - res[j+i]) )/den
+          if j == 0: eres[i] = cp.sqrt(cov[k])
+          k = k + 1
+      
+    #best-fitting model
+    bflx = cp.matmul(likeli,d)/den
+    #bflx = [0.0,0.0]
+        
+    print('res=',res,'eres=',eres)
+      
+    return(res,eres,cov,bflx,likeli)
+
 
 def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None, 
         star=True, conti=0, absolut=False, wrange=None, 
-        focus=False, nail=[], ferre=False):
+        focus=False, nail=[], gpu=False, ferre=False):
 
     """Bayesian Algorithm in Synple
     
@@ -8702,6 +8804,10 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       after the first global fit of all the parameters. This may be useful
       for chemical elements which impact on limited spectral windows
       (default is no parameter to nail, so an empty list)
+    gpu: bool
+      sends the calculation of the likelihood to the GPU
+    ferre: bool
+      calls the FERRE code to run the optimization
    
     Returns
     -------
@@ -8891,8 +8997,21 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         ivar = ivar * mspec**2
 
         #analyze
-        #dgpu = cp.array(d) 
-        res, eres, cov, bmod, weights = cebas( p, d, spec, ivar )
+       
+        if gpu:
+          p_gpu = cp.asarray(p) 
+          d_gpu = cp.asarray(d) 
+          spec_gpu = cp.asarray(spec)
+          ivar_gpu = cp.asarray(ivar)
+          res_gpu, eres_gpu, cov_gpu, bmod_gpu, weights_gpu = cebas_gpu(p_gpu, d_gpu, spec_gpu, ivar_gpu)
+          res = cp.asnumpy(res_gpu)
+          eres = cp.asnumpy(eres_gpu)
+          cov = cp.asnumpy(cov_gpu)
+          bmod = cp.asnumpy(bmod_gpu)
+          weights = cp.asnumpy(weights_gpu)
+        else:
+          res, eres, cov, bmod, weights = cebas( p, d, spec, ivar )
+
         lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - ndim) )
         print('reduced lchi =',lchi)
                 
