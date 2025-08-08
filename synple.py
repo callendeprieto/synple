@@ -2483,28 +2483,34 @@ def grid_builder(config,  modeldir=modeldir):
        os.mkdir(entry)
        os.chdir(entry)
        if 'vmicro' in conf[entry]:  vmicro = float(conf[entry]['vmicro']) 
+       if 'tfeh' in conf[entry]:
+         tfeh  = tuple(map(float,conf[entry]['tfeh'].split()))
+       else:
+         tfeh = (1,0.0,0.0)
+       if 'tafe' in conf[entry]:
+         tafe  = tuple(map(float,conf[entry]['tafe'].split()))
+       else:
+         tafe = (1,0.0,0.0)
+       if 'tcfe' in conf[entry]:
+         tcfe  = tuple(map(float,conf[entry]['tcfe'].split()))
+       else:
+         tcfe = (1,0.0,0.0)
        if conf[entry]['type'] == 'marcs':
           files = collect_marcs(modeldir=modeldir, 
                    tteff = tuple(map(float,conf[entry]['tteff'].split())),
                    tlogg = tuple(map(float,conf[entry]['tlogg'].split())), 
-                   if 'tfeh' in conf[entry]:
-                     tfeh  = tuple(map(float,conf[entry]['tfeh'].split())),
-                   if 'tafe' in conf[entry]:
-                     tafe  = tuple(map(float,conf[entry]['tafe'].split())),
-                   if 'tcfe' in conf[entry]:
-                     tcfe  = tuple(map(float,conf[entry]['tcfe'].split())),
+                   tfeh  = tfeh,
+                   tafe  = tafe,
+                   tcfe  = tcfe,
                    ignore_missing_models = True,
                    ext = 'mod.gz')                   
        elif conf[entry]['type'] == 'kurucz':
           files = collect_kurucz(modeldir=modeldir, 
                    tteff = tuple(map(float,conf[entry]['tteff'].split())),
                    tlogg = tuple(map(float,conf[entry]['tlogg'].split())), 
-                   if 'tfeh' in conf[entry]:
-                     tfeh  = tuple(map(float,conf[entry]['tfeh'].split())),
-                   if 'tafe' in conf[entry]:
-                     tafe  = tuple(map(float,conf[entry]['tafe'].split())),
-                   if 'tcfe' in conf[entry]:
-                     tcfe  = tuple(map(float,conf[entry]['tcfe'].split())),
+                   tfeh  = tfeh,
+                   tafe  = tafe,
+                   tcfe  = tcfe,
                    ignore_missing_models = True,
                    ext = 'mod')
        else:
