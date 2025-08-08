@@ -2464,7 +2464,7 @@ def merge_slurm_parallel(path='./',ext='slurm',nmerge=2,ncpu=2):
 
 def grid_builder(config,  modeldir=modeldir):
 
-    conf = load_conf(config)
+    conf = load_conf(config, confdir=confdir)
 
     wrange = tuple(map(float,conf['wrange'].split()))
     if 'vmicro' in conf: vmicro = float(conf['vmicro'])
