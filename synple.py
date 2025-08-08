@@ -8904,6 +8904,10 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
     if len(infiles) > 1 and (rv is not None or ebv is not None):
       print('BAS warning: are the same rv/ebv arrays/lists intended for multiple infiles ...??')  
 
+
+    if gpu:
+      p_gpu = cp.asarray(p)
+      d_gpu = cp.asarray(d)
         
     for file in infiles:
 
@@ -8999,8 +9003,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         #analyze
        
         if gpu:
-          p_gpu = cp.asarray(p) 
-          d_gpu = cp.asarray(d) 
+          #p_gpu = cp.asarray(p) 
+          #d_gpu = cp.asarray(d) 
           spec_gpu = cp.asarray(spec)
           ivar_gpu = cp.asarray(ivar)
           res_gpu, eres_gpu, cov_gpu, bmod_gpu, weights_gpu = cebas_gpu(p_gpu, d_gpu, spec_gpu, ivar_gpu)
