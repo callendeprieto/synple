@@ -2487,18 +2487,24 @@ def grid_builder(config,  modeldir=modeldir):
           files = collect_marcs(modeldir=modeldir, 
                    tteff = tuple(map(float,conf[entry]['tteff'].split())),
                    tlogg = tuple(map(float,conf[entry]['tlogg'].split())), 
-                   tfeh  = tuple(map(float,conf[entry]['tfeh'].split())),
-                   tafe  = tuple(map(float,conf[entry]['tafe'].split())),
-                   tcfe  = tuple(map(float,conf[entry]['tcfe'].split())),
+                   if 'tfeh' in conf[entry]:
+                     tfeh  = tuple(map(float,conf[entry]['tfeh'].split())),
+                   if 'tafe' in conf[entry]:
+                     tafe  = tuple(map(float,conf[entry]['tafe'].split())),
+                   if 'tcfe' in conf[entry]:
+                     tcfe  = tuple(map(float,conf[entry]['tcfe'].split())),
                    ignore_missing_models = True,
                    ext = 'mod.gz')                   
        elif conf[entry]['type'] == 'kurucz':
           files = collect_kurucz(modeldir=modeldir, 
                    tteff = tuple(map(float,conf[entry]['tteff'].split())),
                    tlogg = tuple(map(float,conf[entry]['tlogg'].split())), 
-                   tfeh  = tuple(map(float,conf[entry]['tfeh'].split())),
-                   tafe  = tuple(map(float,conf[entry]['tafe'].split())),
-                   tcfe  = tuple(map(float,conf[entry]['tcfe'].split())),
+                   if 'tfeh' in conf[entry]:
+                     tfeh  = tuple(map(float,conf[entry]['tfeh'].split())),
+                   if 'tafe' in conf[entry]:
+                     tafe  = tuple(map(float,conf[entry]['tafe'].split())),
+                   if 'tcfe' in conf[entry]:
+                     tcfe  = tuple(map(float,conf[entry]['tcfe'].split())),
                    ignore_missing_models = True,
                    ext = 'mod')
        else:
