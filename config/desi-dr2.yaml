@@ -1,0 +1,22 @@
+wrange: 3000. 10000.
+vmicro: -1
+grids: ['f_m','f_k','f_a','f_b']
+f_m:
+       type: 'marcs'
+       tteff: 16  2500.    100.
+       tlogg: 11     0.0     0.5
+       tfeh:   8    -2.5     0.5
+f_k:
+       type: 'kurucz'
+       tteff: 12  4000.    250.
+       tlogg: 11     0.0     0.5
+       tfeh:  15    -5.0     0.5
+f_a:
+       type: 'kurucz'
+       tteff: 18  6750.    250.
+       tlogg:  9     1.0     0.5
+       tfeh:   8    -2.5     0.5
+f_b:
+       type: 'kurucz'
+       tteff: 20  11000.  1000.
+       tlogg:  5     3.0     0.5
