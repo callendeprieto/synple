@@ -14,19 +14,16 @@ DESI:
     {'synthfile': ['i_B-DESI.dat','i_R-DESI.dat','i_Z-DESI.dat'],
      'outsynthfile': 'i_BRZ-DESI.dat'} ]
   synth_rbf:  [ 
-    {'synthfile': 'i_BRZ-DESI.dat',
+    {'synthfile': 'i_BRZ-DESI.dat', 
       'n': 10000, 'rv': False, 'ebv': False},
-    {'synthfile': 'i_BRZ-DESI.dat',
-      'n': 10000, 'rv': False, 'ebv': True},
     {'synthfile': 'i_BRZ-DESI.dat', 'outsynthfile': 'n_50kBRZ-DESIrbf.dat',
       'n': 50000, 'rv': False, 'ebv': False}, 
-    {'synthfile': 'i_BRZ-DESI.dat', 'outsynthfile': 'n_5kBRZ-DESIrbf.dat',
-      'n': 5000, 'rv': False, 'ebv': False} ]
+    {'synthfile': 'i_BRZ-DESI.dat', 'outsynthfile': 'n_2kBRZ-DESIrbf.dat',
+      'n': 2000, 'rv': False, 'ebv': False} ]
   pickle_synth:  [
     {'synthfile': 'n_BRZ-DESIrbf.dat'},
-    {'synthfile': 'n_BRZ-DESIrbf-EBV.dat'}, 
     {'synthfile': 'n_50kBRZ-DESIrbf.dat'},
-    {'synthfile': 'n_5kBRZ-DESIrbf.dat'} ]
+    {'synthfile': 'n_2kBRZ-DESIrbf.dat'} ]
 STIS:
   gsynth: [
     {'fwhm': 600., 'units': 'km/s', 'ppr': 3., 'wrange': [3000.,9900.],
@@ -34,19 +31,19 @@ STIS:
   rewrite_synth: [
     {'synthfile': 'n_STIS.dat', 'outsynthfile': 'i_STIS.dat'}]
   synth_rbf:     [
-    {'synthfile': 'i_STIS.dat',
+    {'synthfile': 'i_STIS.dat', 
       'n': 10000, 'rv': False, 'ebv': False},
-    {'synthfile': 'i_STIS.dat',
+    {'synthfile': 'i_STIS.dat', 
       'n': 10000, 'rv': False, 'ebv': True},
     {'synthfile': 'i_STIS.dat', 'outsynthfile': 'n_50kSTISrbf.dat',
       'n': 50000, 'rv': False, 'ebv': False},
-    {'synthfile': 'i_STIS.dat', 'outsynthfile': 'n_5kSTISrbf.dat',
-      'n': 5000, 'rv': False, 'ebv': False} ]
+    {'synthfile': 'i_STIS.dat', 'outsynthfile': 'n_2kSTISrbf.dat',
+      'n': 2000, 'rv': False, 'ebv': False} ]
   pickle_synth:  [
     {'synthfile': 'n_STISrbf.dat'},
     {'synthfile': 'n_STISrbf-EBV.dat'},
     {'synthfile': 'n_50kSTISrbf.dat'},
-    {'synthfile': 'n_5kSTISrbf.dat'} ]
+    {'synthfile': 'n_2kSTISrbf.dat'} ]
 MILES:
   gsynth: [
     {'fwhm': 2.5, 'units': 'A', 'ppr': 3., 'wrange': [3510.,7400.],
