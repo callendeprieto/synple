@@ -2530,7 +2530,7 @@ def grid_builder(config,  modeldir=modeldir):
        #merge_slurm_parallel(ext='job', nmerge=nmerge, ncpu=ncpu)
 
        frun = open('run.py','w')
-       frun.write("from synple import mkgrid\n\n")
+       frun.write("from synple import mkgrid, bas_build\n\n")
        frun.write( "mkgrid('%s',tteff = (%4i,%.2f,%.2f), tlogg = (%4i,%.2f,%.2f), tfeh = (%4i,%.2f,%.2f), tafe = (%4i,%.2f,%.2f), tcfe = (%4i,%.2f,%.2f) )\n" % (entry+'.dat',tteff[0],tteff[1],tteff[2],tlogg[0],tlogg[1],tlogg[2],tfeh[0],tfeh[1],tfeh[2],tafe[0],tafe[1],tafe[2],tcfe[0],tcfe[1],tcfe[2]) )
        frun.write( "bas_build('%s')\n" % (entry+'.dat') )
        frun.close()
