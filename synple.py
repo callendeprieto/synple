@@ -2496,7 +2496,7 @@ def grid_builder(config,  modeldir=modeldir):
        else:
          tcfe = (1,0.0,0.0)
        if conf[entry]['type'] == 'marcs':
-          files = collect_marcs(modeldir=modeldir, 
+          files = collect_marcs(modeldir=os.path.join(modeldir,'marcs'), 
                    tteff = tuple(map(float,conf[entry]['tteff'].split())),
                    tlogg = tuple(map(float,conf[entry]['tlogg'].split())), 
                    tfeh  = tfeh,
@@ -2505,7 +2505,7 @@ def grid_builder(config,  modeldir=modeldir):
                    ignore_missing_models = True,
                    ext = 'mod.gz')                   
        elif conf[entry]['type'] == 'kurucz':
-          files = collect_kurucz(modeldir=modeldir, 
+          files = collect_kurucz(modeldir=os.path.join(modeldir,'kurucz'), 
                    tteff = tuple(map(float,conf[entry]['tteff'].split())),
                    tlogg = tuple(map(float,conf[entry]['tlogg'].split())), 
                    tfeh  = tfeh,
