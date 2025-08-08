@@ -2468,6 +2468,15 @@ def grid_builder(config,  modeldir=modeldir):
 
     wrange = tuple(map(float,conf['wrange'].split()))
     if 'vmicro' in conf: vmicro = float(conf['vmicro'])
+    if 'ncpu' in conf: 
+      ncpu = int(conf['ncpu'])
+    else:
+      ncpu = 16
+    if 'nmerge' in conf:
+      nmerge = int(conf['nmerge'])
+    else:
+      nmerge = 100
+
     
     for entry in conf['grids']:
        print('grid=',entry)
@@ -2497,6 +2506,8 @@ def grid_builder(config,  modeldir=modeldir):
           continue
                              
        polysyn(files, wrange = wrange, vmicro = vmicro )
+    
+       merge_slurm_parallel(ext='job', nmerge=nmerge, ncpu=ncpu)
                    
        os.chdir('..')
        

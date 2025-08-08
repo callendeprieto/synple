@@ -1,5 +1,7 @@
 wrange: 3000. 10000.
 vmicro: -1
+ncpu: 16
+nmerge: 100
 grids: ['f_m','f_k','f_a','f_b']
 f_m:
        type: 'marcs'
