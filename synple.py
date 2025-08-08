@@ -9188,10 +9188,10 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         head, fibermap, scores = xtr
         fmp = tbl.Table(fibermap)
         hdu0 = fits.BinTableHDU(fmp)
-        hdu0.writeto(fmpfile)
+        hdu0.writeto(fmpfile, clobber=True)
         scr = tbl.Table(scores)
         hdu0 = fits.BinTableHDU(scr)
-        hdu0.writeto(scrfile)
+        hdu0.writeto(scrfile, clobber=True)
 
       
     return(bigres)
@@ -11102,7 +11102,7 @@ def wferrefits(root, path=None):
 
 
   hdul=fits.HDUList(hdulist)
-  hdul.writeto(root+'.fits')
+  hdul.writeto(root+'.fits', clobber=True)
   
   return None
   
@@ -11445,7 +11445,7 @@ def wtabmodfits(root, path=None):
 
 
   hdul=fits.HDUList(hdulist)
-  hdul.writeto(os.path.join(path,'sptab_'+root+'.fits'))
+  hdul.writeto(os.path.join(path,'sptab_'+root+'.fits'), clobber=True)
   
   #now spmod
   hdulist = [hdu0]
@@ -11543,7 +11543,7 @@ def wtabmodfits(root, path=None):
     hdulist.append(hdu)
 
   hdul=fits.HDUList(hdulist)
-  hdul.writeto(os.path.join(path,'spmod_'+root+'.fits')) 
+  hdul.writeto(os.path.join(path,'spmod_'+root+'.fits'), clobber=True) 
   
   return None
 
