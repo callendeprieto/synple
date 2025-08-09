@@ -2526,22 +2526,45 @@ def grid_builder(config,  modeldir=modeldir):
           continue
        
       
-       if 'elements' in conf[entry]:
-         state = "polysyn(files, wrange = wrange, vmicro = vmicro"
-         for each item in conf['entry']['elements']:
-           state = state +  ',' + str(item) + ' = (-1, 3)'        
-         exec(state)
-       else: 
-         polysyn(files, wrange = wrange, vmicro = vmicro )
+       polysyn(files, wrange = wrange, vmicro = vmicro )
 
-    
-       merge_slurm_parallel(ext='job', nmerge=nmerge, ncpu=ncpu)
+       #merge_slurm_parallel(ext='job', nmerge=nmerge, ncpu=ncpu)
 
        frun = open('run.py','w')
        frun.write("from synple import mkgrid, bas_build\n\n")
        frun.write( "mkgrid('%s',tteff = (%4i,%.2f,%.2f), tlogg = (%4i,%.2f,%.2f), tfeh = (%4i,%.2f,%.2f), tafe = (%4i,%.2f,%.2f), tcfe = (%4i,%.2f,%.2f) )\n" % (entry+'.dat',tteff[0],tteff[1],tteff[2],tlogg[0],tlogg[1],tlogg[2],tfeh[0],tfeh[1],tfeh[2],tafe[0],tafe[1],tafe[2],tcfe[0],tcfe[1],tcfe[2]) )
        frun.write( "bas_build('%s')\n" % (entry+'.dat') )
        frun.close()
+
+       if 'elements' in conf[entry]:
+         for item in conf[entry]['elements']:
+           abu1, abu2, wrange1, wrange2 = tuple(map(float,conf[entry]['elements'][item].split()))
+           print('abu1, abu2, wrange1, wrange2 =',abu1,abu2,wrange1,wrange2)
+           if 'nchem' in conf[entry]:
+             nchem = conf[entry]['nchem']
+           else:
+             nchem = 10
+           os.chdir('..')
+           elgrid = entry + '-' + item
+           print('grid=',elgrid)
+           os.mkdir(elgrid)
+           os.chdir(elgrid)
+
+           state = "polysyn(files, wrange = (" + str(wrange1) + "," + \
+                   str(wrange2)  + ") , vmicro = vmicro, " + \
+                   "nchem = " + str(nchem) + ", " + \
+                   item + " = (" + str(abu1) + "," + str(abu2) +") )"
+
+           print(state+"\n")
+           exec(state)
+
+           merge_slurm_parallel(ext='job', nmerge=nmerge, ncpu=ncpu)
+
+           frun = open('run.py','w')
+           frun.write("from synple import mkgrid, bas_build\n\n")
+           frun.write( "mkgrid_irregular( '"+ elgrid + ".dat', teff=True, logg=True, feh=True, afe = True, cfe = True, " + item + "True, ignore_missing_models = True )\n")
+           frun.write( "bas_build('%s')\n" % (entry+'.dat') )
+           frun.close()
                    
        os.chdir('..')
        
