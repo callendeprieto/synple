@@ -2524,10 +2524,18 @@ def grid_builder(config,  modeldir=modeldir):
        else:
           print('only APOGEE marcs or kurucz models are accepted')
           continue
-                             
-       polysyn(files, wrange = wrange, vmicro = vmicro )
+       
+      
+       if 'elements' in conf[entry]:
+         state = "polysyn(files, wrange = wrange, vmicro = vmicro"
+         for each item in conf['entry']['elements']:
+           state = state +  ',' + str(item) + ' = (-1, 3)'        
+         exec(state)
+       else: 
+         polysyn(files, wrange = wrange, vmicro = vmicro )
+
     
-       #merge_slurm_parallel(ext='job', nmerge=nmerge, ncpu=ncpu)
+       merge_slurm_parallel(ext='job', nmerge=nmerge, ncpu=ncpu)
 
        frun = open('run.py','w')
        frun.write("from synple import mkgrid, bas_build\n\n")

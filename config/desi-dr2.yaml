@@ -2,7 +2,7 @@ wrange: 3000. 10000.
 vmicro: -1
 ncpu: 16
 nmerge: 100
-grids: ['f_m','f_k','f_a','f_b']
+grids: ['f_m','f_k','f_a','f_b','f_ks']
 f_m:
        type: 'marcs'
        tteff: 16  2500.    100.
@@ -22,3 +22,9 @@ f_b:
        type: 'kurucz'
        tteff: 20  11000.  1000.
        tlogg:  5     3.0     0.5
+f_ks:
+       type: 'kurucz'
+       tteff: 12  4000.    250.
+       tlogg: 11     0.0     0.5
+       tfeh:  15    -5.0     0.5
+       elements: 'Li' 'C' 'N' 'Mg' 'Al' 'Ca' 'Rb_Sr_Y_Zr_Ba_La_Ce_Nd_Eu'
