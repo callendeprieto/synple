@@ -2528,7 +2528,7 @@ def grid_builder(config,  modeldir=modeldir):
       
        polysyn(files, wrange = wrange, vmicro = vmicro )
 
-       #merge_slurm_parallel(ext='job', nmerge=nmerge, ncpu=ncpu)
+       merge_slurm_parallel(ext='job', nmerge=nmerge, ncpu=ncpu)
 
        frun = open('run.py','w')
        frun.write("from synple import mkgrid, bas_build\n\n")
