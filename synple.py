@@ -2561,8 +2561,8 @@ def grid_builder(config,  modeldir=modeldir):
            merge_slurm_parallel(ext='job', nmerge=nmerge, ncpu=ncpu)
 
            frun = open('run.py','w')
-           frun.write("from synple import mkgrid, bas_build\n\n")
-           frun.write( "mkgrid_irregular( '"+ elgrid + ".dat', teff=True, logg=True, feh=True, afe = True, cfe = True, " + item + "True, ignore_missing_models = True )\n")
+           frun.write("from synple import mkgrid_irregular, bas_build\n\n")
+           frun.write( "mkgrid_irregular( '"+ elgrid + ".dat', teff=True, logg=True, feh=True, afe = True, cfe = True, " + item + " = True, ignore_missing_models = True )\n")
            frun.write( "bas_build('%s')\n" % (entry+'.dat') )
            frun.close()
                    
