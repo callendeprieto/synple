@@ -2473,7 +2473,10 @@ def grid_builder(config,  modeldir=modeldir):
     conf = load_conf(config, confdir=confdir)
 
     wrange = tuple(map(float,conf['wrange'].split()))
-    if 'vmicro' in conf: vmicro = float(conf['vmicro'])
+    if 'vmicro' in conf: 
+      vmicro = float(conf['vmicro'])
+    else:
+      vmicro = 1.5
     if 'ncpu' in conf: 
       ncpu = int(conf['ncpu'])
     else:
@@ -2532,7 +2535,7 @@ def grid_builder(config,  modeldir=modeldir):
 
        frun = open('run.py','w')
        frun.write("from synple import mkgrid, bas_build\n\n")
-       frun.write( "mkgrid('%s',tteff = (%4i,%.2f,%.2f), tlogg = (%4i,%.2f,%.2f), tfeh = (%4i,%.2f,%.2f), tafe = (%4i,%.2f,%.2f), tcfe = (%4i,%.2f,%.2f), ignore_missing_models )\n" % (entry+'.dat',tteff[0],tteff[1],tteff[2],tlogg[0],tlogg[1],tlogg[2],tfeh[0],tfeh[1],tfeh[2],tafe[0],tafe[1],tafe[2],tcfe[0],tcfe[1],tcfe[2]) )
+       frun.write( "mkgrid('%s',tteff = (%4i,%.2f,%.2f), tlogg = (%4i,%.2f,%.2f), tfeh = (%4i,%.2f,%.2f), tafe = (%4i,%.2f,%.2f), tcfe = (%4i,%.2f,%.2f), vmicro = (%.2f), ignore_missing_models )\n" % (entry+'.dat',tteff[0],tteff[1],tteff[2],tlogg[0],tlogg[1],tlogg[2],tfeh[0],tfeh[1],tfeh[2],tafe[0],tafe[1],tafe[2],tcfe[0],tcfe[1],tcfe[2], vmicro) )
        frun.write( "bas_build('%s')\n" % (entry+'.dat') )
        frun.close()
 
@@ -2562,7 +2565,7 @@ def grid_builder(config,  modeldir=modeldir):
 
            frun = open('run.py','w')
            frun.write("from synple import mkgrid_irregular, bas_build\n\n")
-           frun.write( "mkgrid_irregular( '"+ elgrid + ".dat', teff=True, logg=True, feh=True, afe = True, cfe = True, " + item + " = True, ignore_missing_models = True )\n")
+           frun.write( "mkgrid_irregular( '"+ elgrid + ".dat', teff=True, logg=True, feh=True, afe = True, cfe = True, " + item + " = True, vmicro = "+ str(vmicro) + ", ignore_missing_models = True )\n")
            frun.write( "bas_build('%s')\n" % (entry+'.dat') )
            frun.close()
                    
