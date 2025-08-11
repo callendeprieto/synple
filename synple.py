@@ -8052,7 +8052,10 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
       if jlabel == 0:
         for entry in labels2:
           jlabel = jlabel + 1
-          ilabel = "'"+entry+"'"
+          if entry[0] == "'":
+            ilabel = entry
+          else:
+            ilabel = "'"+entry+"'"
           line = " LABEL("+str(jlabel)+") = "+ilabel+"\n"
           print('line=',line)
           fout.write(line)
