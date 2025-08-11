@@ -66,10 +66,6 @@ import astropy.units as units
 import datetime
 import platform
 import importlib.util
-if importlib.util.find_spec('cupy') is None:
-  print("cupy is not installed")
-else:
-  import cupy as cp
 
 
 #configuration
@@ -2528,7 +2524,7 @@ def grid_builder(config,  modeldir=modeldir):
           print('only APOGEE marcs or kurucz models are accepted')
           continue
 
-       if Mg in conf[entry]: 
+       if 'Mg' in conf[entry]: 
          tMg = tuple(map(float,conf[entry]['Mg'].split()))
          polysyn(files, wrange = wrange, vmicro = vmicro, Mg = tMg) 
        else:
@@ -8863,6 +8859,13 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
     best-fitting parameters (.opf) and best-fitting models (.mdl).
     
     """
+ 
+    if gpu: 
+      if importlib.util.find_spec('cupy') is None:
+        print("cupy is not installed, using the gpu")
+        gpu = False
+      else:
+        import cupy as cp
 
     #check that focus or nail are not activated with ferre
     if ferre and focus:
