@@ -54,6 +54,8 @@ import copy
 import gzip
 import yaml
 import numpy as np
+import matplotlib as mpl
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from math import ceil
 from scipy import interpolate
@@ -8784,7 +8786,7 @@ def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
 
 def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None, 
         star=True, conti=0, absolut=False, wrange=None, 
-        focus=False, nail=[], gpu=False, ferre=False):
+        focus=False, nail=[], plot=False, gpu=False, ferre=False):
 
     """Bayesian Algorithm in Synple
     
@@ -8848,6 +8850,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       after the first global fit of all the parameters. This may be useful
       for chemical elements which impact on limited spectral windows
       (default is no parameter to nail, so an empty list)
+    plot: bool
+      visualizes the likelihood in a matrix of 2d histograms
     gpu: bool
       sends the calculation of the likelihood to the GPU
     ferre: bool
@@ -9178,6 +9182,34 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           den = np.sum(weights)
           abbmod = np.matmul(weights,da)/den
 
+        if plot:
+          fig, axs = plt.subplots(ncols=ndim-1,nrows=ndim-1,figsize=(5.5, 3.5),
+                        layout="constrained")
+          for row in range(ndim):
+            for col in range(ndim):
+              if row > 0 and col < 2 and (row != col):
+                #axs[row-1, col].annotate(f'axs[{row-1}, {col}]', (0.5, 0.5),
+                #               transform=axs[row-1, col].transAxes,
+                #               ha='center', va='center', fontsize=18,
+                #               color='darkgrey')
+                im = axs[row-1,col].hist2d(p[:,row],p[:,col],weights=weights,
+                  #bins=[64,48])
+                  bins=[64,48], norm=mpl.colors.LogNorm())
+                  #bins=[64,48], norm=mcolors.PowerNorm(0.3))
+                axs[row-1,col].set_xlabel(hd0['LABEL('+str(row+1)+')'])
+                axs[row-1,col].set_ylabel(hd0['LABEL('+str(col+1)+')'])
+                #pcm = axs[row-1,col].pcolormesh()
+
+              if (row == col and col == ndim-2):
+                axs[row-1,col].set_visible(False)
+
+
+          #fig.colorbar(mpl.cm.ScalarMappable(), ax=axs[ndim-3,ndim-2],
+          #  location='bottom')
+
+          plt.show()
+
+
       
         opf.write(str(ids[j])+' '+' '.join(map(str,res))+' '+
             ' '.join(map(str,eres))+' '+
@@ -9193,7 +9225,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         if ferre:
             ipf.write(str(ids[j])+' '+' '.join(map(str,np.zeros(ndim)))+'\n')
         if j == 0: wav.write(' '.join(map(str,x2))+'\n')
-      
+
+
 
         outdata = [ids[j]]+list(res)+list(eres)+ \
                   [vrad]+[np.median(spec*np.sqrt(ivar))]+[lchi]
