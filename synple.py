@@ -1344,7 +1344,7 @@ abundances for one at a time.
 def collectdelta(modelfile, wrange, elem, enhance=0.2, 
     strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
-    steprot=0.0, stepfwhm=0.0,  lte=False):
+    steprot=0.0, stepfwhm=0.0,  lte=False, save=True):
 
   """Collects the spectra, after computed, in a dir tree created with polydelta, and writes them out to an output file (modelfile.dlt)
 
@@ -9205,8 +9205,12 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
                   #bins=[64,48])
                   bins=[64,48], norm=mpl.colors.LogNorm())
                   #bins=[64,48], norm=mcolors.PowerNorm(0.3))
-                axs[row-1,col].set_xlabel(hlabels[row-1])
+                axs[row-1,col].set_xlabel(hlabels[row])
+                if hlabels[row] == 'Teff':
+                  axs[row-1,col].set_xscale('log')
                 axs[row-1,col].set_ylabel(hlabels[col])
+                if hlabels[col] == 'Teff':
+                  axs[row-1,col].set_yscale('log')
                 #pcm = axs[row-1,col].pcolormesh()
 
               if (row == col and col == ndim-2):
