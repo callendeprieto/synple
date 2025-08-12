@@ -8922,7 +8922,10 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
 
     if type(hd) is list:
-      hd0 = hd[1]
+      k = 0
+      while 'LABEL(1)' not in hd[k]:
+        k += 1
+      hd0 = hd[k]
     else:
       hd0 = hd
 
@@ -9104,6 +9107,12 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
           print('focus selected ',len(np.where(w)[0]), 'points, giving a reduced lchi =',lchi)
 
+        hlabels = []
+        for i in range(ndim):
+          par = hd0['LABEL('+str(i+1)+')']
+          hlabels.append(par)  
+
+
         if len(nail) > 0:
           ndim2 = int(hd0['N_OF_DIM'])
           assert ndim == ndim2,'error: inconsistency in ndim'
@@ -9117,7 +9126,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           weights0 = weights/np.sum(weights) 
 
           for i in range(ndim): 
-            par = hd0['LABEL('+str(i+1)+')']
+            par = hlabels[i]
             if par in nail:
               #determine weights appropriate for par from response in the grid
               resnorm2 = resnorm1.copy() 
@@ -9196,8 +9205,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
                   #bins=[64,48])
                   bins=[64,48], norm=mpl.colors.LogNorm())
                   #bins=[64,48], norm=mcolors.PowerNorm(0.3))
-                axs[row-1,col].set_xlabel(hd0['LABEL('+str(row+1)+')'])
-                axs[row-1,col].set_ylabel(hd0['LABEL('+str(col+1)+')'])
+                axs[row-1,col].set_xlabel(hlabels[row-1])
+                axs[row-1,col].set_ylabel(hlabels[col])
                 #pcm = axs[row-1,col].pcolormesh()
 
               if (row == col and col == ndim-2):
