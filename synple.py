@@ -8655,7 +8655,14 @@ def cebas(p,d,flx,iva,prior=None,filter=None):
       #print('-- new beta=',beta)
 
     #parameters
-    ndim = len(p[0,:])
+    if p.ndim ==0:
+      print('Error -- p cannot have 0 dim')
+      sys.exit()
+    elif p.ndim == 1: 
+      ndim = 1
+      p = np.reshape(p, (p.size, 1) )
+    else:
+      ndim = len(p[0,:])
     res = np.zeros(ndim)
     eres = np.zeros(ndim)
     cov = np.zeros(ndim*(ndim+1)//2)
@@ -8751,7 +8758,14 @@ def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
       #print('-- new beta=',beta)
 
     #parameters
-    ndim = len(p[0,:])
+    if p.ndim ==0:
+      print('Error -- p cannot have 0 dim')
+      sys.exit()
+    elif p.ndim == 1:
+      ndim = 1
+      p = np.reshape(p, (p.size, 1) )
+    else:
+      ndim = len(p[0,:])
     res = cp.zeros(ndim)
     eres = cp.zeros(ndim)
     cov = cp.zeros(ndim*(ndim+1)//2)
@@ -8786,7 +8800,7 @@ def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
 
 def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None, 
         star=True, conti=0, absolut=False, wrange=None, 
-        focus=False, nail=[], plot=False, gpu=False, ferre=False, filters=None):
+        focus=False, nail=[], plot=False, gpu=False, ferre=False, filters=[]):
 
     """Bayesian Algorithm in Synple
     
@@ -8921,6 +8935,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         print('Error: FERRE cannot (yet) handle irregular grids')
 
 
+    #get labels into the list hlabels
     if type(hd) is list:
       k = 0
       while 'LABEL(1)' not in hd[k]:
@@ -8928,6 +8943,12 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       hd0 = hd[k]
     else:
       hd0 = hd
+
+    hlabels = []
+    for i in range(ndim):
+      par = hd0['LABEL('+str(i+1)+')']
+      hlabels.append(par)  
+
 
     if wrange is not None:
       assert(len(wrange) == 2),'wrange must be a 2-element array' 
@@ -8969,6 +8990,24 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
     if gpu:
       p_gpu = cp.asarray(p)
       d_gpu = cp.asarray(d)
+
+
+    #prep work for filters
+    print('hlabels=',hlabels)
+    if len(filters) > 0:
+      imet = hlabels.index('[Fe/H]')
+      for i in range(len(filters)):
+        arr = np.loadtxt(filters[i])
+        arr = arr / np.sum(arr)
+        if i == 0:
+          dfilters = arr
+        else:
+          dfilters = np.vstack((dfilters, arr))
+
+      if dfilters.ndim == 1: 
+        dfilters = np.reshape(dfilters, (dfilters.size,1))
+    
+
         
     for file in infiles:
 
@@ -9132,11 +9171,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
           print('focus selected ',len(np.where(w)[0]), 'points, giving a reduced lchi =',lchi)
 
-        hlabels = []
-        for i in range(ndim):
-          par = hd0['LABEL('+str(i+1)+')']
-          hlabels.append(par)  
-
 
         if len(nail) > 0:
           ndim2 = int(hd0['N_OF_DIM'])
@@ -9228,6 +9262,48 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               res[i] = res2[i]
               eres[i] = eres2[i]
 
+        if len(filters) > 0:
+          if focus:
+            p3 = p2[w,:]
+            d3 = d2[w,:]
+          else:
+            p3 = p
+            d3 = d
+
+          for i in range(len(filters)):
+
+            print('imet=',imet)
+            print('dfilters.shape=',dfilters.shape)
+
+            #indices for models with parameters other than [Fe/H] compatible
+            wf = np.where( np.all( (np.abs( (np.delete(p3,imet,axis=1) - np.delete(res,imet) ) / np.delete(eres,imet)) < 1.), axis=1))[0]
+
+            print('there are ',len(wf),' models within 1sigma errors in '+' '.join(np.delete(hlabels,imet)))
+            print(np.mean(p3[wf,:],axis=0), np.std(p3[wf,:],axis=0) )
+
+            plt.clf()
+            for entry in wf:
+              print(entry,'params:',p3[entry,:])
+              plt.plot(x2,d3[entry,:],'b')
+              print(p3[entry,:])
+              plt.show()
+
+            plt.plot(x2,spec,'r')
+            plt.show()
+
+            ab, eab, covab, bmodab, weightsab = cebas( p3[wf,imet], 
+               d3[wf,:], spec, ivar, filter=dfilters[i,:])
+
+            print('filter i=',i)
+            print(filters[i])
+            print('ab=',ab)
+
+            plt.clf()
+            plt.plot(p3[wf,imet],weightsab,'.')
+            plt.show()
+            
+
+
         if absolut:
           den = np.sum(weights)
           abbmod = np.matmul(weights,da)/den
@@ -9262,6 +9338,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           #  location='bottom')
 
           plt.show()
+
 
 
       
