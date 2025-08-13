@@ -9286,7 +9286,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               print(entry,'params:',p3[entry,:])
               plt.plot(x2,d3[entry,:],'b')
               print(p3[entry,:])
-              plt.show()
 
             plt.plot(x2,spec,'r')
             plt.show()
@@ -9296,10 +9295,10 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
             print('filter i=',i)
             print(filters[i])
-            print('ab=',ab)
+            print('ab=',ab,'  eab=',eab)
 
             plt.clf()
-            plt.plot(p3[wf,imet],weightsab,'.')
+            plt.plot(p3[wf,imet],np.log10(weightsab),'.')
             plt.show()
             
 
