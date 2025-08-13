@@ -8786,7 +8786,7 @@ def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
 
 def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None, 
         star=True, conti=0, absolut=False, wrange=None, 
-        focus=False, nail=[], plot=False, gpu=False, ferre=False):
+        focus=False, nail=[], plot=False, gpu=False, ferre=False, filters=None):
 
     """Bayesian Algorithm in Synple
     
@@ -8950,6 +8950,9 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
     if focus:
       p2 = p
       d2 = d
+      if gpu:
+        p2_gpu = cp.asarray(p2)
+        d2_gpu = cp.asarray(d2) 
       nmod = len(p[:,0])
       rng = np.random.default_rng(107)
       irnd = np.array(rng.random(int(nmod*0.1))*nmod,dtype=int)
@@ -9061,8 +9064,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         #analyze
        
         if gpu:
-          #p_gpu = cp.asarray(p) 
-          #d_gpu = cp.asarray(d) 
           spec_gpu = cp.asarray(spec)
           ivar_gpu = cp.asarray(ivar)
           res_gpu, eres_gpu, cov_gpu, bmod_gpu, weights_gpu = cebas_gpu(p_gpu, d_gpu, spec_gpu, ivar_gpu)
@@ -9091,7 +9092,18 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           else:
             spec = np.interp(x2, x2 * (1. - vrad/clight), spec)
             ivar = np.interp(x2, x2 * (1. - vrad/clight), ivar)
-            res, eres, cov, bmod, weights = cebas( p, d, spec, ivar )
+            if gpu:
+              spec_gpu = cp.asarray(spec)
+              ivar_gpu = cp.asarray(ivar)
+              res_gpu, eres_gpu, cov_gpu, bmod_gpu, 
+              weights_gpu = cebas_gpu(p_gpu, d_gpu, spec_gpu, ivar_gpu)
+              res = cp.asnumpy(res_gpu)
+              eres = cp.asnumpy(eres_gpu)
+              cov = cp.asnumpy(cov_gpu)
+              bmod = cp.asnumpy(bmod_gpu)
+              weights = cp.asnumpy(weights_gpu)
+            else:
+              res, eres, cov, bmod, weights = cebas( p, d, spec, ivar )
             lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - ndim))
             print('reduced lchi =',lchi)
 
@@ -9099,7 +9111,20 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           eres[eres < 1e-17] = 1e-17 # avoid division by zero
           w = ( (abs(p2-res)/eres).max(1) < 3. )
           if len(np.where(w)[0]) > 1:
-            res, eres, cov, bmod, weights = cebas( p2[w,:], d2[w,:], spec, ivar )
+
+            if gpu:
+              spec_gpu = cp.asarray(spec)
+              ivar_gpu = cp.asarray(ivar)
+              res_gpu, eres_gpu, cov_gpu, bmod_gpu, 
+              weights_gpu = cebas_gpu(p2_gpu[w,:], d2_gpu[w,:], spec_gpu, ivar_gpu)
+              res = cp.asnumpy(res_gpu)
+              eres = cp.asnumpy(eres_gpu)
+              cov = cp.asnumpy(cov_gpu)
+              bmod = cp.asnumpy(bmod_gpu)
+              weights = cp.asnumpy(weights_gpu)
+            else:
+              res, eres, cov, bmod, weights = cebas(p2[w,:],d2[w,:],spec,ivar )
+
             lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / 
                                    (len(bmod) - ndim) )
           else:
@@ -9124,6 +9149,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           if conti == 0:
             flux1 = flux1/continuum(flux1)
           weights0 = weights/np.sum(weights) 
+          if gpu: 
+            weights0_gpu = cp.asarray(weights0)
 
           for i in range(ndim): 
             par = hlabels[i]
@@ -9172,8 +9199,22 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               else:
                 p3 = p
                 d3 = d
-  
-              res2, eres2, cov2, bmod2, weights2 = cebas( p3, 
+
+              if gpu:
+                p3_gpu = cp.asarray(p3)
+                d3_gpu = cp.asarray(d3)
+                spec_gpu = cp.asarray(spec)
+                ivar_gpu = cp.asarray(ivar)
+                sens_gpu = cp.asarray(sens)
+                res2_gpu, eres2_gpu, cov2_gpu, bmod2_gpu,
+                weights2_gpu = cebas_gpu(p3_gpu[w,:], d3_gpu[w,:], spec_gpu, ivar_gpu, prior = weights0_gpu, filter=sens_gpu)
+                res2 = cp.asnumpy(res2_gpu)
+                eres2 = cp.asnumpy(eres2_gpu)
+                cov2 = cp.asnumpy(cov2_gpu)
+                bmod2 = cp.asnumpy(bmod2_gpu)
+                weights2 = cp.asnumpy(weights2_gpu)
+              else:
+                res2, eres2, cov2, bmod2, weights2 = cebas( p3, 
                     d3, spec, ivar, prior = weights0, filter=sens )
 
               if np.isnan(res2).any():
