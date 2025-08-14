@@ -4615,7 +4615,7 @@ def create_irregular_kurucz(n,pteff=None, plogg =None, \
 #extract the header of a synthfile
 def head_synth(synthfile):
     if synthfile[-6:] == "pickle":
-        import pickle
+        import cloudpickle as pickle
         if not os.path.isfile(synthfile):
           sf = os.path.join(griddir,synthfile)
           if os.path.isfile(sf): synthfile = sf
@@ -4728,7 +4728,7 @@ def read_synth(synthfile,nd=False):
     """
 
     if synthfile[-6:] == "pickle":
-        import pickle 
+        import cloudpickle as pickle 
         if not os.path.isfile(synthfile):
           sf = os.path.join(griddir,synthfile)
           if os.path.isfile(sf): synthfile = sf
@@ -4805,7 +4805,7 @@ def pickle_synth(synthfile,outsynthfile=None):
     Reads a (text) FERRE grid and rewrites it to disk in pickle
     (binary) format with the extension .pickle
     """
-    import pickle
+    import cloudpickle as pickle
 
     if outsynthfile is None:
       outsynthfile = synthfile[:-3]+'pickle'
