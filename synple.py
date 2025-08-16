@@ -9277,30 +9277,46 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
             #indices for models with parameters other than [Fe/H] compatible
             wf = np.where( np.all( (np.abs( (np.delete(p3,imet,axis=1) - np.delete(res,imet) ) / np.delete(eres,imet)) < 1.), axis=1))[0]
+            #wf = np.asarray(np.all( (np.abs( (np.delete(p3,imet,axis=1) - np.delete(res,imet) ) / np.delete(eres,imet)) < 1.), axis=1)).nonzero()[0]
 
             print('there are ',len(wf),' models within 1sigma errors in '+' '.join(np.delete(hlabels,imet)))
             print(np.mean(p3[wf,:],axis=0), np.std(p3[wf,:],axis=0) )
 
+            #we interpolate in to sample nnew models with 
+            # -fehrange  < [Fe/H] < fehrange
+            nnew = 1000
+            fehrange = 2.0
+            pmin = p3[wf,:].min(0)
+            ptp = np.ptp(p3[wf,:],0)
+            pp = (p3[wf,:] - pmin) / ptp
+            crbf= interpolate.RBFInterpolator(pp, 
+                d3[wf,:], kernel='linear', neighbors = 100)
+            par = np.tile(res,(nnew,1))
+            rng = np.random.default_rng(107)
+            par[:,imet] = res[imet] + rng.random(nnew)*2.*fehrange -fehrange
+ 
+            specpar = rbf_apply(crbf, pmin, ptp, par)
+
             plt.clf()
-            for entry in wf:
-              print(entry,'params:',p3[entry,:])
-              plt.plot(x2,d3[entry,:],'b')
-              print(p3[entry,:])
+            for entry in range(nnew):
+              print(entry,'params:',par[entry,:])
+              plt.plot(x2,specpar[entry,:],'b')
 
             plt.plot(x2,spec,'r')
+            plt.plot(x2,dfilters[i,:])
             plt.show()
 
-            ab, eab, covab, bmodab, weightsab = cebas( p3[wf,imet], 
-               d3[wf,:], spec, ivar, filter=dfilters[i,:])
+            
+            ab, eab, covab, bmodab, weightsab = cebas( par[:,imet],
+               specpar, spec, ivar, filter=dfilters[i,:])
 
             print('filter i=',i)
             print(filters[i])
             print('ab=',ab,'  eab=',eab)
 
             plt.clf()
-            plt.plot(p3[wf,imet],np.log10(weightsab),'.')
+            plt.plot(par[:,imet],np.log10(weightsab),'.')
             plt.show()
-            
 
 
         if absolut:
