@@ -9311,7 +9311,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             while len(wf) < 10:
               wf = np.where( np.all( (np.abs( (np.delete(p3,imet,axis=1) - np.delete(res,imet) ) / np.delete(eres*rradius,imet)) < 1.), axis=1))[0]
               rradius *= 2.
-              print(rradius,len(wf))
+              print('rradius=',rradius,len(wf))
 
             print('there are ',len(wf),' models within 1sigma errors in '+' '.join(np.delete(hlabels,imet)))
             print(np.mean(p3[wf,:],axis=0), np.std(p3[wf,:],axis=0) )
@@ -9339,7 +9339,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             #plt.plot(x2,dfilters[i,:]/np.max(dfilters[i,:]))
             #plt.show()
 
-            print(np.sum(dfilters[i,:])) 
             ab, eab, covab, bmodab, weightsab = cebas( par[:,imet],
                specpar, spec, ivar, filter=dfilters[i,:])
 
