@@ -80,6 +80,7 @@ modelatomdir = os.path.join(synpledir , "data")
 confdir = os.path.join(synpledir, "config")
 griddir = os.path.join(synpledir, "grids")
 atlasdir = os.path.join(synpledir, "atlases")
+fltdir = os.path.join(synpledir, "filters")
 linelistdir = os.path.join(synpledir, "linelists")
 linelist0 = ['gfATOc.19','gfMOLsun.20','gfTiO.20','H2O-8.20']
 bindir = os.path.join(synpledir,"bin")
@@ -8428,9 +8429,9 @@ def vgsynth(synthfile,wavelength,fwhm,outsynthfile=None,ppr=5,wrange=None,origin
   h, p, d = read_synth(synthfile)
   xx = lambda_synth(synthfile)
   
-  ending = synthfile.find('.dat')
+  ending = synthfile.rfind('.dat')
   if ending < -1: 
-      ending = synthfile.find('.pickle')
+      ending = synthfile.rfind('.pickle')
   if ending < -1:
       ending = len(synthfile) + 1
   root = synthfile[2:ending]
@@ -8870,6 +8871,13 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       sends the calculation of the likelihood to the GPU
     ferre: bool
       calls the FERRE code to run the optimization
+    filters: list of strings
+      this list can provide a list of elements for which filters will
+      be used to derive abundances (e.g. filters = ['Al', 'Mg']).
+      The filter files are expected to be in the filters folder within
+      the synple distribution, within a subfolder with the name of the
+      grid, and having an flt extension (e.g. n_sc2-STISrbf/Al.flt)
+      (default is [])
    
     Returns
     -------
@@ -8995,17 +9003,32 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
     #prep work for filters
     print('hlabels=',hlabels)
     if len(filters) > 0:
-      imet = hlabels.index('[Fe/H]')
+      if "[Fe/H]" in hlabels:
+        imet = hlabels.index('[Fe/H]')
+      elif "feh" in hlabels:
+        imet = hlabels.index('feh')
+      elif "METALS" in hlabels:
+        imet = hlabels.index('METALS')
+      else:
+        print("Error: cannot identify the metallicity LABEL in the header of "+synthfile)
+        sys.exit()
+
+      ending = synthfile.rfind('.dat') 
+      if ending == -1: 
+        ending = synthfile.rfind('.pickle')
+      if ending == -1:
+        ending = len(synthfile) + 1 
+      fltsubdir = os.path.join(fltdir,synthfile[0:ending])
       for i in range(len(filters)):
-        arr = np.loadtxt(filters[i])
+        arr = np.loadtxt(os.path.join(fltsubdir,filters[i]+'.flt'))
         arr = arr / np.sum(arr)
         if i == 0:
-          dfilters = arr
+          dfilters = arr 
         else:
           dfilters = np.vstack((dfilters, arr))
 
       if dfilters.ndim == 1: 
-        dfilters = np.reshape(dfilters, (dfilters.size,1))
+        dfilters = np.reshape(dfilters, (1,dfilters.size))
     
 
         
@@ -9055,6 +9078,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         flxfile = outfile + '.flx'
       if ferre:
         ipffile = outfile + '.spf'
+      if len(filters) > 0:
+        abufile = outfile + '.abu'
 
       #open output parameter, observed and model file
       opf = open(opffile,'w')
@@ -9068,6 +9093,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         flx = open(flxfile,'w')
       if ferre:
         ipf = open(ipffile,'w')
+      if len(filters) > 0:
+        abf = open(abufile,'w')
          
 
       for j in range(nspec):
@@ -9270,14 +9297,21 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             p3 = p
             d3 = d
 
+          abuarr = []
+          eabuarr = []
+
           for i in range(len(filters)):
 
             print('imet=',imet)
             print('dfilters.shape=',dfilters.shape)
 
             #indices for models with parameters other than [Fe/H] compatible
-            wf = np.where( np.all( (np.abs( (np.delete(p3,imet,axis=1) - np.delete(res,imet) ) / np.delete(eres,imet)) < 1.), axis=1))[0]
-            #wf = np.asarray(np.all( (np.abs( (np.delete(p3,imet,axis=1) - np.delete(res,imet) ) / np.delete(eres,imet)) < 1.), axis=1)).nonzero()[0]
+            wf = []
+            rradius = 1.0
+            while len(wf) < 10:
+              wf = np.where( np.all( (np.abs( (np.delete(p3,imet,axis=1) - np.delete(res,imet) ) / np.delete(eres*rradius,imet)) < 1.), axis=1))[0]
+              rradius *= 2.
+              print(rradius,len(wf))
 
             print('there are ',len(wf),' models within 1sigma errors in '+' '.join(np.delete(hlabels,imet)))
             print(np.mean(p3[wf,:],axis=0), np.std(p3[wf,:],axis=0) )
@@ -9297,26 +9331,28 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
  
             specpar = rbf_apply(crbf, pmin, ptp, par)
 
-            plt.clf()
-            for entry in range(nnew):
-              print(entry,'params:',par[entry,:])
-              plt.plot(x2,specpar[entry,:],'b')
+            #plt.clf()
+            #for entry in range(nnew):
+            #  print(entry,'params:',par[entry,:])
+            #  plt.plot(x2,specpar[entry,:],'b')
+            #plt.plot(x2,spec,'r')
+            #plt.plot(x2,dfilters[i,:]/np.max(dfilters[i,:]))
+            #plt.show()
 
-            plt.plot(x2,spec,'r')
-            plt.plot(x2,dfilters[i,:])
-            plt.show()
-
-            
+            print(np.sum(dfilters[i,:])) 
             ab, eab, covab, bmodab, weightsab = cebas( par[:,imet],
                specpar, spec, ivar, filter=dfilters[i,:])
 
             print('filter i=',i)
             print(filters[i])
             print('ab=',ab,'  eab=',eab)
+  
+            abuarr.append(ab)
+            eabuarr.append(eab)
 
-            plt.clf()
-            plt.plot(par[:,imet],np.log10(weightsab),'.')
-            plt.show()
+            #plt.clf()
+            #plt.plot(par[:,imet],np.log10(weightsab),'.')
+            #plt.show()
 
 
         if absolut:
@@ -9370,6 +9406,9 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             flx.write(' '.join(map(str,abbmod))+'\n')
         if ferre:
             ipf.write(str(ids[j])+' '+' '.join(map(str,np.zeros(ndim)))+'\n')
+        if len(filters) > 0:
+            abf.write(str(ids[j])+' '+' '.join(map(str,np.array(abuarr)))+' '+
+            ' '.join(map(str,np.array(eabuarr)))+'\n')
         if j == 0: wav.write(' '.join(map(str,x2))+'\n')
 
 
@@ -9393,6 +9432,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         flx.close()
       if ferre:
         ipf.close()
+      if len(filters) > 0:
+        abf.close()
 
       if ferre:
         nml = dict()
@@ -9981,7 +10022,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
       assert(target is None),'target must be none for FERRE input files'
       assert(rv is None),'rv must be none for FERRE input files'
       instr = 'FERRE'
-      if infile is None: infile = synthfile[2:synthfile.find('.dat')]
+      if infile is None: infile = synthfile[2:synthfile.rfind('.dat')]
       frdfile = infile + '.frd'
       errfile = infile + '.err'
               
@@ -10609,9 +10650,9 @@ def bas_build(synthfile,config='bas-build.yaml'):
 
     conf = load_conf(config=config,confdir=confdir)
 
-    ending = synthfile.find('.dat') 
+    ending = synthfile.rfind('.dat') 
     if ending < -1: 
-        ending = synthfile.find('.pickle')
+        ending = synthfile.rfind('.pickle')
     if ending < -1: 
         ending = len(synthfile) + 1
     root = synthfile[2:ending]
@@ -10787,9 +10828,9 @@ def bas_test(synthfile,snr=1.e6):
     h,p,d = read_synth(synthfile)    
     ndim = len(p[0,:])
     npix = len(d[0,:])
-    ending = synthfile.rfind('.dat')
+    ending = synthfile.find('.dat')
     if ending < -1: 
-        ending = synthfile.rfind('.pickle')
+        ending = synthfile.find('.pickle')
     if ending < -1:
         ending = len(synthfile) + 1
     root = synthfile[2:ending]
