@@ -5249,7 +5249,8 @@ def rbf_apply(c,pmin,ptp,par):
   par2 = par.copy()
   for i in range(len(par[0,:])):
     #par2[:,i] = (par[:,i] - llimits[i] ) / steps[i] 
-    par2[:,i] = (par[:,i] - pmin[i] ) / ptp[i]
+    if np.abs(ptp[i]) > 1e-50: 
+      par2[:,i] = (par[:,i] - pmin[i] ) / ptp[i]
 
 
   print('applying coefficients ..')
@@ -9302,60 +9303,59 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             p3 = p
             d3 = d
 
-          abuarr = []
-          eabuarr = []
+          if res[imet] < -9.00:
+            abuarr = [np.nan] * len(filters)
+            eabuarr = [np.nan] * len(filters)
+          else:
+            abuarr = []
+            eabuarr = []
 
-          for i in range(len(filters)):
+            for i in range(len(filters)):
 
-            print('imet=',imet)
-            print('dfilters.shape=',dfilters.shape)
 
-            #indices for models with parameters other than [Fe/H] compatible
-            wf = []
-            rradius = 1.0
-            while len(wf) < 10:
-              wf = np.where( np.all( (np.abs( (np.delete(p3,imet,axis=1) - np.delete(res,imet) ) / np.delete(eres*rradius,imet)) < 1.), axis=1))[0]
-              rradius *= 2.
-              print('rradius=',rradius,len(wf))
+              #indices for models with parameters other than [Fe/H] compatible
+              wf = []
+              rradius = 1.0
+              while len(wf) < 10:
+                wf = np.where( np.all( (np.abs( (np.delete(p3,imet,axis=1) - np.delete(res,imet) ) / np.delete(eres*rradius,imet)) < 1.), axis=1))[0]
+                rradius *= 2.
 
-            print('there are ',len(wf),' models within 1sigma errors in '+' '.join(np.delete(hlabels,imet)))
-            print(np.mean(p3[wf,:],axis=0), np.std(p3[wf,:],axis=0) )
+              print('there are ',len(wf),' models within 1sigma errors in '+' '.join(np.delete(hlabels,imet)))
+              #print(np.mean(p3[wf,:],axis=0), np.std(p3[wf,:],axis=0) )
 
-            #we interpolate in to sample nnew models with 
-            # -fehrange  < [Fe/H] < fehrange
-            nnew = 1000
-            fehrange = 2.0
-            pmin = p3[wf,:].min(0)
-            ptp = np.ptp(p3[wf,:],0)
-            pp = (p3[wf,:] - pmin) / ptp
-            crbf= interpolate.RBFInterpolator(pp, 
-                d3[wf,:], kernel='linear', neighbors = 100)
-            par = np.tile(res,(nnew,1))
-            rng = np.random.default_rng(107)
-            par[:,imet] = res[imet] + rng.random(nnew)*2.*fehrange -fehrange
+              #we interpolate in to sample nnew models with 
+              # -fehrange  < [Fe/H] < fehrange
+              nnew = 1000
+              fehrange = 2.0
+              pmin = p3[wf,:].min(0)
+              ptp = np.ptp(p3[wf,:],0)
+              pp = np.divide((p3[wf,:] - pmin),ptp, where=(ptp != 0))
+              crbf= interpolate.RBFInterpolator(pp, 
+                  d3[wf,:], kernel='linear', neighbors = 100)
+              par = np.tile(res,(nnew,1))
+              rng = np.random.default_rng(107)
+              par[:,imet] = res[imet] + rng.random(nnew)*2.*fehrange -fehrange
  
-            specpar = rbf_apply(crbf, pmin, ptp, par)
+              specpar = rbf_apply(crbf, pmin, ptp, par)
 
-            #plt.clf()
-            #for entry in range(nnew):
-            #  print(entry,'params:',par[entry,:])
-            #  plt.plot(x2,specpar[entry,:],'b')
-            #plt.plot(x2,spec,'r')
-            #plt.plot(x2,dfilters[i,:]/np.max(dfilters[i,:]))
-            #plt.show()
+              #plt.clf()
+              #for entry in range(nnew):
+              #  print(entry,'params:',par[entry,:])
+              #  plt.plot(x2,specpar[entry,:],'b')
+              #plt.plot(x2,spec,'r')
+              #plt.plot(x2,dfilters[i,:]/np.max(dfilters[i,:]))
+              #plt.show()
 
-            ab, eab, covab, bmodab, weightsab = cebas( par[:,imet],
-               specpar, spec, ivar, filter=dfilters[i,:])
+              ab, eab, covab, bmodab, weightsab = cebas( par[:,imet],
+                 specpar, spec, ivar, filter=dfilters[i,:])
 
-            print('filter i=',i)
-            print(filters[i])
-  
-            abuarr.append(ab)
-            eabuarr.append(eab)
+              print(filters[i])
+              abuarr.append(ab)
+              eabuarr.append(eab)
 
-            #plt.clf()
-            #plt.plot(par[:,imet],np.log10(weightsab),'.')
-            #plt.show()
+              #plt.clf()
+              #plt.plot(par[:,imet],np.log10(weightsab),'.')
+              #plt.show()
 
 
         if absolut:
