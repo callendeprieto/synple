@@ -9350,7 +9350,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
             print('filter i=',i)
             print(filters[i])
-            print('ab=',ab,'  eab=',eab)
   
             abuarr.append(ab)
             eabuarr.append(eab)
