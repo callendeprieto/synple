@@ -9153,7 +9153,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         vrad = 0.0
         if rv is None and 'RV' not in hd0.values() and instr0 is not None:
 
-          print('type(x2) is ',type(x2))
           vrad, evrad = xxc(x2,spec,ivar,x2,bmod)
           print('RV = ',vrad,' km/s')
         
