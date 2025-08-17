@@ -5253,7 +5253,7 @@ def rbf_apply(c,pmin,ptp,par):
       par2[:,i] = (par[:,i] - pmin[i] ) / ptp[i]
 
 
-  print('applying coefficients ..')
+  #print('applying coefficients ..')
   res = c(par2)
 
   return(res)
@@ -9320,7 +9320,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
                 wf = np.where( np.all( (np.abs( (np.delete(p3,imet,axis=1) - np.delete(res,imet) ) / np.delete(eres*rradius,imet)) < 1.), axis=1))[0]
                 rradius *= 2.
 
-              print('there are ',len(wf),' models within 1sigma errors in '+' '.join(np.delete(hlabels,imet)))
+              #print('there are ',len(wf),' models within 1sigma errors in '+' '.join(np.delete(hlabels,imet)))
               #print(np.mean(p3[wf,:],axis=0), np.std(p3[wf,:],axis=0) )
 
               #we interpolate in to sample nnew models with 
