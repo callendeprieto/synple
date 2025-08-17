@@ -9114,6 +9114,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         #skip spectra with no variance
         bigres = None
         if np.std(spec) < 1e-50: 
+          print('skipping spectrum since flux as a std < 1e-50')
           continue
 
         #normalize
