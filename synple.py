@@ -9111,6 +9111,11 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           xax = np.arange(lenx2)
           flx = np.interp(xax,xax[www2],spec[www2])
 
+        #skip spectra with no variance
+        bigres = None
+        if np.std(spec) < 1e-50: 
+          continue
+
         #normalize
         if conti > 0:
           mspec = continuum(spec, window_length=conti)
@@ -9398,7 +9403,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             str(lchi)+' '+' '.join(map(str,cov))+'\n')
         nrd.write(' '.join(map(str,spec))+'\n')
         mdl.write(' '.join(map(str,bmod))+'\n')
-        err.write(' '.join(map(str,1./np.sqrt(ivar)))+'\n')
+        onesigma = np.divide(1.,np.sqrt(ivar), (ivar > 0))
+        err.write(' '.join(map(str,onesigma))+'\n')
         if absolut or ferre:
             frd.write(' '.join(map(str,rawspec))+'\n')
         if absolut:
@@ -11414,13 +11420,17 @@ def wtabmodfits(root, path=None):
     match = re.search('-*.wav',entry)
     tag = match.group()[1:-4]
     if match: band.append(tag.upper())
-    x = loadtxt(proot+'-'+tag+'.wav')
-    npix.append(len(x))
+    wavsize = os.path.getsize(proot+'-'+tag+'.wav') 
+    if wavsize > 0:
+      x = loadtxt(proot+'-'+tag+'.wav')
+      npix.append(len(x))
   
   print('proot+.wav=',proot+'.wav')  
   print('xbandfiles=',xbandfiles)
-  x = np.loadtxt(proot+'.wav')
-  if len(npix) == 0: npix.append(len(x))
+  wavsize = os.path.getsize(proot+'.wav') 
+  if wavsize > 0:
+    x = np.loadtxt(proot+'.wav')
+    if len(npix) == 0: npix.append(len(x))
     
   m=glob.glob(proot+".mdl")
   e=glob.glob(proot+".err")
@@ -11570,254 +11580,255 @@ def wtabmodfits(root, path=None):
       success.append(1) 
     else: success.append(0)
 
-
-
-  #add info copied from fibermap
   nspec = len(targetid)
-  try:
-    #targetid=fibermap.data['targetid']
-    target_ra=fibermap.data['target_ra']
-    target_dec=fibermap.data['target_dec']
-    ref_id=fibermap.data['ref_id']
-    ref_cat=fibermap.data['ref_cat']
-  except NameError:
-    target_ra=np.zeros(nspec)
-    target_dec=np.zeros(nspec)
-    ref_id=np.zeros(nspec,dtype=int64)
-    ref_cat=np.array(["" for x in range(nspec)])
+  if nspec > 0:
 
-  #primary extension
-  hdu0=fits.PrimaryHDU()
+    #add info copied from fibermap
+    nspec = len(targetid)
+    try:
+      #targetid=fibermap.data['targetid']
+      target_ra=fibermap.data['target_ra']
+      target_dec=fibermap.data['target_dec']
+      ref_id=fibermap.data['ref_id']
+      ref_cat=fibermap.data['ref_cat']
+    except NameError:
+      target_ra=np.zeros(nspec)
+      target_dec=np.zeros(nspec)
+      ref_id=np.zeros(nspec,dtype=int64)
+      ref_cat=np.array(["" for x in range(nspec)])
 
-  #find out processing date and add it to primary header
-  now = datetime.datetime.fromtimestamp(time.time())
-  nowstr = now.isoformat() 
-  nowstr = nowstr[:nowstr.rfind('.')]
-  hdu0.header['DATE'] = nowstr
-  #hdu0.header['FCONFIG'] = config
+    #primary extension
+    hdu0=fits.PrimaryHDU()
 
-  #find out host machine and add info to header
-  try:
-    host=os.environ['HOST']
-  except:
-    host='Unknown'
-  hdu0.header['HOST'] = host
-  #find out OS name/platform
-  osname = os.name 
-  platf = platform.system() + ' '+ platform.release()
-  hdu0.header['OS'] = osname
-  hdu0.header['PLATFORM'] = platf
+    #find out processing date and add it to primary header
+    now = datetime.datetime.fromtimestamp(time.time())
+    nowstr = now.isoformat() 
+    nowstr = nowstr[:nowstr.rfind('.')]
+    hdu0.header['DATE'] = nowstr
+    #hdu0.header['FCONFIG'] = config
 
-  #keep track of the number of targets processed and the time it took
-  hdu0.header['NSPEC'] = nspec
-  #ftiming = get_ferre_timings(proot)
-  #hdu0.header['FTIME'] = ftiming
-  #stiming = get_slurm_timings(proot)
-  #hdu0.header['STIME'] = stiming
-  #ncores = get_slurm_cores(proot)
-  #hdu0.header['NCORES'] = ncores
+    #find out host machine and add info to header
+    try:
+      host=os.environ['HOST']
+    except:
+      host='Unknown'
+    hdu0.header['HOST'] = host
+    #find out OS name/platform
+    osname = os.name 
+    platf = platform.system() + ' '+ platform.release()
+    hdu0.header['OS'] = osname
+    hdu0.header['PLATFORM'] = platf
 
-  #get versions and enter then in primary header
-  ver = get_versions()
-  for entry in ver.keys(): hdu0.header[entry] = ver[entry]
+    #keep track of the number of targets processed and the time it took
+    hdu0.header['NSPEC'] = nspec
+    #ftiming = get_ferre_timings(proot)
+    #hdu0.header['FTIME'] = ftiming
+    #stiming = get_slurm_timings(proot)
+    #hdu0.header['STIME'] = stiming
+    #ncores = get_slurm_cores(proot)
+    #hdu0.header['NCORES'] = ncores
+
+    #get versions and enter then in primary header
+    ver = get_versions()
+    for entry in ver.keys(): hdu0.header[entry] = ver[entry]
   
-  hdulist = [hdu0]
+    hdulist = [hdu0]
 
-  #sptab extension
-  cols = {}
-  cols['SUCCESS'] = success
-  cols['TARGETID'] = targetid
-  cols['TARGET_RA'] = target_ra
-  cols['TARGET_DEC'] = target_dec
-  cols['REF_ID'] = ref_id
-  cols['REF_CAT'] = ref_cat
-  cols['SRCFILE'] = srcfile
-  cols['BESTGRID'] = bestgrid
-  cols['TEFF'] = np.array(teff)*units.K
-  cols['LOGG'] = np.array(logg)
-  cols['FEH'] = np.array(feh)
-  cols['ALPHAFE'] = np.array(alphafe) 
-  cols['CFE'] = np.array(cfe)
-  cols['MICRO'] = np.array(micro)
-  cols['PARAM'] = np.vstack ( (teff, logg, feh, alphafe, cfe) ).T
-  cols['COVAR'] = np.array(covar)  #.reshape(len(success),5,5)
-  #cols['ELEM'] = np.array(elem)
-  #cols['ELEM_ERR'] = np.array(elem_err)
-  cols['CHISQ_TOT'] = np.array(chisq_tot)
-  cols['SNR_MED'] = np.array(snr_med)
-  cols['VRAD'] = np.array(vrad)*units.km/units.s
-  cols['VRAD_ERR'] = np.array(vrad_err)*units.km/units.s
-
-  colcomm = {
-  'success': 'Bit indicating whether the code has likely produced useful results',
-  'TARGETID': 'DESI targetid',
-  'TARGET_RA': 'Target Right Ascension (deg) -- details in FIBERMAP',
-  'TARGET_DEC': 'Target Declination (deg) -- details in FIBERMAP',
-  'REF_ID': 'Astrometric cat refID (Gaia SOURCE_ID)',
-  'REF_CAT': 'Astrometry reference catalog',
-  'SRCFILE': 'DESI data file',
-  'BESTGRID': 'Model grid that produced the best fit',
-  'TEFF': 'Effective temperature (K)',
-  'LOGG': 'Surface gravity (g in cm/s**2)',
-  'FEH': 'Metallicity [Fe/H] = log10(N(Fe)/N(H)) - log10(N(Fe)/N(H))sun' ,
-  'ALPHAFE': 'Alpha-to-iron ratio [alpha/Fe]',
-  'CFE': 'Carbon-to-iron ratio [C/Fe]',
-  'MICRO': 'Microturbulence (km/s)',
-  'PARAM': 'Array of atmospheric parameters (Teff, logg, [Fe/H], [alpha/Fe], [C/Fe])',
-  'COVAR': 'Covariance matrix for (Teff, logg, [Fe/H], [alpha/Fe], [C/Fe])',
-  #'ELEM': 'Elemental abundance ratios to hydrogen [elem/H]',
-  #'ELEM_ERR': 'Uncertainties in the elemental abundance ratios',
-  'CHISQ_TOT': 'Total chi**2',
-  'SNR_MED': 'Median signal-to-ratio',
-  'VRAD': 'Adopted Radial Velocity (km/s)',
-  'VRAD_ERR': 'Uncertainty in the adopted Radial Velocity (km/s)'
-  }      
-
-  
-  table = tbl.Table(cols)
-  hdu=fits.BinTableHDU(table,name = 'SPTAB')
-  #hdu.header['EXTNAME']= ('SPTAB', 'Stellar Parameter Table')
-  k = 0
-  for entry in colcomm.keys():
-    print(entry) 
-    hdu.header['TCOMM'+"{:03d}".format(k+1)] = colcomm[entry]
-    k+=1
-  hdulist.append(hdu)
-
-  #fibermap extension
-  if len(fmp) > 0:
-    hdu=fits.BinTableHDU.from_columns(fibermap, name='FIBERMAP')
-    hdulist.append(hdu)
-    ff.close()
-
-  #scores extension
-  if len(scr) > 0:
-    hdu=fits.BinTableHDU.from_columns(scores, name='SCORES')
-    hdulist.append(hdu)
-    fs.close()
-
-  #aux extension
-  #p = ['[Fe/H]','[a/Fe]','log10micro','Teff','logg']
-  #if 'elem' in conf: e = conf['elem']
-  #cols = {}
-  #colcomm = {}
-  #cols['p'] = [p]
-  #colcomm['p'] = 'PARAM tags'
-  #if 'elem' in conf:
-  #  cols['e'] = [e]
-  #  colcomm['e']= 'ELEM tags'
-  
-  #table = tbl.Table(cols)
-  #hdu=fits.BinTableHDU(table,name = 'AUX')
-
-  #k = 0
-  #for entry in colcomm.keys():
-  #  print(entry) 
-  #  hdu.header['TCOMM'+"{:03d}".format(k+1)] = colcomm[entry]
-  #  k+=1
-  #hdulist.append(hdu)
-
-
-  hdul=fits.HDUList(hdulist)
-  hdul.writeto(os.path.join(path,'sptab_'+root+'.fits'), overwrite=True)
-  
-  #now spmod
-  hdulist = [hdu0]
- 
-
-  edata=np.loadtxt(e[0])
-  mdata=np.loadtxt(m[0])
-  odata=np.loadtxt(n[0])
-  
-  i = 0
-  j1 = 0
-
-  if len(xbandfiles) > 0:
-    for entry in band:
-      j2 = j1 + npix[i] 
-      print(entry,i,npix[i],j1,j2)
-      #colx = fits.Column(name='wavelength',format='e8', array=array(x[j1:j2]))
-      #coldefs = fits.ColDefs([colx])
-      #hdu = fits.BinTableHDU.from_columns(coldefs)
-      hdu = fits.ImageHDU(name=entry+'_WAVELENGTH', data=x[j1:j2])
-      hdulist.append(hdu)
-    
-      cols = {}
-      colcomm = {}
-      if odata.ndim == 2: tdata = odata[:,j1:j2]
-      else: tdata = odata[j1:j2][None,:]
-      cols['obs'] = tdata
-      colcomm['obs'] = 'Observed spectra as fit'
-      if edata.ndim == 2: tdata = edata[:,j1:j2]
-      else: tdata = edata[j1:j2][None,:]
-      cols['err'] = tdata
-      colcomm['err'] = 'Error in spectra as fit'
-      if mdata.ndim == 2: tdata = mdata[:,j1:j2]
-      else: tdata = mdata[j1:j2][None,:]
-      cols['fit'] = tdata
-      colcomm['fit'] = 'Best-fitting model'
-
-      table = tbl.Table(cols)
-      hdu=fits.BinTableHDU(table,name = entry+'_MODEL')
-      k = 0
-      for entry in colcomm.keys():
-        print(entry) 
-        hdu.header['TCOMM'+"{:03d}".format(k+1)] = colcomm[entry]
-        k+=1
-      hdulist.append(hdu)
-      i += 1
-      j1 = j2
-      
-  else:
-	  
-    print('single wavelength entry!')
-    #colx = fits.Column(name='wavelength',format='e8', array=array(x[j1:j2]))
-    #coldefs = fits.ColDefs([colx])
-    #hdu = fits.BinTableHDU.from_columns(coldefs)
-    hdu = fits.ImageHDU(name='WAVELENGTH', data=x)
-    hdulist.append(hdu)
-      
+    #sptab extension
     cols = {}
-    colcomm = {}
-    if odata.ndim == 2: tdata = odata[:,:]
-    else: tdata = odata[:][None,:]
-    cols['obs'] = tdata
-    colcomm['obs'] = 'Observed spectra as fit'
-    if edata.ndim == 2: tdata = edata[:,:]
-    else: tdata = edata[:][None,:]
-    cols['err'] = tdata
-    colcomm['err'] = 'Error in spectra as fit'
-    if mdata.ndim == 2: tdata = mdata[:,:]
-    else: tdata = mdata[:][None,:]
-    cols['fit'] = tdata
-    colcomm['fit'] = 'Best-fitting model'      
-      
+    cols['SUCCESS'] = success
+    cols['TARGETID'] = targetid
+    cols['TARGET_RA'] = target_ra
+    cols['TARGET_DEC'] = target_dec
+    cols['REF_ID'] = ref_id
+    cols['REF_CAT'] = ref_cat
+    cols['SRCFILE'] = srcfile
+    cols['BESTGRID'] = bestgrid
+    cols['TEFF'] = np.array(teff)*units.K
+    cols['LOGG'] = np.array(logg)
+    cols['FEH'] = np.array(feh)
+    cols['ALPHAFE'] = np.array(alphafe) 
+    cols['CFE'] = np.array(cfe)
+    cols['MICRO'] = np.array(micro)
+    cols['PARAM'] = np.vstack ( (teff, logg, feh, alphafe, cfe) ).T
+    cols['COVAR'] = np.array(covar)  #.reshape(len(success),5,5)
+    #cols['ELEM'] = np.array(elem)
+    #cols['ELEM_ERR'] = np.array(elem_err)
+    cols['CHISQ_TOT'] = np.array(chisq_tot)
+    cols['SNR_MED'] = np.array(snr_med)
+    cols['VRAD'] = np.array(vrad)*units.km/units.s
+    cols['VRAD_ERR'] = np.array(vrad_err)*units.km/units.s
 
+    colcomm = {
+    'success': 'Bit indicating whether the code has likely produced useful results',
+    'TARGETID': 'DESI targetid',
+    'TARGET_RA': 'Target Right Ascension (deg) -- details in FIBERMAP',
+    'TARGET_DEC': 'Target Declination (deg) -- details in FIBERMAP',
+    'REF_ID': 'Astrometric cat refID (Gaia SOURCE_ID)',
+    'REF_CAT': 'Astrometry reference catalog',
+    'SRCFILE': 'DESI data file',
+    'BESTGRID': 'Model grid that produced the best fit',
+    'TEFF': 'Effective temperature (K)',
+    'LOGG': 'Surface gravity (g in cm/s**2)',
+    'FEH': 'Metallicity [Fe/H] = log10(N(Fe)/N(H)) - log10(N(Fe)/N(H))sun' ,
+    'ALPHAFE': 'Alpha-to-iron ratio [alpha/Fe]',
+    'CFE': 'Carbon-to-iron ratio [C/Fe]',
+    'MICRO': 'Microturbulence (km/s)',
+    'PARAM': 'Array of atmospheric parameters (Teff, logg, [Fe/H], [alpha/Fe], [C/Fe])',
+    'COVAR': 'Covariance matrix for (Teff, logg, [Fe/H], [alpha/Fe], [C/Fe])',
+    #'ELEM': 'Elemental abundance ratios to hydrogen [elem/H]',
+    #'ELEM_ERR': 'Uncertainties in the elemental abundance ratios',
+    'CHISQ_TOT': 'Total chi**2',
+    'SNR_MED': 'Median signal-to-ratio',
+    'VRAD': 'Adopted Radial Velocity (km/s)',
+    'VRAD_ERR': 'Uncertainty in the adopted Radial Velocity (km/s)'
+    }      
+
+  
     table = tbl.Table(cols)
-    hdu=fits.BinTableHDU(table,name = 'MODEL')
+    hdu=fits.BinTableHDU(table,name = 'SPTAB')
+    #hdu.header['EXTNAME']= ('SPTAB', 'Stellar Parameter Table')
     k = 0
     for entry in colcomm.keys():
       print(entry) 
       hdu.header['TCOMM'+"{:03d}".format(k+1)] = colcomm[entry]
       k+=1
     hdulist.append(hdu)
+
+    #fibermap extension
+    if len(fmp) > 0:
+      hdu=fits.BinTableHDU.from_columns(fibermap, name='FIBERMAP')
+      hdulist.append(hdu)
+      ff.close()
+
+    #scores extension
+    if len(scr) > 0:
+      hdu=fits.BinTableHDU.from_columns(scores, name='SCORES')
+      hdulist.append(hdu)
+      fs.close()
+
+    #aux extension
+    #p = ['[Fe/H]','[a/Fe]','log10micro','Teff','logg']
+    #if 'elem' in conf: e = conf['elem']
+    #cols = {}
+    #colcomm = {}
+    #cols['p'] = [p]
+    #colcomm['p'] = 'PARAM tags'
+    #if 'elem' in conf:
+    #  cols['e'] = [e]
+    #  colcomm['e']= 'ELEM tags'
+  
+    #table = tbl.Table(cols)
+    #hdu=fits.BinTableHDU(table,name = 'AUX')
+
+    #k = 0
+    #for entry in colcomm.keys():
+    #  print(entry) 
+    #  hdu.header['TCOMM'+"{:03d}".format(k+1)] = colcomm[entry]
+    #  k+=1
+    #hdulist.append(hdu)
+
+  
+    hdul=fits.HDUList(hdulist)
+    hdul.writeto(os.path.join(path,'sptab_'+root+'.fits'), overwrite=True)
+  
+    #now spmod
+    hdulist = [hdu0]
+ 
+
+    edata=np.loadtxt(e[0])
+    mdata=np.loadtxt(m[0])
+    odata=np.loadtxt(n[0])
+  
+    i = 0
+    j1 = 0
+
+    if len(xbandfiles) > 0:
+      for entry in band:
+        j2 = j1 + npix[i] 
+        print(entry,i,npix[i],j1,j2)
+        #colx = fits.Column(name='wavelength',format='e8', array=array(x[j1:j2]))
+        #coldefs = fits.ColDefs([colx])
+        #hdu = fits.BinTableHDU.from_columns(coldefs)
+        hdu = fits.ImageHDU(name=entry+'_WAVELENGTH', data=x[j1:j2])
+        hdulist.append(hdu)
+    
+        cols = {}
+        colcomm = {}
+        if odata.ndim == 2: tdata = odata[:,j1:j2]
+        else: tdata = odata[j1:j2][None,:]
+        cols['obs'] = tdata
+        colcomm['obs'] = 'Observed spectra as fit'
+        if edata.ndim == 2: tdata = edata[:,j1:j2]
+        else: tdata = edata[j1:j2][None,:]
+        cols['err'] = tdata
+        colcomm['err'] = 'Error in spectra as fit'
+        if mdata.ndim == 2: tdata = mdata[:,j1:j2]
+        else: tdata = mdata[j1:j2][None,:]
+        cols['fit'] = tdata
+        colcomm['fit'] = 'Best-fitting model'
+
+        table = tbl.Table(cols)
+        hdu=fits.BinTableHDU(table,name = entry+'_MODEL')
+        k = 0
+        for entry in colcomm.keys():
+          print(entry) 
+          hdu.header['TCOMM'+"{:03d}".format(k+1)] = colcomm[entry]
+          k+=1
+        hdulist.append(hdu)
+        i += 1
+        j1 = j2
+      
+    else:
+	  
+      print('single wavelength entry!')
+      #colx = fits.Column(name='wavelength',format='e8', array=array(x[j1:j2]))
+      #coldefs = fits.ColDefs([colx])
+      #hdu = fits.BinTableHDU.from_columns(coldefs)
+      hdu = fits.ImageHDU(name='WAVELENGTH', data=x)
+      hdulist.append(hdu)
+      
+      cols = {}
+      colcomm = {}
+      if odata.ndim == 2: tdata = odata[:,:]
+      else: tdata = odata[:][None,:]
+      cols['obs'] = tdata
+      colcomm['obs'] = 'Observed spectra as fit'
+      if edata.ndim == 2: tdata = edata[:,:]
+      else: tdata = edata[:][None,:]
+      cols['err'] = tdata
+      colcomm['err'] = 'Error in spectra as fit'
+      if mdata.ndim == 2: tdata = mdata[:,:]
+      else: tdata = mdata[:][None,:]
+      cols['fit'] = tdata
+      colcomm['fit'] = 'Best-fitting model'      
+      
+
+      table = tbl.Table(cols)
+      hdu=fits.BinTableHDU(table,name = 'MODEL')
+      k = 0
+      for entry in colcomm.keys():
+        print(entry) 
+        hdu.header['TCOMM'+"{:03d}".format(k+1)] = colcomm[entry]
+        k+=1
+      hdulist.append(hdu)
 	  
 
-  if len(fmp) > 0:
-    ff=fits.open(fmp[0])
-    fibermap=ff[1]
-    hdu=fits.BinTableHDU.from_columns(fibermap, name='FIBERMAP')
-    #hdu.header['EXTNAME']='FIBERMAP'
-    hdulist.append(hdu)
+    if len(fmp) > 0:
+      ff=fits.open(fmp[0])
+      fibermap=ff[1]
+      hdu=fits.BinTableHDU.from_columns(fibermap, name='FIBERMAP')
+      #hdu.header['EXTNAME']='FIBERMAP'
+      hdulist.append(hdu)
 
-  if len(scr) > 0:
-    ff=fits.open(scr[0])
-    scores=ff[1]
-    hdu=fits.BinTableHDU.from_columns(scores, name='SCORES')
-    hdulist.append(hdu)
+    if len(scr) > 0:
+      ff=fits.open(scr[0])
+      scores=ff[1]
+      hdu=fits.BinTableHDU.from_columns(scores, name='SCORES')
+      hdulist.append(hdu)
 
-  hdul=fits.HDUList(hdulist)
-  hdul.writeto(os.path.join(path,'spmod_'+root+'.fits'), overwrite=True) 
+    hdul=fits.HDUList(hdulist)
+    hdul.writeto(os.path.join(path,'spmod_'+root+'.fits'), overwrite=True) 
   
   return None
 
