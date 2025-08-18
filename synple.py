@@ -9303,7 +9303,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             p3 = p
             d3 = d
 
-          if res[imet] < -9.00: # no abundances for white dwarfs
+          if res[imet] < -7.00: # no abundances for white dwarfs
             abuarr = [np.nan] * len(filters)
             eabuarr = [np.nan] * len(filters)
           else:
@@ -9354,8 +9354,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               ab, eab, covab, bmodab, weightsab = cebas( par[:,imet],
                  specpar, spec, ivar, filter=dfilters[i,:])
 
-              abuarr.append(ab)
-              eabuarr.append(eab)
+              abuarr.append(ab[0])
+              eabuarr.append(eab[0])
 
               #plt.clf()
               #plt.plot(par[:,imet],np.log10(weightsab),'.')
@@ -9417,8 +9417,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         if ferre:
             ipf.write(str(ids[j])+' '+' '.join(map(str,np.zeros(ndim)))+'\n')
         if len(filters) > 0:
-            abf.write(str(ids[j])+' '+' '.join(map(str,np.array(abuarr)))+' '+
-            ' '.join(map(str,np.array(eabuarr)))+'\n')
+          abf.write(str(ids[j])+' '+' '.join(map(str,abuarr))+' '+
+            ' '.join(map(str,eabuarr))+'\n')
         if j == 0: wav.write(' '.join(map(str,x2))+'\n')
 
 
@@ -9859,7 +9859,9 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
            else:
              assert (type(wavelengths) is list),'A list is expected for the input wavelengths'
              nfreq = len(wavelengths[i])
-             #print('nfreq=',nfreq)
+             print('nfreq=',nfreq)
+             print('grid wavelengths:',np.min(wavelengths[i]),np.max(wavelengths[i]))
+             print('DESI file wavelengths:',np.min(wav1),np.max(wav1)) 
              flux2 = np.zeros((nspec,nfreq))
              ivar2 = np.zeros((nspec,nfreq))
              for j in range(nspec):

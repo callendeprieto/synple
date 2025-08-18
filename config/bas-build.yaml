@@ -1,10 +1,10 @@
 DESI:
   gsynth: [ 
-    {'fwhm': 1.8, 'units': 'A', 'ppr': 3., 'wrange': [3759., 5959], 
+    {'fwhm': 1.8, 'units': 'A', 'ppr': 3., 'wrange': [3612., 5780.], 
     'outsynthfile': 'n_B-DESI.dat'},  
-    {'fwhm': 1.8, 'units': 'A', 'ppr': 3., 'wrange': [5635., 7750.],
+    {'fwhm': 1.8, 'units': 'A', 'ppr': 3., 'wrange': [5779., 7594.],
     'outsynthfile': 'n_R-DESI.dat'},   
-    {'fwhm': 1.8, 'units': 'A', 'ppr': 3., 'wrange': [7445., 9843.],
+    {'fwhm': 1.8, 'units': 'A', 'ppr': 3., 'wrange': [7545., 9791.],
     'outsynthfile': 'n_Z-DESI.dat'} ]
   rewrite_synth: [
     {'synthfile': 'n_B-DESI.dat', 'outsynthfile': 'i_B-DESI.dat'}, 
