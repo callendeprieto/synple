@@ -9842,8 +9842,8 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
                xtmp = np.array(wav1,dtype=float)
                ytmp = np.array(flux1[j,:],dtype=float)
                tmp = remove(ccm89(xtmp, red[j] * 3.1, 3.1), ytmp)
-               ivar1[j,:] = ivar1[j,:] * 
-                 (np.divide (ytmp,tmp,where=(tmp!=0),out=np.ones(len(tmp)) ))**2
+               ivar1[j,:] = ivar1[j,:] * (np.divide (
+                 ytmp,tmp,where=(tmp!=0),out=np.ones(len(tmp)) ))**2
                flux1[j,:] = tmp
 
            if wavelengths is None:
