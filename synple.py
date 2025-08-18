@@ -9128,9 +9128,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           if mspec == 0.0: mspec = np.median(spec)
           if mspec == 0.0: mspec = 1.
 
-        if absolut or ferre:
-          rawspec = spec.copy()
-          rawivar = ivar.copy()
+        rawspec = spec.copy()
+        rawivar = ivar.copy()
         spec = spec / mspec
         ivar = ivar * mspec**2
 
@@ -9158,12 +9157,23 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           print('RV = ',vrad,' km/s')
         
           #correct RV and reanalyze
-          if ferre:
-            spec = np.interp(x2, x2 * (1. - vrad/clight), rawspec)
-            ivar = np.interp(x2, x2 * (1. - vrad/clight), rawivar)
-          else:
-            spec = np.interp(x2, x2 * (1. - vrad/clight), spec)
-            ivar = np.interp(x2, x2 * (1. - vrad/clight), ivar)
+          spec = np.interp(x2, x2 * (1. - vrad/clight), rawspec)
+          ivar = np.interp(x2, x2 * (1. - vrad/clight), rawivar)
+
+          if not ferre:
+            #normalize
+            if conti > 0:
+              mspec = continuum(spec, window_length=conti)
+              www = (mspec == 0.0)
+              mspec[www] = 1. 
+            else:
+              mspec = np.mean(spec)
+              if mspec == 0.0: mspec = np.median(spec)
+              if mspec == 0.0: mspec = 1.
+
+            spec = spec / mspec
+            ivar = ivar * mspec**2
+
             if gpu:
               spec_gpu = cp.asarray(spec)
               ivar_gpu = cp.asarray(ivar)
