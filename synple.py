@@ -9313,13 +9313,12 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             #indices for models with parameters other than [Fe/H] compatible
             wf = []
             rradius = 1.0 #factor to mutiply by errors when selecting models
-            ethreshold = np.ones(ndim)*0.01 #threshold in case errors are 0
+            ethreshold = np.ones(ndim)*0.1 #threshold in case errors are 0
             while len(wf) < 10:
               wfspan = np.delete( np.maximum(eres,ethreshold) * rradius, imet)
               wf = np.where( np.all( (np.abs( (np.delete(p3,imet,axis=1) - np.delete(res,imet) ) / wfspan ) < 1.), axis=1))[0]
               print(rradius,len(wf))    
               rradius *= 2.
-              assert (len(wf) > 0), 'no model found around the solution in bas!'
 
             #print('there are ',len(wf),' models within 1sigma errors in '+' '.join(np.delete(hlabels,imet)))
             #print(np.mean(p3[wf,:],axis=0), np.std(p3[wf,:],axis=0) )
