@@ -9087,7 +9087,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       mdl = open(mdlfile,'w')
       nrd = open(nrdfile,'w')
       err = open(errfile,'w')
-      wav = open(wavfile,'w')
       if absolut or ferre:
         frd = open(frdfile,'w')
       if absolut:
@@ -9097,6 +9096,9 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       if len(filters) > 0:
         abf = open(abufile,'w')
          
+
+      #list that keeps track of the spectra which passed the analysis
+      wentthrough = []
 
       for j in range(nspec):
 
@@ -9409,7 +9411,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           plt.show()
 
 
-
       
         opf.write(str(ids[j])+' '+' '.join(map(str,res))+' '+
             ' '.join(map(str,eres))+' '+
@@ -9429,7 +9430,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         if len(filters) > 0:
           abf.write(str(ids[j])+' '+' '.join(map(str,abuarr))+' '+
             ' '.join(map(str,eabuarr))+'\n')
-        if j == 0: wav.write(' '.join(map(str,x2))+'\n')
+        #if j == 0: wav.write(' '.join(map(str,x2))+'\n')
 
 
 
@@ -9440,11 +9441,14 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         else:
           bigres = np.hstack((bigres,np.array(outdata,dtype=str)))
 
-      print('closing opf file:',opffile)
+        wentthrough.append(j)
+
       opf.close()
       mdl.close()
       nrd.close()
       err.close()
+      wav = open(wavfile,'w')
+      wav.write(' '.join(map(str,x2))+'\n')
       wav.close()
       if absolut or ferre:
         frd.close()
@@ -9481,6 +9485,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
       if instr == 'DESI':
         head, fibermap, scores = xtr
+        fibermap = fibermap[wentthrough]
+        scores = scores[wentthrough]
         fmp = tbl.Table(fibermap)
         hdu0 = fits.BinTableHDU(fmp)
         hdu0.writeto(fmpfile, overwrite=True)
@@ -10180,16 +10186,58 @@ def read_desispec(filename,band=None):
   return((wavelength,flux,ivar,res,header,fibermap,scores))
 
 
+#get names of extensions from a FITS file
+def extnames(hdu):
+  #hdu must have been open as follows hdu=fits.open(filename)
+  x=hdu.info(output=False)
+  names=[]
+  for entry in x: names.append(entry[1])
+  return(names)
+
+#read sptab/rvtab file, returning sp/rvtab, fibermap and primary header (s,f,p)
+def read_tab(file):
+
+  d=fits.open(file)
+  n=extnames(d)
+  h=d[0].header
+  if 'SPTAB' in n or 'sptab' in n:
+    s=d['sptab'].data
+  elif 'rvtab' in n or 'RVTAB' in n:
+    s=d['rvtab'].data
+  else:
+    print('Error: cannot find an rvtab or sptab extension in the file')
+    s=None
+  f=d['fibermap'].data
+ 
+  return(s,f,h) 
+
+
 def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,nozero=None,res=False,interactive=True):
 
   """Plot one or multiple spectra
   """
 
   if root is not None:
-    xx = np.loadtxt(root+'.wav') / 10.
-    n = np.loadtxt(root+'.nrd')
-    m = np.loadtxt(root+'.mdl')
-    o = np.loadtxt(root+'.opf',dtype=str) 
+
+    if root[:5] == 'spmod' and root[-4:] == 'fits':
+      dd = fits.open(root)
+      xx = dd['WAVELENGTH'].data
+      yy = dd['MODEL'].data
+      n = yy['obs']
+      m = yy['fit']
+      sp, map, hdr = read_tab('sptab'+ root[5:])
+      o = np.hstack( (sp['targetid'].reshape((sp['targetid'].size,1)), 
+        sp['param'], sp['param'] , sp['vrad'].reshape((sp['targetid'].size,1)),
+        sp['vrad'].reshape((sp['targetid'].size,1)), 
+        sp['vrad'].reshape((sp['targetid'].size,1)) ), dtype=str )
+       
+
+    else:
+
+      xx = np.loadtxt(root+'.wav') / 10.
+      n = np.loadtxt(root+'.nrd')
+      m = np.loadtxt(root+'.mdl')
+      o = np.loadtxt(root+'.opf',dtype=str) 
 
   else:
 
@@ -10250,7 +10298,10 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,noze
         npar = int(np.sqrt(npar*1.0 - 1.))
       else:
         npar = npar// 2
-      plt.title('params: '+' -- '.join(map("{:.2f}".format,np.array(o[1:npar+1],dtype=float))))
+      print('npar=',npar)
+      print(type(o))
+      print(type(npar))
+      plt.title('params: '+  ' -- '.join(o[j,1:npar+1].astype('str')) )
       xtext = 0.5*xrange[0]+0.5*xrange[1]
       ytext = 0.75*yrange[0]+0.25*yrange[1]
       ycurve = np.interp(xtext,xx[w],n[w])
@@ -10314,7 +10365,7 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,noze
           npar = int(np.sqrt(npar*1.0 - 1.))
         else:
           npar = npar// 2
-        plt.title('params: '+' -- '.join(map("{:.2f}".format,np.array(o[j,1:npar+1],dtype=float))))
+        plt.title('params: '+  ' -- '.join(o[j,1:npar+1].astype('str')) )
         xtext = 0.5*xrange[0]+0.5*xrange[1]
         ytext = 0.75*yrange2[0]+0.25*yrange2[1]
         ycurve = np.interp(xtext,xx2,n[j,w])
@@ -11489,6 +11540,7 @@ def wtabmodfits(root, path=None):
   alphafe_err=[]
   cfe_err=[]
   param=[]
+  param_err=[]
   covar=[]
   elem=[]
   elem_err=[]
@@ -11590,9 +11642,11 @@ def wtabmodfits(root, path=None):
     snr_med.append(float(cells[1+2*ndim]))
     vrad.append(float(cells[0+2*ndim]))
     vrad_err.append(np.nan)
-    par = np.array(cells[0:ndim],dtype=float)
-    cov = np.array(cells[3+2*ndim:],dtype=float)
+    par = np.array(cells[0:ndim], dtype=float)
+    par_err = np.array(cells[ndim+1:ndim+1+ndim], dtype=float)
+    cov = np.array(cells[3+2*ndim:], dtype=float)
     param.append(par)
+    param_err.append(par_err)
     covar.append(cov)
     
     targetid.append(np.int64(id))
@@ -11667,12 +11721,18 @@ def wtabmodfits(root, path=None):
     cols['SRCFILE'] = srcfile
     cols['BESTGRID'] = bestgrid
     cols['TEFF'] = np.array(teff)*units.K
+    cols['TEFF_ERR'] = np.array(teff_err)*units.K
     cols['LOGG'] = np.array(logg)
+    cols['LOGG_ERR'] = np.array(logg_err)
     cols['FEH'] = np.array(feh)
+    cols['FEH_ERR'] = np.array(feh_err)
     cols['ALPHAFE'] = np.array(alphafe) 
+    cols['ALPHAFE_ERR'] = np.array(alphafe_err)
     cols['CFE'] = np.array(cfe)
+    cols['CFE_ERR'] = np.array(cfe_err)
     cols['MICRO'] = np.array(micro)
     cols['PARAM'] = np.vstack ( (teff, logg, feh, alphafe, cfe) ).T
+    cols['PARAM_ERR'] = np.vstack( (teff_err, logg_err, feh_err, alphafe_err, cfe_err) ).T
     cols['COVAR'] = np.array(covar)  #.reshape(len(success),5,5)
     #cols['ELEM'] = np.array(elem)
     #cols['ELEM_ERR'] = np.array(elem_err)
@@ -11691,12 +11751,18 @@ def wtabmodfits(root, path=None):
     'SRCFILE': 'DESI data file',
     'BESTGRID': 'Model grid that produced the best fit',
     'TEFF': 'Effective temperature (K)',
+    'TEFF_ERR': 'Uncertainty in effective temperature (K)',
     'LOGG': 'Surface gravity (g in cm/s**2)',
+    'LOGG_ERR': 'Uncertainty in surface gravity (g in cm/s**2)',
     'FEH': 'Metallicity [Fe/H] = log10(N(Fe)/N(H)) - log10(N(Fe)/N(H))sun' ,
+    'FEH_ERR': 'Uncertainty in metallicity [Fe/H]' ,
     'ALPHAFE': 'Alpha-to-iron ratio [alpha/Fe]',
+    'ALPHAFE_ERR': 'Uncertainty in alpha-to-iron ratio [alpha/Fe]',
     'CFE': 'Carbon-to-iron ratio [C/Fe]',
+    'CFE_ERR': 'Uncertainty in carbon-to-iron ratio [C/Fe]',
     'MICRO': 'Microturbulence (km/s)',
     'PARAM': 'Array of atmospheric parameters (Teff, logg, [Fe/H], [alpha/Fe], [C/Fe])',
+    'PARAM_ERR': 'Array of uncertainties in the atmospheric parameters (Teff, logg, [Fe/H], [alpha/Fe], [C/Fe])',
     'COVAR': 'Covariance matrix for (Teff, logg, [Fe/H], [alpha/Fe], [C/Fe])',
     #'ELEM': 'Elemental abundance ratios to hydrogen [elem/H]',
     #'ELEM_ERR': 'Uncertainties in the elemental abundance ratios',
@@ -11752,7 +11818,7 @@ def wtabmodfits(root, path=None):
 
   
     hdul=fits.HDUList(hdulist)
-    hdul.writeto(os.path.join(path,'sptab_'+root+'.fits'), overwrite=True)
+    hdul.writeto(os.path.join(path,'sptab_'+root), overwrite=True)
   
     #now spmod
     hdulist = [hdu0]
@@ -11850,7 +11916,7 @@ def wtabmodfits(root, path=None):
       hdulist.append(hdu)
 
     hdul=fits.HDUList(hdulist)
-    hdul.writeto(os.path.join(path,'spmod_'+root+'.fits'), overwrite=True) 
+    hdul.writeto(os.path.join(path,'spmod_'+root), overwrite=True) 
   
   return None
 
