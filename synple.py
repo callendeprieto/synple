@@ -9349,7 +9349,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
             for i in range(len(filters)):
 
-            print(filters[i],':')
+              print(filters[i],':')
 
               ab, eab, covab, bmodab, weightsab = cebas( par[:,imet],
                  specpar, spec, ivar, filter=dfilters[i,:])
