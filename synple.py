@@ -9303,59 +9303,64 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             p3 = p
             d3 = d
 
-          if res[imet] < -9.00:
+          if res[imet] < -9.00: # no abundances for white dwarfs
             abuarr = [np.nan] * len(filters)
             eabuarr = [np.nan] * len(filters)
           else:
             abuarr = []
             eabuarr = []
 
-            for i in range(len(filters)):
+          #indices for models with parameters other than [Fe/H] compatible
+          wf = []
+          rradius = 1.0 #factor to mutiply by errors when selecting models
+          ethreshold = np.ones(ndim)*0.01 #threshold in case errors are 0
+          while len(wf) < 10:
+            wfspan = np.delete( np.maximum(eres,ethreshold) * rradius, imet)
+            wf = np.where( np.all( (np.abs( (np.delete(p3,imet,axis=1) - np.delete(res,imet) ) / wfspan ) < 1.), axis=1))[0]
+            print(rradius,len(wf))    
+            rradius *= 2.
+            assert (len(wf) > 0), 'no model found around the solution in bas!'
 
+          #print('there are ',len(wf),' models within 1sigma errors in '+' '.join(np.delete(hlabels,imet)))
+          #print(np.mean(p3[wf,:],axis=0), np.std(p3[wf,:],axis=0) )
 
-              #indices for models with parameters other than [Fe/H] compatible
-              wf = []
-              rradius = 1.0
-              while len(wf) < 10:
-                wf = np.where( np.all( (np.abs( (np.delete(p3,imet,axis=1) - np.delete(res,imet) ) / np.delete(eres*rradius,imet)) < 1.), axis=1))[0]
-                rradius *= 2.
-
-              #print('there are ',len(wf),' models within 1sigma errors in '+' '.join(np.delete(hlabels,imet)))
-              #print(np.mean(p3[wf,:],axis=0), np.std(p3[wf,:],axis=0) )
-
-              #we interpolate in to sample nnew models with 
-              # -fehrange  < [Fe/H] < fehrange
-              nnew = 1000
-              fehrange = 2.0
-              pmin = p3[wf,:].min(0)
-              ptp = np.ptp(p3[wf,:],0)
-              pp = np.divide((p3[wf,:] - pmin),ptp, where=(ptp != 0))
-              crbf= interpolate.RBFInterpolator(pp, 
-                  d3[wf,:], kernel='linear', neighbors = 100)
-              par = np.tile(res,(nnew,1))
-              rng = np.random.default_rng(107)
-              par[:,imet] = res[imet] + rng.random(nnew)*2.*fehrange -fehrange
+          #we interpolate in to sample nnew models with 
+          # -fehrange  < [Fe/H] < fehrange
+          nnew = 1000
+          fehrange = 2.0
+          pmin = p3[wf,:].min(0)
+          ptp = np.ptp(p3[wf,:],0)
+          pp = np.divide((p3[wf,:] - pmin),ptp, where=(ptp != 0))
+          crbf= interpolate.RBFInterpolator(pp, 
+              d3[wf,:], kernel='linear', neighbors = 100)
+          par = np.tile(res,(nnew,1))
+          rng = np.random.default_rng(107)
+          par[:,imet] = res[imet] + rng.random(nnew)*2.*fehrange -fehrange
  
-              specpar = rbf_apply(crbf, pmin, ptp, par)
+          specpar = rbf_apply(crbf, pmin, ptp, par)
 
-              #plt.clf()
-              #for entry in range(nnew):
-              #  print(entry,'params:',par[entry,:])
-              #  plt.plot(x2,specpar[entry,:],'b')
-              #plt.plot(x2,spec,'r')
-              #plt.plot(x2,dfilters[i,:]/np.max(dfilters[i,:]))
-              #plt.show()
+          #plt.clf()
+          #for entry in range(nnew):
+          #  print(entry,'params:',par[entry,:])
+          #  plt.plot(x2,specpar[entry,:],'b')
+          #plt.plot(x2,spec,'r')
+          #plt.plot(x2,dfilters[i,:]/np.max(dfilters[i,:]))
+          #plt.show()
 
-              ab, eab, covab, bmodab, weightsab = cebas( par[:,imet],
-                 specpar, spec, ivar, filter=dfilters[i,:])
 
-              print(filters[i])
-              abuarr.append(ab)
-              eabuarr.append(eab)
+          for i in range(len(filters)):
 
-              #plt.clf()
-              #plt.plot(par[:,imet],np.log10(weightsab),'.')
-              #plt.show()
+            print(filters[i],':')
+
+            ab, eab, covab, bmodab, weightsab = cebas( par[:,imet],
+               specpar, spec, ivar, filter=dfilters[i,:])
+
+            abuarr.append(ab)
+            eabuarr.append(eab)
+
+            #plt.clf()
+            #plt.plot(par[:,imet],np.log10(weightsab),'.')
+            #plt.show()
 
 
         if absolut:
