@@ -1589,6 +1589,64 @@ def mkflt(dltfile,wavelengths,blocks=[],fwhm=0.0,unit='km/s',outdir='.'):
   return None
 
 
+def pltflt(synthfile):
+
+  x = lambda_synth(synthfile)
+  if type(x) is list:
+    xx = np.hstack(x)
+  else:
+    xx = x
+
+  ending = synthfile.rfind('.dat')
+  if ending == -1:
+    ending = synthfile.rfind('.pickle')
+  if ending == -1:
+    ending = len(synthfile) + 1
+  fltsubdir = os.path.join(fltdir,synthfile[0:ending])
+  file = np.array(glob.glob(os.path.join(fltsubdir,"*.flt")), dtype=str)
+
+
+  total = []
+  for entry in file:
+    d = np.loadtxt(entry)
+    total.append(np.sum(d))
+
+  indices = np.argsort(total)[::-1] 
+  print('indices=',indices)
+  file = file[indices]
+
+  fig, ax = plt.subplots()
+
+  label = []
+  i = 0
+  for entry in file:
+    d = np.loadtxt(entry)
+    print(entry,np.sum(d))
+    tag = entry[entry.rfind('/')+1:-4]
+    if np.sum(d) > 0.1 and tag != "He" and tag != "H":
+        d = d/np.sum(d)
+        if  i < 4: 
+          style = "-"
+          width = 2 
+        else:
+          style = "-"
+          width = 1 
+
+        ax.plot(xx/10.,d, linestyle=style, linewidth = width)
+        #ax.fill_between(xx/10.,d-0.01,d+0.01)
+        label.append(tag)
+        i += 1
+  ax.legend(label)
+  ax.set_ylim([5e-5,0.2])
+  ax.set_xlim([350.,1050.])
+  ax.set_yscale('log')
+  ax.set_xlabel('wavelength (nm)')
+  ax.set_ylabel('weights')
+  plt.show()
+ 
+  return()
+
+
 def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
     vmicro=None, vrot=0.0, fwhm=0.0, vmacro=0.0,  \
     linelist=linelist0, atom='ap18', \
