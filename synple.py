@@ -10359,7 +10359,7 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,noze
       print('npar=',npar)
       print(type(o))
       print(type(npar))
-      plt.title('params: '+  ' -- '.join(o[j,1:npar+1].astype('str')) )
+      plt.title('params: '+  ' -- '.join(o[1:npar+1].astype('str')) )
       xtext = 0.5*xrange[0]+0.5*xrange[1]
       ytext = 0.75*yrange[0]+0.25*yrange[1]
       ycurve = np.interp(xtext,xx[w],n[w])
@@ -11525,7 +11525,7 @@ def wtabmodfits(root, path=None):
   ----------
   root: str
       name of the root for input/output FERRE/BAS files 
-      with extensions .opf, .wav, .nrd, .mdl
+      with extensions .opf, .wav, .nrd, .mdl, .abu
 
   path: string
       path to files
@@ -11542,6 +11542,7 @@ def wtabmodfits(root, path=None):
   proot=os.path.join(path,root)
 
   o=glob.glob(proot+".opf")
+  a=glob.glob(proot+".abu")
 
   xbandfiles = sorted(glob.glob(proot+'-*.wav'))
   band = []
@@ -11608,6 +11609,7 @@ def wtabmodfits(root, path=None):
   vrad_err=[]
 
   of=open(o[0],'r')
+  if a: af=open(a[0],'r')
     
   for line in of:
 	  
@@ -11628,8 +11630,8 @@ def wtabmodfits(root, path=None):
     #cov = np.zeros(ndim*ndim+ndim) 
     cov = np.zeros((4,4))
         
-    print('ndim=',ndim)
-    print('ncells=',ncells)
+    #print('ndim=',ndim)
+    #print('ncells=',ncells)
 
 
     if (ndim == 2):
@@ -11701,7 +11703,7 @@ def wtabmodfits(root, path=None):
     vrad.append(float(cells[0+2*ndim]))
     vrad_err.append(np.nan)
     par = np.array(cells[0:ndim], dtype=float)
-    par_err = np.array(cells[ndim+1:ndim+1+ndim], dtype=float)
+    par_err = np.array(cells[ndim:2*ndim], dtype=float)
     cov = np.array(cells[3+2*ndim:], dtype=float)
     param.append(par)
     param_err.append(par_err)
@@ -11713,6 +11715,22 @@ def wtabmodfits(root, path=None):
     if (chisq_tot[-1] < 1.5 and snr_med[-1] > 5.): # chi**2<1.5 and S/N>5
       success.append(1) 
     else: success.append(0)
+
+    if a: 
+      line = af.readline()
+      cells=line.split()
+      id2 = cells[0]
+      cells = cells[1:]
+      nel = len(cells) // 2
+
+      assert (id == id2),'Mismatch between the targetids in the opf and abu files!'
+      ele = np.array(cells[0:nel], dtype=float)
+      ele_err = np.array(cells[nel:], dtype=float)
+      elem.append(ele) 
+      elem_err.append(ele_err)
+
+  of.close()
+  af.close()
 
   nspec = len(targetid)
   if nspec > 0:
@@ -11792,8 +11810,9 @@ def wtabmodfits(root, path=None):
     cols['PARAM'] = np.vstack ( (teff, logg, feh, alphafe, cfe) ).T
     cols['PARAM_ERR'] = np.vstack( (teff_err, logg_err, feh_err, alphafe_err, cfe_err) ).T
     cols['COVAR'] = np.array(covar)  #.reshape(len(success),5,5)
-    #cols['ELEM'] = np.array(elem)
-    #cols['ELEM_ERR'] = np.array(elem_err)
+    if a:
+      cols['ELEM'] = np.array(elem)
+      cols['ELEM_ERR'] = np.array(elem_err)
     cols['CHISQ_TOT'] = np.array(chisq_tot)
     cols['SNR_MED'] = np.array(snr_med)
     cols['VRAD'] = np.array(vrad)*units.km/units.s
@@ -11822,13 +11841,15 @@ def wtabmodfits(root, path=None):
     'PARAM': 'Array of atmospheric parameters (Teff, logg, [Fe/H], [alpha/Fe], [C/Fe])',
     'PARAM_ERR': 'Array of uncertainties in the atmospheric parameters (Teff, logg, [Fe/H], [alpha/Fe], [C/Fe])',
     'COVAR': 'Covariance matrix for (Teff, logg, [Fe/H], [alpha/Fe], [C/Fe])',
-    #'ELEM': 'Elemental abundance ratios to hydrogen [elem/H]',
-    #'ELEM_ERR': 'Uncertainties in the elemental abundance ratios',
     'CHISQ_TOT': 'Total chi**2',
     'SNR_MED': 'Median signal-to-ratio',
     'VRAD': 'Adopted Radial Velocity (km/s)',
     'VRAD_ERR': 'Uncertainty in the adopted Radial Velocity (km/s)'
     }      
+
+    if a:
+      colcomm['ELEM'] = 'Elemental abundance ratios to hydrogen [X/H], where X corresponds to C, Na, Mg, Al, Si, Ca, Ti, Cr, Fe and Ni'
+      colcomm['ELEM_ERR'] = 'Uncertainties in the elemental abundance ratios'
 
   
     table = tbl.Table(cols)
@@ -11876,7 +11897,7 @@ def wtabmodfits(root, path=None):
 
   
     hdul=fits.HDUList(hdulist)
-    hdul.writeto(os.path.join(path,'sptab_'+root), overwrite=True)
+    hdul.writeto(os.path.join(path,'sptab_'+root+'.fits'), overwrite=True)
   
     #now spmod
     hdulist = [hdu0]
@@ -11974,7 +11995,7 @@ def wtabmodfits(root, path=None):
       hdulist.append(hdu)
 
     hdul=fits.HDUList(hdulist)
-    hdul.writeto(os.path.join(path,'spmod_'+root), overwrite=True) 
+    hdul.writeto(os.path.join(path,'spmod_'+root+'.fits'), overwrite=True) 
   
   return None
 
@@ -12107,7 +12128,7 @@ def fparams(root,synthfile=None,figure=None,condition=None):
 
 def desida(path_to_data='healpix',path_to_output='sp_output',
            synthfile=None, seconds_per_target=2.,star=True,focus=False,
-           conti=0):
+           conti=0, filters=[]):
 
   """ Prepare a DESI data for parallel processing
   """
@@ -12187,7 +12208,8 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
      " bas(\'" + entry + "\'," + \
      " outfile=\'" + outfile + "\'," + \
      " synthfile=" + str(synthfile1) + ", star= " + str(star) + ", focus= " + \
-     str(focus) + ", conti= " + str(conti) + "); " + \
+     str(focus) + ", conti= " + str(conti) + "," + \
+     " filters= " + str(filters) +"); " + \
      " wtabmodfits(\'" + root + "'" + ", path= '" + tpath + "\'" + \
      ")\"" + "\n"
 
