@@ -9116,7 +9116,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
 
               
-      ids, x2, obs, ivr, xtr = read_spec(file,wavelengths=x,target=target,rv=rv,
+      #ids, x2, obs, ivr, xtr = read_spec(file,wavelengths=x,target=target,rv=rv,
+      ids, x2, obs, ivr, xtr = read_spec(file,target=target,rv=rv,
                                     ebv=ebv, star=star)
       lenx2 = len(x2)
       if ivr.ndim == 1: 
@@ -9177,13 +9178,41 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         if len(www) > 0:
           www2 = np.where(not np.isnan(spec))[0]
           xax = np.arange(lenx2)
-          flx = np.interp(xax,xax[www2],spec[www2])
+          spec = np.interp(xax,xax[www2],spec[www2])
 
         #skip spectra with no variance
         bigres = None
         if np.std(spec) < 1e-50: 
           print('skipping spectrum since flux as a std < 1e-50')
           continue
+
+        #keep a copy of the data before resampling/normalization
+        rawspec = spec.copy()
+        rawivar = ivar.copy()
+
+        #resample
+        if type(x) is list:
+          xx = np.hstack(x)
+          brkpix = np.where(np.diff(x2) < 0)[0] + 1
+          brkpix = np.insert(brkpix,0,0)
+          brkpix = np.insert(brkpix,len(brkpix),len(spec))
+          print('brkpix=',brkpix)
+          for i in range(len(x)):
+            print('i=',i,' -- x2 = ',x2[brkpix[i]:brkpix[i+1]])
+            spec0 = np.interp(x[i],x2[brkpix[i]:brkpix[i+1]],spec[brkpix[i]:brkpix[i+1]])
+            ivar0 = np.interp(x[i],x2[brkpix[i]:brkpix[i+1]],ivar[brkpix[i]:brkpix[i+1]])
+            if i == 0:
+              spec1 = spec0
+              ivar1 = ivar0
+            else:
+              spec1 = np.concatenate((spec1,spec0))
+              ivar1 = np.concatenate((ivar1, ivar0))
+          spec = spec1
+          ivar = ivar1
+        else:
+          xx = x
+          spec = np.interp(x,x2,spec)
+          ivar = np.interp(x,x2,ivar)
 
         #normalize
         if conti > 0:
@@ -9195,8 +9224,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           if mspec == 0.0: mspec = np.median(spec)
           if mspec == 0.0: mspec = 1.
 
-        rawspec = spec.copy()
-        rawivar = ivar.copy()
         spec = spec / mspec
         ivar = ivar * mspec**2
 
@@ -9220,14 +9247,30 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         vrad = 0.0
         if rv is None and 'RV' not in hd0.values() and instr0 is not None:
 
-          vrad, evrad = xxc(x2,spec,ivar,x2,bmod)
+          print('len(xx),len(spec),len(ivar),len(bmod)=',len(xx),len(spec),len(ivar),len(bmod))
+          vrad, evrad = xxc(xx,spec,ivar,xx,bmod)
           print('RV = ',vrad,' km/s')
-        
-          #correct RV and reanalyze
-          spec = np.interp(x2, x2 * (1. - vrad/clight), rawspec)
-          ivar = np.interp(x2, x2 * (1. - vrad/clight), rawivar)
+
+          #correct the velocity and resample
+          if type(x) is list:
+            for i in range(len(x)):
+              spec0 = np.interp(x[i],x2[brkpix[i]:brkpix[i+1]]* (1. - vrad/clight),rawspec[brkpix[i]:brkpix[i+1]])
+              ivar0 = np.interp(x[i],x2[brkpix[i]:brkpix[i+1]]* (1. - vrad/clight),rawivar[brkpix[i]:brkpix[i+1]])
+              if i == 0:
+                spec1 = spec0
+                ivar1 = ivar0
+              else:
+                spec1 = np.concatenate((spec1,spec0))
+                ivar1 = np.concatenate((ivar1, ivar0))
+            spec = spec1
+            ivar = ivar1
+          else:
+            spec = np.interp(x,x2,spec)
+            ivar = np.interp(x,x2,ivar)
+
 
           if not ferre:
+
             #normalize
             if conti > 0:
               mspec = continuum(spec, window_length=conti)
@@ -9495,7 +9538,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         if len(filters) > 0:
           abf.write(str(ids[j])+' '+' '.join(map(str,abuarr))+' '+
             ' '.join(map(str,eabuarr))+'\n')
-        #if j == 0: wav.write(' '.join(map(str,x2))+'\n')
+        #if j == 0: wav.write(' '.join(map(str,xx))+'\n')
 
 
 
@@ -9513,7 +9556,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       nrd.close()
       err.close()
       wav = open(wavfile,'w')
-      wav.write(' '.join(map(str,x2))+'\n')
+      wav.write(' '.join(map(str,xx))+'\n')
       wav.close()
       if absolut or ferre:
         frd.close()
