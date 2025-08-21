@@ -4246,7 +4246,7 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
 
   f = open(synthfile,'a')
 
-  #look for the first sucessful calculation and define the wavelength for the grid  and write the header
+  #look for the first successful calculation and define the wavelength for the grid  and write the header
   nfreq = 0
   break_out = False
   idir = 0
@@ -4265,7 +4265,7 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
                       if not os.path.isfile(madaffile): continue
 
                     teff2,logg2,vmicro2,abu = read_madaf(madaffile,startdir=entry)
-                    imode, iprin, inmod, inlte, hydprf, wrange, cutoff,  \
+                    imode, iprin, inmod, inlte, hydprf, wrange1, cutoff,  \
                          strength, dw, molls, vmicro1 = read55(os.path.join(entry,'fort.55'))
                     feh2 = np.log10(abu['Fe'])+12-7.50
 	                                
@@ -4354,7 +4354,7 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
 
                     teff2,logg2,vmicro2,abu = read_madaf(madaffile,startdir=entry)
 
-                    imode, iprin, inmod, inlte, hydprf, wrange, cutoff, \
+                    imode, iprin, inmod, inlte, hydprf, wrange1, cutoff, \
                          strength, dw, molls, vmicro1 = read55(os.path.join(entry,'fort.55'))
                     feh2 = np.log10(abu['Fe']) - np.log10(solabu['Fe'])
                     afe2 = np.log10(abu['O']) - np.log10(solabu['O'])
@@ -4404,7 +4404,9 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
                               fgood = True
 
                           if fgood == True:
-                            wave, flux = np.loadtxt(file, unpack=True)
+                            wave, flux = np.loadtxt(file, unpack=True)	
+                            wave = wave[(wave>=minwave) & (wave<=maxwave)]
+                            flux = flux[(wave>=minwave) & (wave<=maxwave)]
                           else:
                             if ignore_missing_models == False:
                               sys.exit('Cannot find model '+file+' or it contains no data or NaNs')
