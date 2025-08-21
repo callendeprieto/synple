@@ -2585,11 +2585,16 @@ def grid_builder(config,  modeldir=modeldir):
           print('only APOGEE marcs or kurucz models are accepted')
           continue
 
-       if 'Mg' in conf[entry]: 
-         tMg = tuple(map(float,conf[entry]['Mg'].split()))
-         polysyn(files, wrange = wrange, vmicro = vmicro, Mg = tMg) 
-       else:
-         polysyn(files, wrange = wrange, vmicro = vmicro )
+       symbols, mass, sol = elements()
+
+       eldict = dict()
+       for el in symbols:
+         if el in conf[entry]:
+           tel = tuple(map(float,conf[entry][el].split()))
+           eldict[el] = tel
+
+       polysyn(files, wrange = wrange, vmicro = vmicro, **eldict)
+       print('calling polysyn with ',eldict)
 
        merge_slurm_parallel(ext='job', nmerge=nmerge, ncpu=ncpu)
 
