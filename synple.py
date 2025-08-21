@@ -9265,8 +9265,9 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             spec = spec1
             ivar = ivar1
           else:
-            spec = np.interp(x,x2,spec)
-            ivar = np.interp(x,x2,ivar)
+            print('len(x),len(x2),len(spec),len(ivar)=',len(x),len(x2),len(spec),len(ivar))
+            spec = np.interp(x,x2 * (1. - vrad/clight), rawspec)
+            ivar = np.interp(x,x2 * (1. - vrad/clight), rawivar)
 
 
           if not ferre:
@@ -10037,8 +10038,8 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
           err = flux * 0.05
         if 'SYSERROR' in s.names: err = flux*0.000001 + err + s['SYSERROR']
         ivar4 = np.divide(np.ones(len(err)), err**2, 
-          where = (err**2 > 0.) , out = 0.0, dtype = np.float128)
-        ivar = np.float64(ivar4)
+          where = (err**2 > 0.) , out = np.zeros(len(err)), dtype = np.float128)
+        ivar = np.array(ivar4,dtype=float)
         if 'TARGETID' in head:
           ids = np.array([head['TARGETID']])
         elif 'TARGNAME' in head:
