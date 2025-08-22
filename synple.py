@@ -10064,7 +10064,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
         print('         assuming S/N = 20!')
         err = flux * 0.05
         ivar4 = np.divide(np.ones(len(err)), err**2, 
-          where = (err**2 > 0.) , out = 0.0, dtype = np.float128)
+          where = (err**2 > 0.) , out = np.zeros(len(err)), dtype = np.float128)
         ivar = np.float64(ivar4)
 
 
@@ -10096,7 +10096,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
         wav = np.arange(len(flux))*head['CD1_1']+head['CRVAL1']
         lenwav = len(wav)        
         ivar4 = np.divide(np.ones(len(err)), err**2, 
-          where = (err**2 > 0.) , out = 0.0, dtype = np.float128)
+          where = (err**2 > 0.) , out = np.zeros(len(err)), dtype = np.float128)
         ivar = np.float64(ivar4)
 
         if 'OBJECT' in head:
@@ -10120,7 +10120,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
         print('         assuming S/N = 20!')
         err = flux * 0.05
         ivar4 = np.divide(np.ones(len(err)), err**2, 
-          where = (err**2 > 0.) , out = 0.0, dtype = np.float128)
+          where = (err**2 > 0.) , out = np.zeros(len(err)), dtype = np.float128)
         ivar = np.float64(ivar4)
 
         if 'OBJECT' in head:
@@ -10145,7 +10145,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
         print('         assuming S/N = 20!')
         err = flux * 0.05
         ivar4 = np.divide(np.ones(len(err)), err**2, 
-          where = (err**2 > 0.), out = 0.0, dtype = np.float128)
+          where = (err**2 > 0.), out = np.zeros(len(err)), dtype = np.float128)
         ivar = np.float64(ivar4)
 
         if 'OBJECT' in head:
@@ -10171,7 +10171,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
       #read frdfile and errfile
       frd = np.loadtxt(frdfile,dtype=float)
       err = (np.loadtxt(errfile,dtype=float)**2)
-      ivr = np.divide(np.ones(len(err)), err, where = (err > 0.), out = 0.0)
+      ivr = np.divide(np.ones(len(err)), err, where = (err > 0.), out = np.zeros(len(err)) )
       wav = wavelengths
       if frd.ndim == 1:
         ids = np.array([0])
@@ -10210,7 +10210,7 @@ def single_target_prep(wav,flux,ivar,rv,ebv,wavelengths=None):
       xtmp = np.array(wav,dtype=float)
       ytmp = np.array(flux,dtype=float)
       tmp = remove(ccm89(xtmp, red * 3.1, 3.1), ytmp)
-      ivar = ivar * (np.divide(ytmp,tmp,where=tmp>0,out=0.0))**2
+      ivar = ivar * (np.divide(ytmp,tmp,where=tmp>0, out= np.zeros(len(ivar))))**2
       flux = tmp
 
     if wavelengths is None:
