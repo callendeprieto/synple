@@ -9248,7 +9248,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         if rv is None and 'RV' not in hd0.values() and instr0 is not None:
 
           print('len(xx),len(spec),len(ivar),len(bmod)=',len(xx),len(spec),len(ivar),len(bmod))
-          vrad, evrad = xxc(xx,spec,ivar,xx,bmod)
+          vrad, evrad = xxc(xx,spec,ivar,xx,bmod,plot=True) 
           print('RV = ',vrad,' km/s')
 
           #correct the velocity and resample
@@ -11781,7 +11781,8 @@ def wtabmodfits(root, path=None):
       elem_err.append(ele_err)
 
   of.close()
-  af.close()
+  if a: 
+    af.close()
 
   nspec = len(targetid)
   if nspec > 0:
