@@ -2557,8 +2557,10 @@ def grid_builder(config,  modeldir=modeldir):
          tfeh = (1,0.0,0.0)
        if 'tafe' in conf[entry]:
          tafe  = tuple(map(float,conf[entry]['tafe'].split()))
+         tie_afe = False
        else:
          tafe = (1,0.0,0.0)
+         tie_afe = True
        if 'tcfe' in conf[entry]:
          tcfe  = tuple(map(float,conf[entry]['tcfe'].split()))
        else:
@@ -2570,6 +2572,7 @@ def grid_builder(config,  modeldir=modeldir):
                    tfeh  = tfeh,
                    tafe  = tafe,
                    tcfe  = tcfe,
+                   tie_afe = tie_afe,
                    ignore_missing_models = True,
                    ext = 'mod.gz')                   
        elif conf[entry]['type'] == 'kurucz':
@@ -2579,6 +2582,7 @@ def grid_builder(config,  modeldir=modeldir):
                    tfeh  = tfeh,
                    tafe  = tafe,
                    tcfe  = tcfe,
+                   tie_afe = tie_afe,
                    ignore_missing_models = True,
                    ext = 'mod')
        else:
