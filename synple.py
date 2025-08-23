@@ -10309,23 +10309,21 @@ def extnames(hdu):
   return(names)
 
 #read sptab/rvtab file, returning sp/rvtab, fibermap and primary header (s,f,p)
-def read_tab(file):
+def read_tab(file,extension='sptab'):
 
   d=fits.open(file)
   n=extnames(d)
   h=d[0].header
-  if 'SPTAB' in n or 'sptab' in n:
-    s=d['sptab'].data
-  elif 'rvtab' in n or 'RVTAB' in n:
-    s=d['rvtab'].data
+  if extension in n:
+    s=d[extension.upper()].data
   else:
-    print('Error: cannot find an rvtab or sptab extension in the file')
+    print('Error: cannot find an ',extension.upper(),' extension in the file')
     s=None
   f=d['fibermap'].data
  
   return(s,f,h) 
 
-def eval_desi_clusters(tabfile):
+def eval_desi_clusters(tabfile,extension='sptab'):
 
   """Evaluate DESI MWS data quality based on cluster properties
 
@@ -10343,7 +10341,7 @@ def eval_desi_clusters(tabfile):
   cluster = np.loadtxt(os.path.join(confdir,'cluster-targets.txt'), dtype=str)
 
   #read tab data
-  s, m, h = read_tab(tabfile)
+  s, m, h = read_tab(tabfile, extension=extension.upper())
 
   elements = ['C','Na','Mg','Al','Si','Ca','Ti','Cr','Fe','Ni']
 
@@ -10362,11 +10360,12 @@ def eval_desi_clusters(tabfile):
     if nt > 0:
       print('  %i targets --  %0.2f %0.2f %0.2f %0.2f' % (nt, np.mean(s['vrad'][w]), np.std(s['vrad'][w]), np.mean(s['feh'][w]), np.std(s['feh'][w]) ) )
 
-      nel = len(elements)
-      for j in range(nel):
-        w1 = (np.abs(s['vrad'] - vrad) < svrad) & (np.abs(m['pmra'] - pmra) < spmra) & (np.abs(m['pmra'] - pmra) < spmra)  & (np.abs(s['elem'][:,j] - feh) < sfeh)
+      if 'ELEM' in s.names:
+        nel = len(elements)
+        for j in range(nel):
+          w1 = (np.abs(s['vrad'] - vrad) < svrad) & (np.abs(m['pmra'] - pmra) < spmra) & (np.abs(m['pmra'] - pmra) < spmra)  & (np.abs(s['elem'][:,j] - feh) < sfeh)
 
-        print('  %s --  %0.2f %0.2f' % (elements[j], np.mean(s['elem'][w1,j]), np.std(s['elem'][w1,j])) )
+          print('  %s --  %0.2f %0.2f' % (elements[j], np.mean(s['elem'][w1,j]), np.std(s['elem'][w1,j])) )
 
       fig, ax = plt.subplots()
 
