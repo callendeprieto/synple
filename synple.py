@@ -8866,7 +8866,7 @@ def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
 
 
 def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None, 
-        star=True, conti=0, absolut=False, wrange=None, 
+        star=True, conti=0, wrange=None, 
         focus=False, nail=[], plot=False, gpu=False, ferre=False, filters=[]):
 
     """Bayesian Algorithm in Synple
@@ -8914,9 +8914,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       NOTE that the default (0) is dividing the input/model fluxes in each 
       spectrum by their mean value
       (default 0)
-    absolut: bool
-      activates the output of the absolute fluxes for the best-fitting 
-      model (.flx file) and the input (unnormalized) fluxes (.frd file)
     wrange: 2-element iterable
       spectral range to use in the fittings
       (default None, and sets wrange to the values of the adopted grid)
@@ -8999,6 +8996,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
  
     lenx = len(x)
     ndim = len(p[0,:])
+    ntot = len(p[:,0])
 
     #check that ferre is not activated with an irregular grid
     if 'TYPE' in hd:
@@ -9033,18 +9031,22 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       
     #normalization
     print('normalizing grid...')
-    if absolut: da = d.copy() # da keeps a copy of the original grid
+    if abs(conti) > 0:
+      da = np.zeros_like(d) # da keeps a copy of conti=0 normalized grid
+    damian = np.zeros(ntot)
     for entry in range(len(d[:,0])):
-        if conti > 0:
-          cc = continuum(d[entry,:],window_length=conti)
-        else:
-          cc = np.mean(d[entry,:])
+        cc = np.mean(d[entry,:])
+        damian[entry] = cc
+        if abs(conti) > 0:
+          da[entry,:] = d[entry,:] / cc
+          cc = continuum(d[entry,:],window_length=abs(conti))
         d[entry,:] = d[entry,:] / cc
+    if conti == 0: da = d #for conti=0, da is a reference to d
 
 
     if focus:
-      p2 = p
-      d2 = d
+      p2 = p.copy()
+      d2 = d.copy()
       if gpu:
         p2_gpu = cp.asarray(p2)
         d2_gpu = cp.asarray(d2) 
@@ -9053,6 +9055,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       irnd = np.array(rng.random(int(nmod*0.1))*nmod,dtype=int)
       p = p[irnd,:]
       d = d[irnd,:]
+      if abs(conti) > 0: #otherwise da changes as d automatically
+        da = da[irnd,:]
 
 
     
@@ -9064,6 +9068,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
     if gpu:
       p_gpu = cp.asarray(p)
       d_gpu = cp.asarray(d)
+      da_gpu = cp.asarray(da)
 
 
     #prep work for filters
@@ -9139,10 +9144,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       wavfile = outfile + '.wav'
       fmpfile = outfile + '.fmp.fits'
       scrfile = outfile + '.scr.fits'
-      if absolut or ferre:
-        frdfile = outfile + '.frd'
-      if absolut:
-        flxfile = outfile + '.flx'
+      frdfile = outfile + '.frd'
+      flxfile = outfile + '.flx'
       if ferre:
         ipffile = outfile + '.spf'
       if len(filters) > 0:
@@ -9153,10 +9156,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       mdl = open(mdlfile,'w')
       nrd = open(nrdfile,'w')
       err = open(errfile,'w')
-      if absolut or ferre:
-        frd = open(frdfile,'w')
-      if absolut:
-        flx = open(flxfile,'w')
+      frd = open(frdfile,'w')
+      flx = open(flxfile,'w')
       if ferre:
         ipf = open(ipffile,'w')
       if len(filters) > 0:
@@ -9216,7 +9217,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
         #normalize
         if conti > 0:
-          mspec = continuum(spec, window_length=conti)
+          mspec = continuum(spec, window_length=abs(conti))
           www = (mspec == 0.0)
           mspec[www] = 1. 
         else:
@@ -9227,19 +9228,25 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         spec = spec / mspec
         ivar = ivar * mspec**2
 
-        #analyze
+        #analyze # 
        
         if gpu:
           spec_gpu = cp.asarray(spec)
           ivar_gpu = cp.asarray(ivar)
-          res_gpu, eres_gpu, cov_gpu, bmod_gpu, weights_gpu = cebas_gpu(p_gpu, d_gpu, spec_gpu, ivar_gpu)
+          if conti > 0:
+            res_gpu, eres_gpu, cov_gpu, bmod_gpu, weights_gpu = cebas_gpu(p_gpu, d_gpu, spec_gpu, ivar_gpu)
+          else:
+            res_gpu, eres_gpu, cov_gpu, bmod_gpu, weights_gpu = cebas_gpu(p_gpu, da_gpu, spec_gpu, ivar_gpu)
           res = cp.asnumpy(res_gpu)
           eres = cp.asnumpy(eres_gpu)
           cov = cp.asnumpy(cov_gpu)
           bmod = cp.asnumpy(bmod_gpu)
           weights = cp.asnumpy(weights_gpu)
         else:
-          res, eres, cov, bmod, weights = cebas( p, d, spec, ivar )
+          if conti > 0:
+            res, eres, cov, bmod, weights = cebas( p, d, spec, ivar )
+          else:
+            res, eres, cov, bmod, weights = cebas( p, da, spec, ivar )
 
         lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - ndim) )
         print('reduced lchi =',lchi)
@@ -9247,8 +9254,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         vrad = 0.0
         if rv is None and 'RV' not in hd0.values() and instr0 is not None:
 
-          print('len(xx),len(spec),len(ivar),len(bmod)=',len(xx),len(spec),len(ivar),len(bmod))
-          vrad, evrad = xxc(xx,spec,ivar,xx,bmod,plot=True) 
+          vrad, evrad = xxc(xx,spec,ivar,xx,bmod) 
           print('RV = ',vrad,' km/s')
 
           #correct the velocity and resample
@@ -9273,8 +9279,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           if not ferre:
 
             #normalize
-            if conti > 0:
-              mspec = continuum(spec, window_length=conti)
+            if abs(conti) > 0:
+              mspec = continuum(spec, window_length=abs(conti))
               www = (mspec == 0.0)
               mspec[www] = 1. 
             else:
@@ -9484,9 +9490,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
 
         #get absolute flux for best-fitting model
-        if absolut:
-          den = np.sum(weights)
-          abbmod = np.matmul(weights,da)/den
+        den = np.sum(weights)
+        abbmod = np.matmul(weights * damian,da)/den
 
         if plot:
           fig, axs = plt.subplots(ncols=ndim-1,nrows=ndim-1,figsize=(5.5, 3.5),
@@ -9530,10 +9535,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         onesigma = np.divide(np.ones(len(ivar)),np.sqrt(ivar), 
           where=(ivar > 0),  out= spec*10000.)
         err.write(' '.join(map(str,onesigma))+'\n')
-        if absolut or ferre:
-            frd.write(' '.join(map(str,rawspec))+'\n')
-        if absolut:
-            flx.write(' '.join(map(str,abbmod))+'\n')
+        frd.write(' '.join(map(str,rawspec))+'\n')
+        flx.write(' '.join(map(str,abbmod))+'\n')
         if ferre:
             ipf.write(str(ids[j])+' '+' '.join(map(str,np.zeros(ndim)))+'\n')
         if len(filters) > 0:
@@ -9559,10 +9562,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       wav = open(wavfile,'w')
       wav.write(' '.join(map(str,xx))+'\n')
       wav.close()
-      if absolut or ferre:
-        frd.close()
-      if absolut:
-        flx.close()
+      frd.close()
+      flx.close()
       if ferre:
         ipf.close()
       if len(filters) > 0:
@@ -9582,9 +9583,9 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         nml['SFFILE'] = nrdfile
         nml['ALGOR'] = 5
         nml['COVPRINT'] = 1
-        if conti > 0:
+        if abs(conti) > 0:
           nml['CONT'] = 3
-          nml['NCONT'] = conti
+          nml['NCONT'] = abs(conti)
         else:
           nml['CONT'] = 1
           nml['NCONT'] = 0
