@@ -10367,10 +10367,11 @@ def eval_desi_clusters(tabfile):
       fig, ax = plt.subplots()
 
       ax.plot(s['teff'][w],s['logg'][w],'.')
-      ax.set_xlim([20000.,2000.])
-      ax.set_ylim([10,-1])
+      ax.set_xlim([np.max(s['teff'][w])+200.,np.min(s['teff'][w]) - 200.])
+      ax.set_ylim([np.max(s['logg'][w]) + 0.5, np.min(s['logg'][w]) - 0.5])
       ax.set_xlabel('Teff')
       ax.set_ylabel('logg')
+      ax.set_title(name)
       plt.show()
 
 
