@@ -10321,6 +10321,62 @@ def read_tab(file):
  
   return(s,f,h) 
 
+def eval_desi_clusters(tabfile):
+
+  """Evaluate DESI MWS data quality based on cluster properties
+
+  Parameters
+  =========
+  tabfile - str
+    name of the sptab or rvtab file from DESI's MWS pipeline
+
+  Returns
+  =======
+
+  """
+
+  #read cluster data catalog from the synple config folder
+  cluster = np.loadtxt(os.path.join(confdir,'cluster-targets.txt'), dtype=str)
+
+  #read tab data
+  s, m, h = read_tab(tabfile)
+
+  elements = ['C','Na','Mg','Al','Si','Ca','Ti','Cr','Fe','Ni']
+
+
+  #loop over the clusters checking spread
+  for i in range(len(cluster[:,0])):
+    name = cluster[i,0]
+    vrad, svrad, pmra, spmra, pmdec, spmdec, feh, sfeh = \
+       np.array(cluster[i,1:], dtype=float) 
+
+    w = (np.abs(s['vrad'] - vrad) < svrad) & (np.abs(m['pmra'] - pmra) < spmra) & (np.abs(m['pmra'] - pmra) < spmra)  & (np.abs(s['feh'] - feh) < sfeh)
+
+    print('cluster=',name,' nominal vrad=',vrad,' nominal [Fe/H]=',feh)
+    
+    nt = len(np.where(w)[0])
+    if nt > 0:
+      print('  %i targets --  %0.2f %0.2f %0.2f %0.2f' % (nt, np.mean(s['vrad'][w]), np.std(s['vrad'][w]), np.mean(s['feh'][w]), np.std(s['feh'][w]) ) )
+
+      nel = len(elements)
+      for j in range(nel):
+        w1 = (np.abs(s['vrad'] - vrad) < svrad) & (np.abs(m['pmra'] - pmra) < spmra) & (np.abs(m['pmra'] - pmra) < spmra)  & (np.abs(s['elem'][:,j] - feh) < sfeh)
+
+        print('  %s --  %0.2f %0.2f' % (elements[j], np.mean(s['elem'][w1,j]), np.std(s['elem'][w1,j])) )
+
+      fig, ax = plt.subplots()
+
+      ax.plot(s['teff'][w],s['logg'][w],'.')
+      ax.set_xlim([20000.,2000.])
+      ax.set_ylim([10,-1])
+      ax.set_xlabel('Teff')
+      ax.set_ylabel('logg')
+      plt.show()
+
+
+  return(None)
+
+
 
 def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,nozero=None,res=False,interactive=True):
 
