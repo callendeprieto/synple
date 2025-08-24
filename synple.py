@@ -11778,18 +11778,18 @@ def wtabmodfits(root, path=None):
 
 
     elif (ndim == 4):
-      #Teff, logg, [Fe/H] and [a/Fe]
+      #Teff, logg, [Fe/H] and [C/Fe] -- CRUMPS
       feh.append(float(cells[2]))
       teff.append(float(cells[0]))
       logg.append(float(cells[1]))
-      alphafe.append(float(cells[3]))
-      cfe.append(float(cells[4]))
-      micro.append(1.5)
+      alphafe.append(float(np.nan))
+      cfe.append(float(cells[3]))
+      micro.append(np.nan)
       feh_err.append(float(cells[6]))
       teff_err.append(float(cells[4]))
       logg_err.append(float(cells[5]))
-      alphafe_err.append(float(cells[7]))
-      cfe_err.append(np.nan)
+      alphafe_err.append(np.nan)
+      cfe_err.append(float(cells[7]))
 
    
     elif (ndim == 5):
