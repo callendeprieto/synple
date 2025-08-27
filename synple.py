@@ -9181,7 +9181,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         www = np.where(np.isnan(spec))[0]
         #print('www:',www)
         if len(www) > 0:
-          www2 = np.where(not np.isnan(spec))[0]
+          www2 = np.where(~np.isnan(spec))[0]
           xax = np.arange(lenx2)
           spec = np.interp(xax,xax[www2],spec[www2])
 
