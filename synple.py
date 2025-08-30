@@ -11740,7 +11740,7 @@ def wtabmodfits(root, path=None):
     assert (ncells > 6), 'Error, the file '+o[0]+' has less than 7 columns, which would correspond to ndim=2'
     par = np.zeros(ndim)
     #cov = np.zeros(ndim*ndim+ndim) 
-    cov = np.zeros((4,4))
+    cov = np.zeros((5,5))
         
     #print('ndim=',ndim)
     #print('ncells=',ncells)
@@ -11782,7 +11782,14 @@ def wtabmodfits(root, path=None):
       feh.append(float(cells[2]))
       teff.append(float(cells[0]))
       logg.append(float(cells[1]))
-      alphafe.append(float(np.nan))
+      tmpfeh = float(cells[2])
+      if tmpfeh <= -1.5: 
+        tmpalphafe = 0.5
+      elif tmp >= 0.0:
+        tmpalphafe = 0.0
+      else:
+        tmpalphafe = -1./3. * tmpfeh
+      alphafe.append(tmpalphafe))
       cfe.append(float(cells[3]))
       micro.append(np.nan)
       feh_err.append(float(cells[6]))
