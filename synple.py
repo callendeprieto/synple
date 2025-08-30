@@ -12109,6 +12109,14 @@ def wtabmodfits(root, path=None):
 
     hdul=fits.HDUList(hdulist)
     hdul.writeto(os.path.join(path,'spmod_'+root+'.fits'), overwrite=True) 
+
+    #cleanup
+    exts=['opf','nrd','mdl','frd','flx','abu','err','wav','fmp.fits','scr.fits','job']
+    for extension in exts:
+      if os.path.exists(root+'.'+extension):
+        os.remove(root+'.'+extension)
+
+
   
   return None
 
