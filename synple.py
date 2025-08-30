@@ -8737,7 +8737,7 @@ def cebas(p,d,flx,iva,prior=None,filter=None):
     res = np.zeros(ndim)
     eres = np.zeros(ndim)
     cov = np.zeros(ndim*(ndim+1)//2)
-    fullcov = np.zeros(ndim,ndim)
+    fullcov = np.zeros((ndim,ndim))
     likeli = np.exp(-chi/2./beta)
     if prior is not None:
       assert np.abs(1.-np.sum(prior)) < 1e-10,'sum(prior) must be 1.'
@@ -8847,7 +8847,7 @@ def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
     res = cp.zeros(ndim)
     eres = cp.zeros(ndim)
     cov = cp.zeros(ndim*(ndim+1)//2)
-    fullcov = np.zeros(ndim,ndim)
+    fullcov = np.zeros((ndim,ndim))
     likeli = cp.exp(-chi/2./beta)
     if prior is not None:
       assert cp.abs(1.-cp.sum(prior)) < 1e-10,'sum(prior) must be 1.'
