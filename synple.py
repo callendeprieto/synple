@@ -8757,10 +8757,10 @@ def cebas(p,d,flx,iva,prior=None,filter=None):
           cov[k] = np.sum( likeli * (p[:,i] - res[i]) * (p[:,j+i] - res[j+i]) )/den
           if j == 0: 
             eres[i] = np.sqrt(cov[k])
-            fullcov[i,j] = cov[k]
+            fullcov[i,i] = cov[k]
           else:
-            fullcov[i,j] = cov[k]
-            fullcov[j,i] = cov[k]
+            fullcov[i,j+1] = cov[k]
+            fullcov[j+1,i] = cov[k]
           
           k = k + 1
 
@@ -8770,7 +8770,7 @@ def cebas(p,d,flx,iva,prior=None,filter=None):
         
     print('res=',res,'eres=',eres)
       
-    return(res,eres,fullcov.reshape((ndim,ndim)),bflx,likeli)
+    return(res,eres,fullcov.reshape(ndim*ndim),bflx,likeli)
 
 def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
 
@@ -8867,10 +8867,10 @@ def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
           cov[k] = cp.sum( likeli * (p[:,i] - res[i]) * (p[:,j+i] - res[j+i]) )/den
           if j == 0:
             eres[i] = np.sqrt(cov[k])
-            fullcov[i,j] = cov[k]
+            fullcov[i,i] = cov[k]
           else:
-            fullcov[i,j] = cov[k]
-            fullcov[j,i] = cov[k]
+            fullcov[i,j+1] = cov[k]
+            fullcov[j+1,i] = cov[k]
 
           k = k + 1
       
@@ -8880,7 +8880,7 @@ def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
         
     print('res=',res,'eres=',eres)
       
-    return(res,eres,fullcov.reshape((ndim,ndim)),bflx,likeli)
+    return(res,eres,fullcov.reshape(ndim*ndim),bflx,likeli)
 
 
 def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None, 
