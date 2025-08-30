@@ -4414,8 +4414,8 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
 
                           if fgood == True:
                             wave, flux = np.loadtxt(file, unpack=True)	
-                            wave = wave[(wave>=minwave) & (wave<=maxwave)]
                             flux = flux[(wave>=minwave) & (wave<=maxwave)]
+                            wave = wave[(wave>=minwave) & (wave<=maxwave)]
                           else:
                             if ignore_missing_models == False:
                               sys.exit('Cannot find model '+file+' or it contains no data or NaNs')
