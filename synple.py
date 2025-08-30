@@ -11803,7 +11803,7 @@ def wtabmodfits(root, path=None):
         tmpalphafe = 0.0
       else:
         tmpalphafe = -1./3. * tmpfeh
-      alphafe.append(tmpalphafe))
+      alphafe.append(tmpalphafe)
       cfe.append(float(cells[3]))
       micro.append(np.nan)
       feh_err.append(float(cells[6]))
