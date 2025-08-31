@@ -4146,7 +4146,7 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
   """Collects the synthetic spectra part of an irregular grid. 
    To track changes in Teff, logg, [Fe/H], [alpha/Fe], or [C/Fe] one can 
    activate the booleans teff, logg, feh, afe or cfe, respectively.
-   To track changes in other elements addinvmicro=nvmicro, tional booleans (e.g. Ca=True)
+   To track changes in other elements additional booleans (e.g. Ca=True)
    can be made active at the end of the parameter list (**element). 
    The wavelength sampling can be chosen (the spectral range must be limited 
    to the range of the computations), but the default is to take it from the first model.
@@ -4270,8 +4270,8 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
   break_out = False
   idir = 0
   
-  folders = sorted(glob.glob('hyd*'))
-  
+  folders = sorted(glob.glob("hyd*[!.dat]"))
+
   ntot = 0
   for entry in folders:
                     idir = idir + 1
@@ -4361,16 +4361,17 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
   for key, value in elem.items():
     elems.append(key)
 
-
   if nthreads == 1:
     mkgrid_irregular_body(folders, teff=teff, logg=logg, feh=feh, afe=afe,  
            cfe=cfe, x=x, nvmicro=nvmicro, vrots=vrots, fwhms=fwhms, 
            vmacros=vmacros, file_handle=f, 
            ignore_missing_models=ignore_missing_models,elems=elems)
   else:
+    assert ntot >= nthreads,'nthreads should be smaller than ntot!'
     pars = []
     folders_lists = np.array_split(np.array(folders),nthreads)
     for i in range(nthreads):
+      #print('i,list(folders_lists[i])=',i,list(folders_lists[i]))
       pararr = [list(folders_lists[i]), teff, logg, feh, afe,  
            cfe, x, nvmicro, vrots, fwhms, vmacros, 
            None, ignore_missing_models,elems]
@@ -4418,7 +4419,9 @@ def mkgrid_irregular_body(folders, teff=True, logg=True, feh=True, afe=True,
   vmacros: list
      macroturbulence values
   file_handle
-     used for output (None will make the routine to create one)
+     file_handle for writing data
+     if None a file will be created on the fly with the range of the 
+     hyd folders
   elems
      list of symbols for the elements that vary (variables in the grid)
   """
@@ -4435,9 +4438,8 @@ def mkgrid_irregular_body(folders, teff=True, logg=True, feh=True, afe=True,
   #now read, interpolate and write out the calculations
   idir = 0
   for entry in folders:
-                    idir = idir + 1
-                    dir = ( "hyd%07d" % (idir) )
-	                
+
+
                     madaffile = os.path.join(entry,'fort.5')
                     if ignore_missing_models == False:
                       assert os.path.isfile(madaffile), 'Cannot find madaf file '+madaffile                  
@@ -4456,24 +4458,19 @@ def mkgrid_irregular_body(folders, teff=True, logg=True, feh=True, afe=True,
                     print(teff2,logg2,feh2,vmicro1,vmicro2)
 
                     pars = []
-                    print(teff,logg,feh,afe,cfe,nvmicro)
                     if teff: pars.append(teff2)
                     if logg: pars.append(logg2)
                     if feh: pars.append(feh2)
                     if afe: pars.append(afe2)
                     if cfe: pars.append(cfe2)
                     if nvmicro > 1: pars.append(vmicro1)
-                    print('nvmicro=',nvmicro)
                     for el in elems:
-                      print('el=',el)
                       if '_' in el:
                         els = el.split('_')
                         elo = els[0]
                       else:
                         elo = el
                       pars.append(np.log10(abu[elo]) - np.log10(solabu[elo]) )
-
-                    print('pars=',pars)
 
 
                     iconv = 0
@@ -4487,7 +4484,7 @@ def mkgrid_irregular_body(folders, teff=True, logg=True, feh=True, afe=True,
                           else:
                             outconv = ("%07dfort.7" % (iconv) )
 
-                          file = os.path.join(dir,outconv)
+                          file = os.path.join(entry,outconv)
  
                           if len(vrots) > 1: pars.append(vrot1)
                           if len(fwhms) > 1: pars.append(fwhm1)
@@ -4501,8 +4498,6 @@ def mkgrid_irregular_body(folders, teff=True, logg=True, feh=True, afe=True,
                             if 'NaN' not in fdata:
                               fgood = True
 
-                          print('file, fgood=',file,fgood)
-
                           if fgood == True:
                             wave, flux = np.loadtxt(file, unpack=True)	
                             flux = flux[(wave>=x.min()) & (wave<=x.max())]
@@ -4513,13 +4508,10 @@ def mkgrid_irregular_body(folders, teff=True, logg=True, feh=True, afe=True,
                             else:
                               wave, flux = (np.array([np.min(x),np.max(x)]), np.array([0.0, 0.0]))
                  
-                          print('idir,iconv, dw=',idir,iconv,dw)
-                          print(wave.shape,flux.shape)
                           if x is None:
                             y = flux
                           else:
                             y = np.interp(x, wave, flux)
-                            print(x.shape,y.shape)
                           #plt.plot(wave,flux,'b',x,y,'.')
                           #plt.show()
                           np.savetxt(file_handle,[pars+list(y)], fmt='%12.5e')
