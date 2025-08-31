@@ -4139,14 +4139,14 @@ def mkhdr(tteff=None, tlogg=None, tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), \
   
 def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,  
            cfe=True, vmicro=None, vrot=0.0, fwhm=0.0, vmacro=0.0, 
-           wrange=None, dw=None, logw=0, ignore_missing_models=False,**elem):
+           wrange=None, dw=None, logw=0, ignore_missing_models=False, nthreads=1, **elem):
 
 
 
   """Collects the synthetic spectra part of an irregular grid. 
    To track changes in Teff, logg, [Fe/H], [alpha/Fe], or [C/Fe] one can 
    activate the booleans teff, logg, feh, afe or cfe, respectively.
-   To track changes in other elements additional booleans (e.g. Ca=True)
+   To track changes in other elements addinvmicro=nvmicro, tional booleans (e.g. Ca=True)
    can be made active at the end of the parameter list (**element). 
    The wavelength sampling can be chosen (the spectral range must be limited 
    to the range of the computations), but the default is to take it from the first model.
@@ -4188,18 +4188,28 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
       linear (0), log10 (1), or log (2)
       (default 0)
   ignore_missing_models: bool
-    set to True to avoid stopping when a model is missing,
-    in which case a None is entered in the returning list
-    
+      set to True to avoid stopping when a model is missing,
+      in which case a None is entered in the returning list
+  nthreads: int
+      set to an integer > 1 to assemble the grid in parallel.
+      Output data will go to nthreads separate files and can later
+      be combined with the 'cat' POSIX command. A value nthreads=0
+      will be interpreted as a request to use all available cores
+      (default 1 -- sequential operation)
   **elem: booleans
-    Activate to track additional chemical elements
-    e.g. Na=True, Ca=True
+      Activate to track additional chemical elements
+      e.g. Na=True, Ca=True
  
   Returns
   -------
   None
 
   """
+
+  from multiprocessing import Pool, cpu_count
+
+  if nthreads == 0: 
+    nthreads = int(cpu_count() - 1)
 
   try: 
     nvmicro = len(vmicro)
@@ -4346,8 +4356,82 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
   f.write(' &SYNTH\n')
   for entry in hdr: f.write(' '+entry + ' = ' + hdr[entry] + '\n')
   f.write(' /\n')
-  
-  
+
+  elems = []
+  for key, value in elem.items():
+    elems.append(key)
+
+
+  if nthreads == 1:
+    mkgrid_irregular_body(folders, teff=teff, logg=logg, feh=feh, afe=afe,  
+           cfe=cfe, x=x, nvmicro=nvmicro, vrots=vrots, fwhms=fwhms, 
+           vmacros=vmacros, file_handle=f, 
+           ignore_missing_models=ignore_missing_models,elems=elems)
+  else:
+    pars = []
+    folders_lists = np.array_split(np.array(folders),nthreads)
+    for i in range(nthreads):
+      pararr = [list(folders_lists[i]), teff, logg, feh, afe,  
+           cfe, x, nvmicro, vrots, fwhms, vmacros, 
+           None, ignore_missing_models,elems]
+      pars.append(pararr)
+
+    pool = Pool(nthreads)
+    results = pool.starmap(mkgrid_irregular_body, pars)
+    pool.close()
+    pool.join()
+
+  return(None)
+
+def mkgrid_irregular_body(folders, teff=True, logg=True, feh=True, afe=True,  
+           cfe=True, x=None, nvmicro=1, vrots=[], fwhms=[], vmacros=[], 
+           file_handle=None, ignore_missing_models=False, elems=[]):
+
+  """Writes the body (data) for an irregular grid. 
+     This code snippet has been extracted from mkgrid_irregular in order to parallelize
+     the process with the multiprocessing library
+
+  Parameters
+  ---------
+  folders: list
+     list of folders (hyd*) to process
+  teff: boolean
+    Activate to track this parameter
+  logg: boolean
+    Activate to track this parameter
+  feh: boolean
+    Activate to track this parameter
+  afe: boolean
+    Activate to track this parameter ([alpha/Fe])
+  cfe: boolean
+    Activate to track this parameter ([C/Fe])
+  nvmicro: int
+    Number of microturbulence values used (km/s)
+    which should be known to figure out whether this is a grid dimension 
+    (default is 1)
+  x: numpy float array
+     array of wavelengths to interpolate the output flux onto
+  vrots: list
+     projected rotational velocities
+  fwhm: list
+     spectral resolution (Angstroms)
+  vmacros: list
+     macroturbulence values
+  file_handle
+     used for output (None will make the routine to create one)
+  elems
+     list of symbols for the elements that vary (variables in the grid)
+  """
+
+  if file_handle is None:
+    file_handle = open(folders[0]+'_'+folders[-1]+'.dat','w')
+
+  #track solar reference abundances to set the scale
+  symbol, mass, sol = elements()
+  solabu = dict()
+  for i in range(len(symbol)):
+    solabu[symbol[i]] = sol[i]
+
   #now read, interpolate and write out the calculations
   idir = 0
   for entry in folders:
@@ -4372,19 +4456,24 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
                     print(teff2,logg2,feh2,vmicro1,vmicro2)
 
                     pars = []
+                    print(teff,logg,feh,afe,cfe,nvmicro)
                     if teff: pars.append(teff2)
                     if logg: pars.append(logg2)
                     if feh: pars.append(feh2)
                     if afe: pars.append(afe2)
-                    if cfe2: pars.append(cfe2)
+                    if cfe: pars.append(cfe2)
                     if nvmicro > 1: pars.append(vmicro1)
-                    for el in elem.keys():
+                    print('nvmicro=',nvmicro)
+                    for el in elems:
+                      print('el=',el)
                       if '_' in el:
                         els = el.split('_')
                         elo = els[0]
                       else:
                         elo = el
                       pars.append(np.log10(abu[elo]) - np.log10(solabu[elo]) )
+
+                    print('pars=',pars)
 
 
                     iconv = 0
@@ -4393,16 +4482,16 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
                         for vmacro1 in vmacros:
 								
                           iconv = iconv + 1
-                          if np.min(vrot) < 1e-7 and  np.min(fwhm) < 1e-7 and np.min(vmacro) < 1e-7:
+                          if np.min(vrots) < 1e-7 and  np.min(fwhms) < 1e-7 and np.min(vmacros) < 1e-7:
                             outconv = "fort.7"
                           else:
                             outconv = ("%07dfort.7" % (iconv) )
 
                           file = os.path.join(dir,outconv)
  
-                          if nvrot > 1: pars.append(vrot1)
-                          if nfwhm > 1: pars.append(fwhm1)
-                          if nvmacro > 1: pars.append(vmacro1)
+                          if len(vrots) > 1: pars.append(vrot1)
+                          if len(fwhms) > 1: pars.append(fwhm1)
+                          if len(vmacros) > 1: pars.append(vmacro1)
 
                           fgood = False
                           if os.path.isfile(file) and os.path.getsize(file) > 0:
@@ -4412,10 +4501,12 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
                             if 'NaN' not in fdata:
                               fgood = True
 
+                          print('file, fgood=',file,fgood)
+
                           if fgood == True:
                             wave, flux = np.loadtxt(file, unpack=True)	
-                            flux = flux[(wave>=minwave) & (wave<=maxwave)]
-                            wave = wave[(wave>=minwave) & (wave<=maxwave)]
+                            flux = flux[(wave>=x.min()) & (wave<=x.max())]
+                            wave = wave[(wave>=x.min()) & (wave<=x.max())]
                           else:
                             if ignore_missing_models == False:
                               sys.exit('Cannot find model '+file+' or it contains no data or NaNs')
@@ -4424,17 +4515,23 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
                  
                           print('idir,iconv, dw=',idir,iconv,dw)
                           print(wave.shape,flux.shape)
-                          y = np.interp(x, wave, flux)
-                          print(x.shape,y.shape)
+                          if x is None:
+                            y = flux
+                          else:
+                            y = np.interp(x, wave, flux)
+                            print(x.shape,y.shape)
                           #plt.plot(wave,flux,'b',x,y,'.')
                           #plt.show()
-                          np.savetxt(f,[pars+list(y)], fmt='%12.5e')
+                          np.savetxt(file_handle,[pars+list(y)], fmt='%12.5e')
 
-  f.close()
+  file_handle.close()
 
   return(None)
 
 def mkhdr_irregular(pars):	  
+
+  """Prepares a dictionary with the header for an irregular grid
+  """
   
   ndim = len(pars)
 
@@ -8749,6 +8846,7 @@ def cebas(p,d,flx,iva,prior=None,filter=None):
     #print('den=',den)
     k = 0
     for i in range(ndim):
+        print('ndim, i=',ndim,i)
         #parameters
         res[i] = np.sum( likeli * p[:,i])/den
         
@@ -8759,8 +8857,8 @@ def cebas(p,d,flx,iva,prior=None,filter=None):
             eres[i] = np.sqrt(cov[k])
             fullcov[i,i] = cov[k]
           else:
-            fullcov[i,j+1] = cov[k]
-            fullcov[j+1,i] = cov[k]
+            fullcov[i,j+i] = cov[k]
+            fullcov[j+i,i] = cov[k]
           
           k = k + 1
 
@@ -8869,8 +8967,8 @@ def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
             eres[i] = np.sqrt(cov[k])
             fullcov[i,i] = cov[k]
           else:
-            fullcov[i,j+1] = cov[k]
-            fullcov[j+1,i] = cov[k]
+            fullcov[i,j+i] = cov[k]
+            fullcov[j+i,i] = cov[k]
 
           k = k + 1
       
