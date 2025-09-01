@@ -9640,7 +9640,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             str(lchi)+' '+' '.join(map(str,cov))+'\n')
         nrd.write(' '.join(map(str,spec))+'\n')
         mdl.write(' '.join(map(str,bmod))+'\n')
-        onesigma = np.divide(np.ones(len(ivar)),np.sqrt(ivar), 
+        onesigma = np.divide(1.,np.sqrt(ivar), 
           where=(ivar > 0),  out= spec*10000.)
         err.write(' '.join(map(str,onesigma))+'\n')
         frd.write(' '.join(map(str,rawspec))+'\n')
@@ -10146,8 +10146,8 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
           print('         assuming S/N = 20!')
           err = flux * 0.05
         if 'SYSERROR' in s.names: err = flux*0.000001 + err + s['SYSERROR']
-        ivar4 = np.divide(np.ones(len(err)), err**2, 
-          where = (err**2 > 0.) , out = np.zeros(len(err)), dtype = np.float128)
+        ivar4 = np.divide(1., err**2, 
+          where = (err**2 > 0.) , out = np.zeros_like(err), dtype = np.float128)
         ivar = np.array(ivar4,dtype=float)
         if 'TARGETID' in head:
           ids = np.array([head['TARGETID']])
@@ -10204,8 +10204,8 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
           sys.exit(1)
         wav = np.arange(len(flux))*head['CD1_1']+head['CRVAL1']
         lenwav = len(wav)        
-        ivar4 = np.divide(np.ones(len(err)), err**2, 
-          where = (err**2 > 0.) , out = np.zeros(len(err)), dtype = np.float128)
+        ivar4 = np.divide(1., err**2, 
+          where = (err**2 > 0.) , out = np.zeros_like(err), dtype = np.float128)
         ivar = np.float64(ivar4)
 
         if 'OBJECT' in head:
@@ -10228,8 +10228,8 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
         print('Warning: OSIRIS files do not include uncertainties')
         print('         assuming S/N = 20!')
         err = flux * 0.05
-        ivar4 = np.divide(np.ones(len(err)), err**2, 
-          where = (err**2 > 0.) , out = np.zeros(len(err)), dtype = np.float128)
+        ivar4 = np.divide(1., err**2, 
+          where = (err**2 > 0.) , out = np.zeros_like(err), dtype = np.float128)
         ivar = np.float64(ivar4)
 
         if 'OBJECT' in head:
@@ -10253,8 +10253,8 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
         print('Warning: Mercator-HERMES files do not include uncertainties')
         print('         assuming S/N = 20!')
         err = flux * 0.05
-        ivar4 = np.divide(np.ones(len(err)), err**2, 
-          where = (err**2 > 0.), out = np.zeros(len(err)), dtype = np.float128)
+        ivar4 = np.divide(1., err**2, 
+          where = (err**2 > 0.), out = np.zeros_like(err), dtype = np.float128)
         ivar = np.float64(ivar4)
 
         if 'OBJECT' in head:
@@ -10280,7 +10280,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
       #read frdfile and errfile
       frd = np.loadtxt(frdfile,dtype=float)
       err = (np.loadtxt(errfile,dtype=float)**2)
-      ivr = np.divide(np.ones(len(err)), err, where = (err > 0.), out = np.zeros(len(err)) )
+      ivr = np.divide(1., err, where = (err > 0.), out = np.zeros_like(err) )
       wav = wavelengths
       if frd.ndim == 1:
         ids = np.array([0])
@@ -10319,7 +10319,7 @@ def single_target_prep(wav,flux,ivar,rv,ebv,wavelengths=None):
       xtmp = np.array(wav,dtype=float)
       ytmp = np.array(flux,dtype=float)
       tmp = remove(ccm89(xtmp, red * 3.1, 3.1), ytmp)
-      ivar = ivar * (np.divide(ytmp,tmp,where=tmp>0, out= np.zeros(len(ivar))))**2
+      ivar = ivar * (np.divide(ytmp,tmp,where=tmp>0, out= np.zeros_like(ivar)))**2
       flux = tmp
 
     if wavelengths is None:
