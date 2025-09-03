@@ -10283,7 +10283,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
       ivr = np.divide(1., err, where = (err > 0.), out = np.zeros_like(err) )
       if wavelengths is None:
         if frd.ndim == 1:
-          wav = np.arange(len(frd)
+          wav = np.arange(len(frd))
         else:
           wav = np.arange(len(frd[0,:]))
       else:
