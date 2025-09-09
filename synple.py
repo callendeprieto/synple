@@ -7732,7 +7732,7 @@ def xyzmass(abu):
 
 def keepz(abu,zs,dex):
 
-  """finds out the array of abundances that keeps the abundance changes in
+  """returns a modified list of abundances that keeps the abundance changes in
      the array dex for the elements with the atomic number zs
      and at the same time keeps the metal mass fraction
      constant by modifying the metal abundances
@@ -7740,32 +7740,34 @@ def keepz(abu,zs,dex):
 
   assert (len(zs) == len(dex)),'zs and dex must have the same number of elements'
 
-  abu1 = abu.copy()
+  abu0 = np.array(abu,dtype=float)
+  abu1 = abu0.copy()
+  zzs = np.array(zs,dtype=int) - 1
+  x0, y0, z0 = xyzmass(abu0)
   i = 0
-  for entry in zs:
-    abu1[entry-1] = abu[entry-1] + dex[i]
+  for entry in zzs:
+    abu1[entry] = abu0[entry] * 10.**dex[i]
     i = i + 1
-
-  x0, y0, z0 = xyzmass(abu)
   x1, y1, z1 = xyzmass(abu1)
-  print(z0,z1)
-  diff = np.array(abu1[zs]) - np.array(abu[zs])
-  zr = np.abs(z1/z0)
-  abu1[2:] = abu[2:]/zr 
-  diff1 = np.array(abu1[zs]) - np.array(abu[zs])
 
-  while np.max(diff1 - diff) > 0.0001:
-    print(np.max(diff1 - diff))
+  diff = np.max( np.log10( abu1[zzs] ) - np.log10( abu0[zzs] ) )
+  diff1 = diff + 0.1
+
+  j = 0
+  while np.abs(diff1 - diff) > 0.0001:
+    i = 0
+    for entry in zzs:
+      abu1[entry] = abu0[entry] * 10.**dex[i]
+      i = i + 1
     x1, y1, z1 = xyzmass(abu1)
     zr = np.abs(z1/z0)
-    abu1[2:] = abu[2:]/zr
-    diff1 = np.array(abu1) - np.array(abu)
+    abu1[2:] = abu1[2:]/zr
+    diff1 = np.max( np.log10( abu1[zzs] ) - np.log10( abu0[zzs] ) )
 
-  return()
-      
+    #print(j,diff,diff1)
+     
+  return(list(abu1)) 
 
-
-  
 
 def lgconv(xinput, yinput, fwhm, ppr=None):
 
