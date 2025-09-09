@@ -1651,10 +1651,10 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
     vmicro=None, vrot=0.0, fwhm=0.0, vmacro=0.0,  \
     linelist=linelist0, atom='ap18', \
     steprot=0.0, stepfwhm=0.0,  clean=True, save=None, lte=False, 
-    nchem=1, **kargs):
+    nchem=1, keepingz=False, **kargs):
 
   """Sets up a directory tree for computing synthetic spectra for a list of files in 
-  parallel. The values of vmicro, vrot, fwhm, and nfe can be iterables. 
+  parallel. The values of vmicro, vrot, fwhm, and vmacro can be iterables. 
 
 
   Parameters
@@ -1682,9 +1682,6 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
   vmacro: float
       Radial-tangential macroturbulence (km/s)
       (default 0.)
-  nfe: float, can be an iterable
-      [N/Fe] nitrogen abundance change from the one specified in the array 'abu' (dex)
-      (default 0.)
   linelist: array of str
       filenames of the line lists, the first one corresponds to 
       the atomic lines and all the following ones (optional) to
@@ -1707,7 +1704,7 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
   save: bool
       set to True to save the computed spectra to files (default False)
       the root of the model atmosphere file, with an extension ".syn" will be used
-      if multiple values of vmicro, vrot, fwhm or nfe are used, their values are
+      if multiple values of vmicro, vrot, fwhm or vmacro are used, their values are
       prepended to the file names 
       (default None)
   lte: bool
@@ -1726,6 +1723,12 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
       This parameter is updated automatically in the subroutine for regular 
       grids.
       (default 1)
+  keepingz: bool
+      when the abundances are varied through kargs (i.e. they are applied
+      for the spectral synthesis) this option allows an automatic adjustment
+      of all the other metal abundances to keep the total metal mass fraction 
+      constant 
+      (default False)
   kargs:  tuples
        For irregular grids with random abundances as many pairs as necessary, 
        indicating the range for elemental variations [X/Fe]
@@ -1858,8 +1861,10 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
 
             abu1 = copy.copy(abu)
 
-            #if need be, adjust nitrogen abundance according to nfe
+            #if need be, adjust the abundances
             if (ichem > -1):
+              zs = []
+              dex = []
               if (abu1 == None):
                 linelist, entry = checksynspec(linelist,entry)
                 atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
@@ -1868,10 +1873,21 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
                 if '_' in el:
                   els = el.split('_')
                   for elo in els:
-                    abu1[zatom[elo]-1] = abu1[zatom[elo]-1] * 10.**chems[el][ichem]
+                    if keepingz:
+                      zs.append(zatom[elo])
+                      dex.append(chems[el][ichem])
+                    else:
+                      abu1[zatom[elo]-1] = abu1[zatom[elo]-1] * 10.**chems[el][ichem]
                 else:
-                  abu1[zatom[el]-1] = abu1[zatom[el]-1] * 10.**chems[el][ichem]
+                  if keepingz:
+                    zs.append(zatom[el])
+                    dex.append(chems[el][ichem])
+                  else:
+                    abu1[zatom[el]-1] = abu1[zatom[el]-1] * 10.**chems[el][ichem]
                 iel += 1
+
+            if keepingz:  
+              abu1 = keepz(abu1,zs,dex)
 
 
             x, y, z = syn(entry, wrange, dw=None, strength=strength, vmicro=vmicro1, \
@@ -2542,6 +2558,10 @@ def grid_builder(config,  modeldir=modeldir):
       nmerge = int(conf['nmerge'])
     else:
       nmerge = 100
+    if 'keepingz' in conf:
+      keepingz = conf['keepingz']
+    else
+      keepingz = False
 
     
     for entry in conf['grids']:
@@ -2597,7 +2617,9 @@ def grid_builder(config,  modeldir=modeldir):
            tel = tuple(map(float,conf[entry][el].split()))
            eldict[el] = tel
 
-       polysyn(files, wrange = wrange, vmicro = vmicro, **eldict)
+       polysyn(files, wrange = wrange, vmicro = vmicro,
+               keepingz = keepinz,  **eldict)
+
        print('calling polysyn with ',eldict)
 
        merge_slurm_parallel(ext='job', nmerge=nmerge, ncpu=ncpu)
