@@ -2,6 +2,7 @@ wrange: 3000. 10000.
 vmicro: -1
 ncpu: 16
 nmerge: 100
+keepingz: True
 grids: ['f_m1','f_m2','f_k1','f_k2']
 f_m1:
        type: 'marcs'

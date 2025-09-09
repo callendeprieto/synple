@@ -2,9 +2,10 @@ wrange: 3000. 10000.
 vmicro: -1
 ncpu: 16
 nmerge: 100
-grids: ['f_m']
-f_m:
+keepingz: True
+grids: ['f_m2']
+f_m2:
        type: 'marcs'
-       tteff: 16  2500.    100.
-       tlogg: 11     0.0     0.5
-       tfeh:   8    -2.5     0.5
+       tteff: 2  2800.    700.
+       tlogg: 1   5.0       0.0
+       Mg:     2     0.0     0.3

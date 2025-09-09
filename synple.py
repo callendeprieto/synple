@@ -2560,7 +2560,7 @@ def grid_builder(config,  modeldir=modeldir):
       nmerge = 100
     if 'keepingz' in conf:
       keepingz = conf['keepingz']
-    else
+    else:
       keepingz = False
 
     
@@ -2618,7 +2618,7 @@ def grid_builder(config,  modeldir=modeldir):
            eldict[el] = tel
 
        polysyn(files, wrange = wrange, vmicro = vmicro,
-               keepingz = keepinz,  **eldict)
+               keepingz = keepingz,  **eldict)
 
        print('calling polysyn with ',eldict)
 
