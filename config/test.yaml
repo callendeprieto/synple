@@ -3,9 +3,11 @@ vmicro: -1
 ncpu: 16
 nmerge: 100
 keepingz: True
-grids: ['f_m2']
-f_m2:
-       type: 'marcs'
-       tteff: 2  2800.    700.
-       tlogg: 1   5.0       0.0
-       Mg:     2     0.0     0.3
+grids: ['f_mkki']
+f_mkki:
+       type: 'mkk-irregular'
+       nmodels: 100
+       pteff: 2800.    3500.
+       plogg: 0.0       5.0
+       pfeh: 0.0      0.0
+       Mg:    0.0     0.3

@@ -2568,23 +2568,53 @@ def grid_builder(config,  modeldir=modeldir):
        print('grid=',entry)
        os.mkdir(entry)
        os.chdir(entry)
-       if 'vmicro' in conf[entry]:  vmicro = float(conf[entry]['vmicro']) 
-       tteff = tuple(map(float,conf[entry]['tteff'].split()))
-       tlogg = tuple(map(float,conf[entry]['tlogg'].split())) 
+       if 'vmicro' in conf[entry]:  vmicro = float(conf[entry]['vmicro']) #overrides the generic vmicro
+       if 'tteff' in conf[entry]: 
+         tteff = tuple(map(float,conf[entry]['tteff'].split()))
+         bteff = True
+       elif 'pteff' in conf[entry]:
+         pteff = tuple(map(float,conf[entry]['pteff'].split()))
+         bteff = True
+       if 'tlogg' in conf[entry]: 
+         tlogg = tuple(map(float,conf[entry]['tlogg'].split())) 
+         blogg = True
+       elif 'plogg' in conf[entry]:
+         plogg = tuple(map(float,conf[entry]['plogg'].split()))
+         blogg = True          
        if 'tfeh' in conf[entry]:
          tfeh  = tuple(map(float,conf[entry]['tfeh'].split()))
+         bfeh = True
+       elif 'pfeh' in conf[entry]:
+         pfeh  = tuple(map(float,conf[entry]['pfeh'].split()))
+         bfeh = True
        else:
          tfeh = (1,0.0,0.0)
+         bfeh = False
        if 'tafe' in conf[entry]:
          tafe  = tuple(map(float,conf[entry]['tafe'].split()))
          tie_afe = False
+         bafe = True
        else:
          tafe = (1,0.0,0.0)
+         bafe = False
          tie_afe = True
        if 'tcfe' in conf[entry]:
          tcfe  = tuple(map(float,conf[entry]['tcfe'].split()))
+         bcfe = True
        else:
          tcfe = (1,0.0,0.0)
+         bcfe = False
+       if 'nmodels' in conf[entry]:
+         nmodels = int(conf[entry]['nmodels'])
+
+       symbols, mass, sol = elements()
+
+       eldict = dict()
+       for el in symbols:
+         if el in conf[entry]:
+           tel = tuple(map(float,conf[entry][el].split()))
+           eldict[el] = tel
+
        if conf[entry]['type'] == 'marcs':
           files = collect_marcs(modeldir=os.path.join(modeldir,'marcs'), 
                    tteff = tteff,
@@ -2605,28 +2635,41 @@ def grid_builder(config,  modeldir=modeldir):
                    tie_afe = tie_afe,
                    ignore_missing_models = True,
                    ext = 'mod')
+       elif conf[entry]['type'] == 'mkk-regular':
+          create_regular_kurucz(tteff=tteff, tlogg=tlogg, 
+                   tfeh=tfeh, tafe=tafe, tie_afe = tie_afe, **eldict)
+       elif conf[entry]['type'] == 'mkk-irregular':
+          create_irregular_kurucz(nmodels, pteff=pteff, plogg=plogg, 
+                   pfeh=pfeh, tie_afe = tie_afe, **eldict)
        else:
-          print('only APOGEE marcs or kurucz models are accepted')
-          continue
+          print('accepted models can be kurucz/marcs/mkk-regular/mkk-irregular')
+          sys.exit(0)
 
-       symbols, mass, sol = elements()
 
-       eldict = dict()
-       for el in symbols:
-         if el in conf[entry]:
-           tel = tuple(map(float,conf[entry][el].split()))
-           eldict[el] = tel
-
-       polysyn(files, wrange = wrange, vmicro = vmicro,
+       if conf[entry]['type'] == 'marcs' or conf[entry]['type'] == 'kurucz':
+         polysyn(files, wrange = wrange, vmicro = vmicro,
                keepingz = keepingz,  **eldict)
 
-       print('calling polysyn with ',eldict)
+         print('calling polysyn with ',eldict)
+         merge_slurm_parallel(ext='job', nmerge=nmerge, ncpu=ncpu)
 
-       merge_slurm_parallel(ext='job', nmerge=nmerge, ncpu=ncpu)
+       else:
+         streldict = ",".join("{}={}".format(*i) for i in eldict.items())  
+         frun = open('run1.py','w')
+         frun.write("import os\nimport numpy as np\nfrom synple import polysyn, merge_slurm_parallel\n\n")
+         frun.write("pwd=os.path.abspath(os.curdir)\n")
+         frun.write("files = np.loadtxt(os.path.join(pwd,'kur*/k*.7'))\n")
+         frun.write( "polysyn(files,wrange = (%.2f,%.2f), vmicro = %.2f, keepingz = %s, %s )\n" %  (wrange[0], wrange[1], vmicro, keepingz, streldict) )
+         frun.write( "merge_slurm_parallel(ext='job', nmerge=%4i, ncpu=%4i)\n" % (nmerge,ncpu) )
+         frun.close()
 
-       frun = open('run.py','w')
+
+       frun = open('run2.py','w')
        frun.write("from synple import mkgrid, bas_build\n\n")
-       frun.write( "mkgrid('%s',tteff = (%4i,%.2f,%.2f), tlogg = (%4i,%.2f,%.2f), tfeh = (%4i,%.2f,%.2f), tafe = (%4i,%.2f,%.2f), tcfe = (%4i,%.2f,%.2f), vmicro = %.2f, ignore_missing_models = True )\n" % (entry+'.dat',tteff[0],tteff[1],tteff[2],tlogg[0],tlogg[1],tlogg[2],tfeh[0],tfeh[1],tfeh[2],tafe[0],tafe[1],tafe[2],tcfe[0],tcfe[1],tcfe[2], vmicro) )
+       if conf[entry]['type'] == 'mkk-irregular':
+         frun.write( "mkgrid_irregular('%s',teff = %s, logg = %s, feh = %s, afe = %s, cfe = %s, vmicro = %.2f, ignore_missing_models = True )\n" % (entry+'.dat', bteff, blogg, bfeh, bafe, bcfe, vmicro) )
+       else:
+         frun.write( "mkgrid('%s',tteff = (%4i,%.2f,%.2f), tlogg = (%4i,%.2f,%.2f), tfeh = (%4i,%.2f,%.2f), tafe = (%4i,%.2f,%.2f), tcfe = (%4i,%.2f,%.2f), vmicro = %.2f, ignore_missing_models = True )\n" % (entry+'.dat',tteff[0],tteff[1],tteff[2],tlogg[0],tlogg[1],tlogg[2],tfeh[0],tfeh[1],tfeh[2],tafe[0],tafe[1],tafe[2],tcfe[0],tcfe[1],tcfe[2], vmicro) )
        frun.write( "bas_build('%s')\n" % (entry+'.dat') )
        frun.close()
 
