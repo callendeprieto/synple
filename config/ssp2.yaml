@@ -1,0 +1,30 @@
+wrange: 3000. 10000.
+vmicro: -1
+ncpu: 16
+nmerge: 100
+keepingz: True
+grids: ['f_m1','f_k1','f_k2','f_k3']
+f_m1:
+       type: 'marcs'
+       tteff: 16  2500.    100.
+       tlogg: 11     0.0     0.5
+       tfeh:   8    -2.5     0.5
+       Mg:     2     0.0     0.3
+f_k1:
+       type: 'mkk-regular'
+       tteff: 18  4000.    250.
+       tlogg: 11     0.0     0.5
+       tfeh:   8    -2.5     0.5
+       Mg:     2     0.0     0.3
+f_k2:
+       type: 'mkk-regular'
+       tteff: 12  6750.    250.
+       tlogg:  9     1.0     0.5
+       tfeh:   8    -2.5     0.5
+       Mg:     2     0.0     0.3
+f_k3:
+       type: 'mkk-regular'
+       tteff: 20  11000.  1000.
+       tlogg:  5     3.0     0.5
+       tfeh:   8     -2.5    0.3
+       Mg:     2     0.0     0.3

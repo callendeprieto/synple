@@ -3,7 +3,7 @@ vmicro: -1
 ncpu: 16
 nmerge: 100
 keepingz: True
-grids: ['f_mkki']
+grids: ['f_mkki','f_mkkr']
 f_mkki:
        type: 'mkk-irregular'
        nmodels: 100
@@ -11,3 +11,9 @@ f_mkki:
        plogg: 0.0       5.0
        pfeh: 0.0      0.0
        Mg:    0.0     0.3
+f_mkkr:
+       type: 'mkk-regular'
+       tteff: 16  2500.    100.
+       tlogg: 11     0.0     0.5
+       tfeh:   8    -2.5     0.5
+       Mg:     2     0.0     0.3
