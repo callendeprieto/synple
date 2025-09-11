@@ -2606,6 +2606,10 @@ def grid_builder(config,  modeldir=modeldir):
          bcfe = False
        if 'nmodels' in conf[entry]:
          nmodels = int(conf[entry]['nmodels'])
+       if 'nchem' in conf[entry]:
+         nchem = int(conf[entry]['nchem'])
+       else:
+         nchem = 1
 
        symbols, mass, sol = elements()
 
@@ -2648,7 +2652,7 @@ def grid_builder(config,  modeldir=modeldir):
 
        if conf[entry]['type'] == 'marcs' or conf[entry]['type'] == 'kurucz':
          polysyn(files, wrange = wrange, vmicro = vmicro,
-               keepingz = keepingz,  **eldict)
+               keepingz = keepingz, nchem = nchem,  **eldict)
 
          print('calling polysyn with ',eldict)
          merge_slurm_parallel(ext='job', nmerge=nmerge, ncpu=ncpu)
@@ -2673,36 +2677,6 @@ def grid_builder(config,  modeldir=modeldir):
        frun.write( "bas_build('%s')\n" % (entry+'.dat') )
        frun.close()
 
-       if 'elements' in conf[entry]:
-         for item in conf[entry]['elements']:
-           abu1, abu2, wrange1, wrange2 = tuple(map(float,conf[entry]['elements'][item].split()))
-           print('abu1, abu2, wrange1, wrange2 =',abu1,abu2,wrange1,wrange2)
-           if 'nchem' in conf[entry]:
-             nchem = conf[entry]['nchem']
-           else:
-             nchem = 10
-           os.chdir('..')
-           elgrid = entry + '-' + item
-           print('grid=',elgrid)
-           os.mkdir(elgrid)
-           os.chdir(elgrid)
-
-           state = "polysyn(files, wrange = (" + str(wrange1) + "," + \
-                   str(wrange2)  + ") , vmicro = vmicro, " + \
-                   "nchem = " + str(nchem) + ", " + \
-                   item + " = (" + str(abu1) + "," + str(abu2) +") )"
-
-           print(state+"\n")
-           exec(state)
-
-           merge_slurm_parallel(ext='job', nmerge=nmerge, ncpu=ncpu)
-
-           frun = open('run.py','w')
-           frun.write("from synple import mkgrid_irregular, bas_build\n\n")
-           frun.write( "mkgrid_irregular( '"+ elgrid + ".dat', teff=True, logg=True, feh=True, afe = True, cfe = True, " + item + " = True, vmicro = "+ str(vmicro) + ", ignore_missing_models = True )\n")
-           frun.write( "bas_build('%s')\n" % (entry+'.dat') )
-           frun.close()
-                   
        os.chdir('..')
        
     return(None)
