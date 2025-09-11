@@ -10491,12 +10491,12 @@ def read_tab(file,extension='sptab'):
   d=fits.open(file)
   n=extnames(d)
   h=d[0].header
-  if extension in n:
+  if extension.upper() in n:
     s=d[extension.upper()].data
   else:
     print('Error: cannot find an ',extension.upper(),' extension in the file')
     s=None
-  f=d['fibermap'].data
+  f=d['FIBERMAP'].data
  
   return(s,f,h) 
 
