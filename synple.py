@@ -2656,9 +2656,9 @@ def grid_builder(config,  modeldir=modeldir):
        else:
          streldict = ",".join("{}={}".format(*i) for i in eldict.items())  
          frun = open('run1.py','w')
-         frun.write("import os\nimport numpy as np\nfrom synple import polysyn, merge_slurm_parallel\n\n")
+         frun.write("import os\nimport glob\nimport numpy as np\nfrom synple import polysyn, merge_slurm_parallel\n\n")
          frun.write("pwd=os.path.abspath(os.curdir)\n")
-         frun.write("files = np.loadtxt(os.path.join(pwd,'kur*/k*.7'))\n")
+         frun.write("files = glob.glob(os.path.join(pwd,'kur*/k*.7'))\n")
          frun.write( "polysyn(files,wrange = (%.2f,%.2f), vmicro = %.2f, keepingz = %s, %s )\n" %  (wrange[0], wrange[1], vmicro, keepingz, streldict) )
          frun.write( "merge_slurm_parallel(ext='job', nmerge=%4i, ncpu=%4i)\n" % (nmerge,ncpu) )
          frun.close()
@@ -9710,7 +9710,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         onesigma = np.divide(1.,np.sqrt(ivar), 
           where=(ivar > 0),  out= spec*10000.)
         err.write(' '.join(map(str,onesigma))+'\n')
-        frd.write(' '.join(map(str,rawspec))+'\n')
+        frd.write(' '.join(map(str,spec))+'\n')
         flx.write(' '.join(map(str,abbmod))+'\n')
         if ferre:
             ipf.write(str(ids[j])+' '+' '.join(map(str,np.zeros(ndim)))+'\n')
