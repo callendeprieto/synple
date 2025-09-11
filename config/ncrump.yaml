@@ -19,9 +19,9 @@ f_ncrump2:
 f_ncrump3:
        type: 'mkk-irregular'
        nmodels: 600
-       tteff: 4500.  6750.
-       tlogg:    1.0    5.0
-       tfeh:    -8.0   -2.5
+       pteff: 4500.  6750.
+       plogg:    1.0    5.0
+       pfeh:    -8.0   -2.5
        nchem:  100
        C:      -1.0      5.0
        N:      -1.0      5.0
