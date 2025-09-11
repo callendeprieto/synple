@@ -3,17 +3,11 @@ vmicro: -1
 ncpu: 16
 nmerge: 100
 keepingz: True
-grids: ['f_m1','f_k1','f_k2','f_k3']
-f_m1:
-       type: 'marcs'
-       tteff: 16  2500.    100.
-       tlogg: 11     0.0     0.5
-       tfeh:   8    -2.5     0.5
-       Mg:     2     0.0     0.3
+grids: ['f_k1','f_k2','f_k3']
 f_k1:
        type: 'mkk-regular'
-       tteff: 18  4000.    250.
-       tlogg: 11     0.0     0.5
+       tteff: 22  3000.    250.
+       tlogg: 13    -1.0     0.5
        tfeh:   8    -2.5     0.5
        Mg:     2     0.0     0.3
 f_k2:
