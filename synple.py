@@ -2658,12 +2658,12 @@ def grid_builder(config,  modeldir=modeldir):
          merge_slurm_parallel(ext='job', nmerge=nmerge, ncpu=ncpu)
 
        else:
-         streldict = ",".join("{}={}".format(*i) for i in eldict.items())  
+         #streldict = ",".join("{}={}".format(*i) for i in eldict.items())  
          frun = open('run1.py','w')
          frun.write("import os\nimport glob\nimport numpy as np\nfrom synple import polysyn, merge_slurm_parallel\n\n")
          frun.write("pwd=os.path.abspath(os.curdir)\n")
          frun.write("files = glob.glob(os.path.join(pwd,'kur*/k*.7'))\n")
-         frun.write( "polysyn(files,wrange = (%.2f,%.2f), vmicro = %.2f, keepingz = %s, %s )\n" %  (wrange[0], wrange[1], vmicro, keepingz, streldict) )
+         frun.write( "polysyn(files,wrange = (%.2f,%.2f), vmicro = %.2f, keepingz = %s )\n" %  (wrange[0], wrange[1], vmicro, keepingz) )
          frun.write( "merge_slurm_parallel(ext='job', nmerge=%4i, ncpu=%4i)\n" % (nmerge,ncpu) )
          frun.close()
 
