@@ -2513,7 +2513,12 @@ def merge_slurm_parallel(path='./',ext='slurm',nmerge=2,ncpu=2):
 
     for line in f1: 
       if line[0] == "#":
-        if j == 0: header.append(line)
+        if j == 0: 
+          if 'cpus-per-task=1' in line:
+            line.replace('task=1','task='+str(ncpu))
+          if '-D' in line:
+            line.replace('#SBATCH  -D','# ')
+          header.append(line)
         if '--time' in line:
           entries = line.split('=') 
           newtime = int(entries[1])
