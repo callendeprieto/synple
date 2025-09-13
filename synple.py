@@ -3619,7 +3619,9 @@ def mkgrid_body(indices, ind, steps, llimits, x=None,
      hyd folders
   """
 
-  for entry in indices: entry = entry + 1
+  i = 0
+  for entry in indices:
+    indices[i] = indices + 1
 
   if file_handle is None:
     file_name1 = ( "hyd%07d" % (indices[0]) )
