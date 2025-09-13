@@ -3190,7 +3190,8 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
            tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), tofe=(1,0.0,0.0), 
            trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), 
            vmicro=None, nfe=0.0, vrot=0.0, fwhm=0.0, vmacro=0.0, 
-           wrange=None, dw=None, logw=0, ignore_missing_models=False, **elements):
+           wrange=None, dw=None, logw=0, ignore_missing_models=False, 
+           nthreads=1, **elements):
 
 
 
@@ -3253,8 +3254,14 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
       linear (0), log10 (1), or log (2)
       (default 0)
   ignore_missing_models: bool
-    set to True to avoid stopping when a model is missing,
+    set to True to avoid stopping when a model is missing,    
     in which case a None is entered in the returning list    
+  nthreads: int
+      set to an integer > 1 to assemble the grid in parallel.
+      Output data will go to nthreads separate files and can later
+      be combined with the 'cat' POSIX command. A value nthreads=0
+      will be interpreted as a request to use all available cores
+      (default 1 -- sequential operation)
   elements:  tuples
     as many triads as necessary, for other elemental variations [X/Fe]
     e.g. Na=(3,-0.2,0.2), Al=(9, -0.5, 0.1), ...
@@ -3265,6 +3272,11 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
   None
 
   """
+
+  from multiprocessing import Pool, cpu_count
+
+  if nthreads == 0:
+    nthreads = int(cpu_count() - 1)
 
 
   pars = []
@@ -3452,8 +3464,6 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
     i = i + 1
   ind = np.array(list(product(*ll)))
   
-  print
-
 
   hdr = mkhdr(tteff=tteff, tlogg=tlogg, tfeh=tfeh, tafe=tafe, 
               tcfe=tcfe, tnfe=tnfe, tofe=tofe, trfe=trfe, tsfe=tsfe,
@@ -3547,17 +3557,85 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
                               
   assert nfreq > 0, 'could not find a single successful calculation in this grid'
   
-  #now read, interpolate and write out the calculations
-  j = 0
+  ntot = len(ind)
+  #ntot = ntot * nvrot * nfwhm * nvmacro
+  #hdr['NTOT'] = str(ntot)
 
-  for i in ind:
-                        j = j + 1
-                        print('line ',j)
+  if nthreads == 1:
+    indices = range(ntot)
+    mkgrid_body(indices, ind, steps, llimits, x=x,  
+           vrots=vrots, fwhms=fwhms, vmacros=vmacros, file_handle=f, 
+           ignore_missing_models=ignore_missing_models)
+  else:
+    assert ntot >= nthreads,'nthreads should be smaller than ntot!'
+    pars = []
+    indices_lists = np.array_split(range(ntot),nthreads)
+    for i in range(nthreads):
+      #print('i,list(indices_lists[i])=',i,list(indices_lists[i]))
+      pararr = [list(indices_lists[i]), ind, steps, llimits, x,
+           vrots, fwhms, vmacros, None,
+           ignore_missing_models]
+      pars.append(pararr)
+
+
+    pool = Pool(nthreads)
+    results = pool.starmap(mkgrid_body, pars)
+    pool.close()
+    pool.join()
+
+
+  return(None)
+
+
+def mkgrid_body(indices, ind, steps, llimits, x=None,  
+           vrots=[], fwhms=[], vmacros=[], file_handle=None,
+           ignore_missing_models=False):
+
+  """Writes the body (data) for a FERRE regular grid.
+     This code snippet has been extracted from mkgrid in order to parallelize
+     the process with the multiprocessing library
+
+  Parameters
+  ---------
+  indices: list
+     list of indices indicating the elements of ind to process
+  ind: list of lists with the indices of the parameters corresponding to each 
+     of the compute hyd folders
+  steps: list
+     steps for the grid parameters
+  llimits: limits
+     lower limits (first and minimum values) for the grid parameters
+  x: numpy float array
+     array of wavelengths to interpolate the output flux onto
+  vrots: list
+     projected rotational velocities
+  fwhm: list
+     spectral resolution (Angstroms)
+  vmacros: list
+     macroturbulence values
+  file_handle
+     file_handle for writing data
+     if None a file will be created on the fly with the range of the
+     hyd folders
+  """
+
+
+  if file_handle is None:
+    file_name1 = ( "hyd%07d" % (indices[0]) )
+    file_name2 = ( "hyd%07d" % (indices[-1]) )
+    file_handle = open(file_name1+'_'+file_name2+'.dat','w')
+
+
+  #now read, interpolate and write out the calculations
+  ind2 = ind[indices]
+  j = 0
+  for i in ind2:
+                        print('line ',ind2[j])
                         print(i,steps,llimits)
                         par = i*steps+llimits
                         print(par)
                     
-                        dir = ( "hyd%07d" % (j) )
+                        dir = ( "hyd%07d" % (indices[j]) )
 
                         iconv = 0
                         for vrot1 in vrots:
@@ -3566,7 +3644,7 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
 								
                               iconv = iconv + 1
 
-                              if np.min(vrot) < 1e-7 and  np.min(fwhm) < 1e-7 and np.min(vmacro) < 1e-7:
+                              if np.min(vrots) < 1e-7 and  np.min(fwhms) < 1e-7 and np.min(vmacros) < 1e-7:
                                 outconv = "fort.7"
                               else:
                                 outconv = ("%07dfort.7" % (iconv) )
@@ -3588,17 +3666,18 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
                                 else:
                                   wave, flux = (np.array([np.min(x),np.max(x)]), np.array([0.0, 0.0]))
                     
-                              print('idir,iconv, dw=',idir,iconv,dw)
+                              print('indices[j],iconv=',indices[j],iconv)
                               print(wave.shape,flux.shape)
                               y = np.interp(x, wave, flux)
                               print(x.shape,y.shape)
                               #plt.plot(wave,flux,'b',x,y,'.')
                               #plt.show()
-                              np.savetxt(f,[y], fmt='%12.5e')
+                              np.savetxt(file_handle,[y], fmt='%12.5e')
 
-  f.close()
+                        j = j + 1 
 
-  return(None)
+  file_handle.close()
+
 
 
 def mkgrid_old(synthfile=None, tteff=None, tlogg=None, 

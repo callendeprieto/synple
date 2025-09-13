@@ -1,19 +1,10 @@
 wrange: 3000. 10000.
 vmicro: -1
-ncpu: 16
-nmerge: 100
-keepingz: True
-grids: ['f_mkki','f_mkkr']
-f_mkki:
-       type: 'mkk-irregular'
-       nmodels: 100
-       pteff: 2800.    3500.
-       plogg: 0.0       5.0
-       pfeh: 0.0      0.0
-       Mg:    0.0     0.3
-f_mkkr:
+ncpu: 1
+nmerge: 1
+grids: ['f_test']
+f_test:
        type: 'mkk-regular'
-       tteff: 16  2500.    100.
-       tlogg: 11     0.0     0.5
-       tfeh:   8    -2.5     0.5
-       Mg:     2     0.0     0.3
+       tteff: 2  5500.    100.
+       tlogg: 2     0.0     0.5
+       tfeh:  2    -2.5     0.5
