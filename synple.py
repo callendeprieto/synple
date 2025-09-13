@@ -3619,18 +3619,14 @@ def mkgrid_body(indices, ind, steps, llimits, x=None,
      hyd folders
   """
 
-  i = 0
-  for entry in indices:
-    indices[i] = indices[i] + 1
-
-  if file_handle is None:
-    file_name1 = ( "hyd%07d" % (indices[0]) )
-    file_name2 = ( "hyd%07d" % (indices[-1]) )
-    file_handle = open(file_name1+'_'+file_name2+'.dat','w')
-
-
   #now read, interpolate and write out the calculations
   ind2 = ind[indices]
+
+  if file_handle is None:
+    file_name1 = ( "hyd%07d" % (indices[0] + 1) )
+    file_name2 = ( "hyd%07d" % (indices[-1] + 1) )
+    file_handle = open(file_name1+'_'+file_name2+'.dat','w')
+
   j = 0
   for i in ind2:
                         print('line ',ind2[j])
@@ -3638,7 +3634,7 @@ def mkgrid_body(indices, ind, steps, llimits, x=None,
                         par = i*steps+llimits
                         print(par)
                     
-                        dir = ( "hyd%07d" % (indices[j]) )
+                        dir = ( "hyd%07d" % (indices[j] + 1) )
 
                         iconv = 0
                         for vrot1 in vrots:
