@@ -4406,7 +4406,7 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
 
                     teff2,logg2,vmicro2,abu = read_madaf(madaffile,startdir=entry)
                     #imode, iprin, inmod, inlte, hydprf, wrange1, cutoff,  \
-                         strength, dw1, molls, vmicro1 = read55(os.path.join(entry,'fort.55'))
+                    #     strength, dw1, molls, vmicro1 = read55(os.path.join(entry,'fort.55'))
                     feh2 = np.log10(abu['Fe']) - np.log10(solabu['Fe'])
 	                                
                     #print(teff2,logg2,feh2,vmicro1,vmicro2)
@@ -4570,7 +4570,7 @@ def mkgrid_irregular_body(folders, teff=True, logg=True, feh=True, afe=True,
                     teff2,logg2,vmicro2,abu = read_madaf(madaffile,startdir=entry)
 
                     #imode, iprin, inmod, inlte, hydprf, wrange1, cutoff, \
-                         strength, dw1, molls, vmicro1 = read55(os.path.join(entry,'fort.55'))
+                    #     strength, dw1, molls, vmicro1 = read55(os.path.join(entry,'fort.55'))
                     feh2 = np.log10(abu['Fe']) - np.log10(solabu['Fe'])
                     afe2 = np.log10(abu['O']) - np.log10(solabu['O'])
                     afe2 = afe2 - feh2
