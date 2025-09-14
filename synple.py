@@ -3516,6 +3516,7 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
                                   dw = np.median(np.diff(wave))
                         
                                 nfreq = np.floor((maxwave - minwave)/dw + 1)
+                                print('file,minwave,maxwave,np.min(wave),np.max(wave)=',file,minwave,maxwave,np.min(wave),np.max(wave))
                                 print('logw, minwave, dw, nfreq=',logw,minwave,dw,nfreq)
  
                                 if logw == 0:
@@ -4444,7 +4445,7 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
                             dw = np.median(np.diff(wave))
                         
                           nfreq = np.floor((maxwave - minwave)/dw + 1)
-
+                          print('file,minwave,maxwave,np.min(wave),np.max(wave)=',file,minwave,maxwave,np.min(wave),np.max(wave))
                           print('logw, minwave, dw, nfreq=',logw,minwave,dw,nfreq)
 
  
