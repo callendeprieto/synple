@@ -4444,6 +4444,9 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
                             dw = np.median(np.diff(wave))
                         
                           nfreq = np.floor((maxwave - minwave)/dw + 1)
+
+                          print('logw, minwave, dw, nfreq=',logw,minwave,dw,nfreq)
+
  
                           if logw == 0:
                             x = minwave + np.arange(nfreq)*dw
