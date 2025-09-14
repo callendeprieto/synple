@@ -3512,8 +3512,11 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
                                   minwave = wrange[0]
                                   maxwave = wrange[1]
 
+                                print('dw=',dw)
                                 if dw is None:
                                   dw = np.median(np.diff(wave))
+
+                                print('dw=',dw)
                         
                                 nfreq = np.floor((maxwave - minwave)/dw + 1)
                                 print('file,minwave,maxwave,np.min(wave),np.max(wave)=',file,minwave,maxwave,np.min(wave),np.max(wave))
@@ -4411,8 +4414,8 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
                       if not os.path.isfile(madaffile): continue
 
                     teff2,logg2,vmicro2,abu = read_madaf(madaffile,startdir=entry)
-                    imode, iprin, inmod, inlte, hydprf, wrange1, cutoff,  \
-                         strength, dw, molls, vmicro1 = read55(os.path.join(entry,'fort.55'))
+                    #imode, iprin, inmod, inlte, hydprf, wrange1, cutoff,  \
+                    #     strength, dw, molls, vmicro1 = read55(os.path.join(entry,'fort.55'))
                     feh2 = np.log10(abu['Fe'])+12-7.50
 	                                
                     print(teff2,logg2,feh2,vmicro1,vmicro2)
@@ -4441,8 +4444,11 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
                             minwave = wrange[0]
                             maxwave = wrange[1]
 
+                          print('dw=',dw)
                           if dw is None:
                             dw = np.median(np.diff(wave))
+
+                          print('dw=',dw)
                         
                           nfreq = np.floor((maxwave - minwave)/dw + 1)
                           print('file,minwave,maxwave,np.min(wave),np.max(wave)=',file,minwave,maxwave,np.min(wave),np.max(wave))
