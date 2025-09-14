@@ -4418,7 +4418,7 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True, afe=True,
                     #     strength, dw, molls, vmicro1 = read55(os.path.join(entry,'fort.55'))
                     feh2 = np.log10(abu['Fe'])+12-7.50
 	                                
-                    print(teff2,logg2,feh2,vmicro1,vmicro2)
+                    #print(teff2,logg2,feh2,vmicro1,vmicro2)
                     
                     ntot = ntot + 1
 
