@@ -536,7 +536,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   """Computes a synthetic spectrum, splitting the spectral range in nthreads parallel calculations
 
-  Wrapper for syn, using multiprocessing, to speed-up the calculation of a broad spectral range
+  Wrapper for syn, using multiprocess, to speed-up the calculation of a broad spectral range
 
   Parameters
   ----------
@@ -648,7 +648,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   """
 
-  from multiprocessing import Pool,cpu_count
+  from multiprocess import Pool,cpu_count
 
   #basic checks on the line list and model atmosphere
   linelist, modelfile = checksynspec(linelist,modelfile)
@@ -3273,7 +3273,7 @@ def mkgrid(synthfile=None, tteff=None, tlogg=None,
 
   """
 
-  from multiprocessing import Pool, cpu_count
+  from multiprocess import Pool, cpu_count
 
   if nthreads == 0:
     nthreads = int(cpu_count() - 1)
@@ -3592,7 +3592,7 @@ def mkgrid_body(indices, ind, steps, llimits, x=None,
 
   """Writes the body (data) for a FERRE regular grid.
      This code snippet has been extracted from mkgrid in order to parallelize
-     the process with the multiprocessing library
+     the process with the multiprocess library
 
   Parameters
   ---------
@@ -4327,7 +4327,7 @@ def mkgrid_irregular(synthfile=None, teff=True, logg=True, feh=True,
 
   """
 
-  from multiprocessing import Pool, cpu_count
+  from multiprocess import Pool, cpu_count
 
   if nthreads == 0: 
     nthreads = int(cpu_count() - 1)
@@ -4510,7 +4510,7 @@ def mkgrid_irregular_body(folders, teff=True, logg=True, feh=True, afe=True,
 
   """Writes the body (data) for an irregular grid. 
      This code snippet has been extracted from mkgrid_irregular in order to parallelize
-     the process with the multiprocessing library
+     the process with the multiprocess library
 
   Parameters
   ---------
