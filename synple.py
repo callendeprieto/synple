@@ -7872,6 +7872,7 @@ def keepz(abu,zs,dex):
     i = i + 1
   x1, y1, z1 = xyzmass(abu1)
 
+  print('len(zzs),len(abu0),len(abu1),len(abu1[zzs]),len(abu0[zzs])=',len(zzs),len(abu0),len(abu1),len(abu1[zzs]),len(abu0[zzs]))
   diff = np.max( np.log10( abu1[zzs] ) - np.log10( abu0[zzs] ) )
   diff1 = diff + 0.1
 
