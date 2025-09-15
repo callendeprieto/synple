@@ -1886,6 +1886,7 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
                     abu1[zatom[el]-1] = abu1[zatom[el]-1] * 10.**chems[el][ichem]
                 iel += 1
 
+            print('abu1,zs,dex=',abu1,zs,dex)
             if keepingz:  
               abu1 = keepz(abu1,zs,dex)
 
