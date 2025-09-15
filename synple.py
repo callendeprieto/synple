@@ -1782,7 +1782,6 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
   rng = np.random.default_rng()
   iel = 0
   for entry in kargs.values():
-    print(entry)
     if iel == 0:
       n_p = []
       symbol, mass, sol = elements()
@@ -1869,7 +1868,6 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
                 linelist, entry = checksynspec(linelist,entry)
                 atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
               iel = 0 
-              print('symbols=',symbols)
               for el in symbols:
                 if '_' in el:
                   els = el.split('_')
@@ -1881,14 +1879,12 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
                       abu1[zatom[elo]-1] = abu1[zatom[elo]-1] * 10.**chems[el][ichem]
                 else:
                   if keepingz:
-                    print('el,zatom[el]=',el,zatom[el])
                     zs.append(zatom[el])
                     dex.append(chems[el][ichem])
                   else:
                     abu1[zatom[el]-1] = abu1[zatom[el]-1] * 10.**chems[el][ichem]
                 iel += 1
 
-            print('abu1,zs,dex=',abu1,zs,dex)
             if keepingz:  
               abu1 = keepz(abu1,zs,dex)
 
@@ -2626,6 +2622,8 @@ def grid_builder(config,  modeldir=modeldir):
          if el in conf[entry]:
            tel = tuple(map(float,conf[entry][el].split()))
            eldict[el] = tel
+
+       print('eldict=',eldict)
 
        if conf[entry]['type'] == 'marcs':
           files = collect_marcs(modeldir=os.path.join(modeldir,'marcs'), 
