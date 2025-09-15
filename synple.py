@@ -1869,6 +1869,7 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
                 linelist, entry = checksynspec(linelist,entry)
                 atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
               iel = 0 
+              print('symbols=',symbols)
               for el in symbols:
                 if '_' in el:
                   els = el.split('_')
@@ -1880,6 +1881,7 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
                       abu1[zatom[elo]-1] = abu1[zatom[elo]-1] * 10.**chems[el][ichem]
                 else:
                   if keepingz:
+                    print('el,zatom[el]=',el,zatom[el])
                     zs.append(zatom[el])
                     dex.append(chems[el][ichem])
                   else:
