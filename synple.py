@@ -8120,14 +8120,14 @@ def smooth(x,n):
 
 
 def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
-    outsynthfile=None,ppr=5,wrange=None,freeze=None):
+    outsynthfile=None,ppr=5,wrange=None,freeze=None,nthreads=1):
 
   """Convolve and/or redden spectra in a FERRE grid
 
   Parameters
   ----------
   synthfile: str
-      name of the input FERRE synth file 
+      name of the input FERRE synth file  -- MUST BE in text format
   fwhm: float, can be an iterable
       FWHM of the Gaussian kernel (in A or km/s) for convolution
       (default 0.0, which means no convolution is performed)      
@@ -8161,14 +8161,24 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
       Example: set freeze = {'TEFF': 5000.} to fix that value for the Teff dimension
       in a grid.
       (default None, to retain all the original dimensions)
+  nthreads: int
+      set to an integer > 1 to assemble the grid in parallel.
+      Output data will go to nthreads separate files and can later
+      be combined with the 'cat' POSIX command. A value nthreads=0
+      will be interpreted as a request to use all available cores
+      (default 1 -- sequential operation)
+
   Returns
   -------
   writes outsynthfile with the smooth spectra
 
   """
-  
-  from synple import vgconv
-  import numpy as np
+
+  from multiprocess import Pool, cpu_count
+
+  if nthreads == 0: 
+    nthreads = int(cpu_count() - 1)
+
   if np.max(ebv) > 0.0: from extinction import apply,ccm89 
   clight = 299792.458
 
@@ -8183,7 +8193,11 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
   hd = []
   labels = []
   type = "'regular'"
-  line = fin.readline()
+  try:
+    line = fin.readline()
+  except IOError:
+    print('Cannot read the file ',synthfile,' -- is it a text file?')
+    sys_exit(0)
   hd.append(line)
   while line[1] != "/":
     line = fin.readline()
@@ -8300,10 +8314,11 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
       ll.append(np.arange(n_p[i]))
       i = i + 1
     ind = np.array(list(product(*ll)))
-  
+
+  xorig = x.copy()
   if wrange is not None:
     assert (len(wrange) == 2), 'Error: wrange must have two elements'
-    section1 = np.where( (x >= wrange[0]*(1.-10.*np.max(fwhm)/clight)) & (x <= wrange[1]*(1.+10.*np.max(fwhm)/clight)) )
+    section1 = np.where( (x >= wrange[0]*(1.-10.*np.max(fwhms)/clight)) & (x <= wrange[1]*(1.+10.*np.max(fwhms)/clight)) )
     x = x[section1]
     npix = len(x)
     
@@ -8378,14 +8393,90 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
 
   fout.write(" /\n")
 
+
+  ntot = len(ind)
+
+
+  if nthreads == 1:
+    indices = range(ntot)
+    print('ntot, len(indices),len(ind)=',ntot,len(indices),len(ind))
+    print('indices=',indices)
+    print('ind=',ind)
+    gsynth_body(indices, ind, ntot, xorig, fin, labels, steps, llimits, 
+           fwhms=fwhms, ebvs=ebvs, ervs=ervs, wrange=wrange, ppr=ppr, file_handle=fout)
+  else:
+    assert ntot >= nthreads,'nthreads should be smaller than ntot!'
+    pars = []
+    indices_lists = np.array_split(range(ntot),nthreads)
+    for i in range(nthreads):
+      #print('i,list(indices_lists[i])=',i,list(indices_lists[i]))
+      pararr = [list(indices_lists[i]), ind, ntot, xorig, fin, labels, 
+           steps, llimits, fwhms, ebvs, ervs, wrange, ppr, None ]
+      pars.append(pararr)
+
+
+    pool = Pool(nthreads)
+    results = pool.starmap(gsynth_body, pars)
+    pool.close()
+    pool.join()
+
+
+def gsynth_body(indices, ind, ntot, x, fin, labels, steps=[], llimits=[], 
+           fwhms=[], ebvs=[], ervs=[], wrange=None, ppr=5, file_handle=None):
+
+  """Computes and writes the body (data) for a FERRE grid smoothed with gsynth.
+     This code snippet has been extracted from gsynth in order to parallelize
+     the process with the multiprocess library
+
+  Parameters
+  ---------
+  indices: list
+     list of indices indicating the elements of ind to process
+  ind: list of lists with the indices of the parameters corresponding to each 
+     of the compute hyd folders
+  ntot: int
+     number of lines in the input synthfile
+  x: numpy float array
+     array of wavelengths to interpolate the output flux onto
+  fin: file handle
+     file handle for reading the data from the synthfile
+  labels: list
+     names of the grid parameters
+  steps: list
+     steps for the grid parameters in a regular grid
+     default is an empty list, which is fine for irregular grids
+  llimits: list
+     lower limits (first and minimum values) for the grid parameters
+     default values are an empty list, which is fine for irregular grids
+  fwhms: list
+     spectral resolution (Angstroms)
+  ebvs: list
+     E(B-V) reddening (mag)
+  ervs: list
+     Radial velocity (km/s)
+  wrange: tuple
+     two-element tuple with the initial and ending wavelengths (Angstroms)
+  ppr: int
+     points per resolution element
+     (default value is 5)
+  file_handle: file handle
+     file handle for writing data
+     if None a file will be created on the fly with the range of the
+     hyd folders
+  """
+
+  #now read, interpolate and write out the calculations
+  ind2 = ind[indices]
+
+  if file_handle is None:
+    file_name1 = ( "hyd%07d" % (indices[0] + 1) )
+    file_name2 = ( "hyd%07d" % (indices[-1] + 1) )
+    file_handle = open(file_name1+'_'+file_name2+'.dat','w')
+  
   #smooth and write data
   k = 0 #increases only when a line from the original file is used
   j = 0 #increases as we advance through the array ind
-  if 'irregular' in type: 
-    pass
-  else:
-    ntot = np.prod(n_p)
-  for i in ind:
+  for i in ind2:
     j = j + 1
     print('line ',j,' of ',ntot)
     #print(k,ntot,i)
@@ -8409,6 +8500,11 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
     
     #print('len(y)=',len(y))
     if wrange is not None: y = y [section1]
+    if wrange is not None:
+      assert (len(wrange) == 2), 'Error: wrange must have two elements'
+      section1 = np.where( (x >= wrange[0]*(1.-10.*np.max(fwhms)/clight)) & (x <= wrange[1]*(1.+10.*np.max(fwhms)/clight)) )
+      y = y[section1]
+
       
     #apply Gaussian convolution
     if 'FWHM' in labels:
@@ -8429,18 +8525,25 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
     if 'E(B-V)' in labels:
       w = np.where(np.array(labels) == 'E(B-V)')
       ebvval = par[w[0][0]]
+    else:
+      ebvval = ebv
       #print(ebvval)
-      yy = apply(ccm89(xx, ebvval* 3.1, 3.1), yy)
+    yy = apply(ccm89(xx, ebvval* 3.1, 3.1), yy)
 
     #apply RV  
     if 'RV' in labels:
       w = np.where(np.array(labels) == 'RV')
       rvval = par[w[0][0]]
       #print(rvval)
-      yy = np.interp(xx, xx*(1.+rvval/clight), yy)
+    else:
+      rvval = rv
+    yy = np.interp(xx, xx*(1.+rvval/clight), yy)
 
 		
-    if wrange is not None: yy = yy[section2]
+    if wrange is not None:
+      section2 = np.where( (xx >= wrange[0]) & (xx <= wrange[1]) )
+      yy = yy [section2]
+
     
     if 'irregular' in type: yy = np.insert(yy,0,par)
     yy.tofile(fout,sep=" ",format="%0.4e")
