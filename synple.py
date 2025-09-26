@@ -8293,7 +8293,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
   
   #define indices for grid loops
   if 'irregular' in type:
-    ind = range(ntot)
+    ind = np.array(range(ntot), dtype=int)
     ind_n_p =  list(range(ndim))
     labels2 = list(labels)
   else:
@@ -8398,20 +8398,23 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
 
 
   if nthreads == 1:
-    indices = range(ntot)
+    indices = np.array(range(ntot), dtype=int)
     print('ntot, len(indices),len(ind)=',ntot,len(indices),len(ind))
     print('indices=',indices)
     print('ind=',ind)
-    gsynth_body(indices, ind, ntot, xorig, fin, labels, steps, llimits, 
-           fwhms=fwhms, ebvs=ebvs, ervs=ervs, wrange=wrange, ppr=ppr, file_handle=fout)
+    gsynth_body(indices, ind, type, ndim, ntot, newcol, xorig, fin,
+           labels, steps, llimits, 
+           fwhms=fwhms, ebvs=ebvs, ervs=ervs, wrange=wrange, ppr=ppr,
+           freeze=freeze, file_handle=fout )
   else:
     assert ntot >= nthreads,'nthreads should be smaller than ntot!'
     pars = []
     indices_lists = np.array_split(range(ntot),nthreads)
     for i in range(nthreads):
       #print('i,list(indices_lists[i])=',i,list(indices_lists[i]))
-      pararr = [list(indices_lists[i]), ind, ntot, xorig, fin, labels, 
-           steps, llimits, fwhms, ebvs, ervs, wrange, ppr, None ]
+      pararr = [list(indices_lists[i]), ind, type, ndim, ntot, newcol,
+           xorig, fin, labels, steps, llimits, 
+           fwhms, ebvs, ervs, wrange, ppr, freeze, None ]
       pars.append(pararr)
 
 
@@ -8421,8 +8424,10 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
     pool.join()
 
 
-def gsynth_body(indices, ind, ntot, x, fin, labels, steps=[], llimits=[], 
-           fwhms=[], ebvs=[], ervs=[], wrange=None, ppr=5, file_handle=None):
+def gsynth_body(indices, ind, type, ndim, ntot, newcol, x, fin, 
+           labels, steps=[], llimits=[], 
+           fwhms=[], ebvs=[], ervs=[], wrange=None, ppr=5, 
+           freeze=None, file_handle=None):
 
   """Computes and writes the body (data) for a FERRE grid smoothed with gsynth.
      This code snippet has been extracted from gsynth in order to parallelize
@@ -8434,8 +8439,14 @@ def gsynth_body(indices, ind, ntot, x, fin, labels, steps=[], llimits=[],
      list of indices indicating the elements of ind to process
   ind: list of lists with the indices of the parameters corresponding to each 
      of the compute hyd folders
+  type: str
+     'regular' or 'irregular' type of grid
+  ndim: int
+     number of dimensions
   ntot: int
      number of lines in the input synthfile
+  newcol: numpy array of int
+     array giving the indices of the dimensions 
   x: numpy float array
      array of wavelengths to interpolate the output flux onto
   fin: file handle
@@ -8459,11 +8470,23 @@ def gsynth_body(indices, ind, ntot, x, fin, labels, steps=[], llimits=[],
   ppr: int
      points per resolution element
      (default value is 5)
+ freeze: dictionary
+     Allows to reduce the dimensionality of the grid. 
+     The keys are the labels
+     of the dimensions to freeze 
+     (as given in in the header of the input grid) with
+     the values that should be adopted for those 'frozen' dimensions. 
+     Example: set freeze = {'TEFF': 5000.} to fix that value for 
+     the Teff dimension in a grid.
+    (default None, to retain all the original dimensions)
   file_handle: file handle
      file handle for writing data
      if None a file will be created on the fly with the range of the
      hyd folders
   """
+
+  if 'E(B-V)' in labels or len(ebvs) > 0: 
+    from extinction import apply,ccm89
 
   #now read, interpolate and write out the calculations
   ind2 = ind[indices]
@@ -8511,7 +8534,7 @@ def gsynth_body(indices, ind, ntot, x, fin, labels, steps=[], llimits=[],
       w = np.where(np.array(labels) == 'FWHM')
       fwhmval = par[w[0][0]]
     else:
-      fwhmval = fwhm
+      fwhmval = fwhms[0]
     #print('fwhmval=',fwhmval)
     if fwhmval > 1.e-7:
       if units == 'km/s':
@@ -8526,7 +8549,7 @@ def gsynth_body(indices, ind, ntot, x, fin, labels, steps=[], llimits=[],
       w = np.where(np.array(labels) == 'E(B-V)')
       ebvval = par[w[0][0]]
     else:
-      ebvval = ebv
+      ebvval = ebvs[0]
       #print(ebvval)
     yy = apply(ccm89(xx, ebvval* 3.1, 3.1), yy)
 
@@ -8536,7 +8559,7 @@ def gsynth_body(indices, ind, ntot, x, fin, labels, steps=[], llimits=[],
       rvval = par[w[0][0]]
       #print(rvval)
     else:
-      rvval = rv
+      rvval = ervs[0]
     yy = np.interp(xx, xx*(1.+rvval/clight), yy)
 
 		
@@ -8546,12 +8569,12 @@ def gsynth_body(indices, ind, ntot, x, fin, labels, steps=[], llimits=[],
 
     
     if 'irregular' in type: yy = np.insert(yy,0,par)
-    yy.tofile(fout,sep=" ",format="%0.4e")
-    fout.write("\n")
+    yy.tofile(file_handle,sep=" ",format="%0.4e")
+    file_handle.write("\n")
     k = k + 1
 
   fin.close()
-  fout.close()
+  file_handle.close()
   
 
 def gsynth_old(synthfile,fwhm=0.0,units='km/s',outsynthfile=None,ppr=5,wrange=None,freeze=None):
