@@ -8128,20 +8128,19 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
   ----------
   synthfile: str
       name of the input FERRE synth file  -- MUST BE in text format
-  fwhm: float, can be an iterable
+  fwhm: float, can be an iterable for regular grids
       FWHM of the Gaussian kernel (in A or km/s) for convolution
       (default 0.0, which means no convolution is performed)      
   units: str
       units for the FWHM ('A' for a constant resolution in Angstroms, 
       'km/s' for a constant resolution in velocity
       (default is 'km/s')
-  ebv: float or iterable with floats
+  ebv: float or iterable with floats (iterables not allowed for irregular grids)
       E(B-V) to be applied to the model in the grid
       (default is 0.0)
-  r_v: float or iterable with floats
+  r_v: float or iterable with floats (iterables not allowed for irregular grids)
       ratio of total to V-band extinction A_V/E(B-V)
-
-  rv: float or iterable with floats
+  rv: float or iterable with floats (iterables not allowed for irregular grids)
       Radial velocity to the applied to the model in the grid
       (default is 0.0)
   outsynthfile: str
@@ -8159,7 +8158,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
       of the dimensions to freeze (as given in in the header of the input grid) 
       with the values that should be adopted for those 'frozen' dimensions. 
       Example: set freeze = {'TEFF': 5000.} to fix that value for the Teff dimension
-      in a grid.
+      in a grid. This keyword can only be used on regular grids.
       (default None, to retain all the original dimensions)
   nthreads: int
       set to an integer > 1 to assemble the grid in parallel.
@@ -8175,6 +8174,8 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
   """
 
   from multiprocess import Pool, cpu_count
+
+  now = time.time()
 
   if nthreads == 0: 
     nthreads = int(cpu_count() - 1)
@@ -8192,13 +8193,14 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
   fout = open(outsynthfile,'w')
   hd = []
   labels = []
-  type = "'regular'"
+  tipo = "'regular'"
   try:
     line = fin.readline()
   except IOError:
     print('Cannot read the file ',synthfile,' -- is it a text file?')
-    sys_exit(0)
+    sys.exit(0)
   hd.append(line)
+  hlines = 1
   while line[1] != "/":
     line = fin.readline()
     if "N_P" in line: n_p = np.array(line.split()[2:],dtype=int)
@@ -8210,12 +8212,21 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
     if "WAVE" in line: wave = np.array(line.split()[2:],dtype=float)
     if "LOGW" in line: logw = int(line.split()[2]) 
     if "RESOLUTION" in line: resolution = float(line.split()[2])
-    if "TYPE" in line: type = str(line.split()[2])
+    if "TYPE" in line: tipo = str(line.split()[2])
     if "NTOT" in line: ntot = int(line.split()[2])
     hd.append(line)
+    hlines += 1
 
-  if 'irregular' in type:
+  if 'irregular' in tipo:
     assert (len(labels) == ndim), 'The number of LABELS in the header does not agree with the dimension of the grid'
+    if type(fwhm) is list:
+      assert (len(fwhm) < 2),'fwhm cannot have more than one element for irregular grids'
+    if type(ebv) is list:
+      assert (len(ebv) < 2),'ebv cannot have more than one element for irregular grids'
+    if type(r_v) is list:
+      assert (len(r_v) < 2),'r_v cannot have more than one element for irregular grids'
+    if type(rv) is list:
+      assert (len(rv) < 2),'rv cannot have more than one element for irregular grids'
   else:
     assert (len(n_p) == len(steps) & len(n_p) == len(llimits) & len(n_p) == len(labels) & len(n_p) == ndim), 'The dimension of the parameters from the header are inconsistent'
 
@@ -8230,11 +8241,8 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
   try: 
     nebv = len(ebv)
     ebvs = ebv
-    print(ebvs)
-    print(ndim,labels)
     #check they are uniformly spaced
     debv = np.diff(ebvs)
-    print(np.max(debv),np.min(debv))
     assert np.max(debv) - np.min(debv) < 1.e-7, 'ebv values are not linearly spaced!'
     n_p = np.append(n_p,nebv)
     steps = np.append(steps,ebvs[1]-ebvs[0])
@@ -8243,7 +8251,6 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
     ndim = ndim + 1
     newcol.append(ndim-1)
     #update RESOLUTION?
-    print(ndim,labels)
   except TypeError:
     nebv = 1
     ebvs = [ ebv ]
@@ -8251,11 +8258,8 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
   try:
     nrv = len(rv)
     rvs = rv 
-    print(rvs)
-    print(ndim,labels)
     #check they are uniformly spaced
     drv = np.diff(rvs)
-    print(np.max(drv),np.min(drv))
     assert np.max(drv) - np.min(drv) < 1.e-7, 'rv values are not linearly spaced!'
     n_p = np.append(n_p,nrv)
     steps = np.append(steps,rvs[1]-rvs[0])
@@ -8263,7 +8267,6 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
     labels.append('RV')
     ndim = ndim + 1
     newcol.append(ndim-1)
-    print(ndim,labels)
   except TypeError:
     nrv = 1
     ervs = [ rv ]
@@ -8271,28 +8274,25 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
   try: 
     nfwhm = len(fwhm)
     fwhms = fwhm
-    print(fwhms)
-    print(ndim,labels)
-    #check they are uniformly spaced
-    dfwhm = np.diff(fwhms)
-    print(np.max(dfwhm),np.min(dfwhm))
-    assert np.max(dfwhm) - np.min(dfwhm) < 1.e-7, 'fwhm values are not linearly spaced!'
-    n_p = np.append(n_p,nfwhm)
-    steps = np.append(steps,fwhms[1]-fwhms[0])
-    llimits = np.append(llimits,fwhms[0])
-    labels.append('FWHM')
-    ndim = ndim + 1
-    newcol.append(ndim-1)
-    minfwhm=np.min(fwhms)
-    #update RESOLUTION?
-    print(ndim,labels)
+    if len(fwhms) > 1:
+      #check they are uniformly spaced
+      dfwhm = np.diff(fwhms)
+      assert np.max(dfwhm) - np.min(dfwhm) < 1.e-7, 'fwhm values are not linearly spaced!'
+      n_p = np.append(n_p,nfwhm)
+      steps = np.append(steps,fwhms[1]-fwhms[0])
+      llimits = np.append(llimits,fwhms[0])
+      labels.append('FWHM')
+      ndim = ndim + 1
+      newcol.append(ndim-1)
+      minfwhm=np.min(fwhms)
+      #update RESOLUTION?
   except TypeError:
     nfwhm = 1
     fwhms = [ fwhm ]
 
   
   #define indices for grid loops
-  if 'irregular' in type:
+  if 'irregular' in tipo:
     ind = np.array(range(ntot), dtype=int)
     ind_n_p =  list(range(ndim))
     labels2 = list(labels)
@@ -8325,7 +8325,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
   if np.min(fwhms) > 1.e-7:
     y = np.ones(npix)
     if units == 'km/s':
-      print('min(fwhm)=',np.min(fwhms))
+      #print('min(fwhm)=',np.min(fwhms))
       xx,yy = vgconv(x,y,np.min(fwhms),ppr=ppr)
       logw = 1
     else:
@@ -8340,8 +8340,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
     section2 = np.where( (xx >= wrange[0]) & (xx <= wrange[1]) ) 
     xx = xx [section2]
     
-  #print(x,xx)
-  #print(len(x),len(xx))
+  #print('len(x),len(xx)=',len(x),len(xx))
   #print(len(section1),len(section2))
   
   jlabel = 0
@@ -8399,12 +8398,13 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
 
   if nthreads == 1:
     indices = np.array(range(ntot), dtype=int)
-    print('ntot, len(indices),len(ind)=',ntot,len(indices),len(ind))
-    print('indices=',indices)
-    print('ind=',ind)
-    gsynth_body(indices, ind, type, ndim, ntot, newcol, xorig, fin,
-           labels, steps, llimits, 
-           fwhms=fwhms, ebvs=ebvs, ervs=ervs, wrange=wrange, ppr=ppr,
+    #print('ndim, ntot, len(indices),len(ind)=',ndim,ntot,len(indices),len(ind))
+    #print('indices=',indices)
+    #print('ind=',ind)
+    gsynth_body(indices, ind, tipo, ndim, ntot, hlines, newcol, xorig,
+           synthfile, labels, steps, llimits, 
+           fwhms=fwhms, units=units, 
+           ebvs=ebvs, ervs=ervs, wrange=wrange, ppr=ppr,
            freeze=freeze, file_handle=fout )
   else:
     assert ntot >= nthreads,'nthreads should be smaller than ntot!'
@@ -8412,9 +8412,9 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
     indices_lists = np.array_split(range(ntot),nthreads)
     for i in range(nthreads):
       #print('i,list(indices_lists[i])=',i,list(indices_lists[i]))
-      pararr = [list(indices_lists[i]), ind, type, ndim, ntot, newcol,
-           xorig, fin, labels, steps, llimits, 
-           fwhms, ebvs, ervs, wrange, ppr, freeze, None ]
+      pararr = [list(indices_lists[i]), ind, tipo, ndim, ntot, hlines, 
+           newcol, xorig, synthfile, labels, steps, llimits, 
+           fwhms, units, ebvs, ervs, wrange, ppr, freeze, None ]
       pars.append(pararr)
 
 
@@ -8423,10 +8423,12 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
     pool.close()
     pool.join()
 
+  print('this run took ',time.time()-now,' seconds')
+  return()
 
-def gsynth_body(indices, ind, type, ndim, ntot, newcol, x, fin, 
+def gsynth_body(indices, ind, tipo, ndim, ntot, hlines, newcol, x, synthfile, 
            labels, steps=[], llimits=[], 
-           fwhms=[], ebvs=[], ervs=[], wrange=None, ppr=5, 
+           fwhms=[], units='km/s', ebvs=[], ervs=[], wrange=None, ppr=5, 
            freeze=None, file_handle=None):
 
   """Computes and writes the body (data) for a FERRE grid smoothed with gsynth.
@@ -8439,18 +8441,20 @@ def gsynth_body(indices, ind, type, ndim, ntot, newcol, x, fin,
      list of indices indicating the elements of ind to process
   ind: list of lists with the indices of the parameters corresponding to each 
      of the compute hyd folders
-  type: str
+  tipo: str
      'regular' or 'irregular' type of grid
   ndim: int
      number of dimensions
   ntot: int
-     number of lines in the input synthfile
+     number of data rows in the input synthfile
+  hlines: int
+     number of lines in the header of the input file
   newcol: numpy array of int
      array giving the indices of the dimensions 
   x: numpy float array
      array of wavelengths to interpolate the output flux onto
-  fin: file handle
-     file handle for reading the data from the synthfile
+  synthfile: str
+     file name for the input grid
   labels: list
      names of the grid parameters
   steps: list
@@ -8485,6 +8489,8 @@ def gsynth_body(indices, ind, type, ndim, ntot, newcol, x, fin,
      hyd folders
   """
 
+  import linecache
+
   if 'E(B-V)' in labels or len(ebvs) > 0: 
     from extinction import apply,ccm89
 
@@ -8492,10 +8498,10 @@ def gsynth_body(indices, ind, type, ndim, ntot, newcol, x, fin,
   ind2 = ind[indices]
 
   if file_handle is None:
-    file_name1 = ( "hyd%07d" % (indices[0] + 1) )
-    file_name2 = ( "hyd%07d" % (indices[-1] + 1) )
+    file_name1 = ( "gsyn%07d" % (indices[0] + 1) )
+    file_name2 = ( "gsyn%07d" % (indices[-1] + 1) )
     file_handle = open(file_name1+'_'+file_name2+'.dat','w')
-  
+
   #smooth and write data
   k = 0 #increases only when a line from the original file is used
   j = 0 #increases as we advance through the array ind
@@ -8504,24 +8510,23 @@ def gsynth_body(indices, ind, type, ndim, ntot, newcol, x, fin,
     print('line ',j,' of ',ntot)
     #print(k,ntot,i)
     if len(newcol) == 0 or all(i[newcol] == 0):
-      line = fin.readline()
+      #line = fin.readline()
+      line = linecache.getline(synthfile, indices[k]+1+hlines)
+      #print('reading line=',line)
     if freeze is not None:
       skip = True
       for entry in lfkeys: 
         if (abs(freeze[entry] - par[labels.index(entry)]) < 1e-6): skip = False
       if skip: continue
     y = np.array(line.split(),dtype=float)
-    if 'irregular' in type:
+    if 'irregular' in tipo:
       par = y[:ndim]
       y = y[ndim:]
     else:
       #print(i,steps,llimits)
       par = i*steps+llimits
-    print('par=',par)
-    #print('newcol=',newcol)
-    #print('i[newcol]=',i[newcol])
+    #print('par=',par)
     
-    #print('len(y)=',len(y))
     if wrange is not None: y = y [section1]
     if wrange is not None:
       assert (len(wrange) == 2), 'Error: wrange must have two elements'
@@ -8535,7 +8540,6 @@ def gsynth_body(indices, ind, type, ndim, ntot, newcol, x, fin,
       fwhmval = par[w[0][0]]
     else:
       fwhmval = fwhms[0]
-    #print('fwhmval=',fwhmval)
     if fwhmval > 1.e-7:
       if units == 'km/s':
         xx,yy = vgconv(x,y,fwhmval,ppr=ppr)
@@ -8543,7 +8547,7 @@ def gsynth_body(indices, ind, type, ndim, ntot, newcol, x, fin,
         xx,yy = lgconv(x,y,fwhmval,ppr=ppr)
     else:
       xx,yy = x, y          
-      
+
     #apply extinction
     if 'E(B-V)' in labels:
       w = np.where(np.array(labels) == 'E(B-V)')
@@ -8568,12 +8572,12 @@ def gsynth_body(indices, ind, type, ndim, ntot, newcol, x, fin,
       yy = yy [section2]
 
     
-    if 'irregular' in type: yy = np.insert(yy,0,par)
+    if 'irregular' in tipo: yy = np.insert(yy,0,par)
     yy.tofile(file_handle,sep=" ",format="%0.4e")
     file_handle.write("\n")
     k = k + 1
 
-  fin.close()
+  #fin.close()
   file_handle.close()
   
 
