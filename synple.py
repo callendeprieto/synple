@@ -12383,7 +12383,11 @@ def wtabmodfits(root, path=None):
 
   
     hdul=fits.HDUList(hdulist)
-    hdul.writeto(os.path.join(path,'sptab_'+root+'.fits'), overwrite=True)
+    if root[-4:] == 'fits':
+      outfile = 'sptab_'+root
+    else:
+      outfile = 'sptab_'+root+'.fits'
+    hdul.writeto(os.path.join(path,outfile), overwrite=True)
   
     #now spmod
     hdulist = [hdu0]
@@ -12481,7 +12485,11 @@ def wtabmodfits(root, path=None):
       hdulist.append(hdu)
 
     hdul=fits.HDUList(hdulist)
-    hdul.writeto(os.path.join(path,'spmod_'+root+'.fits'), overwrite=True) 
+    if root[-4:] == 'fits':
+      outfile = 'spmod_'+root
+    else:
+      outfile = 'spmod_'+root+'.fits'
+    hdul.writeto(os.path.join(path,outfile), overwrite=True) 
 
     #cleanup
     exts=['opf','nrd','mdl','frd','flx','abu','err','wav','fmp.fits','scr.fits','job']
