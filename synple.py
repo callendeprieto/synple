@@ -5921,6 +5921,8 @@ def checkinput(wrange, vmicro, linelist):
 def getlinelistrange(atomiclinelist):
 #finds out min and max wavelengths for a line list
 
+  import linecache
+
   if atomiclinelist[-3:] == '.11':
     file00 = atomiclinelist[:-3]+'.00'
     assert (os.path.isfile(file00)),'The file '+file00+' reporting linelist statistics is missing'
@@ -5934,17 +5936,20 @@ def getlinelistrange(atomiclinelist):
     maxlambda = float(entries[0])*10.
     f.close()
   else:
-    f = open(atomiclinelist,'r')
-    line = f.readline()
+    #f = open(atomiclinelist,'r')
+    #line = f.readline()
+    line = linecache.getline(atomiclinelist, 1)
     entries = line.split()
     minlambda = float(entries[0])*10.
-    fsize = os.path.getsize(atomiclinelist)
-    f.seek(fsize-103)
-    line = f.readline()
-    f.close()
+    #fsize = os.path.getsize(atomiclinelist)
+    #f.seek(fsize-103)
+    #line = f.readline()
+    nlines = sum(1 for _ in open(atomiclinelist))
+    line = linecache.getline(atomiclinelist, nlines)
+    #f.close()
     entries = line.split()
     maxlambda = float(entries[0])*10.
-    nlines = int(0.01 * fsize)
+    #nlines = int(0.01 * fsize)
 
 
   return(nlines, minlambda,maxlambda)
