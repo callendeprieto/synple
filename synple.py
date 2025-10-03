@@ -6092,7 +6092,7 @@ def write55(wrange,dw=1e-2,imode=0,iprin=0,inlte=0,hydprf=2,cutoff0=200., \
   f.write(" "+str(inmod)+3*zero+"\n")
   f.write(5*zero+"\n")
   f.write(one+str(abs(inlte))+zero+str(inlist)+zero+"\n")
-  f.write(str(hydprf)+2*zero+"\n")
+  f.write(str(hydprf)+2*one+"\n")
   if imode <= -3:
     f.write( ' %f %f %f %i %e %f \n ' % (wrange[0],  -wrange[1], cutoff0, 0, strength, dw) )
   else:
