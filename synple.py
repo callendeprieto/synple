@@ -9680,6 +9680,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             if doubleconti:
               spec = np.hstack((spec, spec2))
               ivar = np.hstack((ivar, ivar2))
+              xx = np.hstack((xx,xx))
 
             if gpu:
               spec_gpu = cp.asarray(spec)
