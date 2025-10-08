@@ -9283,7 +9283,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       The default (0) is dividing the input/model fluxes in each
       spectrum by their mean value
       conti < 0 activates the continuum normalization as explained above, but
-      using conti=0 for the first optimization, used to measure radial velocity
+      using conti=0 for the first optimization, which is used to measure radial velocity
       (default 0)
     wrange: 2-element iterable
       spectral range to use in the fittings
@@ -9379,7 +9379,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
     elif 'type' in hd:
       if hd['type'] == 'irregular' and ferre:
         print('Error: FERRE cannot (yet) handle irregular grids')
-
 
     #get labels into the list hlabels
     if type(hd) is list:
@@ -9501,8 +9500,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
 
               
-      ids, x2, obs, ivr, xtr = read_spec(file,wavelengths=x,target=target,rv=rv,
-      #ids, x2, obs, ivr, xtr = read_spec(file,target=target,rv=rv,
+      #ids, x2, obs, ivr, xtr = read_spec(file,wavelengths=x,target=target,rv=rv,
+      ids, x2, obs, ivr, xtr = read_spec(file,target=target,rv=rv,
                                     ebv=ebv, star=star)
 
       if type(x2) is list:
@@ -9557,9 +9556,11 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         print('spectrum ',j,' of ',nspec,' in ',file)
         
         #resample
-        if type(x2) is list:
-          xx = np.hstack(x2)
-          for i in range(len(x2)):
+        if type(x) is list:
+          asssert (type(obs) is list),'when the wavelengths are in a list, the data returned by read_spec should be an array'
+          asssert (len(obs) == len(x)),'the size of the spectra and the wavelength lists should be the same'
+          xx = np.hstack(x)
+          for i in range(len(x)):
             spec0 = obs[i][j,:]
             ivar0 = ivr[i][j,:]
             #clean the data
@@ -9568,6 +9569,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               www2 = np.where(~np.isnan(spec0))[0]
               xax0 = np.arange(len(x2[i]))
               spec0 = np.interp(xax0,xax0[www2],spec0[www2])
+            spec0 = np.interp(x[i],x2[i], spec0)
             if i == 0:
               spec1 = spec0
               ivar1 = ivar0
@@ -9577,7 +9579,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           spec = spec1
           ivar = ivar1
         else:
-          xx = x2
+          xx = x
           spec = obs[j,:]
           ivar = ivr[j,:]
           #clean the data
@@ -9586,6 +9588,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             www2 = np.where(~np.isnan(spec))[0]
             xax = np.arange(len(x2[i]))
             spec = np.interp(xax,xax[www2],spec[www2])
+          spec = np.interp(x,x2,spec)
 
 
         #skip spectra with no variance
@@ -9642,9 +9645,11 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           print('RV = ',vrad,' km/s')
 
         #correct RV and resample
-        if type(x2) is list:
-          xx = np.hstack(x2)
-          for i in range(len(x2)):
+        if type(x) is list:
+          asssert (type(obs) is list),'when the wavelengths are in a list, the data returned by read_spec should be an array'
+          asssert (len(obs) == len(x)),'the size of the spectra and the wavelength lists should be the same'
+          xx = np.hstack(x)
+          for i in range(len(x)):
             spec0 = obs[i][j,:]
             ivar0 = ivr[i][j,:]
             #clean the data
@@ -9654,7 +9659,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               xax0 = np.arange(len(x2[i]))
               spec0 = np.interp(xax0,xax0[www2],spec0[www2])
             #rv correction
-            spec0 = np.interp(x2[i],x2[i] * (1. - vrad/clight), spec0)
+            spec0 = np.interp(x[i],x2[i] * (1. - vrad/clight), spec0)
             if i == 0:
               spec1 = spec0
               ivar1 = ivar0
@@ -10854,18 +10859,24 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,noze
           plt.plot(xx[p[i]:p[i+1]][w],m[p[i]:p[i+1]][w]-n[p[i]:p[i+1]][w])
           labels.append('residuals')
     else:
-      if nozero:
-        w = (n > 0.)
-      else:
-        w = range(len(xx))
-      plt.plot(xx[w],n[w])
-      labels.append('data')
-      if m is not None:
-        plt.plot(xx[w],m[w])
-        labels.append('model')
-      if res:
-        plt.plot(xx[w],m[w]-n[w])
-        labels.append('residuals')
+      brkpix = findjumps(xx)
+      print('brkpix=',brkpix)
+      for i in range(len(brkpix)-1):
+        if nozero:
+          w = (n[brkpix[i]:brkpix[i+1]] > 0.)
+        else:
+          w = range(brkpix[i+1]-brkpix[i]) + brkpix[i]
+        print('i,w=',i,w)
+        print('xx[w]=',xx[w])
+        plt.plot(xx[w],n[w])
+        labels.append('data')
+        if m is not None:
+          plt.plot(xx[w],m[w])
+          labels.append('model')
+        if res:
+          plt.plot(xx[w],m[w]-n[w])
+          labels.append('residuals')
+
     if yrange is None: yrange = [np.min(n)*0.95,np.max(n)*1.05]
     if res: yrange[0] = np.min(m[w]-n[w])*1.05
     plt.xlabel('wavelength (nm)')
@@ -10910,23 +10921,27 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,noze
             plt.plot(xx[p[i]:p[i+1]][w],m[j,p[i]:p[i+1]][w]-n[j,p[i]:p[i+1]][w])
             labels.append('residuals')
       else:
-        if nozero:
-          w = (n[j,:] > 0.)
-        else:
-          w = np.ones(nfreq,dtype=bool)
+        brkpix = findjumps(xx)
+        for i in range(len(brkpix)-1):
+          if nozero:
+            w = (n[j,brkpix[i]:brkpix[i+1]] > 0.)
+          else:
+            w = range(brkpix[i+1]-brkpix[i]) + brkpix[i]
       
-        if xx.ndim  == 1:
-          xx2 = xx[w]
-        else:
-          xx2 = xx[j,w].transpose()
-        plt.plot(xx2,n[j,w])
-        labels.append('data')
-        if m is not None:
-          plt.plot(xx2,m[j,w])
-          labels.append('model')
-        if res:
-          plt.plot(xx2,m[j,w]-n[j,w])
-          labels.append('residuals')
+          if xx.ndim  == 1:
+            xx2 = xx[w]
+          else:
+            xx2 = xx[j,w].transpose()
+          plt.plot(xx2,n[j,w])
+          labels.append('data')
+          if m is not None:
+            plt.plot(xx2,m[j,w])
+            labels.append('models')
+          if res:
+            plt.plot(xx2,m[j,w]-n[j,w])
+            labels.append('residuals')
+
+
       if yrange is None: 
         yrange2 = [np.min(n[j,:])*0.95,np.max(n[j,:])*1.05]
       else:
@@ -10956,6 +10971,18 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,noze
         
 
   return()
+
+def findjumps(x):
+    """Finds the pixels where the input array ceases to increase
+       monotonically, returning their indices in an iterable x flanked by 
+       the indices of the first and last pixels
+    """
+
+    brkpix = np.where(np.diff(x) < 0)[0] + 1
+    brkpix = np.insert(brkpix,0,0)
+    brkpix = np.insert(brkpix,len(brkpix),len(x))
+
+    return(brkpix)
 
 
 def vac2air(wavelength):
