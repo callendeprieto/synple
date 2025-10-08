@@ -9557,8 +9557,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         
         #resample
         if type(x) is list:
-          asssert (type(obs) is list),'when the wavelengths are in a list, the data returned by read_spec should be an array'
-          asssert (len(obs) == len(x)),'the size of the spectra and the wavelength lists should be the same'
+          assert (type(obs) is list),'when the wavelengths are in a list, the data returned by read_spec should be an array'
+          assert (len(obs) == len(x)),'the size of the spectra and the wavelength lists should be the same'
           xx = np.hstack(x)
           for i in range(len(x)):
             spec0 = obs[i][j,:]
@@ -9646,8 +9646,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
         #correct RV and resample
         if type(x) is list:
-          asssert (type(obs) is list),'when the wavelengths are in a list, the data returned by read_spec should be an array'
-          asssert (len(obs) == len(x)),'the size of the spectra and the wavelength lists should be the same'
+          assert (type(obs) is list),'when the wavelengths are in a list, the data returned by read_spec should be an array'
+          assert (len(obs) == len(x)),'the size of the spectra and the wavelength lists should be the same'
           xx = np.hstack(x)
           for i in range(len(x)):
             spec0 = obs[i][j,:]
