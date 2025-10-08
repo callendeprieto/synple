@@ -9099,7 +9099,6 @@ def cebas(p,d,flx,iva,prior=None,filter=None):
     #print('den=',den)
     k = 0
     for i in range(ndim):
-        print('ndim, i=',ndim,i)
         #parameters
         res[i] = np.sum( likeli * p[:,i])/den
         
@@ -9419,6 +9418,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       d = np.hstack((d,da))
       lenx = 2 * lenx
 
+    print('shape of d,da:',d.shape,da.shape)
+
 
     if focus:
       p2 = p.copy()
@@ -9504,6 +9505,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       ids, x2, obs, ivr, xtr = read_spec(file,target=target,rv=rv,
                                     ebv=ebv, star=star)
 
+
       if type(x2) is list:
         nspec = len(obs[0][:,0])
       else:
@@ -9569,7 +9571,13 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               www2 = np.where(~np.isnan(spec0))[0]
               xax0 = np.arange(len(x2[i]))
               spec0 = np.interp(xax0,xax0[www2],spec0[www2])
+            www = np.where(np.isnan(ivar0))[0]
+            if len(www) > 0:
+              www2 = np.where(~np.isnan(ivar0))[0]
+              xax0 = np.arange(len(x2[i]))
+              ivar0 = np.interp(xax0,xax0[www2],ivar0[www2])
             spec0 = np.interp(x[i],x2[i], spec0)
+            ivar0 = np.interp(x[i],x2[i], ivar0)
             if i == 0:
               spec1 = spec0
               ivar1 = ivar0
@@ -9588,7 +9596,13 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             www2 = np.where(~np.isnan(spec))[0]
             xax = np.arange(len(x2[i]))
             spec = np.interp(xax,xax[www2],spec[www2])
+          www = np.where(np.isnan(ivar))[0]
+          if len(www) > 0:
+            www2 = np.where(~np.isnan(ivar))[0]
+            xax = np.arange(len(x2[i]))
+            ivar = np.interp(xax,xax[www2],ivar[www2])
           spec = np.interp(x,x2,spec)
+          ivar = np.interp(x,x2,ivar)
 
 
         #skip spectra with no variance
@@ -9596,11 +9610,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         if np.std(spec) < 1e-50:
           print('skipping spectrum since flux as a std < 1e-50')
           continue
-
-        #keep a copy of the data before normalization
-        rawspec = spec.copy()
-        rawivar = ivar.copy()
-
 
         #normalize
         if conti > 0:
@@ -9658,8 +9667,14 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               www2 = np.where(~np.isnan(spec0))[0]
               xax0 = np.arange(len(x2[i]))
               spec0 = np.interp(xax0,xax0[www2],spec0[www2])
+            www = np.where(np.isnan(ivar0))[0]
+            if len(www) > 0:
+              www2 = np.where(~np.isnan(ivar0))[0]
+              xax0 = np.arange(len(x2[i]))
+              ivar0 = np.interp(xax0,xax0[www2],ivar0[www2])
             #rv correction
             spec0 = np.interp(x[i],x2[i] * (1. - vrad/clight), spec0)
+            ivar0 = np.interp(x[i],x2[i] * (1. - vrad/clight), ivar0)
             if i == 0:
               spec1 = spec0
               ivar1 = ivar0
@@ -9678,8 +9693,15 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             www2 = np.where(~np.isnan(spec))[0]
             xax = np.arange(len(x2[i]))
             spec = np.interp(xax,xax[www2],spec[www2])
+          www = np.where(np.isnan(ivar))[0]
+          if len(www) > 0:
+            www2 = np.where(~np.isnan(ivar))[0]
+            xax = np.arange(len(x2[i]))
+            ivar = np.interp(xax,xax[www2],ivar[www2])
           #rv correction
           spec = np.interp(x2,x2 * (1. - vrad/clight), spec)
+          ivar = np.interp(x2,x2 * (1. - vrad/clight), ivar)
+
 
         if not ferre:
           #normalize
@@ -10418,9 +10440,9 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
            wav.append(wav1)
            frd.append(flux1)
            ivr.append(ivar1)
-           print('i=',i)
-           print('wav1,wav=',wav1,wav)
-           print(len(wav1),len(wav))
+           #print('i=',i)
+           #print('wav1,wav=',wav1,wav)
+           #print(len(wav1),len(wav))
 
            i += 1
 
