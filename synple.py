@@ -9501,14 +9501,19 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
 
               
-      #ids, x2, obs, ivr, xtr = read_spec(file,wavelengths=x,target=target,rv=rv,
-      ids, x2, obs, ivr, xtr = read_spec(file,target=target,rv=rv,
+      ids, x2, obs, ivr, xtr = read_spec(file,wavelengths=x,target=target,rv=rv,
+      #ids, x2, obs, ivr, xtr = read_spec(file,target=target,rv=rv,
                                     ebv=ebv, star=star)
-      lenx2 = len(x2)
-      if ivr.ndim == 1: 
-        obs = obs.reshape((1,lenx2))
-        ivr = ivr.reshape((1,lenx2))
-      nspec = len(obs[:,0])
+
+      if type(x2) is list:
+        nspec = len(obs[0][:,0])
+      else:
+        lenx2 = len(x2)
+        if ivr.ndim == 1: 
+          obs = obs.reshape((1,lenx2))
+          ivr = ivr.reshape((1,lenx2))
+        nspec = len(obs[:,0])
+
       print('nspec in bas:',nspec)
 
       if outfile is None or len(infiles) > 1:
@@ -9551,37 +9556,18 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
         print('spectrum ',j,' of ',nspec,' in ',file)
         
-        #clean the data
-        spec = obs[j,:]
-        ivar = ivr[j,:]
-        www = np.where(np.isnan(spec))[0]
-        #print('www:',www)
-        if len(www) > 0:
-          www2 = np.where(~np.isnan(spec))[0]
-          xax = np.arange(lenx2)
-          spec = np.interp(xax,xax[www2],spec[www2])
-
-        #skip spectra with no variance
-        bigres = None
-        if np.std(spec) < 1e-50: 
-          print('skipping spectrum since flux as a std < 1e-50')
-          continue
-
-        #keep a copy of the data before resampling/normalization
-        rawspec = spec.copy()
-        rawivar = ivar.copy()
-
         #resample
-        if type(x) is list:
-          xx = np.hstack(x)
-          brkpix = np.where(np.diff(x2) < 0)[0] + 1
-          brkpix = np.insert(brkpix,0,0)
-          brkpix = np.insert(brkpix,len(brkpix),len(spec))
-          print('brkpix=',brkpix)
-          for i in range(len(x)):
-            print('i=',i,' -- x2 = ',x2[brkpix[i]:brkpix[i+1]])
-            spec0 = np.interp(x[i],x2[brkpix[i]:brkpix[i+1]],spec[brkpix[i]:brkpix[i+1]])
-            ivar0 = np.interp(x[i],x2[brkpix[i]:brkpix[i+1]],ivar[brkpix[i]:brkpix[i+1]])
+        if type(x2) is list:
+          xx = np.hstack(x2)
+          for i in range(len(x2)):
+            spec0 = obs[i][j,:]
+            ivar0 = ivr[i][j,:]
+            #clean the data
+            www = np.where(np.isnan(spec0))[0]
+            if len(www) > 0:
+              www2 = np.where(~np.isnan(spec0))[0]
+              xax0 = np.arange(len(x2[i]))
+              spec0 = np.interp(xax0,xax0[www2],spec0[www2])
             if i == 0:
               spec1 = spec0
               ivar1 = ivar0
@@ -9591,9 +9577,27 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           spec = spec1
           ivar = ivar1
         else:
-          xx = x
-          spec = np.interp(x,x2,spec)
-          ivar = np.interp(x,x2,ivar)
+          xx = x2
+          spec = obs[j,:]
+          ivar = ivr[j,:]
+          #clean the data
+          www = np.where(np.isnan(spec))[0]
+          if len(www) > 0:
+            www2 = np.where(~np.isnan(spec))[0]
+            xax = np.arange(len(x2[i]))
+            spec = np.interp(xax,xax[www2],spec[www2])
+
+
+        #skip spectra with no variance
+        bigres = None
+        if np.std(spec) < 1e-50:
+          print('skipping spectrum since flux as a std < 1e-50')
+          continue
+
+        #keep a copy of the data before normalization
+        rawspec = spec.copy()
+        rawivar = ivar.copy()
+
 
         #normalize
         if conti > 0:
@@ -9637,65 +9641,80 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           vrad, evrad = xxc(xx,spec,ivar,xx,bmod) 
           print('RV = ',vrad,' km/s')
 
-          #correct the velocity and resample
-          if type(x) is list:
-            for i in range(len(x)):
-              spec0 = np.interp(x[i],x2[brkpix[i]:brkpix[i+1]]* (1. - vrad/clight),rawspec[brkpix[i]:brkpix[i+1]])
-              ivar0 = np.interp(x[i],x2[brkpix[i]:brkpix[i+1]]* (1. - vrad/clight),rawivar[brkpix[i]:brkpix[i+1]])
-              if i == 0:
-                spec1 = spec0
-                ivar1 = ivar0
-              else:
-                spec1 = np.concatenate((spec1,spec0))
-                ivar1 = np.concatenate((ivar1, ivar0))
-            spec = spec1
-            ivar = ivar1
-          else:
-            print('len(x),len(x2),len(spec),len(ivar)=',len(x),len(x2),len(spec),len(ivar))
-            spec = np.interp(x,x2 * (1. - vrad/clight), rawspec)
-            ivar = np.interp(x,x2 * (1. - vrad/clight), rawivar)
-
-
-          if not ferre:
-
-            #normalize
-            if abs(conti) > 0:
-              mspec = continuum(spec, window_length=abs(conti))
-              www = (mspec == 0.0)
-              mspec[www] = 1. 
-              if doubleconti:
-                mspec2 = np.mean(spec)
-                if mspec2 == 0.0: mspec2 = np.median(spec)
-                if mspec2 == 0.0: mspec2 = 1.
-                spec2 = spec.copy() / mspec2
-                ivar2 = ivar.copy() * mspec2**2
+        #correct RV and resample
+        if type(x2) is list:
+          xx = np.hstack(x2)
+          for i in range(len(x2)):
+            spec0 = obs[i][j,:]
+            ivar0 = ivr[i][j,:]
+            #clean the data
+            www = np.where(np.isnan(spec0))[0]
+            if len(www) > 0:
+              www2 = np.where(~np.isnan(spec0))[0]
+              xax0 = np.arange(len(x2[i]))
+              spec0 = np.interp(xax0,xax0[www2],spec0[www2])
+            #rv correction
+            spec0 = np.interp(x2[i],x2[i] * (1. - vrad/clight), spec0)
+            if i == 0:
+              spec1 = spec0
+              ivar1 = ivar0
             else:
-              mspec = np.mean(spec)
-              if mspec == 0.0: mspec = np.median(spec)
-              if mspec == 0.0: mspec = 1.
+              spec1 = np.concatenate((spec1,spec0))
+              ivar1 = np.concatenate((ivar1, ivar0))
+          spec = spec1
+          ivar = ivar1
+        else:
+          xx = x2
+          spec = obs[j,:]
+          ivar = ivr[j,:]
+          #clean the data
+          www = np.where(np.isnan(spec))[0]
+          if len(www) > 0:
+            www2 = np.where(~np.isnan(spec))[0]
+            xax = np.arange(len(x2[i]))
+            spec = np.interp(xax,xax[www2],spec[www2])
+          #rv correction
+          spec = np.interp(x2,x2 * (1. - vrad/clight), spec)
 
-            spec = spec / mspec
-            ivar = ivar * mspec**2
-
+        if not ferre:
+          #normalize
+          if abs(conti) > 0:
+            mspec = continuum(spec, window_length=abs(conti))
+            www = (mspec == 0.0)
+            mspec[www] = 1. 
             if doubleconti:
-              spec = np.hstack((spec, spec2))
-              ivar = np.hstack((ivar, ivar2))
-              xx = np.hstack((xx,xx))
+              mspec2 = np.mean(spec)
+              if mspec2 == 0.0: mspec2 = np.median(spec)
+              if mspec2 == 0.0: mspec2 = 1.
+              spec2 = spec.copy() / mspec2
+              ivar2 = ivar.copy() * mspec2**2
+          else:
+            mspec = np.mean(spec)
+            if mspec == 0.0: mspec = np.median(spec)
+            if mspec == 0.0: mspec = 1.
 
-            if gpu:
-              spec_gpu = cp.asarray(spec)
-              ivar_gpu = cp.asarray(ivar)
-              res_gpu, eres_gpu, cov_gpu, bmod_gpu, 
-              weights_gpu = cebas_gpu(p_gpu, d_gpu, spec_gpu, ivar_gpu)
-              res = cp.asnumpy(res_gpu)
-              eres = cp.asnumpy(eres_gpu)
-              cov = cp.asnumpy(cov_gpu)
-              bmod = cp.asnumpy(bmod_gpu)
-              weights = cp.asnumpy(weights_gpu)
-            else:
-              res, eres, cov, bmod, weights = cebas( p, d, spec, ivar )
-            lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - ndim))
-            print('reduced lchi =',lchi)
+          spec = spec / mspec
+          ivar = ivar * mspec**2
+
+          if doubleconti:
+            spec = np.hstack((spec, spec2))
+            ivar = np.hstack((ivar, ivar2))
+            xx = np.hstack((xx,xx))
+
+          if gpu:
+            spec_gpu = cp.asarray(spec)
+            ivar_gpu = cp.asarray(ivar)
+            res_gpu, eres_gpu, cov_gpu, bmod_gpu, 
+            weights_gpu = cebas_gpu(p_gpu, d_gpu, spec_gpu, ivar_gpu)
+            res = cp.asnumpy(res_gpu)
+            eres = cp.asnumpy(eres_gpu)
+            cov = cp.asnumpy(cov_gpu)
+            bmod = cp.asnumpy(bmod_gpu)
+            weights = cp.asnumpy(weights_gpu)
+          else:
+            res, eres, cov, bmod, weights = cebas( p, d, spec, ivar )
+          lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - ndim))
+          print('reduced lchi =',lchi)
 
         if focus:
           eres[eres < 1e-17] = 1e-17 # avoid division by zero
@@ -10202,15 +10221,15 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
     ids: numpy array of str
       strings identifying the target(s). In some cases it may simply 
       be a number 
-    wav: numpy array of floats
+    wav: numpy array of floats (or list of arrays)
       common wavelength array for the spectra
       which will be identical to the input 'wavelengths' array if provided
       
-    frd: numpy array of floats
+    frd: numpy array of floats (or list of arrays)
       observed spectra (as many columns as frequencies and as many rows
       as spectra)
       
-    ivr: numpy array of floats
+    ivr: numpy array of floats (or list of arrays)
       inverse variance for frd (same size as frd)
       
     xtr: tuple of objects
@@ -10268,12 +10287,6 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
         wav, frd, ivr = single_target_prep(wav, flux, ivar, rv, ebv, wavelengths=wavelengths)
 
       elif instr == 'DESI':
-         if wavelengths is not None and type(wavelengths) is not list:
-           twavelengths = []
-           twavelengths.append(wavelengths[(wavelengths < 5800.)])
-           twavelengths.append(wavelengths[(wavelengths >= 5800.) & (wavelengths < 7600.)])
-           twavelengths.append(wavelengths[wavelengths >= 7600.])
-           wavelengths = twavelengths.copy()
 
          i = 0
          for band in ('B','R','Z'):
@@ -10389,17 +10402,19 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
              wav1 = wavelengths[i]
                
            if band == 'B':
-             wav = wav1
-             frd = flux1
+             wav = []
+             print('len(wav)=',len(wav))
+             frd = []
              wbad = (wav1 >= 4300.) & (wav1 <= 4450.)
              ivar1[:,wbad] = 0.
-             ivr = ivar1
-             ids = map1['targetid']             
+             ivr = []
+             ids = map1['targetid']         
              xtr = (head1, map1, scores1)
-           else:
-             wav = np.concatenate((wav,wav1))
-             frd = np.concatenate((frd,flux1),axis=1)
-             ivr = np.concatenate((ivr,ivar1),axis=1)
+           wav.append(wav1)
+           frd.append(flux1)
+           ivr.append(ivar1)
+           print('i=',i)
+           print('wav1,wav=',wav1,wav)
            print(len(wav1),len(wav))
 
            i += 1
