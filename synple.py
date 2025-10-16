@@ -12721,7 +12721,7 @@ def fparams(root,synthfile=None,figure=None,condition=None):
 
 def desida(path_to_data='healpix',path_to_output='sp_output',
            synthfile=None, seconds_per_target=2.,star=True,focus=False,
-           conti=0, filters=[]):
+           conti=0, doubleconti=False, filters=[]):
 
   """ Prepare a DESI data for parallel processing
   """
@@ -12802,6 +12802,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
      " outfile=\'" + outfile + "\'," + \
      " synthfile=" + str(synthfile1) + ", star= " + str(star) + ", focus= " + \
      str(focus) + ", conti= " + str(conti) + "," + \
+     " doubleconti= " + str(doubleconti) + "," + \
      " filters= " + str(filters) +"); " + \
      " wtabmodfits(\'" + root + "'" + ", path= '" + tpath + "\'" + \
      ")\"" + "\n"
