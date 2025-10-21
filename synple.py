@@ -8536,6 +8536,7 @@ def gsynth_body(indices, ind, tipo, ndim, ntot, hlines, newcol, x, synthfile,
       assert (len(wrange) == 2), 'Error: wrange must have two elements'
       section1 = np.where( (x >= wrange[0]*(1.-10.*np.max(fwhms)/clight)) & (x <= wrange[1]*(1.+10.*np.max(fwhms)/clight)) )
       y = y[section1]
+      x = x[section1]
 
       
     #apply Gaussian convolution
