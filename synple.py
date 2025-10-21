@@ -8532,7 +8532,6 @@ def gsynth_body(indices, ind, tipo, ndim, ntot, hlines, newcol, x, synthfile,
       par = i*steps+llimits
     #print('par=',par)
     
-    if wrange is not None: y = y [section1]
     if wrange is not None:
       assert (len(wrange) == 2), 'Error: wrange must have two elements'
       section1 = np.where( (x >= wrange[0]*(1.-10.*np.max(fwhms)/clight)) & (x <= wrange[1]*(1.+10.*np.max(fwhms)/clight)) )
