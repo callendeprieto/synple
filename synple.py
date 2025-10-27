@@ -8508,6 +8508,12 @@ def gsynth_body(indices, ind, tipo, ndim, ntot, hlines, newcol, x, synthfile,
     file_name1 = ( "gsyn%07d" % (indices[0] + 1) )
     file_name2 = ( "gsyn%07d" % (indices[-1] + 1) )
     file_handle = open(file_name1+'_'+file_name2+'.dat','w')
+    fin = None
+  else:
+    fin = open(synthfile,'r')
+    line = "  "
+    while line[1] != "/":
+      line = fin.readline()
 
   #smooth and write data
   k = 0 #increases only when a line from the original file is used
@@ -8517,8 +8523,10 @@ def gsynth_body(indices, ind, tipo, ndim, ntot, hlines, newcol, x, synthfile,
     print('line ',j,' of ',ntot)
     #print(k,ntot,i)
     if len(newcol) == 0 or all(i[newcol] == 0):
-      #line = fin.readline()
-      line = linecache.getline(synthfile, indices[k]+1+hlines)
+      if fin is not None:
+        line = fin.readline()
+      else:
+        line = linecache.getline(synthfile, indices[k]+1+hlines)
       #print('reading line=',line)
     if freeze is not None:
       skip = True
@@ -8584,7 +8592,7 @@ def gsynth_body(indices, ind, tipo, ndim, ntot, hlines, newcol, x, synthfile,
     file_handle.write("\n")
     k = k + 1
 
-  #fin.close()
+  if fin is not None: fin.close()
   file_handle.close()
   
 
