@@ -9441,16 +9441,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       irnd = np.array(rng.random(int(nmod*0.1))*nmod,dtype=int)
       p = p[irnd,:]
       d = d[irnd,:]
-<<<<<<< HEAD
-      if abs(conti) > 0: #otherwise da changes as d automatically
-        da2 = da.copy()
-        da = da[irnd,:]
-=======
       da2 = da.copy()
       da = da[irnd,:]
->>>>>>> chorder
-
-
     
     #sanity check  
     if len(infiles) > 1 and (rv is not None or ebv is not None):
