@@ -9443,6 +9443,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       p = p[irnd,:]
       d = d[irnd,:]
       if abs(conti) > 0: #otherwise da changes as d automatically
+        da2 = da.copy()
         da = da[irnd,:]
 
 
@@ -9938,7 +9939,11 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
         #get absolute flux for best-fitting model
         den = np.sum(weights)
-        abbmod = np.matmul(weights * damian,da)/den
+        print('weights.shape,damian.shape,da.shape,da2[w,:].shape=',weights.shape,damian.shape,da.shape,da2[w,:].shape)
+        if focus:
+          abbmod = np.matmul(weights * damian[w],da2[w,:])/den
+        else:
+          abbmod = np.matmul(weights * damian,da)/den
 
         if plot:
           fig, axs = plt.subplots(ncols=ndim-1,nrows=ndim-1,figsize=(5.5, 3.5),
