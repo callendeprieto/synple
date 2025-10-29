@@ -9939,10 +9939,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
         #get absolute flux for best-fitting model
         den = np.sum(weights)
-<<<<<<< HEAD
-        print('weights.shape,damian.shape,da.shape,da2[w,:].shape=',weights.shape,damian.shape,da.shape,da2[w,:].shape)
-=======
->>>>>>> chorder
         if focus:
           abbmod = np.matmul(weights * damian[w],da2[w,:])/den
         else:
