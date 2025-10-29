@@ -9244,7 +9244,7 @@ def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
 
 
 def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None, 
-        star=True, conti=0, wrange=None, doubleconti=False, 
+        star=True, conti=1, wrange=None, doubleconti=False, 
         focus=False, nail=[], plot=False, gpu=False, ferre=False, filters=[]):
 
     """Bayesian Algorithm in Synple
@@ -9287,18 +9287,19 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       effect on other data sets. Activating target disables star.
       (default True)
     conti: int
-      conti > 0 activates the continuum normalization (see 'continuum' function)
+      conti > 1 activates the continuum normalization (see 'continuum' function)
       by a Saviztky-Golay filter with a width of  'conti'
-      The default (0) is dividing the input/model fluxes in each
+      The default (1) is dividing the input/model fluxes in each
       spectrum by their mean value
       conti < 0 activates the continuum normalization as explained above, but
-      using conti=0 for the first optimization, which is used to measure radial velocity
-      (default 0)
+      using conti=1 for the first optimization, which is used to measure radial 
+      velocity. Conti=0 corresponds to no normalization at all.
+      (default 1)
     wrange: 2-element iterable
       spectral range to use in the fittings
       (default None, and sets wrange to the values of the adopted grid)
     doubleconti: bool
-      when on, and abs(conti)> 0, both the spectrum normalized with conti=0
+      when on, and abs(conti)> 1, both the spectrum normalized with conti=1
       and abs(conti) are fit simultaneously
     focus: bool
       switch to activate a two-step algorithm in which a coarsely
@@ -9413,17 +9414,15 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       
     #normalization
     print('normalizing grid...')
-    if abs(conti) > 0:
-      da = np.zeros_like(d) # da keeps a copy of conti=0 normalized grid
+    da = np.zeros_like(d) # da keeps a copy of conti=1 normalized grid
     damian = np.zeros(ntot) # array with the mean fluxes for each model/row 
     for entry in range(len(d[:,0])):
         cc = np.mean(d[entry,:])
         damian[entry] = cc
-        if abs(conti) > 0:
-          da[entry,:] = d[entry,:] / cc
+        da[entry,:] = d[entry,:] / cc
+        if abs(conti) > 1:
           cc = continuum(d[entry,:],window_length=abs(conti))
         d[entry,:] = d[entry,:] / cc
-    if conti == 0: da = d #for conti=0, da is a reference to d
     if doubleconti: 
       d = np.hstack((d,da))
       lenx = 2 * lenx
@@ -9442,9 +9441,14 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       irnd = np.array(rng.random(int(nmod*0.1))*nmod,dtype=int)
       p = p[irnd,:]
       d = d[irnd,:]
+<<<<<<< HEAD
       if abs(conti) > 0: #otherwise da changes as d automatically
         da2 = da.copy()
         da = da[irnd,:]
+=======
+      da2 = da.copy()
+      da = da[irnd,:]
+>>>>>>> chorder
 
 
     
@@ -9623,14 +9627,16 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           continue
 
         #normalize
-        if conti > 0:
+        if conti > 1:
           mspec = continuum(spec, window_length=abs(conti))
           www = (mspec == 0.0)
           mspec[www] = 1. 
-        else:
+        elif conti < 0:
           mspec = np.mean(spec)
           if mspec == 0.0: mspec = np.median(spec)
           if mspec == 0.0: mspec = 1.
+        else:
+          mspec = 1.
 
         spec = spec / mspec
         ivar = ivar * mspec**2
@@ -9640,7 +9646,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         if gpu:
           spec_gpu = cp.asarray(spec)
           ivar_gpu = cp.asarray(ivar)
-          if conti > 0:
+          if conti > -1:
             res_gpu, eres_gpu, cov_gpu, bmod_gpu, weights_gpu = cebas_gpu(p_gpu, d_gpu, spec_gpu, ivar_gpu)
           else:
             res_gpu, eres_gpu, cov_gpu, bmod_gpu, weights_gpu = cebas_gpu(p_gpu, da_gpu, spec_gpu, ivar_gpu)
@@ -9650,7 +9656,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           bmod = cp.asnumpy(bmod_gpu)
           weights = cp.asnumpy(weights_gpu)
         else:
-          if conti > 0:
+          if conti > -1:
             res, eres, cov, bmod, weights = cebas( p, d, spec, ivar )
           else:
             res, eres, cov, bmod, weights = cebas( p, da, spec, ivar )
@@ -9716,7 +9722,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
         if not ferre:
           #normalize
-          if abs(conti) > 0:
+          if abs(conti) > 1:
             mspec = continuum(spec, window_length=abs(conti))
             www = (mspec == 0.0)
             mspec[www] = 1. 
@@ -9726,10 +9732,12 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               if mspec2 == 0.0: mspec2 = 1.
               spec2 = spec.copy() / mspec2
               ivar2 = ivar.copy() * mspec2**2
-          else:
+          elif abs(conti) == 1:
             mspec = np.mean(spec)
             if mspec == 0.0: mspec = np.median(spec)
             if mspec == 0.0: mspec = 1.
+          else:
+            mspec = 1.
 
           spec = spec / mspec
           ivar = ivar * mspec**2
@@ -9788,7 +9796,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           lind1 = np.abs(resnorm1 - pnorm).sum(1).argmin()
           #print('pars for flux1:',p[lind1])
           flux1 = d[lind1,:]
-          if conti == 0:
+          if abs(conti) < 2:
             flux1 = flux1/continuum(flux1)
           weights0 = weights/np.sum(weights) 
           if gpu: 
@@ -9813,7 +9821,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               #print('lind2=',lind2)
               #print('pars for flux2:',p[lind2])
               flux2 = d[lind2,:]
-              if conti == 0:
+              if conti < 2:
                 flux2 = flux2/continuum(flux2)
               sens = np.abs(flux2 - flux1)/flux1
               #print('np.sum(sens)=',np.sum(sens))
@@ -9939,7 +9947,10 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
         #get absolute flux for best-fitting model
         den = np.sum(weights)
+<<<<<<< HEAD
         print('weights.shape,damian.shape,da.shape,da2[w,:].shape=',weights.shape,damian.shape,da.shape,da2[w,:].shape)
+=======
+>>>>>>> chorder
         if focus:
           abbmod = np.matmul(weights * damian[w],da2[w,:])/den
         else:
@@ -10035,10 +10046,10 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         nml['SFFILE'] = nrdfile
         nml['ALGOR'] = 5
         nml['COVPRINT'] = 1
-        if abs(conti) > 0:
+        if abs(conti) > 1:
           nml['CONT'] = 3
           nml['NCONT'] = abs(conti)
-        else:
+        elif abs(conti) == 1:
           nml['CONT'] = 1
           nml['NCONT'] = 0
         write_nml(nml,nmlfile='input.nml')
@@ -10062,7 +10073,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
 def ebv_bas(infile, ebvstep=0.01, nebv=10, 
         synthfile=None, outfile=None, target=None, rv=None, 
-        star=True, conti=0, absolut=False, wrange=None, 
+        star=True, conti=1, absolut=False, wrange=None, 
         focus=False, nail=[], ferre=False):
 
      """Wrapping bas to explore multiple values of E(B-V)
