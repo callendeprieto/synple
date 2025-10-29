@@ -9413,17 +9413,15 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       
     #normalization
     print('normalizing grid...')
-    if abs(conti) > 0:
-      da = np.zeros_like(d) # da keeps a copy of conti=0 normalized grid
+    da = np.zeros_like(d) # da keeps a copy of conti=1 normalized grid
     damian = np.zeros(ntot) # array with the mean fluxes for each model/row 
     for entry in range(len(d[:,0])):
         cc = np.mean(d[entry,:])
         damian[entry] = cc
+        da[entry,:] = d[entry,:] / cc
         if abs(conti) > 0:
-          da[entry,:] = d[entry,:] / cc
           cc = continuum(d[entry,:],window_length=abs(conti))
         d[entry,:] = d[entry,:] / cc
-    if conti == 0: da = d #for conti=0, da is a reference to d
     if doubleconti: 
       d = np.hstack((d,da))
       lenx = 2 * lenx
@@ -9442,8 +9440,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       irnd = np.array(rng.random(int(nmod*0.1))*nmod,dtype=int)
       p = p[irnd,:]
       d = d[irnd,:]
-      if abs(conti) > 0: #otherwise da changes as d automatically
-        da = da[irnd,:]
+      da = da[irnd,:]
 
 
     
