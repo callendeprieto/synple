@@ -11418,7 +11418,7 @@ def rewrite_synth(synthfile,outsynthfile=None):
 
 
 def bas_perfcheck(synthfile,n=100,snr=1.e6,
-    conti=0, focus=False, nail=[], interpol=False, 
+    conti=1, focus=False, nail=[], interpol=False, 
     edgemargin=0.05, ferre=False):
 
     """Carry out a full performance check using bas on a synthetic grid
@@ -11436,9 +11436,9 @@ def bas_perfcheck(synthfile,n=100,snr=1.e6,
     conti: int
       conti > 0 activates the continuum normalization (see 'continuum' function)
       by a running mean with a width of  'conti'
-      NOTE that the default (0) is dividing the input/model fluxes in each
+      NOTE that the default (1) is dividing the input/model fluxes in each
       spectrum by their mean value
-      (default 0)
+      (default 1)
     focus: bool
       switch to activate a two-step algorithm in which a coarsely 
       subsampled version of the grid is used to identify first where   
@@ -12735,7 +12735,7 @@ def fparams(root,synthfile=None,figure=None,condition=None):
 
 def desida(path_to_data='healpix',path_to_output='sp_output',
            synthfile=None, seconds_per_target=2.,star=True,focus=False,
-           conti=0, doubleconti=False, filters=[]):
+           conti=1, doubleconti=False, filters=[]):
 
   """ Prepare a DESI data for parallel processing
   """
