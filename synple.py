@@ -12104,30 +12104,36 @@ def wferrefits(root, path=None):
   
 def wtabmodfits(root, path=None):
 	
-  """Write out DESI MWS SP pipeline output
+ """Write out DESI MWS SP pipeline output
 
-  Parameters
-  ----------
-  root: str
-      name of the root for input/output FERRE/BAS files 
-      with extensions .opf, .wav, .nrd, .mdl, .abu
+ Parameters
+ ----------
+ root: str
+     name of the root for input/output FERRE/BAS files 
+     with extensions .opf, .wav, .nrd, .mdl, .abu
 
-  path: string
-      path to files
-      (default is None, and the code looks for the FERRE/BAS files 
-      in the current folder)
+ path: string
+     path to files
+     (default is None, and the code looks for the FERRE/BAS files 
+     in the current folder)
  
-  Returns
-  -------  
-      An SPTAB file with the parameters, and an SPMOD with the spectra      
+ Returns
+ -------  
+     An SPTAB file with the parameters, and an SPMOD with the spectra      
   
-  """
+ """
   
-  if path is None: path=""
-  proot=os.path.join(path,root)
+ if path is None: path=""
+ proot=os.path.join(path,root)
 
-  o=glob.glob(proot+".opf")
-  a=glob.glob(proot+".abu")
+ o=glob.glob(proot+".opf")
+ a=glob.glob(proot+".abu")
+
+ if len(o) == 0 or os.stat(o[0]).st_size > 0:
+
+  print('wtabmodfits found no results in the opf file ',o[0])
+
+ else:
 
   xbandfiles = sorted(glob.glob(proot+'-*.wav'))
   band = []
@@ -12144,10 +12150,11 @@ def wtabmodfits(root, path=None):
   
   print('proot+.wav=',proot+'.wav')  
   print('xbandfiles=',xbandfiles)
-  wavsize = os.path.getsize(proot+'.wav') 
-  if wavsize > 0:
-    x = np.loadtxt(proot+'.wav')
-    if len(npix) == 0: npix.append(len(x))
+  if os.path.exists(proot+'.wav'):
+    wavsize = os.path.getsize(proot+'.wav') 
+    if wavsize > 0:
+      x = np.loadtxt(proot+'.wav')
+      if len(npix) == 0: npix.append(len(x))
     
   m=glob.glob(proot+".mdl")
   e=glob.glob(proot+".err")
@@ -12598,15 +12605,15 @@ def wtabmodfits(root, path=None):
       outfile = 'spmod_'+root+'.fits'
     hdul.writeto(os.path.join(path,outfile), overwrite=True) 
 
-    #cleanup
-    exts=['opf','nrd','mdl','frd','flx','abu','err','wav','fmp.fits','scr.fits','job']
-    for extension in exts:
-      if os.path.exists(root+'.'+extension):
-        os.remove(root+'.'+extension)
+ #cleanup
+ exts=['opf','nrd','mdl','frd','flx','abu','err','wav','fmp.fits','scr.fits','job']
+ for extension in exts:
+   if os.path.exists(root+'.'+extension):
+     os.remove(root+'.'+extension)
 
 
   
-  return None
+ return None
 
 #get dependencies versions, shamelessly copied from rvspec (Koposov's code)
 def get_dep_versions():
