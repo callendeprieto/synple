@@ -9422,6 +9422,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         da[entry,:] = d[entry,:] / cc
         if abs(conti) > 1:
           cc = continuum(d[entry,:],window_length=abs(conti))
+        elif conti == 0:
+          cc = 1.0
         d[entry,:] = d[entry,:] / cc
     if doubleconti: 
       d = np.hstack((d,da))
@@ -9623,7 +9625,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           mspec = continuum(spec, window_length=abs(conti))
           www = (mspec == 0.0)
           mspec[www] = 1. 
-        elif conti < 0:
+        elif abs(conti) > 0:
           mspec = np.mean(spec)
           if mspec == 0.0: mspec = np.median(spec)
           if mspec == 0.0: mspec = 1.
