@@ -9695,7 +9695,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           spec = spec1
           ivar = ivar1
         else:
-          xx = x2
+          xx = x
           spec = obs[j,:]
           ivar = ivr[j,:]
           #clean the data
@@ -9710,8 +9710,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             xax = np.arange(len(x2[i]))
             ivar = np.interp(xax,xax[www2],ivar[www2])
           #rv correction
-          spec = np.interp(x2,x2 * (1. - vrad/clight), spec)
-          ivar = np.interp(x2,x2 * (1. - vrad/clight), ivar)
+          spec = np.interp(x,x2 * (1. - vrad/clight), spec)
+          ivar = np.interp(x,x2 * (1. - vrad/clight), ivar)
 
 
         if not ferre:
@@ -10898,14 +10898,14 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,noze
           labels.append('residuals')
     else:
       brkpix = findjumps(xx)
-      print('brkpix=',brkpix)
+      #print('brkpix=',brkpix)
       for i in range(len(brkpix)-1):
         if nozero:
           w = (n[brkpix[i]:brkpix[i+1]] > 0.)
         else:
           w = range(brkpix[i+1]-brkpix[i]) + brkpix[i]
-        print('i,w=',i,w)
-        print('xx[w]=',xx[w])
+        #print('i,w=',i,w)
+        #print('xx[w]=',xx[w])
         plt.plot(xx[w],n[w])
         labels.append('data')
         if m is not None:
@@ -10925,9 +10925,9 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,noze
         npar = int(np.sqrt(npar*1.0 - 1.))
       else:
         npar = npar// 2
-      print('npar=',npar)
-      print(type(o))
-      print(type(npar))
+      #print('npar=',npar)
+      #print(type(o))
+      #print(type(npar))
       plt.title('params: '+  ' -- '.join(o[1:npar+1].astype('str')) )
       xtext = 0.5*xrange[0]+0.5*xrange[1]
       ytext = 0.75*yrange[0]+0.25*yrange[1]
