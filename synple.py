@@ -12129,7 +12129,7 @@ def wtabmodfits(root, path=None):
  o=glob.glob(proot+".opf")
  a=glob.glob(proot+".abu")
 
- if len(o) == 0 or os.stat(o[0]).st_size > 0:
+ if len(o) == 0 or os.stat(o[0]).st_size == 0:
 
   print('wtabmodfits found no results in the opf file ',o[0])
 
