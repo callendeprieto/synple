@@ -12131,7 +12131,7 @@ def wtabmodfits(root, path=None):
 
  if len(o) == 0 or os.stat(o[0]).st_size == 0:
 
-  print('wtabmodfits found no results in the opf file ',o[0])
+  print('wtabmodfits found no results in the opf file ')
 
  else:
 
