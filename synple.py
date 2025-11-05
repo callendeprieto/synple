@@ -12102,7 +12102,7 @@ def wferrefits(root, path=None):
   
   return None
   
-def wtabmodfits(root, path=None, overwrite=False):
+def wtabmodfits(root, path=None, overwrite=True):
 	
  """Write out DESI MWS SP pipeline output
 
@@ -12501,7 +12501,11 @@ def wtabmodfits(root, path=None, overwrite=False):
       outfile = 'sptab_'+root
     else:
       outfile = 'sptab_'+root+'.fits'
-    hdul.writeto(os.path.join(path,outfile), overwrite=overwrite)
+    if os.stat(os.path.join(path,outfile)).st_size > 0:
+      if overwrite:
+        hdul.writeto(os.path.join(path,outfile), overwrite=overwrite)
+    else:
+      hdul.writeto(os.path.join(path,outfile), overwrite=overwrite)
   
     #now spmod
     hdulist = [hdu0]
@@ -12603,7 +12607,11 @@ def wtabmodfits(root, path=None, overwrite=False):
       outfile = 'spmod_'+root
     else:
       outfile = 'spmod_'+root+'.fits'
-    hdul.writeto(os.path.join(path,outfile), overwrite=overwrite) 
+    if os.stat(os.path.join(path,outfile)).st_size > 0:
+      if overwrite:
+        hdul.writeto(os.path.join(path,outfile), overwrite=overwrite)
+    else:
+      hdul.writeto(os.path.join(path,outfile), overwrite=overwrite)
 
  #cleanup
  exts=['opf','nrd','mdl','frd','flx','abu','err','wav','fmp.fits','scr.fits','job']
