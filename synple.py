@@ -12501,9 +12501,10 @@ def wtabmodfits(root, path=None, overwrite=True):
       outfile = 'sptab_'+root
     else:
       outfile = 'sptab_'+root+'.fits'
-    if os.stat(os.path.join(path,outfile)).st_size > 0:
-      if overwrite:
-        hdul.writeto(os.path.join(path,outfile), overwrite=overwrite)
+    if os.path.exists(os.path.join(path,outfile)):
+      if os.stat(os.path.join(path,outfile)).st_size > 0:
+        if overwrite:
+          hdul.writeto(os.path.join(path,outfile), overwrite=overwrite)
     else:
       hdul.writeto(os.path.join(path,outfile), overwrite=overwrite)
   
