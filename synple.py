@@ -9517,6 +9517,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
       if type(x2) is list:
         nspec = len(obs[0][:,0])
+        assert (type(x) is list),'The wavelenghts for the data are list, but those for the model grid are not!'
       else:
         lenx2 = len(x2)
         if ivr.ndim == 1: 
