@@ -1936,7 +1936,7 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
   return()
 
 
-def build_exomol(isosum_folder='isosum_data'):
+def build_exomol(isosum_folder='isosum_data',download=True):
 
 #   code to build linelists from exomol data using Ivan Hubeny's scripts
 
@@ -1963,7 +1963,7 @@ def build_exomol(isosum_folder='isosum_data'):
 
       #create folder
       try:
-        folder = os.path.join('linelists-merge',molecule)
+        folder = os.path.join('linelists',molecule)
         os.mkdir(folder)
         print('created folder ',folder)
       except OSError:
@@ -2022,8 +2022,9 @@ def build_exomol(isosum_folder='isosum_data'):
 
       #write the R0 file
       fh = open(os.path.join(folder,'R0'),'w')
-      fh.write('#awk '+"'"+'{print "wget "$0}'+"'"+' download.list  |sh \n')
-      fh.write('#bunzip2 *bz2 \n')
+      if download:
+        fh.write('awk '+"'"+'{print "wget "$0}'+"'"+' download.list  |sh \n')
+        fh.write('bunzip2 *bz2 \n')
       fh.write('ln -s -f ../../xprog/isotops . \n')
       fh.write('../../xprog/isosum.exe < '+molecule+'.5 > '+molecule+'.log \n')
       fh.write('cp fort.10 '+molecule+'.pf \n')
@@ -2039,8 +2040,8 @@ def build_exomol(isosum_folder='isosum_data'):
           if i > 0:
               fh.write('echo  merging cc'+str(i)+'.list and cc'+str(i+1)+'.list \n')
               fh.write('cp cc'+str(i)+'.list fort.10 \n')
-              fh.write('../../xprog/merge.exe <cc'+str(i+1)+'.list >cc'+str(i)+str(i+1)+'.log \n')
-              #fh.write('sort -n -k1,1 fort.10 cc'+str(i+1)+'.list > fort.11 \n')
+              #fh.write('../../xprog/merge.exe <cc'+str(i+1)+'.list >cc'+str(i)+str(i+1)+'.log \n')
+              fh.write('sort -n -k1,1 fort.10 cc'+str(i+1)+'.list > fort.11 \n')
               fh.write('mv fort.11 cc'+str(i+1)+'.list \n')
 
       fh.write('mv cc'+str(i+1)+'.list '+molecule+'.list \n') 
