@@ -2022,8 +2022,8 @@ def build_exomol(isosum_folder='isosum_data'):
 
       #write the R0 file
       fh = open(os.path.join(folder,'R0'),'w')
-      fh.write('awk '+"'"+'{print "wget "$0}'+"'"+' download.list  |sh \n')
-      fh.write('bunzip2 *bz2 \n')
+      fh.write('#awk '+"'"+'{print "wget "$0}'+"'"+' download.list  |sh \n')
+      fh.write('#bunzip2 *bz2 \n')
       fh.write('ln -s -f ../../xprog/isotops . \n')
       fh.write('../../xprog/isosum.exe < '+molecule+'.5 > '+molecule+'.log \n')
       fh.write('cp fort.10 '+molecule+'.pf \n')
@@ -2038,10 +2038,9 @@ def build_exomol(isosum_folder='isosum_data'):
           fh.write('../../xprog/reverse.exe <fort.10 >cc'+str(i+1)+'.list \n')
           if i > 0:
               fh.write('echo  merging cc'+str(i)+'.list and cc'+str(i+1)+'.list \n')
-              #fh.write('ln -s -f cc'+str(i)+'.list fort.10 \n')
               fh.write('cp cc'+str(i)+'.list fort.10 \n')
-              #fh.write('../../xprog/merge.exe <cc'+str(i+1)+'.list >cc'+str(i)+str(i+1)+'.log \n')
-              fh.write('sort -n -k1,1 fort.10 cc'+str(i+1)+'.list > fort.11 \n')
+              fh.write('../../xprog/merge.exe <cc'+str(i+1)+'.list >cc'+str(i)+str(i+1)+'.log \n')
+              #fh.write('sort -n -k1,1 fort.10 cc'+str(i+1)+'.list > fort.11 \n')
               fh.write('mv fort.11 cc'+str(i+1)+'.list \n')
 
       fh.write('mv cc'+str(i+1)+'.list '+molecule+'.list \n') 
