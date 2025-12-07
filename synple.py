@@ -1963,7 +1963,7 @@ def build_exomol(isosum_folder='isosum_data'):
 
       #create folder
       try:
-        folder = os.path.join('linelists',molecule)
+        folder = os.path.join('linelists-merge',molecule)
         os.mkdir(folder)
         print('created folder ',folder)
       except OSError:
