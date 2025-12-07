@@ -2040,7 +2040,8 @@ def build_exomol(isosum_folder='isosum_data'):
               fh.write('echo  merging cc'+str(i)+'.list and cc'+str(i+1)+'.list \n')
               #fh.write('ln -s -f cc'+str(i)+'.list fort.10 \n')
               fh.write('cp cc'+str(i)+'.list fort.10 \n')
-              fh.write('../../xprog/merge.exe <cc'+str(i+1)+'.list >cc'+str(i)+str(i+1)+'.log \n')
+              #fh.write('../../xprog/merge.exe <cc'+str(i+1)+'.list >cc'+str(i)+str(i+1)+'.log \n')
+              fh.write('sort -n -k1,1 fort.10 cc'+str(i+1)+'.list > fort.11 \n')
               fh.write('mv fort.11 cc'+str(i+1)+'.list \n')
 
       fh.write('mv cc'+str(i+1)+'.list '+molecule+'.list \n') 
