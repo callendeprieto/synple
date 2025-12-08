@@ -1960,6 +1960,7 @@ def build_exomol(isosum_folder='isosum_data',download=True):
       
       tmp = os.path.split(entry)
       molecule = tmp[-1][:-2]
+      molecule_path = molecule.replace('+','_p')
 
       #create folder
       try:
@@ -1990,13 +1991,13 @@ def build_exomol(isosum_folder='isosum_data',download=True):
           iso = parts[0]
           tag = parts[1]
           if i == 0:
-              url = os.path.join('https://www.exomol.com/db',molecule,tag+'_README.txt')
+              url = os.path.join('https://www.exomol.com/db',molecule_path,tag+'_README.txt')
               fh.write(url+'\n')
-          url = os.path.join('https://www.exomol.com/db',molecule,iso,tag,cad+'.states.bz2')
+          url = os.path.join('https://www.exomol.com/db',molecule_path,iso,tag,cad+'.states.bz2')
           fh.write(url+'\n')
-          url = os.path.join('https://www.exomol.com/db',molecule,iso,tag,cad+'.trans.bz2')
+          url = os.path.join('https://www.exomol.com/db',molecule_path,iso,tag,cad+'.trans.bz2')
           fh.write(url+'\n')
-          url = os.path.join('https://www.exomol.com/db',molecule,iso,tag,cad+'.pf')
+          url = os.path.join('https://www.exomol.com/db',molecule_path,iso,tag,cad+'.pf')
           fh.write(url+'\n')
       fh.close()
 
@@ -2017,7 +2018,7 @@ def build_exomol(isosum_folder='isosum_data',download=True):
           else:
               fh.write(' '.join([zz[0],data[i,0],zz[1],data[i,1]])+'\n')
               fh.write(data[i,2][:-4]+"'"+'\n')
-          fh.write('100  100000  -9.0\n')
+          fh.write('0.1    100000  -10.0\n')
           fh.close()
 
       #write the R0 file
