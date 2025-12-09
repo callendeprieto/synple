@@ -2036,6 +2036,7 @@ def build_exomol(isosum_folder='isosum_data',download=True):
       fh = open(os.path.join(folder,'R1'),'w')
       for i in range(niso):
           fh.write('echo building cc'+str(i+1)+'.list \n')
+          fh.write('rm -f fort.10'\n')
           fh.write('../../xprog/list.exe <cc'+str(i+1)+'.5 >cc'+str(i+1)+'.log \n')
           fh.write('../../xprog/reverse.exe <fort.10 >cc'+str(i+1)+'.list \n')
           if i > 0:
