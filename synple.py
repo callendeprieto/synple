@@ -2038,7 +2038,8 @@ def build_exomol(isosum_folder='isosum_data',download=True):
           fh.write('echo building cc'+str(i+1)+'.list \n')
           fh.write('rm -f fort.10'\n')
           fh.write('../../xprog/list.exe <cc'+str(i+1)+'.5 >cc'+str(i+1)+'.log \n')
-          fh.write('../../xprog/reverse.exe <fort.10 >cc'+str(i+1)+'.list \n')
+          #fh.write('../../xprog/reverse.exe <fort.10 >cc'+str(i+1)+'.list \n')
+          fh.write('sort -n -k1,1 fort.10 >cc'+str(i+1)+'.list \n')
           if i > 0:
               fh.write('echo  merging cc'+str(i)+'.list and cc'+str(i+1)+'.list \n')
               fh.write('cp cc'+str(i)+'.list fort.10 \n')
