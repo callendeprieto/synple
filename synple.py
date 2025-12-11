@@ -8227,6 +8227,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
     hd.append(line)
     hlines += 1
 
+
   if 'irregular' in tipo:
     assert (len(labels) == ndim), 'The number of LABELS in the header does not agree with the dimension of the grid'
     if type(fwhm) is list:
@@ -8306,8 +8307,8 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
     ind = np.array(range(ntot), dtype=int)
     ind_n_p =  list(range(ndim))
     labels2 = list(labels)
-    steps = []
-    llimits = []
+    #steps = []
+    #llimits = []
   else:
     ll = []
     ind_n_p = []
@@ -8358,9 +8359,9 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
   jlabel = 0
   for line in hd:
     if "N_OF_DIM" in line: line = " N_OF_DIM = "+str(len(ind_n_p))+"\n"    
-    if "N_P" in line: line = " N_P = "+' '.join(map(str,n_p[ind_n_p]))+"\n"   
-    if "STEPS" in line: line = " STEPS = "+' '.join(map(str,steps[ind_n_p]))+"\n"   
-    if "LLIMITS" in line: line = " LLIMITS = "+' '.join(map(str,llimits[ind_n_p]))+"\n"
+    if "N_P" in line: line = " N_P = "+' '.join(map(str,[n_p[i] for i in ind_n_p]))+"\n"   
+    if "STEPS" in line: line = " STEPS = "+' '.join(map(str,[steps[i] for i in ind_n_p]))+"\n"   
+    if "LLIMITS" in line: line = " LLIMITS = "+' '.join(map(str,[llimits[i] for i in ind_n_p]))+"\n"
     if "LABEL" in line: 
       if jlabel == 0:
         for entry in labels2:
@@ -8715,9 +8716,9 @@ def gsynth_old(synthfile,fwhm=0.0,units='km/s',outsynthfile=None,ppr=5,wrange=No
   jlabel = 0
   for line in hd:
     if "N_OF_DIM" in line: line = " N_OF_DIM = "+str(len(ind_n_p))+"\n"    
-    if "N_P" in line: line = " N_P = "+' '.join(map(str,n_p[ind_n_p]))+"\n"   
-    if "STEPS" in line: line = " STEPS = "+' '.join(map(str,steps[ind_n_p]))+"\n"   
-    if "LLIMITS" in line: line = " LLIMITS = "+' '.join(map(str,llimits[ind_n_p]))+"\n"
+    if "N_P" in line: line = " N_P = "+' '.join(map(str,[n_p[i] for i in ind_n_p]))+"\n"   
+    if "STEPS" in line: line = " STEPS = "+' '.join(map(str,[steps[i] for i in ind_n_p]))+"\n"   
+    if "LLIMITS" in line: line = " LLIMITS = "+' '.join(map(str,[llimits[i] for i in ind_n_p]))+"\n"
     if freeze is not None:
       if "LABEL" in line:
         ilabel = line.split()[-1][1:-1] #drop starting/ending quotes
