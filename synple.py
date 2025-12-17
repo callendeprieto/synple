@@ -9615,7 +9615,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           www = np.where(np.isnan(ivar))[0]
           if len(www) > 0:
             www2 = np.where(~np.isnan(ivar))[0]
-            xax = np.arange(len(x2[i]))
+            xax = np.arange(len(x2))
             ivar = np.interp(xax,xax[www2],ivar[www2])
           spec = np.interp(x,x2,spec)
           ivar = np.interp(x,x2,ivar)
