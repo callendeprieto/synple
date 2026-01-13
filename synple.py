@@ -8307,8 +8307,8 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
     ind = np.array(range(ntot), dtype=int)
     ind_n_p =  list(range(ndim))
     labels2 = list(labels)
-    #steps = []
-    #llimits = []
+    steps = []
+    llimits = []
   else:
     ll = []
     ind_n_p = []
