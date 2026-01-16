@@ -7902,6 +7902,110 @@ def keepz(abu,zs,dex):
      
   return(list(abu1)) 
 
+def kurucz2tsuji():
+
+  """Code that writes a file (tsuji.molec_bc2.codes) from the input file
+  tsuji.molec_bc2, listing the different molecules considered and their
+  Kurucz codes and their Tsuji codes, so that they can be crossmatched
+  between the molecular equilibrium code and the line lists.
+  
+  """
+
+  symbol, mass, sol = elements()
+  zatom = dict()
+  for i in range(len(symbol)):
+    zatom[symbol[i]] = i + 1
+
+  d = np.loadtxt(os.path.join(synpledir,'data','tsuji.molec_bc2'),dtype=str,usecols=[0])
+  #d = ['H-']
+  #d = ['C6H6']
+  #d = ['Li4H']
+  #d = ['Na2']
+  #d = ['C14H10a']
+
+  fo = open('tsuji.molec_bc2.codes','w')
+  k = 0
+  for st in d:
+    k += 1
+    #st = 'C6H6Mg12'
+    #print(st)
+    valid = True
+    if '(' in st: 
+      print('ignoring: ',st)
+      continue
+    sy = ''
+    nu = '1'
+    p = 'a'
+    codes = []
+    code = ''
+    for char in st:
+      #print('char=',char)
+      #print('sy=',sy)
+      if char.isalpha() or char == '-' or char == '+':
+        if (char.isupper()) or not p.isalpha() or char == '-' or char == '+':
+          if sy == '': nu = '1'
+          code = ''
+          if sy != '-' and sy != '+' and sy != '':
+            if sy in symbol:
+              #print('sy,zatom=',sy,zatom[sy]) 
+              sy = zatom[sy]
+              if sy < 10: 
+                sy = '0'+str(sy)
+              else:
+                sy = str(sy)
+            else:
+              valid = False
+          if int(nu) > 6: valid = False
+          for entry in range(int(nu)):
+            codes.append(sy)
+          nu = '1'
+          #print('codes=',codes)
+          sy = ''
+        sy += char
+      else:
+        if p.isalpha(): 
+          nu = ''
+        nu += char
+      if int(nu) > 6: valid = False
+      p = char
+      #print('p=',p,'sy=',sy, '  nu=',nu)
+      if char == '-' or char == '+': nu = '1'
+  
+
+    #print('sy=',sy)
+    #print('nu=',nu)
+    if '+' not in sy and '-' not in sy:
+      if sy in symbol:
+        #print('sy,zatom=',sy,zatom[sy]) 
+        sy = zatom[sy]
+        if sy < 10:
+          sy = '0'+str(sy)
+        else:
+          sy = str(sy)
+      else:
+        valid = False
+
+
+    if int(nu) > 6: valid = False
+    for entry in range(int(nu)):
+      codes.append(sy)
+  
+    codes.sort()
+    code = ''.join(codes)
+    if code[0] == '-': code = code[1:] + '99'
+    if code[0] == '+': code = code[1:] + '.01'
+    if code[0] == '0': code = code[1:]
+    if valid: 
+      print(st,code)
+      fo.write(' %10s %30s %5s  \n' % (st,code, str(k) ) )
+    else:
+      print('ignoring: ',st)
+
+  fo.close()
+
+  return()
+
+
 
 def lgconv(xinput, yinput, fwhm, ppr=None):
 
