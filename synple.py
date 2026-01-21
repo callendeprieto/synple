@@ -5979,7 +5979,7 @@ def writetas(filename,nd,linelist,nonstd=None):
 
   f.write("ND= "+str(nd)+" \n")
   if len(linelist) > 1:  f.write("IFMOL= "+one+" \n")
-  f.write("TMOLIM= 8000. \n")
+  f.write("TMOLIM= 10000. \n")
 
 
   f.close()
