@@ -12963,6 +12963,104 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
 
   return()
 
+#pack a collection of fits files with binary tables in multiple HDUs into a single one
+def packfits(input="*.fits",output="output.fits",update_srcfile=False):
+
+
+  f = sorted(glob.glob(input))
+
+  print('reading ... ',f[0])
+  hdul1 = fits.open(f[0])
+  hdu0 = hdul1[0]
+  for entry in f[1:]:
+    hdulist = [hdu0]       
+    print('reading ... ',entry)
+    hdul2 = fits.open(entry)
+    for i in arange(len(hdul1)-1)+1:
+      nrows1 = hdul1[i].data.shape[0]
+      nrows2 = hdul2[i].data.shape[0]
+      nrows = nrows1 + nrows2
+      if (str(type(hdul1[i])) == "<class 'astropy.io.fits.hdu.table.BinTableHDU'>"): #binary tables
+        hdu = fits.BinTableHDU.from_columns(hdul1[i].columns, nrows=nrows)
+        hdu.header['EXTNAME'] = hdul1[i].header['EXTNAME']
+        if (str(type(hdul2[i])) != "<class 'astropy.io.fits.hdu.table.BinTableHDU'>"): 
+          print(i, str(type(hdul1[i])),str(type(hdul2[i])))
+          print('Warning: the extension ',i, 'in file ',entry,' is not a binary table as expected based on the preceding files. The extension is skipped.')
+
+        for colname in hdul1[i].columns.names:
+          #print('adding colname=',colname,' from the 2nd file')
+          try:
+            if colname in hdul2[i].columns.names:
+              #print(hdul1[i].data[colname].shape,hdul2[i].data[colname].shape)
+              #print(hdu.data[colname].shape)
+              hdu.data[colname][nrows1:] = hdul2[i].data[colname]
+            else: print('Warning: the file ',entry,' does not include column ',colname,' in extension ',i,' -- ',hdu.header['EXTNAME'])
+          except AttributeError:
+            print('Warning: the file ',entry,' does not have the attribute columns ',' in extension ',i,' -- ',hdu.header['EXTNAME']) 
+          if update_srcfile and colname == 'SRCFILE':
+            if entry == f[1]: 
+              hdu.data[colname][:nrows1] = '-'.join(f[0].split(os.path.sep)[-1].split('-')[1:])
+            hdu.data[colname][nrows1:] = '-'.join(entry.split(os.path.sep)[-1].split('-')[1:])
+
+      elif (str(type(hdul1[i])) == "<class 'astropy.io.fits.hdu.image.ImageHDU'>"): #images
+        hdu = fits.PrimaryHDU(vstack( (hdul1[i].data, hdul2[i].data) ))
+        hdu.header['EXTNAME'] = hdul1[i].header['EXTNAME']
+
+      hdulist.append(hdu) 
+
+    hdul1 = fits.HDUList(hdulist)
+
+  hdul1.writeto(output)
+
+  return(None)
+  
+#calls packfits hierarchically in a folder tree
+#to pack the results from a DESI data tree
+#e.g. try calling it from healpix with structure like
+#healpix/cmx/backup/gpix/hpix
+def treepackspfits(input='sptab*.fits',path='./',depth=3):
+  sites1 = [] #deepest layer, gpix (where srcfile will be updated)
+  sites2 = [] #rest of layers
+  base_depth = path.rstrip(os.path.sep).count(os.path.sep)
+  for root, dirs, files in os.walk(path,topdown=False):
+    for entry in dirs:
+      cur_depth = os.path.join(root,entry).count(os.path.sep) 
+      print(os.path.join(root,entry),cur_depth)
+      if base_depth + depth == cur_depth:
+        sites1.append(os.path.join(root,entry))
+      elif base_depth + depth > cur_depth:
+        sites2.append(os.path.join(root,entry))
+      
+  sites2.append(path)
+  
+  sites = sites1 + sites2
+  
+  i = 0
+  startpath = os.path.abspath(os.curdir)
+  for entry in sites:
+    i = i + 1
+    os.chdir(startpath)
+    os.chdir(entry)
+    infiles = glob.glob(os.path.join('*',input))
+    print('pwd=',os.path.abspath(os.curdir))
+    print('infiles=',infiles)
+    if len(infiles) < 1: continue
+    parts = infiles[0].split(os.path.sep)[1].split('-')
+    ext = parts[-1].split('.')[-1]
+    
+    if entry in sites1:
+      #drop petal info from filename, since petals are merged
+      if parts[1] in list(map(str,range(10))): parts.pop(1) 
+      outfile = '-'.join(parts[:-1]) + '-' + entry.split(os.path.sep)[-1] + '.' + ext
+      packfits(os.path.join('*',input),output=outfile,update_srcfile=True)
+    else:
+      outfile = '-'.join(parts[:-1]) + '.' + ext
+      packfits(os.path.join('*',input),output=outfile,update_srcfile=False)			
+ 			
+  return(None)
+  
+
+
 def desiget(ra=None,dec=None,radius=30.,targetids=[],da='dr1',user=None,password=None):
 
   """Calls DESI inspector to retrieve a FITS with the spectra in a field or 
