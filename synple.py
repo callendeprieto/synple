@@ -2530,6 +2530,7 @@ def merge_slurm_parallel(path='./',ext='slurm',nmerge=2,ncpu=2):
           if j == 0: wtime = len(header)-1
 
   if wtime > -1: 
+    print('time changed from ',time,' to ', int(time/cpu*1.3))
     time = int(time/ncpu*1.3) #factor 1.3 is a safety margin
     entries = header[wtime].split('=')
     header[wtime] = entries[0]+'='+str(time)+'\n' 
@@ -9586,6 +9587,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       if ending == -1:
         ending = len(synthfile) + 1 
       fltsubdir = os.path.join(fltdir,synthfile[0:ending])
+      print('fltsubdir=',fltsubdir)
       for i in range(len(filters)):
         arr = np.loadtxt(os.path.join(fltsubdir,filters[i]+'.flt'))
         arr = arr / np.sum(arr)
