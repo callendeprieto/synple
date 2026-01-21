@@ -12976,7 +12976,7 @@ def packfits(input="*.fits",output="output.fits",update_srcfile=False):
     hdulist = [hdu0]       
     print('reading ... ',entry)
     hdul2 = fits.open(entry)
-    for i in arange(len(hdul1)-1)+1:
+    for i in np.arange(len(hdul1)-1)+1:
       nrows1 = hdul1[i].data.shape[0]
       nrows2 = hdul2[i].data.shape[0]
       nrows = nrows1 + nrows2
