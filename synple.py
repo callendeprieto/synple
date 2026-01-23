@@ -2530,7 +2530,7 @@ def merge_slurm_parallel(path='./',ext='slurm',nmerge=2,ncpu=2):
           if j == 0: wtime = len(header)-1
 
   if wtime > -1: 
-    print('time changed from ',time,' to ', int(time/cpu*1.3))
+    print('time changed from ',time,' to ', int(time/ncpu*1.3))
     time = int(time/ncpu*1.3) #factor 1.3 is a safety margin
     entries = header[wtime].split('=')
     header[wtime] = entries[0]+'='+str(time)+'\n' 
