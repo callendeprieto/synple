@@ -2060,7 +2060,7 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
     tlt = (20,3.08,0.068), tlrho = (20,-14.0,0.59), \
     tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), \
     tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), tvmicro=(1,1.0,0.0), \
-    zexclude=None, atom='ap18'):
+    zexclude=None, atom='ap18', model=None):
 
   """Sets up a directory tree for computing opacity tables for TLUSTY. The table collection forms 
   a regular grid defined by triads in various parameters. Each triad has three values (n, llimit, step)
@@ -2339,7 +2339,7 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
 
                   write5(9999.,9.9,abu2,atom)
                   
-                  writetas('tas',1,linelist)
+                  writetas('tas',0,linelist)
 
 
                   write2(lt,lrho,wrange, filename='opt.data', \

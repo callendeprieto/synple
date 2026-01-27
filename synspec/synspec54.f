@@ -21770,7 +21770,7 @@ c
          wlgrid(i)=exp(wl1+(i-1)*dwl)
       end do
 c
-      if(temp1.gt.0.) then
+      if(ntemp.gt.0.) then
          at1=log(temp1)
          at2=log(temp2)
          dt=0.
@@ -21980,9 +21980,6 @@ c     prepare values for a new table
 c     ------------------------------
 c
       ipfreq=0
-      do i=1,10
-        write(*,*)'nden(indext)=',nden(indext)
-      enddo
       ndens=nden(indext)
       if(indexn.lt.ndens) then
          indexn=indexn+1
