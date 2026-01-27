@@ -2333,7 +2333,7 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
 
 
 
-                  write55(wrange,dw=space,imode=imode,iprin=0,inlte=0,hydprf=0,      \
+                  write55(wrange,dw=space,imode=imode,iprin=0,inlte=0,     \
                           cutoff0=cutoff0, strength=strength, vmicro=vmicro, \
                           linelist=linelist)
 

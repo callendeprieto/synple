@@ -21824,8 +21824,8 @@ c
             write(6,622) tempg(i),(log10(densg(i,j)),j=1,ndens)
          end do
   621    format(/' COMPUTING AN OPACITY TABLE WITH GRID PARAMETERS:'/
-     *   ' ===== ntemp, ndens ',2i4)
-  622    format(f10.1,20f8.2)
+     *   ' ===== ntemp, ndens ',i4,i4)
+  622    format(f10.1,x,20e11.2)
        else
          call inpmod
          ntemp=nd
@@ -21835,6 +21835,7 @@ c
             densg0(it)=dens(it)
             densg(it,1)=dens(it)
             elecm(it)=elec(it)
+            nden(it)=ndens
          end do
          if(ifeos.le.0) then
             write(6,621) ntemp,ndens
@@ -21875,7 +21876,9 @@ c
   
       call abnchn(0)
 
+
       return
+ 
 c
 c     ---------------------------------------------
 c     after computing the table for one T-rho pair:
@@ -21977,6 +21980,9 @@ c     prepare values for a new table
 c     ------------------------------
 c
       ipfreq=0
+      do i=1,10
+        write(*,*)'nden(indext)=',nden(indext)
+      enddo
       ndens=nden(indext)
       if(indexn.lt.ndens) then
          indexn=indexn+1
@@ -21985,7 +21991,7 @@ c
      *                indexn,densg(indext,indexn)
          call densit(rho,idens0)
          inext=1
-       else 
+      else 
          indexn=1
          irelin=1
          if(indext.lt.ntemp) then
