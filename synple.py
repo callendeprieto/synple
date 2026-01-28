@@ -2339,33 +2339,24 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
                       imode = -4 
                   else: imode = -3
 
-
-
-                  write55(wrange,dw=space,imode=imode,iprin=0,inlte=0,     \
-                          cutoff0=cutoff0, strength=strength, vmicro=vmicro, \
-                          linelist=linelist)
-
                   write5(9999.,9.9,abu2,atom)
                   
                   writetas('tas',0,linelist)
 
                   ismodel = False
+                  atmostype = 'tlusty'
                   if model != '':
                     atmostype,teff,logg,vmicro,abu3,nd,atmos = read_model(model)
-                    if atmostype == 'kurucz':
-                      tp = np.dtype([('dm', 'f'), ('t','f'), ('p','f'), \
-                                     ('ne','f'), ('rho','f') ])
-                      atmos2 = np.zeros(nd, dtype=tp)
-                      atmos2['dm'] = atmos['dm']
-                      atmos2['t'] =  atmos['t']
-                      atmos2['p'] =  atmos['p']
-                      atmos2['ne'] = atmos['ne']
-                      atmos2['rho'] = (atmos['p'] - \
-                           atmos['ne']*bolk*atmos['t'])/ bolk / atmos['t'] 
-                    write8(teff, logg, nd, atmos2, 'tlusty')
+                    write8(teff, logg, nd, atmos2, atmostype)
                     if abu is None:
                       write5(teff, logg, abu3, atom)
                     ismodel = True
+
+                  write55(wrange,dw=space,imode=imode,iprin=0, \
+                          inlte=0,     \
+                          cutoff0=cutoff0, strength=strength, vmicro=vmicro, \
+                          linelist=linelist, atmostype=atmostype)
+
 
                   write2(lt,lrho,wrange, filename='opt.data', \
                          dlw=dlw, binary=binary,strength=strength, \
@@ -6105,7 +6096,8 @@ def read55(filename='fort.55'):
 
   return(imode,iprin,inmod,inlte,hydprf,wrange,cutoff0,strength,dw,molls,vmicro)
 
-def write55(wrange,dw=1e-2,imode=0,iprin=0,inlte=0,hydprf=2,cutoff0=200., \
+def write55(wrange,dw=1e-2,imode=0,iprin=0,inlte=0, \
+  hydprf=2,cutoff0=200., \
   strength=1e-4,vmicro=1.0, \
   linelist=linelist0, atmostype='kurucz',intensity=False):
 

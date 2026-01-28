@@ -21827,7 +21827,12 @@ c
      *   ' ===== ntemp, ndens ',i4,i4)
   622    format(f10.1,x,20e11.2)
        else
-         call inpmod
+         write(*,*) INMOD 
+         if (inmod.eq.0) then
+           call inkur
+         else
+           call inpmod
+         end if
          ntemp=nd
          ndens=1
          do it=1,ntemp
