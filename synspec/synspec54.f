@@ -21827,12 +21827,12 @@ c
      *   ' ===== ntemp, ndens ',i4,i4)
   622    format(f10.1,x,20e11.2)
        else
-         write(*,*) INMOD 
-c         if (inmod.eq.0) then
-c           call inkur
-c         else
+         write(*,*)'inmod=',inmod
+         if (inmod.eq.0) then
+           call inkur
+         else
            call inpmod
-c         end if
+         end if
          ntemp=nd
          ndens=1
          do it=1,ntemp

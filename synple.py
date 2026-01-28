@@ -2059,7 +2059,7 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
     abu=None, linelist=linelist0, \
     tlt = (20,3.08,0.068), tlrho = (20,-14.0,0.59), \
     tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), \
-    tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), tvmicro=(1,1.0,0.0), \
+    tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), tvmicro=(0,1.0,0.0), \
     zexclude=None, atom='ap18', model=''):
 
   """Sets up a directory tree for computing opacity tables for TLUSTY. The table collection forms 
@@ -2211,7 +2211,10 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
   try: 
     nvmicro = len(tvmicro)
     assert (nvmicro == 3), 'Error: vmicro triad must have three elements (n, llimit, step)'
-    vmicros = np.arange(tvmicro[0])*tvmicro[2] + tvmicro[1]
+    if tvmicro[0] == 0:
+      vmicros = [0.0]
+    else:
+      vmicros = np.arange(tvmicro[0])*tvmicro[2] + tvmicro[1]
   except TypeError:
     print('Error: vmicro triad must have three elements (n, llimit, step)')
     return ()
@@ -2346,11 +2349,14 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
                   ismodel = False
                   atmostype = 'tlusty'
                   if model != '':
-                    atmostype,teff,logg,vmicro,abu3,nd,atmos = read_model(model)
+                    atmostype,teff,logg,vmicro3,abu3,nd,atmos = read_model(model)
                     write8(teff, logg, nd, atmos, atmostype)
                     if abu is None:
                       write5(teff, logg, abu3, atom)
+                    if tvmicro[0] == 0: 
+                      vmicro = vmicro3
                     ismodel = True
+
 
                   write55(wrange,dw=space,imode=imode,iprin=0, \
                           inlte=0,     \
