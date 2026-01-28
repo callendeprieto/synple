@@ -2347,7 +2347,7 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
                   atmostype = 'tlusty'
                   if model != '':
                     atmostype,teff,logg,vmicro,abu3,nd,atmos = read_model(model)
-                    write8(teff, logg, nd, atmos2, atmostype)
+                    write8(teff, logg, nd, atmos, atmostype)
                     if abu is None:
                       write5(teff, logg, abu3, atom)
                     ismodel = True
