@@ -2060,7 +2060,7 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
     tlt = (20,3.08,0.068), tlrho = (20,-14.0,0.59), \
     tfeh=(1,0.0,0.0), tafe=(1,0.0,0.0), tcfe=(1,0.0,0.0), tnfe=(1,0.0,0.0), \
     tofe=(1,0.0,0.0), trfe=(1,0.0,0.0), tsfe=(1,0.0,0.0), tvmicro=(1,1.0,0.0), \
-    zexclude=None, atom='ap18', model=False):
+    zexclude=None, atom='ap18', model=''):
 
   """Sets up a directory tree for computing opacity tables for TLUSTY. The table collection forms 
   a regular grid defined by triads in various parameters. Each triad has three values (n, llimit, step)
@@ -2138,10 +2138,10 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
       'yo19' -- restricted set for NLTE calculations for APOGEE 2019 (Osorio+ 2019)
       'hhm' -- continuum opacity is simplified to H and H-
       (default 'ap18')
-  model: bool
-     set to True to ignore the temperatures and densities specified in
-     the fort.2 file and use instead those from a model atmosphere in 
-     TLUSTY format given in fort.8 (default is False)
+  model: str
+     set to a filename to ignore the temperatures and densities specified in
+     the fort.2 file and use instead those from a model atmosphere given
+     in that filename
   """
 
   #synspec does not currently run in parallel
@@ -2345,10 +2345,20 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
                   
                   writetas('tas',0,linelist)
 
+                  ismodel = False
+                  if model != '':
+                    atmostype,teff,logg,vmicro,abu,nd,atmos = \
+                        read_model(model)
+
+                    write8(teff, logg, nd, atmos, atmostype, kvmicro=vmicro, \
+                        kabu = abu)
+
+                    ismodel = True
 
                   write2(lt,lrho,wrange, filename='opt.data', \
                          dlw=dlw, binary=binary,strength=strength, \
-                         inttab=inttab, model=model, zexclude=zexclude)
+                         inttab=inttab, ismodel=ismodel, zexclude=zexclude)
+
 
                   #if zexclude is not None: 
                   #  write3(zexclude)
@@ -6001,11 +6011,11 @@ def write3(zexclude):
   return()
 
 
-def write2(lt,lrho,wrange, filename='opt.data', dlw=2.1e-5, binary=False,strength=1e-4,inttab=1, model=False, zexclude=None):
+def write2(lt,lrho,wrange, filename='opt.data', dlw=2.1e-5, binary=False,strength=1e-4,inttab=1, ismodel=False, zexclude=None):
 #write fort.2 file for creating opacity tables for TLUSTY
 
   f = open('fort.2','w')
-  if model:
+  if ismodel:
     f.write( " %d %10.4e %10.4e \n" % (0,10.**lt[0],10.**lt[-1]) )
   else:
     f.write( " %d %10.4e %10.4e \n" % (len(lt),10.**lt[0],10.**lt[-1]) )
