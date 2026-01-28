@@ -2353,9 +2353,16 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
                   if model != '':
                     atmostype,teff,logg,vmicro,abu3,nd,atmos = read_model(model)
                     if atmostype == 'kurucz':
-                      atmos['rho'] = (atmos['p'] - \
+                      tp = np.dtype([('dm', 'f'), ('t','f'), ('p','f'), \
+                                     ('ne','f'), ('rho','f') ])
+                      atmos2 = np.zeros(nd, dtype=tp)
+                      atmos2['dm'] = atmos['dm']
+                      atmos2['t'] =  atmos['t']
+                      atmos2['p'] =  atmos['p']
+                      atmos2['ne'] = atmosp['ne']
+                      atmos2['rho'] = (atmos['p'] - \
                            atmos['ne']*bolk*atmos['t'])/ bolk / atmos['t'] 
-                    write8(teff, logg, nd, atmos, 'tlusty')
+                    write8(teff, logg, nd, atmos2, 'tlusty')
                     if abu is None:
                       write5(teff, logg, abu3, atom)
                     ismodel = True
