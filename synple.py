@@ -2099,6 +2099,10 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
       (default is 1)
   abu: array of floats (99 elements), optional
     chemical abundances relative to hydrogen (N(X)/N(H))
+    To be clear, the default abundances are solar, but if a model atmosphere
+    (see below the help about the parameter "model") is given, those 
+    abundances take precedence. Finally, the abundances pass through this
+    parameter "abu" take precedence over all the others.
     (default is solar -- see the function 'elements' )
   linelist: array of str
       filenames of the line lists, the first one corresponds to 
@@ -2347,12 +2351,10 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
 
                   ismodel = False
                   if model != '':
-                    atmostype,teff,logg,vmicro,abu,nd,atmos = \
-                        read_model(model)
-
-                    write8(teff, logg, nd, atmos, atmostype, kvmicro=vmicro, \
-                        kabu = abu)
-
+                    atmostype,teff,logg,vmicro,abu3,nd,atmos = read_model(model)
+                    write8(teff, logg, nd, atmos, 'tlusty')
+                    if abu is None:
+                      write5(teff, logg, abu3, atom)
                     ismodel = True
 
                   write2(lt,lrho,wrange, filename='opt.data', \
