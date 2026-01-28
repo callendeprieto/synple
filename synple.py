@@ -2359,7 +2359,7 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
                       atmos2['dm'] = atmos['dm']
                       atmos2['t'] =  atmos['t']
                       atmos2['p'] =  atmos['p']
-                      atmos2['ne'] = atmosp['ne']
+                      atmos2['ne'] = atmos['ne']
                       atmos2['rho'] = (atmos['p'] - \
                            atmos['ne']*bolk*atmos['t'])/ bolk / atmos['t'] 
                     write8(teff, logg, nd, atmos2, 'tlusty')
