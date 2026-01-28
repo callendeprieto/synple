@@ -2352,6 +2352,9 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
                   ismodel = False
                   if model != '':
                     atmostype,teff,logg,vmicro,abu3,nd,atmos = read_model(model)
+                    if atmostype == 'kurucz':
+                      atmos['rho'] = (atmos['p'] - \
+                           atmos['ne']*bolk*atmos['t'])/ bolk / atmos['t'] 
                     write8(teff, logg, nd, atmos, 'tlusty')
                     if abu is None:
                       write5(teff, logg, abu3, atom)
