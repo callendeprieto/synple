@@ -5995,7 +5995,7 @@ def writetas(filename,nd,linelist,nonstd=None):
     for entry in nonstd.keys():
       f.write(entry + "=" + str(nonstd[entry])+"\n")
 
-  f.write("ND= "+str(nd)+" \n")
+  if nd > 0: f.write("ND= "+str(nd)+" \n")
   if len(linelist) > 1:  f.write("IFMOL= "+one+" \n")
   f.write("TMOLIM= 10000. \n")
 

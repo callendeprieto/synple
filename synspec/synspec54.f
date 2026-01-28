@@ -21828,11 +21828,11 @@ c
   622    format(f10.1,x,20e11.2)
        else
          write(*,*) INMOD 
-         if (inmod.eq.0) then
-           call inkur
-         else
+c         if (inmod.eq.0) then
+c           call inkur
+c         else
            call inpmod
-         end if
+c         end if
          ntemp=nd
          ndens=1
          do it=1,ntemp
