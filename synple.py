@@ -12902,7 +12902,7 @@ def fparams(root,synthfile=None,figure=None,condition=None):
 
 def desida(path_to_data='healpix',path_to_output='sp_output',
            synthfile=None, seconds_per_target=2.,star=True,focus=False,
-           conti=1, doubleconti=False, filters=[]):
+           conti=1, doubleconti=False, gpu=False, filters=[]):
 
   """ Prepare a DESI data for parallel processing
   """
@@ -12953,23 +12953,31 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
     s.write("#SBATCH --time="+str(int(minutes)+1)+"\n") #minutes
     s.write("#SBATCH --ntasks=1" + "\n")
     s.write("#SBATCH --nodes=1" + "\n")
-    if (host == 'login1'): #lapalma
-      nthreads = 4
-      s.write("#SBATCH  -J "+str(root)+" \n")
-      s.write("#SBATCH  -o "+str(root)+"_%j.out"+" \n")
-      s.write("#SBATCH  -e "+str(root)+"_%j.err"+" \n")
-      s.write("#SBATCH --cpus-per-task="+str(16)+"\n")
-      s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
-      s.write("module load python"+"\n")
-    else: # perlmutter
-      nthreads = 4
-      s.write("#SBATCH --qos=regular" + "\n")
-      s.write("#SBATCH --constraint=cpu" + "\n")
-      s.write("#SBATCH --account=desi \n")
-      s.write("#SBATCH --cpus-per-task="+str(128*2)+"\n")
-      s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
-      s.write("module load python"+"\n")
+    if gpu: # perlmutter GPU
+        nthreads = 4
+        s.write("#SBATCH --qos=regular" + "\n")
+        s.write("#SBATCH --constraint=gpu" + "\n")
+        s.write("#SBATCH --account=desi_g \n")
+        s.write("#SBATCH --cpus-per-task="+str(128)+"\n")
+        s.write("#SBATCH --gpus=" + str(1) + "\n")
+        s.write("#SBATCH --cpu_bind=cores" + "\n")
+    else:
+      if (host == 'login1'): #lapalma
+        nthreads = 4
+        s.write("#SBATCH  -J "+str(root)+" \n")
+        s.write("#SBATCH  -o "+str(root)+"_%j.out"+" \n")
+        s.write("#SBATCH  -e "+str(root)+"_%j.err"+" \n")
+        s.write("#SBATCH --cpus-per-task="+str(16)+"\n")
+      else: # perlmutter
+        nthreads = 4
+        s.write("#SBATCH --qos=regular" + "\n")
+        s.write("#SBATCH --constraint=cpu" + "\n")
+        s.write("#SBATCH --account=desi \n")
+        s.write("#SBATCH --cpus-per-task="+str(128*2)+"\n")
+        s.write("#SBATCH --cpu_bind=cores" + "\n")
 
+    s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
+    s.write("module load python"+"\n")
     s.write("cd "+pwd+"\n\n")
 
     command="python3 -c \"import sys; " + \
@@ -12982,9 +12990,10 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
      " bas(\'" + entry + "\'," + \
      " outfile=\'" + outfile + "\'," + \
      " synthfile=" + str(synthfile1) + ", star= " + str(star) + ", focus= " + \
-     str(focus) + ", conti= " + str(conti) + "," + \
+       str(focus) + ", conti= " + str(conti) + "," + \
      " doubleconti= " + str(doubleconti) + "," + \
      " filters= " + str(filters) +"); " + \
+     " gpu= " + str(gpu) + "); " + \
      " wtabmodfits(\'" + root + "'" + ", path= '" + tpath + "\'" + \
      ")\"" + "\n"
 
