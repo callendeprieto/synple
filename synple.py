@@ -10769,10 +10769,13 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
       err = (np.loadtxt(errfile,dtype=float)**2)
       ivr = np.divide(1., err, where = (err > 0.), out = np.zeros_like(err) )
       if wavelengths is None:
-        if frd.ndim == 1:
-          wav = np.arange(len(frd))
-        else:
-          wav = np.arange(len(frd[0,:]))
+        if os.path.isfile(infile + '.wav'):
+          wav = np.loadtxt(infile + '.wav')
+        else: 
+          if frd.ndim == 1:
+            wav = np.arange(len(frd))
+          else:
+            wav = np.arange(len(frd[0,:]))
       else:
         wav = wavelengths
       if frd.ndim == 1:
