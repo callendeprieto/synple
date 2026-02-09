@@ -1836,6 +1836,7 @@ def polysyn(modelfiles, wrange, strength=1e-4, abu=None, \
         if entry == 'missing' or os.path.getsize(entry) == 0:
           pass
         else:
+          print('model is ',entry)
           atmostype, teff, logg, vmicro2, abu1, nd, atmos = read_model(entry)
           if teff is None: 
             pass
@@ -9658,6 +9659,9 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       #ids, x2, obs, ivr, xtr = read_spec(file,wavelengths=x,target=target,rv=rv,
       ids, x2, obs, ivr, xtr = read_spec(file,target=target,rv=rv,
                                     ebv=ebv, star=star)
+
+      print('x=',x)
+      print('x2=',x2)
 
 
       if type(x2) is list:
