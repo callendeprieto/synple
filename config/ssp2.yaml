@@ -5,20 +5,20 @@ nmerge: 100
 keepingz: False
 grids: ['f_k1','f_k2','f_k3']
 f_k1:
-       type: 'mkk-regular'
-       tteff: 22  3000.    250.
-       tlogg: 13    -1.0     0.5
-       tfeh:   8    -2.5     0.5
-       Mg:     2     0.0     0.3
+       type: 'mkk-irregular'
+       nmodels: 3000
+       pteff: 3000.   6700.
+       plogg: -1.0     5.5
+       pfeh:  -2.5     1.0
 f_k2:
-       type: 'mkk-regular'
-       tteff: 12  6750.    250.
-       tlogg:  9     1.0     0.5
-       tfeh:   8    -2.5     0.5
-       Mg:     2     0.0     0.3
+       type: 'mkk-irregular'
+       nmodels: 2000
+       pteff: 6750.    10500.
+       plogg: 1.0      5.5
+       pfeh:   8      -2.5
 f_k3:
-       type: 'mkk-regular'
-       tteff: 20  11000.  1000.
-       tlogg:  5     3.0     0.5
-       tfeh:   8     -2.5    0.3
-       Mg:     2     0.0     0.3
+       type: 'mkk-irregular'
+       nmodels: 1000
+       pteff: 11000.  30000.
+       plogg: 2.0      5.5
+       pfeh: -2.5      1.0
