@@ -12909,9 +12909,61 @@ def fparams(root,synthfile=None,figure=None,condition=None):
 
 def desida(path_to_data='healpix',path_to_output='sp_output',
            synthfile=None, seconds_per_target=2.,star=True,focus=False,
-           conti=1, doubleconti=False, gpu=False, filters=[]):
+           conti=1, doubleconti=False, gpu=False, cpu_share=1, 
+           ferre=False, filters=[]):
 
-  """ Prepare a DESI data for parallel processing
+  """Prepare a DESI data for parallel processing
+ 
+  Parameters
+  ----------
+  path_to_data: str
+      Folder where the input data is stored
+      (default is 'healpix')
+  path_to_output: str
+      Folder where the output will go to
+      (default is 'sp_output')
+  synthfile: str
+      Filename with the model grid to be used in the analysis.
+      (default is None, which will make the code decide on the grid based on
+       the config/bas-grids.yaml)
+  seconds_per_target: float
+      Seconds it will take to analyze a single target on a single core
+  star: bool
+      When True the criteria for selecting which targets in an input DESI file
+      will be actually analyzed are chosen to pick stars. The actual criteria
+      are defined in read_spec. This keyword has no effect on data from 
+      instruments other than DESI
+  focus: True
+      When True bas takes a shortcut and preselects which region of the grid
+      will be used to test models. By default (focus=False) the entire grid
+      is tested in bas 
+  conti: int
+      conti > 1 activates the continuum normalization (see 'continuum' function)
+      by a Saviztky-Golay filter with a width of  'conti'
+      The default (1) is dividing the input/model fluxes in each
+      spectrum by their mean value
+      conti < 0 activates the continuum normalization as explained above, but
+      using conti=1 for the first optimization, which is used to measure radial 
+      velocity. Conti=0 corresponds to no normalization at all.
+      (default 1)
+  doubleconti: bool
+      when on, and abs(conti)> 1, both the spectrum normalized with conti=1
+      and abs(conti) are fit simultaneously
+  gpu: bool
+      sends the calculation of the likelihood to the GPU
+  cpu_share: int
+      this number avoid offloading the analysis of all the files to the GPU when
+      gpu is True. 1/cpu_share of the jobs will NOT be offloaded. 
+  ferre: bool
+      calls the FERRE code to run the optimization
+  filters: list of strings
+      this list can provide a list of elements for which filters will
+      be used to derive abundances (e.g. filters = ['Al', 'Mg']).
+      The filter files are expected to be in the filters folder within
+      the synple distribution, within a subfolder with the name of the
+      grid, and having an flt extension (e.g. n_sc2-STISrbf/Al.flt)
+      (default is [])
+
   """
 
   
@@ -12960,7 +13012,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
     s.write("#SBATCH --time="+str(int(minutes)+1)+"\n") #minutes
     s.write("#SBATCH --ntasks=1" + "\n")
     s.write("#SBATCH --nodes=1" + "\n")
-    if gpu: # perlmutter GPU
+    if gpu and np.mod(k,cpu_share): # perlmutter GPU
         nthreads = 4
         s.write("#SBATCH --qos=regular" + "\n")
         s.write("#SBATCH --constraint=gpu" + "\n")
@@ -13007,7 +13059,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
     s.write(command)
     s.close()
     os.chmod(sfile,0o755)
- 
+    k += 1 
 
 
   return()
