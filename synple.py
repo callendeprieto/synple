@@ -9348,13 +9348,13 @@ def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
       sys.exit()
     elif p.ndim == 1:
       ndim = 1
-      p = np.reshape(p, (p.size, 1) )
+      p = cp.reshape(p, (p.size, 1) )
     else:
       ndim = len(p[0,:])
     res = cp.zeros(ndim)
     eres = cp.zeros(ndim)
     cov = cp.zeros(ndim*(ndim+1)//2)
-    fullcov = np.zeros((ndim,ndim))
+    fullcov = cp.zeros((ndim,ndim))
     likeli = cp.exp(-chi/2./beta)
     if prior is not None:
       assert cp.abs(1.-cp.sum(prior)) < 1e-10,'sum(prior) must be 1.'
@@ -9373,7 +9373,7 @@ def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
         for j in range(ndim-i):
           cov[k] = cp.sum( likeli * (p[:,i] - res[i]) * (p[:,j+i] - res[j+i]) )/den
           if j == 0:
-            eres[i] = np.sqrt(cov[k])
+            eres[i] = cp.sqrt(cov[k])
             fullcov[i,i] = cov[k]
           else:
             fullcov[i,j+i] = cov[k]
@@ -9902,7 +9902,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             eres = cp.asnumpy(eres_gpu)
             cov = cp.asnumpy(cov_gpu)
             bmod = cp.asnumpy(bmod_gpu)
-            weights = cp.asnumpy(weights_gpu.get())
+            weights = cp.asnumpy(weights_gpu)
           else:
             res, eres, cov, bmod, weights = cebas( p, d, spec, ivar )
           lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - ndim))
