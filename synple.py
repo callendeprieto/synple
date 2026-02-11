@@ -9898,11 +9898,11 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             ivar_gpu = cp.asarray(ivar)
             res_gpu, eres_gpu, cov_gpu, bmod_gpu, 
             weights_gpu = cebas_gpu(p_gpu, d_gpu, spec_gpu, ivar_gpu)
-            res = cp.asnumpy(res_gpu)
-            eres = cp.asnumpy(eres_gpu)
-            cov = cp.asnumpy(cov_gpu)
-            bmod = cp.asnumpy(bmod_gpu)
-            weights = cp.asnumpy(weights_gpu)
+            res = cp.asnumpy(res_gpu.get())
+            eres = cp.asnumpy(eres_gpu.get())
+            cov = cp.asnumpy(cov_gpu.get())
+            bmod = cp.asnumpy(bmod_gpu.get())
+            weights = cp.asnumpy(weights_gpu.get())
           else:
             res, eres, cov, bmod, weights = cebas( p, d, spec, ivar )
           lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - ndim))
