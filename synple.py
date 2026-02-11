@@ -12989,6 +12989,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
 
 
   folders = []
+  k = 0
   for entry in infiles:
     parts = entry.split('/')
     infile = parts[-1]
