@@ -9328,6 +9328,8 @@ def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
       
     """
 
+    import cupy as cp
+
     if filter is None:
       chi = cp.sum((d-flx)**2 * iva,-1)
     else:
@@ -13020,7 +13022,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
         s.write("#SBATCH --account=desi_g \n")
         s.write("#SBATCH --cpus-per-task="+str(128)+"\n")
         s.write("#SBATCH --gpus=" + str(1) + "\n")
-        s.write("#SBATCH --cpu_bind=cores" + "\n")
+        #s.write("#SBATCH --cpu_bind=cores" + "\n")
     else:
       if (host == 'login1'): #lapalma
         nthreads = 4
@@ -13034,7 +13036,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
         s.write("#SBATCH --constraint=cpu" + "\n")
         s.write("#SBATCH --account=desi \n")
         s.write("#SBATCH --cpus-per-task="+str(128*2)+"\n")
-        s.write("#SBATCH --cpu_bind=cores" + "\n")
+        #s.write("#SBATCH --cpu_bind=cores" + "\n")
 
     s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
     s.write("module load python"+"\n")
