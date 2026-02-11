@@ -13052,7 +13052,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
      " synthfile=" + str(synthfile1) + ", star= " + str(star) + ", focus= " + \
        str(focus) + ", conti= " + str(conti) + "," + \
      " doubleconti= " + str(doubleconti) + "," + \
-     " filters= " + str(filters) +"); " + \
+     " filters= " + str(filters) +", " + \
      " gpu= " + str(gpu) + "); " + \
      " wtabmodfits(\'" + root + "'" + ", path= '" + tpath + "\'" + \
      ")\"" + "\n"
