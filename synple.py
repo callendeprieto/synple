@@ -9386,6 +9386,7 @@ def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
     #bflx = [0.0,0.0]
         
     print('res=',res,'eres=',eres)
+    print('types of res,eres,fullcov,fullcov.reshape(ndim*ndim),bflx,likely', type(res),type(eres),type(fullcov),type(fullcov.reshape(ndim*ndim)),type(bflx),type(likely))
       
     return(res,eres,fullcov.reshape(ndim*ndim),bflx,likeli)
 
