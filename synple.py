@@ -13041,7 +13041,8 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
         #s.write("#SBATCH --cpu_bind=cores" + "\n")
 
     s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
-    s.write("module load python"+"\n")
+    #s.write("module load python"+"\n")  #LaPalma
+    s.write("module load conda"+"\n")    #Perlmutter
     s.write("cd "+pwd+"\n\n")
 
     command="python3 -c \"import sys; " + \
