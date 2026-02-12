@@ -9386,7 +9386,6 @@ def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
     #bflx = [0.0,0.0]
         
     print('res=',res,'eres=',eres)
-    print('types of res,eres,fullcov,fullcov.reshape(ndim*ndim),bflx,likely', type(res),type(eres),type(fullcov),type(fullcov.reshape(ndim*ndim)),type(bflx),type(likeli))
       
     return(res,eres,fullcov.reshape(ndim*ndim),bflx,likeli)
 
@@ -9898,7 +9897,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           if gpu:
             spec_gpu = cp.asarray(spec)
             ivar_gpu = cp.asarray(ivar)
-            res_gpu, eres_gpu, cov_gpu, bmod_gpu, 
+            res_gpu, eres_gpu, cov_gpu, bmod_gpu, \
             weights_gpu = cebas_gpu(p_gpu, d_gpu, spec_gpu, ivar_gpu)
             res = cp.asnumpy(res_gpu)
             eres = cp.asnumpy(eres_gpu)
