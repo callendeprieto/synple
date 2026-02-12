@@ -9328,6 +9328,8 @@ def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
       
     """
 
+    import cupy as cp
+
     if filter is None:
       chi = cp.sum((d-flx)**2 * iva,-1)
     else:
