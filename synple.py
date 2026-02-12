@@ -9386,7 +9386,7 @@ def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
     #bflx = [0.0,0.0]
         
     print('res=',res,'eres=',eres)
-    print('types of res,eres,fullcov,fullcov.reshape(ndim*ndim),bflx,likely', type(res),type(eres),type(fullcov),type(fullcov.reshape(ndim*ndim)),type(bflx),type(likely))
+    print('types of res,eres,fullcov,fullcov.reshape(ndim*ndim),bflx,likely', type(res),type(eres),type(fullcov),type(fullcov.reshape(ndim*ndim)),type(bflx),type(likeli))
       
     return(res,eres,fullcov.reshape(ndim*ndim),bflx,likeli)
 
@@ -13041,8 +13041,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
         #s.write("#SBATCH --cpu_bind=cores" + "\n")
 
     s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
-    #s.write("module load python"+"\n")  #LaPalma
-    s.write("module load conda"+"\n")    #Perlmutter
+    s.write("module load python"+"\n") 
     s.write("cd "+pwd+"\n\n")
 
     command="python3 -c \"import sys; " + \
