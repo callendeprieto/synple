@@ -2478,7 +2478,7 @@ def merge_slurm(path='./',ext='slurm',nmerge=2,concurrent=False):
   return None
   
   
-def merge_slurm_parallel(path='./',ext='slurm',nmerge=2,ncpu=2):
+def merge_slurm_parallel(path='./', ext='slurm', nmerge=2, ncpu=2, kstart=1, kstep=1):
   """identifies all the *.slurm files in the path and merge them 
      in groups of nmerge so that there are fewer/longer jobs. 
      Inside of the new jobs, gnu parallel will be used to have ncpu
@@ -2496,10 +2496,15 @@ def merge_slurm_parallel(path='./',ext='slurm',nmerge=2,ncpu=2):
   nmerge: int
      size of the groups to be created
      (default is 2)
-     
   ncpu: int
      number of the input jobs to be run simultaneously 
      as part of the output jobs
+  kstart: int
+     identifying number for the first output script (e.g. job-0001.slurm)
+     (default is 1)
+  kstep: int
+     step for the identifying number of the following output scripts 
+     (default is 1)
      
   Returns
   -------
@@ -2513,14 +2518,14 @@ def merge_slurm_parallel(path='./',ext='slurm',nmerge=2,ncpu=2):
 
   assert nfiles > 0, 'There are no input files ending in '+ext
 
-  k = 0 
+  k = kstart 
   wtime = -1
   print('nfiles=',nfiles)
   for i in range(nfiles):
     f1 = open(slurms[i],'r')
     j = i % nmerge
     if j == 0:
-      k = k + 1
+      k = k + kstep
       if k > 1: 
         if wtime > -1:
           #if concurrent: time = int(time*3.) #factor 3 is a safety margin
@@ -13073,11 +13078,18 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
         s.write("#SBATCH --cpus-per-task="+str(16)+"\n")
       else: # perlmutter
         nthreads = 4
-        s.write("#SBATCH --qos=regular" + "\n")
-        s.write("#SBATCH --constraint=cpu" + "\n")
-        s.write("#SBATCH --account=desi \n")
-        s.write("#SBATCH --cpus-per-task="+str(128*2)+"\n")
-        #s.write("#SBATCH --cpu_bind=cores" + "\n")
+        if gpu:
+          s.write("#SBATCH --qos=regular" + "\n")
+          s.write("#SBATCH --constraint=gpu" + "\n")
+          s.write("#SBATCH --account=desi \n")
+          s.write("#SBATCH --cpus-per-task="+str(128)+"\n")
+          #s.write("#SBATCH --cpu_bind=cores" + "\n")
+        else:
+          s.write("#SBATCH --qos=regular" + "\n")
+          s.write("#SBATCH --constraint=cpu" + "\n")
+          s.write("#SBATCH --account=desi \n")
+          s.write("#SBATCH --cpus-per-task="+str(128*2)+"\n")
+          #s.write("#SBATCH --cpu_bind=cores" + "\n")
 
       s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
       s.write("module load python"+"\n") 
