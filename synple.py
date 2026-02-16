@@ -2488,20 +2488,24 @@ def merge_slurm(path='./',ext='slurm',outext='slurm',nmerge=2,concurrent=False,k
   return None
   
   
-def merge_slurm_parallel(path='./', ext='slurm', nmerge=2, ncpu=2, kstart=1, kstep=1):
+def merge_slurm_parallel(path='./', ext='slurm', outext='slurm', nmerge=2, ncpu=2, kstart=1, kstep=1):
   """identifies all the *.slurm files in the path and merge them 
      in groups of nmerge so that there are fewer/longer jobs. 
      Inside of the new jobs, gnu parallel will be used to have ncpu
      of the input jobs run simultaneously.
-     The new scripts are named job-*.slurm and written to the current 
-     folder
+     The new scripts are named job-*.slurm (ending in outext) and 
+     written to the current folder 
 
   Parameters
   ----------
   path: str
      path under which the slurm jobs are to be found
      (default is './')
-  ext: str     extension of the slurm jobs to be found
+  ext: str     
+     extension of the slurm jobs to be found
+     (default is 'slurm')
+  outext: str
+     extension of the slurm jobs to be created
      (default is 'slurm')
   nmerge: int
      size of the groups to be created
@@ -2547,7 +2551,7 @@ def merge_slurm_parallel(path='./', ext='slurm', nmerge=2, ncpu=2, kstart=1, kst
         for entry in infiles: f3.write(entry+'\n')
         f2.close()
         f3.close()
-      f2 = open('job-'+"{:04d}".format(k)+'.slurm','w')
+      f2 = open('job-'+"{:04d}".format(k)+outext,'w')
       f3 = open('input-'+"{:04d}".format(k)+'.txt','w')
       time = 0
       header = []
