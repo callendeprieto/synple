@@ -12912,7 +12912,7 @@ def fparams(root,synthfile=None,figure=None,condition=None):
 
 def desida(path_to_data='healpix',path_to_output='sp_output',
            synthfile=None, seconds_per_target=2.,star=True,focus=False,
-           conti=1, doubleconti=False, gpu=False, cpu_share=1, 
+           conti=1, doubleconti=False, gpu=False, cpu_share=0, 
            ferre=False, filters=[]):
 
   """Prepare a DESI data for parallel processing
@@ -13001,30 +13001,69 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
 
     os.makedirs(tpath,exist_ok=True) 
 
+
     minutes = 4000*seconds_per_target/60.
     root = infile[:-5]
 
-    sfile = os.path.join(tpath,root+'.job') 
-    outfile = os.path.join(tpath,root)
-
-    print('infile=',entry)
-    print('outfile=',outfile)
-    s = open(sfile,'w')
-    s.write("#!/bin/bash \n")
-    s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
-    s.write("#This script was written by synple.py on "+now+" \n")
-    s.write("#SBATCH --time="+str(int(minutes)+1)+"\n") #minutes
-    s.write("#SBATCH --ntasks=1" + "\n")
-    s.write("#SBATCH --nodes=1" + "\n")
     if gpu and np.mod(k,cpu_share): # perlmutter GPU
-        nthreads = 4
-        s.write("#SBATCH --qos=regular" + "\n")
-        s.write("#SBATCH --constraint=gpu" + "\n")
-        s.write("#SBATCH --account=desi_g \n")
-        s.write("#SBATCH --cpus-per-task="+str(128)+"\n")
-        s.write("#SBATCH --gpus=" + str(1) + "\n")
-        #s.write("#SBATCH --cpu_bind=cores" + "\n")
+
+      sfile = os.path.join(tpath,root+'.gpu') 
+      outfile = os.path.join(tpath,root)
+
+      print('infile=',entry)
+      print('outfile=',outfile)
+      s = open(sfile,'w')
+      s.write("#!/bin/bash \n")
+      s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
+      s.write("#This script was written by synple.py on "+now+" \n")
+      s.write("#SBATCH --time="+str(int(minutes)+1)+"\n") #minutes
+      s.write("#SBATCH --ntasks=1" + "\n")
+      s.write("#SBATCH --nodes=1" + "\n")
+      nthreads = 4
+      s.write("#SBATCH --qos=regular" + "\n")
+      s.write("#SBATCH --constraint=gpu" + "\n")
+      s.write("#SBATCH --account=desi_g \n")
+      s.write("#SBATCH --cpus-per-task="+str(128)+"\n")
+      s.write("#SBATCH --gpus=" + str(1) + "\n")
+      #s.write("#SBATCH --cpu_bind=cores" + "\n")
+
+      s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
+      s.write("module load python"+"\n")  
+      s.write("cd "+pwd+"\n\n")
+
+      command="python3 -c \"import sys; " + \
+       " sys.path.insert(0, '"+python_path1 + "'); " + \
+       " nthreads = " + str(nthreads) + ";" + \
+       " import os; os.environ['OMP_NUM_THREADS'] = str(nthreads) ; "+ \
+       " os.environ['OPENBLAS_NUM_THREADS'] = str(nthreads) ;"  + \
+       " os.environ['MKL_NUM_THREADS'] = str(nthreads) ; " + \
+       " from synple import bas, wtabmodfits; " + \
+       " bas(\'" + entry + "\'," + \
+       " outfile=\'" + outfile + "\'," + \
+       " synthfile=" + str(synthfile1) + ", star= " + str(star) + \
+       ", focus= " + str(focus) + ", conti= " + str(conti) + "," + \
+       " doubleconti= " + str(doubleconti) + "," + \
+       " filters= " + str(filters) +", " + \
+       " gpu= " + str(gpu) + "); " + \
+       " wtabmodfits(\'" + root + "'" + ", path= '" + tpath + "\'" + \
+       ")\"" + "\n"
+
+
     else:
+
+      sfile = os.path.join(tpath,root+'.job')
+      outfile = os.path.join(tpath,root)
+
+      print('infile=',entry)
+      print('outfile=',outfile)
+      s = open(sfile,'w')
+      s.write("#!/bin/bash \n")
+      s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
+      s.write("#This script was written by synple.py on "+now+" \n")
+      s.write("#SBATCH --time="+str(int(minutes)+1)+"\n") #minutes
+      s.write("#SBATCH --ntasks=1" + "\n")
+      s.write("#SBATCH --nodes=1" + "\n")
+
       if (host == 'login1'): #lapalma
         nthreads = 4
         s.write("#SBATCH  -J "+str(root)+" \n")
@@ -13039,26 +13078,26 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
         s.write("#SBATCH --cpus-per-task="+str(128*2)+"\n")
         #s.write("#SBATCH --cpu_bind=cores" + "\n")
 
-    s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
-    s.write("module load python"+"\n") 
-    s.write("cd "+pwd+"\n\n")
+      s.write("#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-# \n")
+      s.write("module load python"+"\n") 
+      s.write("cd "+pwd+"\n\n")
 
-    command="python3 -c \"import sys; " + \
-     " sys.path.insert(0, '"+python_path1 + "'); " + \
-     " nthreads = " + str(nthreads) + ";" + \
-     " import os; os.environ['OMP_NUM_THREADS'] = str(nthreads) ; "+ \
-     " os.environ['OPENBLAS_NUM_THREADS'] = str(nthreads) ;"  + \
-     " os.environ['MKL_NUM_THREADS'] = str(nthreads) ; " + \
-     " from synple import bas, wtabmodfits; " + \
-     " bas(\'" + entry + "\'," + \
-     " outfile=\'" + outfile + "\'," + \
-     " synthfile=" + str(synthfile1) + ", star= " + str(star) + ", focus= " + \
-       str(focus) + ", conti= " + str(conti) + "," + \
-     " doubleconti= " + str(doubleconti) + "," + \
-     " filters= " + str(filters) +", " + \
-     " gpu= " + str(gpu) + "); " + \
-     " wtabmodfits(\'" + root + "'" + ", path= '" + tpath + "\'" + \
-     ")\"" + "\n"
+      command="python3 -c \"import sys; " + \
+       " sys.path.insert(0, '"+python_path1 + "'); " + \
+       " nthreads = " + str(nthreads) + ";" + \
+       " import os; os.environ['OMP_NUM_THREADS'] = str(nthreads) ; "+ \
+       " os.environ['OPENBLAS_NUM_THREADS'] = str(nthreads) ;"  + \
+       " os.environ['MKL_NUM_THREADS'] = str(nthreads) ; " + \
+       " from synple import bas, wtabmodfits; " + \
+       " bas(\'" + entry + "\'," + \
+       " outfile=\'" + outfile + "\'," + \
+       " synthfile=" + str(synthfile1) + ", star= " + str(star) + \
+       ", focus= " + str(focus) + ", conti= " + str(conti) + "," + \
+       " doubleconti= " + str(doubleconti) + "," + \
+       " filters= " + str(filters) +", " + \
+       " gpu= " + str(False) + "); " + \
+       " wtabmodfits(\'" + root + "'" + ", path= '" + tpath + "\'" + \
+       ")\"" + "\n"
 
     s.write(command)
     s.close()
