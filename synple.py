@@ -2392,7 +2392,7 @@ def polyopt(wrange=(9.e2,1.e5), dlw=2.1e-5, binary=False, strength=1e-4, inttab=
 
   return()
   
-def merge_slurm(path='./',ext='slurm',nmerge=2,concurrent=False):
+def merge_slurm(path='./',ext='slurm',outext='slurm',nmerge=2,concurrent=False,kstart=1,kstep=1):
   """identifies all the *.slurm files in the path and merge them 
      in groups of nmerge so that there are fewer/longer jobs. 
      The scripts are named job-*.slurm and written to the current folder
@@ -2405,12 +2405,22 @@ def merge_slurm(path='./',ext='slurm',nmerge=2,concurrent=False):
   ext: str
      extension of the slurm jobs to be found
      (default is 'slurm')
+  outext: str
+     extension of the slurm jobs to create
+     (default is 'slurm')
   nmerge: int
      size of the groups to be created
      (default is 2)
   concurrent: bool
      whether or not the grouped jobs are to be executed concurrently
      (default is False, so the jobs in a group are to be executed serially)
+  kstart: int
+     identifying number for the first output script (e.g. job-0001.slurm)
+     (default is 1)
+  kstep: int
+     step for the identifying number of the following output scripts
+     (default is 1)
+
      
   Returns
   -------
@@ -2418,21 +2428,21 @@ def merge_slurm(path='./',ext='slurm',nmerge=2,concurrent=False):
   
   """
 
-  slurms = glob.glob(os.path.join(path,'**','*'+ext), recursive=True)
+  slurms = np.sort( glob.glob(os.path.join(path,'**','*'+ext), recursive=True) )
 
   nfiles = len(slurms)
 
   assert nfiles > 0, 'There are no input files ending in '+ext
 
-  k = 0 
+  k = kstart - kstep
   wtime = -1
   print('nfiles=',nfiles)
   for i in range(nfiles):
     f1 = open(slurms[i],'r')
     j = i % nmerge
     if j == 0:
-      k = k + 1
-      if k > 1: 
+      k = k + kstep
+      if k > kstart: 
         if wtime > -1:
           if concurrent: time = int(time*3.) #factor 3 is a safety margin
           entries = header[wtime].split('=')
@@ -2441,7 +2451,7 @@ def merge_slurm(path='./',ext='slurm',nmerge=2,concurrent=False):
         if concurrent: body.append("wait\n")
         f2.writelines(body)
         f2.close()
-      f2 = open('job-'+"{:04d}".format(k)+'.slurm','w')
+      f2 = open('job-'+"{:04d}".format(k)+outext,'w')
       time = 0
       header = []
       body = []
@@ -2512,7 +2522,7 @@ def merge_slurm_parallel(path='./', ext='slurm', nmerge=2, ncpu=2, kstart=1, kst
   
   """
 
-  slurms = glob.glob(os.path.join(path,'**','*'+ext), recursive=True)
+  slurms = np.sort( glob.glob(os.path.join(path,'**','*'+ext), recursive=True) )
 
   nfiles = len(slurms)
 
