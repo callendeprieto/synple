@@ -13095,7 +13095,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
         if gpu:
           s.write("#SBATCH --qos=regular" + "\n")
           s.write("#SBATCH --constraint=gpu" + "\n")
-          s.write("#SBATCH --account=desi \n")
+          s.write("#SBATCH --account=desi_g \n")
           s.write("#SBATCH --cpus-per-task="+str(128)+"\n")
           #s.write("#SBATCH --cpu_bind=cores" + "\n")
         else:
