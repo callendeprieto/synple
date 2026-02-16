@@ -2518,7 +2518,7 @@ def merge_slurm_parallel(path='./', ext='slurm', nmerge=2, ncpu=2, kstart=1, kst
 
   assert nfiles > 0, 'There are no input files ending in '+ext
 
-  k = kstart 
+  k = kstart - kstep
   wtime = -1
   print('nfiles=',nfiles)
   for i in range(nfiles):
