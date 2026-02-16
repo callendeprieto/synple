@@ -2451,7 +2451,7 @@ def merge_slurm(path='./',ext='slurm',outext='slurm',nmerge=2,concurrent=False,k
         if concurrent: body.append("wait\n")
         f2.writelines(body)
         f2.close()
-      f2 = open('job-'+"{:04d}".format(k)+outext,'w')
+      f2 = open('job-'+"{:04d}".format(k)+'.'+outext,'w')
       time = 0
       header = []
       body = []
@@ -2551,7 +2551,7 @@ def merge_slurm_parallel(path='./', ext='slurm', outext='slurm', nmerge=2, ncpu=
         for entry in infiles: f3.write(entry+'\n')
         f2.close()
         f3.close()
-      f2 = open('job-'+"{:04d}".format(k)+outext,'w')
+      f2 = open('job-'+"{:04d}".format(k)+'.'+outext,'w')
       f3 = open('input-'+"{:04d}".format(k)+'.txt','w')
       time = 0
       header = []
