@@ -2547,7 +2547,7 @@ def merge_slurm_parallel(path='./', ext='slurm', outext='slurm', nmerge=2, ncpu=
           header[wtime] = entries[0]+'='+str(time)+'\n'
         f2.writelines(header)
         f2.write('module load gnuparallel\n')
-        f2.writelines('parallel -j'+str(ncpu)+" :::: "+"input-"+"{:04d}".format(k-1)+".txt\n")
+        f2.writelines('parallel -j'+str(ncpu)+" :::: "+"input-"+"{:04d}".format(k-kstep)+".txt\n")
         for entry in infiles: f3.write(entry+'\n')
         f2.close()
         f3.close()
