@@ -2526,7 +2526,7 @@ def merge_slurm_parallel(path='./', ext='slurm', nmerge=2, ncpu=2, kstart=1, kst
     j = i % nmerge
     if j == 0:
       k = k + kstep
-      if k > 1: 
+      if k > kstart: 
         if wtime > -1:
           #if concurrent: time = int(time*3.) #factor 3 is a safety margin
           entries = header[wtime].split('=')
