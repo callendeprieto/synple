@@ -12930,7 +12930,7 @@ def fparams(root,synthfile=None,figure=None,condition=None):
 
 
 def desida(path_to_data='healpix',path_to_output='sp_output',
-           synthfile=None, seconds_per_target=2.,star=True,focus=False,
+           synthfile=None, seconds_per_target=0.1,star=True,focus=False,
            conti=1, doubleconti=False, gpu=False, gpu_share=1, 
            ferre=False, filters=[]):
 
