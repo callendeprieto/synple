@@ -12912,7 +12912,7 @@ def fparams(root,synthfile=None,figure=None,condition=None):
 
 def desida(path_to_data='healpix',path_to_output='sp_output',
            synthfile=None, seconds_per_target=2.,star=True,focus=False,
-           conti=1, doubleconti=False, gpu=False, cpu_share=0, 
+           conti=1, doubleconti=False, gpu=False, gpu_share=1, 
            ferre=False, filters=[]):
 
   """Prepare a DESI data for parallel processing
@@ -12954,9 +12954,10 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
       and abs(conti) are fit simultaneously
   gpu: bool
       sends the calculation of the likelihood to the GPU
-  cpu_share: int
+  gpu_share: int
       this number avoid offloading the analysis of all the files to the GPU when
-      gpu is True. 1/cpu_share of the jobs will NOT be offloaded. 
+      gpu is True. 1/gpu_share of the jobs will be offloaded and the rest will
+      be run on the CPU. 
   ferre: bool
       calls the FERRE code to run the optimization
   filters: list of strings
@@ -13005,7 +13006,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
     minutes = 4000*seconds_per_target/60.
     root = infile[:-5]
 
-    if gpu and np.mod(k,cpu_share): # perlmutter GPU
+    if gpu and not np.mod(k,gpu_share): # perlmutter GPU
 
       sfile = os.path.join(tpath,root+'.gpu') 
       outfile = os.path.join(tpath,root)
