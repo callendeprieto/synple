@@ -12623,7 +12623,7 @@ def wtabmodfits(root, path=None, overwrite=True):
     }      
 
     if a:
-      colcomm['ELEM'] = 'Elemental abundance ratios to hydrogen [X/H], where X corresponds to C, Na, Mg, Al, Si, Ca, Ti, Cr, Fe and Ni'
+      colcomm['ELEM'] = 'Elemental abundance ratios to hydrogen [X/H], where X corresponds to C, Mg, Si, Ca and  Fe'
       colcomm['ELEM_ERR'] = 'Uncertainties in the elemental abundance ratios'
 
   
