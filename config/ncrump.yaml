@@ -2,21 +2,26 @@ wrange: 3000. 10000.
 vmicro: 1.5
 ncpu: 16
 nmerge: 100
-grids: ['f_ncrump','f_ncrump2','f_ncrump3']
+grids: ['f_ncrump','f_ncrump2','f_ncrump3','f_ncrump4']
 f_ncrump:
        type: 'mkk-regular'
        tteff: 10  4500.    250.
        tlogg:  5    1.0      1.0
        tfeh:  12    -8.0     0.5
-       C:     10    0.0      0.5
 f_ncrump2:
        type: 'mkk-regular'
        tteff: 10  4500.    250.
        tlogg:  5    1.0      1.0
        tfeh:  12    -8.0     0.5
        C:     10    0.0      0.5
-       N:     10    0.0      0.5
 f_ncrump3:
+       type: 'mkk-regular'
+       tteff: 10  4500.    250.
+       tlogg:  5    1.0      1.0
+       tfeh:  12    -8.0     0.5
+       C:     10    0.0      0.5
+       N:     10    0.0      0.5
+f_ncrump4:
        type: 'mkk-irregular'
        nmodels: 600
        pteff: 4500.  6750.
