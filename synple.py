@@ -12802,6 +12802,41 @@ def wtabmodfits(root, path=None, overwrite=True):
   
  return None
 
+def desipurge(sptabfiles):
+    """For all the input sptab files, all the tmp extensions ('opf','nrd','mdl','frd','flx','abu','err','wav','fmp.fits','scr.fits','job') will be deleted
+
+    Parameters
+    ----------
+
+    sptabfiles: str
+      sptab*fits files (wildcards encouraged)
+
+    """
+
+    exts=['opf','nrd','mdl','frd','flx','abu','err','wav','fmp.fits','scr.fits','job']
+
+    sptabs = glob.glob(sptabfiles)
+
+    k = 0
+    for file in sptabs:
+      print(file)
+      path, filename = os.path.split(files[0])
+      dotpos = filename.index('.')
+      root = filename[:dotpos]
+      root = os.path.join(path,root)
+      for extension in exts:
+        if os.path.exists(root+'.'+extension):
+          print('removing ',root+'.'+extension)
+          #os.remove(root+'.'+extension)
+
+      k += 1
+
+
+
+    return()
+    
+
+
 #get dependencies versions, shamelessly copied from rvspec (Koposov's code)
 def get_dep_versions():
     """
