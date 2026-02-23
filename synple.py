@@ -12827,7 +12827,7 @@ def desipurge(sptabfiles):
       for extension in exts:
         if os.path.exists(root+'.'+extension):
           print('removing ',root+'.'+extension)
-          #os.remove(root+'.'+extension)
+          os.remove(root+'.'+extension)
 
       k += 1
 
