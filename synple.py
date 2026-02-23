@@ -12820,10 +12820,8 @@ def desipurge(sptabfiles):
     k = 0
     for file in sptabs:
       print(file)
-      path, filename = os.path.split(file)
-      dotpos = filename.index('.')
-      root = filename[:dotpos]
-      root = os.path.join(path,root)
+      dotpos = file.index('.')
+      root = file[:dotpos]
       for extension in exts:
         if os.path.exists(root+'.'+extension):
           print('removing ',root+'.'+extension)
