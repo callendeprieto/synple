@@ -2713,7 +2713,28 @@ def grid_builder(config,  modeldir=modeldir):
          print('calling polysyn with ',eldict)
          merge_slurm_parallel(ext='job', nmerge=nmerge, ncpu=ncpu)
 
-       else:
+       elif conf[entry]['type'] == 'mkk-regular':
+         frun = open('run1.py','w')
+         frun.write("import os\nimport glob\nimport numpy as np\nfrom synple import polysyn, merge_slurm_parallel\n\n")
+         frun.write("pwd=os.path.abspath(os.curdir)\n")
+         streldict = ''
+         for ky in eldict: streldict += '{}={}'.format(ky,eldict[ky])+','
+         if len(streldict) > 0:
+           frun.write("files = collect_regular_kurucz(tteff=" + \
+                str(tteff)+", tlogg="+str(tlogg)+", tfeh=" + \
+                str(tfeh)+", tafe="+str(tafe)+", tie_afe="+str(tie_afe)+ \
+                ", "+streldict[:-1]+" )\n")
+         else:
+           frun.write("files = collect_regular_kurucz(tteff=" + \
+                str(tteff)+", tlogg="+str(tlogg)+", tfeh=" + \
+                str(tfeh)+", tafe="+str(tafe)+", tie_afe="+str(tie_afe)+ \
+                " )\n")
+
+         #frun.write("files = glob.glob(os.path.join(pwd,'kur*/k*.7'))\n")
+         frun.write( "polysyn(files,wrange = (%.2f,%.2f), vmicro = %.2f, keepingz = %s )\n" %  (wrange[0], wrange[1], vmicro, keepingz) )
+         frun.write( "merge_slurm_parallel(ext='job', nmerge=%4i, ncpu=%4i)\n" % (nmerge,ncpu) )
+         frun.close()
+       elif conf[entry]['type'] == 'mkk-irregular':
          #streldict = ",".join("{}={}".format(*i) for i in eldict.items())  
          frun = open('run1.py','w')
          frun.write("import os\nimport glob\nimport numpy as np\nfrom synple import polysyn, merge_slurm_parallel\n\n")
@@ -2722,6 +2743,9 @@ def grid_builder(config,  modeldir=modeldir):
          frun.write( "polysyn(files,wrange = (%.2f,%.2f), vmicro = %.2f, keepingz = %s )\n" %  (wrange[0], wrange[1], vmicro, keepingz) )
          frun.write( "merge_slurm_parallel(ext='job', nmerge=%4i, ncpu=%4i)\n" % (nmerge,ncpu) )
          frun.close()
+       else:
+          print('accepted models can be kurucz/marcs/mkk-regular/mkk-irregular')
+          sys.exit(0)
 
 
        frun = open('run2.py','w')
@@ -4835,12 +4859,91 @@ def create_regular_kurucz(tteff=None, tlogg =None, \
     
     return()
 
+#collect the models computed using mkk-atlas9 and create_regular_kurucz
+def collect_regular_kurucz(tteff=None, tlogg =None, \
+                          tfeh = (1,0.0,0.0), tafe = (1,0.0,0.0), 
+                          tmicro = (1, 1.0, 0.0), \
+                          tie_afe=False, **kargs):
+							  
+    """Collects the model atmospheres meant to build a regular grid using Sbordone's version 
+    of ATLAS9. The model grid is defined by triads of various parameters.  Each triad has 
+    three values (n, llimit, step) that define an array x = np.range(n)*step + llimit. 
+    Triads in teff (tteff) and logg (tlogg) are mandatory. Triads in [Fe/H] 
+    (tfeh) , [alpha/Fe] (tafe) and 
+    microturbulence (tmicro) are optional since arrays with just one 0.0 are included by 
+    default. Any other chemical element can be added with additional triads, e.g. to 
+    vary sodium with 3 values [Na/Fe] = -0.2, 0.0 and +0.2 one would add a parameter
+    Na=(3,-0.2,0.2). The syntax is identical to that of create_regular_kurucz. It returns a list
+    with the filenames for models (or 'missing' when unavailable).
+    
+    Parameters
+    ----------
+    tteff: tuple
+      Teff triad (n, llimit, step)
+    tlogg: tuple
+      logg triad (n, llimit, step)
+    tfeh: tuple
+      [Fe/H] triad
+    tafe: tuple
+      [a/Fe] triad
+    tmicro: tuple
+       microturbulence triad
+    tie_afe: boolean
+      if active, when there is no loop in [alpha/Fe] (n in tafe is 1),
+      [alpha/Fe] is tied to [Fe/H]:
+      [alpha/Fe] is 0.5, for [Fe/H]<=-1.5, 0.0 for [Fe/H] >=0 and changes
+      linearly in between
+      (default: False)    
+    kargs:  tuples
+       as many triads as necessary, for other elemental variations [X/Fe]
+       e.g. Na=(3,-0.2,0.2), Al=(9, -0.5, 0.1), ...
+
+    Returns
+    -------
+    files: list of str
+      filenames of the models that can be used to feed polysyn
+
+    
+    """
+    
+							  
+    n_p = [tteff[0],tlogg[0], tfeh[0], tafe[0], tmicro[0]]
+    llimits = [tteff[1], tlogg[1], tfeh[1], tafe[1], tmicro[1]]
+    steps  = [tteff[2], tlogg[2] , tfeh[2], tafe[2], tmicro[2]]
+    tags = ['teff', 'logg', 'METALS', 'ALPHAS', 'MICRO'] 
+    alphas = ['O', 'Ne', 'Mg', 'Si', 'S', 'Ca', 'Ti']
+    if (tafe[0] > 1 and tie_afe):
+      print('Error: either tafe has more than one element or tie_afe is True')
+      sys.exit(0)
+
+
+    for entry in list(map(str,kargs.keys())): tags.append(entry)
+    for entry in kargs.values(): 
+        print(entry)
+        n_p.append(entry[0])
+        llimits.append(entry[1])
+        steps.append(entry[2])
+	
+    aa = getaa(n_p)	
+    files = []
+    
+    for i in range(len(aa[:,0])):
+       dir = ( "kur%07d" % (i+1) )       
+       ff = glob.glob(os.path.join(dir,"k*.7"))
+       if len(ff) == 1 and os.path.isfile(ff[0]) and os.stat(ff[0]).st_size > 0:
+         files.append(ff[0])
+       else:
+         files.append("missing")
+    
+    return(files)
+
+
 #create an irregular grid of Kurucz model atmospheres
 def create_irregular_kurucz(n,pteff=None, plogg =None, \
                           pfeh = (0.0,0.0), pmicro = (1.0, 1.0), \
                           tie_afe=False, **kargs):
 							  
-    """Creates scripts to compute an iregular grid of Kurucz models using Sbordone's version 
+    """Creates scripts to compute an irregular grid of Kurucz models using Sbordone's version 
     of ATLAS9. The model grid is defined by pairs of various parameters.  Each pair has 
     two values (llimit, ulimit) that define the sampling interval. 
     Pairs in teff (pteff) and logg (plogg) are mandatory. Pairs in [Fe/H] (pfeh) and 
