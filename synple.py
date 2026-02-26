@@ -2729,13 +2729,7 @@ def grid_builder(config,  modeldir=modeldir):
                 str(tteff)+", tlogg="+str(tlogg)+", tfeh=" + \
                 str(tfeh)+", tafe="+str(tafe)+", tie_afe="+str(tie_afe)+ \
                 " )\n")
-         frun.write("files2 = [] \n")
-         frun.write("for s in files: \n")
-         frun.write("  if s == 'missing': \n")
-         frun.write("    files2.append(s) \n")
-         frun.write("  else: \n")
-         frun.write("    files2.append(os.path.join(pwd,s)) \n") 
-         frun.write( "polysyn(files2,wrange = (%.2f,%.2f), vmicro = %.2f, keepingz = %s )\n" %  (wrange[0], wrange[1], vmicro, keepingz) )
+         frun.write( "polysyn(files,wrange = (%.2f,%.2f), vmicro = %.2f, keepingz = %s )\n" %  (wrange[0], wrange[1], vmicro, keepingz) )
          frun.write( "merge_slurm_parallel(ext='job', nmerge=%4i, ncpu=%4i)\n" % (nmerge,ncpu) )
          frun.close()
        elif conf[entry]['type'] == 'mkk-irregular':
@@ -4883,7 +4877,7 @@ def create_regular_kurucz(tteff=None, tlogg =None, \
 def collect_regular_kurucz(tteff=None, tlogg =None, \
                           tfeh = (1,0.0,0.0), tafe = (1,0.0,0.0), 
                           tmicro = (1, 1.0, 0.0), \
-                          tie_afe=False, **kargs):
+                          tie_afe=False, modeldir="./", **kargs):
 							  
     """Collects the model atmospheres meant to build a regular grid using Sbordone's version 
     of ATLAS9. The model grid is defined by triads of various parameters.  Each triad has 
@@ -4914,6 +4908,8 @@ def collect_regular_kurucz(tteff=None, tlogg =None, \
       [alpha/Fe] is 0.5, for [Fe/H]<=-1.5, 0.0 for [Fe/H] >=0 and changes
       linearly in between
       (default: False)    
+    modeldir: str
+      directory where model atmosphere files are
     kargs:  tuples
        as many triads as necessary, for other elemental variations [X/Fe]
        e.g. Na=(3,-0.2,0.2), Al=(9, -0.5, 0.1), ...
@@ -4925,8 +4921,10 @@ def collect_regular_kurucz(tteff=None, tlogg =None, \
 
     
     """
-    
-							  
+
+    if not os.path.isabs(modeldir):
+      modeldir = os.path.join (os.getcwd(), modeldir)
+
     n_p = [tteff[0],tlogg[0], tfeh[0], tafe[0], tmicro[0]]
     llimits = [tteff[1], tlogg[1], tfeh[1], tafe[1], tmicro[1]]
     steps  = [tteff[2], tlogg[2] , tfeh[2], tafe[2], tmicro[2]]
@@ -4951,7 +4949,7 @@ def collect_regular_kurucz(tteff=None, tlogg =None, \
        dir = ( "kur%07d" % (i+1) )       
        ff = glob.glob(os.path.join(dir,"k*.7"))
        if len(ff) == 1 and os.path.isfile(ff[0]) and os.stat(ff[0]).st_size > 0:
-         files.append(ff[0])
+         files.append(os.path.join(modeldir,ff[0]))
        else:
          files.append("missing")
     
