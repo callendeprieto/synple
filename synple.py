@@ -2754,14 +2754,14 @@ def grid_builder(config,  modeldir=modeldir):
          streldict = ''
          for ky in eldict: streldict += '{}={}'.format(ky,eldict[ky])+','
          if len(streldict) > 0:
-           frun.write( "mkgrid('%s',tteff = (%4i,%.2f,%.2f), tlogg = (%4i,%.2f,%.2f), tfeh = (%4i,%.2f,%.2f), tafe = (%4i,%.2f,%.2f), tcfe = (%4i,%.2f,%.2f), vmicro = %.2f, ignore_missing_models = True , '%s' )\n" % (entry+'.dat',tteff[0],tteff[1],tteff[2],tlogg[0],tlogg[1],tlogg[2],tfeh[0],tfeh[1],tfeh[2],tafe[0],tafe[1],tafe[2],tcfe[0],tcfe[1],tcfe[2], vmicro, streldict[:-1]) )
+           frun.write( "mkgrid('%s',tteff = (%4i,%.2f,%.2f), tlogg = (%4i,%.2f,%.2f), tfeh = (%4i,%.2f,%.2f), tafe = (%4i,%.2f,%.2f), tcfe = (%4i,%.2f,%.2f), vmicro = %.2f, ignore_missing_models = True , %s )\n" % (entry+'.dat',tteff[0],tteff[1],tteff[2],tlogg[0],tlogg[1],tlogg[2],tfeh[0],tfeh[1],tfeh[2],tafe[0],tafe[1],tafe[2],tcfe[0],tcfe[1],tcfe[2], vmicro, streldict[:-1]) )
          else:
            frun.write( "mkgrid('%s',tteff = (%4i,%.2f,%.2f), tlogg = (%4i,%.2f,%.2f), tfeh = (%4i,%.2f,%.2f), tafe = (%4i,%.2f,%.2f), tcfe = (%4i,%.2f,%.2f), vmicro = %.2f, ignore_missing_models = True )\n" % (entry+'.dat',tteff[0],tteff[1],tteff[2],tlogg[0],tlogg[1],tlogg[2],tfeh[0],tfeh[1],tfeh[2],tafe[0],tafe[1],tafe[2],tcfe[0],tcfe[1],tcfe[2], vmicro) )
        elif conf[entry]['type'] == 'mkk-irregular':
          streldict = ''
          for ky in eldict: streldict += '{}={}'.format(ky,eldict[ky])+','
          if len(streldict) > 0:
-           frun.write( "mkgrid_irregular('%s',teff = %s, logg = %s, feh = %s, afe = %s, cfe = %s, vmicro = %.2f, ignore_missing_models = True , '%s' )\n" % (entry+'.dat', bteff, blogg, bfeh, bafe, bcfe, vmicro, streldict[:-1]) )
+           frun.write( "mkgrid_irregular('%s',teff = %s, logg = %s, feh = %s, afe = %s, cfe = %s, vmicro = %.2f, ignore_missing_models = True , %s )\n" % (entry+'.dat', bteff, blogg, bfeh, bafe, bcfe, vmicro, streldict[:-1]) )
          else:
            frun.write( "mkgrid_irregular('%s',teff = %s, logg = %s, feh = %s, afe = %s, cfe = %s, vmicro = %.2f, ignore_missing_models = True )\n" % (entry+'.dat', bteff, blogg, bfeh, bafe, bcfe, vmicro) )
        else:
