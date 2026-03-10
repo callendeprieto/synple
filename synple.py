@@ -11090,7 +11090,7 @@ def eval_desi_clusters(tabfile,extension='sptab'):
   #read tab data
   s, m, h = read_tab(tabfile, extension=extension.upper())
 
-  elements = ['C','Na','Mg','Al','Si','Ca','Ti','Cr','Fe','Ni']
+  elements = ['C','Mg','Si','Ca','Fe']
 
 
   #loop over the clusters checking spread
