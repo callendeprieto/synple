@@ -11794,6 +11794,7 @@ def bas_perfcheck(synthfile,n=100,snr=1.e6,
                 edgemargin=edgemargin)
 
     else:
+      assert(n > ntot/2),'The number of experiments is smaller than half of the total number of models in the grid, which will likely bias the evaluation'
       #straight test using part of the grid sample
       hd, p, d = read_synth(synthfile) 
       trainsynthfile=synthfile+'-train.dat'
