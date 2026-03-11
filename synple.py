@@ -11717,7 +11717,7 @@ def rewrite_synth(synthfile,outsynthfile=None):
 
 def bas_perfcheck(synthfile,n=100,snr=1.e6,
     conti=1, focus=False, nail=[], interpol=False, 
-    edgemargin=0.05, ferre=False):
+    edgemargin=0.05, gpu=False, ferre=False):
 
     """Carry out a full performance check using bas on a synthetic grid
 
@@ -11750,6 +11750,11 @@ def bas_perfcheck(synthfile,n=100,snr=1.e6,
       fraction from the min/max values of the input parameters to exclude
       from the range to sample -- ony valid when interpol is True
       (default 0.05 -- exclude 5% from the edges)
+   gpu: bool
+      sends the calculation of the likelihood to the GPU
+   ferre: bool
+      calls the FERRE code to run the optimization
+
 
 
     Returns
@@ -11794,7 +11799,8 @@ def bas_perfcheck(synthfile,n=100,snr=1.e6,
                 edgemargin=edgemargin)
 
     else:
-      assert(n > ntot/2),'The number of experiments is smaller than half of the total number of models in the grid, which will likely bias the evaluation'
+      print('n,ntot=',n,ntot)
+      assert(n < ntot/2),'The number of experiments is larger than half of the total number of models in the grid, which will likely bias the evaluation (you may want to activate interpolation)'
       #straight test using part of the grid sample
       hd, p, d = read_synth(synthfile) 
       trainsynthfile=synthfile+'-train.dat'
@@ -11820,7 +11826,7 @@ def bas_perfcheck(synthfile,n=100,snr=1.e6,
     print('running ... ','bas(',testsynthfile[2:-4],'synthfile=',trainsynthfile,')')
     now = time.time()
     bas(testsynthfile[2:-4],synthfile=trainsynthfile,conti=conti,
-        focus=focus,nail=nail,ferre=ferre)
+        focus=focus,nail=nail,gpu=gpu,ferre=ferre)
 
 
     print('this run took ',time.time()-now,' seconds')
