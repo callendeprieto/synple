@@ -8235,11 +8235,11 @@ def lgconv(xinput, yinput, fwhm, ppr=None):
 
   y = np.convolve(y,kernel,'valid')
   #y = ss.fftconvolve(y,kernel,'valid')
-  print(npoints)
+  #print(npoints)
   edge = int(npoints/2)
   x = x[edge:-edge]
 
-  print(xinput.size,x.size,y.size)
+  #print(xinput.size,x.size,y.size)
 
   if ppr != None:
     fac = int(fwhm / step / ppr)
@@ -8313,7 +8313,7 @@ def vgconv(xinput,yinput,fwhm, ppr=None):
   if ppr != None:
     fac = int(fwhm / step / ppr)
     assert (fac != 0),'cannot resample since fac is = 0, increase fwhm or reduce ppr'
-    print(fwhm,step,ppr,fac)
+    #print(fwhm,step,ppr,fac)
     subset = np.arange(x.size / fac, dtype=int) * fac 
     x = x[subset]
     y = y[subset]
@@ -8693,7 +8693,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
     #print('ndim, ntot, len(indices),len(ind)=',ndim,ntot,len(indices),len(ind))
     #print('indices=',indices)
     #print('ind=',ind)
-    gsynth_body(indices, ind, tipo, ndim, ntot, hlines, newcol, xorig,
+    gsynth_body(indices, ind, tipo, ndim, ntot, hlines, newcol, xorig, xx, 
            synthfile, labels, steps, llimits, 
            fwhms=fwhms, units=units, 
            ebvs=ebvs, ervs=ervs, wrange=wrange, ppr=ppr,
@@ -8705,7 +8705,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
     for i in range(nthreads):
       #print('i,list(indices_lists[i])=',i,list(indices_lists[i]))
       pararr = [list(indices_lists[i]), ind, tipo, ndim, ntot, hlines, 
-           newcol, xorig, synthfile, labels, steps, llimits, 
+           newcol, xorig, xx, synthfile, labels, steps, llimits, 
            fwhms, units, ebvs, ervs, wrange, ppr, freeze, None ]
       pars.append(pararr)
 
@@ -8718,8 +8718,8 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
   print('this run took ',time.time()-now,' seconds')
   return()
 
-def gsynth_body(indices, ind, tipo, ndim, ntot, hlines, newcol, x, synthfile, 
-           labels, steps=[], llimits=[], 
+def gsynth_body(indices, ind, tipo, ndim, ntot, hlines, newcol, xin, xout, 
+           synthfile, labels, steps=[], llimits=[], 
            fwhms=[], units='km/s', ebvs=[], ervs=[], wrange=None, ppr=5, 
            freeze=None, file_handle=None):
 
@@ -8743,7 +8743,9 @@ def gsynth_body(indices, ind, tipo, ndim, ntot, hlines, newcol, x, synthfile,
      number of lines in the header of the input file
   newcol: numpy array of int
      array giving the indices of the dimensions 
-  x: numpy float array
+  xin: numpy float  array
+     array of wavelenghts for the input grid
+  xout: numpy float array
      array of wavelengths to interpolate the output flux onto
   synthfile: str
      file name for the input grid
@@ -8826,7 +8828,8 @@ def gsynth_body(indices, ind, tipo, ndim, ntot, hlines, newcol, x, synthfile,
       #print(i,steps,llimits)
       par = i*steps+llimits
     #print('par=',par)
-    
+   
+    x = xin.copy()
     if wrange is not None:
       assert (len(wrange) == 2), 'Error: wrange must have two elements'
       section1 = np.where( (x >= wrange[0]*(1.-10.*np.max(fwhms)/clight)) & (x <= wrange[1]*(1.+10.*np.max(fwhms)/clight)) )
@@ -8864,14 +8867,8 @@ def gsynth_body(indices, ind, tipo, ndim, ntot, hlines, newcol, x, synthfile,
       #print(rvval)
     else:
       rvval = ervs[0]
-    yy = np.interp(xx, xx*(1.+rvval/clight), yy)
+    yy = np.interp(xout, xx*(1.+rvval/clight), yy)
 
-		
-    if wrange is not None:
-      section2 = np.where( (xx >= wrange[0]) & (xx <= wrange[1]) )
-      yy = yy [section2]
-
-    
     if 'irregular' in tipo: yy = np.insert(yy,0,par)
     yy.tofile(file_handle,sep=" ",format="%0.4e")
     file_handle.write("\n")
