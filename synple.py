@@ -63,6 +63,7 @@ from scipy.signal import savgol_filter
 from scipy.optimize import curve_fit
 from itertools import product
 from astropy.io import fits
+from astropy.stats import mad_std
 import astropy.table as tbl
 import astropy.units as units
 import datetime
@@ -11105,14 +11106,14 @@ def eval_desi_clusters(tabfile,extension='sptab'):
     
     nt = len(np.where(w)[0])
     if nt > 0:
-      print('  %i targets --  %0.2f %0.2f %0.2f %0.2f' % (nt, np.mean(s['vrad'][w]), np.std(s['vrad'][w]), np.mean(s['feh'][w]), np.std(s['feh'][w]) ) )
+      print('  %i targets --  %0.2f %0.2f %0.2f %0.2f' % (nt, np.median(s['vrad'][w]), mad_std(s['vrad'][w]), np.median(s['feh'][w]), mad_std(s['feh'][w]) ) )
 
       if 'ELEM' in s.names:
         nel = len(elements)
         for j in range(nel):
           w1 = (np.abs(s['vrad'] - vrad) < svrad) & (np.abs(m['pmra'] - pmra) < spmra) & (np.abs(m['pmra'] - pmra) < spmra)  & (np.abs(s['elem'][:,j] - feh) < sfeh)
 
-          print('  %s --  %0.2f %0.2f' % (elements[j], np.mean(s['elem'][w1,j]), np.std(s['elem'][w1,j])) )
+          print('  %s --  %0.2f %0.2f' % (elements[j], np.median(s['elem'][w1,j]), mad_std(s['elem'][w1,j])) )
 
       fig, ax = plt.subplots()
 
