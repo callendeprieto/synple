@@ -11097,10 +11097,10 @@ def eval_desi_clusters(tabfile,extension='sptab'):
   #loop over the clusters checking spread
   for i in range(len(cluster[:,0])):
     name = cluster[i,0]
-    vrad, svrad, pmra, spmra, pmdec, spmdec, feh, sfeh = \
+    alpha, delta, radius, vrad, svrad, pmra, spmra, pmdec, spmdec, feh, sfeh = \
        np.array(cluster[i,1:], dtype=float) 
 
-    w = (np.abs(s['vrad'] - vrad) < svrad) & (np.abs(m['pmra'] - pmra) < spmra) & (np.abs(m['pmra'] - pmra) < spmra)  & (np.abs(s['feh'] - feh) < sfeh)
+    w = (np.abs(s['target_ra'] - alpha) < radius) & (np.abs(s['target_dec'] - delta) <  radius)  & (np.abs(s['vrad'] - vrad) < svrad) & (np.abs(m['pmra'] - pmra) < spmra) & (np.abs(m['pmra'] - pmra) < spmra)  & (np.abs(s['feh'] - feh) < sfeh)
 
     print('cluster=',name,' nominal vrad=',vrad,' nominal [Fe/H]=',feh)
     
