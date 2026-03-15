@@ -11090,36 +11090,60 @@ def eval_desi_clusters(tabfile,extension='sptab'):
 
   elements = ['C','Mg','Si','Ca','Fe']
 
+  
+  if 'VRAD' in s.names: 
+    vrad_key = 'VRAD'
+  else:
+    vrad_key = 'RV_ADOP'
 
+  plt.ion()
   #loop over the clusters checking spread
   for i in range(len(cluster[:,0])):
     name = cluster[i,0]
     alpha, delta, radius, vrad, svrad, pmra, spmra, pmdec, spmdec, feh, sfeh = \
        np.array(cluster[i,1:], dtype=float) 
 
-    w = (np.abs(s['target_ra'] - alpha) < radius) & (np.abs(s['target_dec'] - delta) <  radius)  & (np.abs(s['vrad'] - vrad) < svrad) & (np.abs(m['pmra'] - pmra) < spmra) & (np.abs(m['pmra'] - pmra) < spmra)  & (np.abs(s['feh'] - feh) < sfeh)
+    w = (np.abs(s['target_ra'] - alpha) < radius) & (np.abs(s['target_dec'] - delta) <  radius)  & (np.abs(s[vrad_key] - vrad) < svrad) & (np.abs(m['pmra'] - pmra) < spmra) & (np.abs(m['pmra'] - pmra) < spmra)  & (np.abs(s['feh'] - feh) < sfeh)
 
     print('cluster=',name,' nominal vrad=',vrad,' nominal [Fe/H]=',feh)
     
     nt = len(np.where(w)[0])
     if nt > 0:
-      print('  %i targets --  %0.2f %0.2f %0.2f %0.2f' % (nt, np.median(s['vrad'][w]), mad_std(s['vrad'][w]), np.median(s['feh'][w]), mad_std(s['feh'][w]) ) )
+      print('  %i targets --  %0.2f %0.2f %0.2f %0.2f' % (nt, np.median(s[vrad_key][w]), mad_std(s[vrad_key][w]), np.median(s['feh'][w]), mad_std(s['feh'][w]) ) )
 
       if 'ELEM' in s.names:
         nel = len(elements)
         for j in range(nel):
-          w1 = (np.abs(s['vrad'] - vrad) < svrad) & (np.abs(m['pmra'] - pmra) < spmra) & (np.abs(m['pmra'] - pmra) < spmra)  & (np.abs(s['elem'][:,j] - feh) < sfeh)
+          w1 = (np.abs(s['target_ra'] - alpha) < radius) & (np.abs(s['target_dec'] - delta) <  radius)  & (np.abs(s[vrad_key] - vrad) < svrad) & (np.abs(m['pmra'] - pmra) < spmra) & (np.abs(m['pmra'] - pmra) < spmra)  & (np.abs(s['elem'][:,j] - feh) < sfeh)
 
           print('  %s --  %0.2f %0.2f' % (elements[j], np.median(s['elem'][w1,j]), mad_std(s['elem'][w1,j])) )
 
-      fig, ax = plt.subplots()
+      fig, ax = plt.subplots(3,1)
 
-      ax.plot(s['teff'][w],s['logg'][w],'.')
-      ax.set_xlim([np.max(s['teff'][w])+200.,np.min(s['teff'][w]) - 200.])
-      ax.set_ylim([np.max(s['logg'][w]) + 0.5, np.min(s['logg'][w]) - 0.5])
-      ax.set_xlabel('Teff')
-      ax.set_ylabel('logg')
-      ax.set_title(name)
+      ax[0].plot(s['teff'][w],s['logg'][w],'.')
+      ax[0].set_xlim([np.max(s['teff'][w])+200.,np.min(s['teff'][w]) - 200.])
+      ax[0].set_ylim([np.max(s['logg'][w]) + 0.5, np.min(s['logg'][w]) - 0.5])
+      ax[0].set_xscale('log')
+      ax[0].set_xlabel('Teff')
+      ax[0].set_ylabel('logg')
+      ax[0].set_title(name)
+
+      if nt > 30:
+        ax[1].hist(s['feh'][w],bins=int(np.max([nt/100,10])))
+        cfeh = np.median(s['feh'][w])
+        sfeh = mad_std(s['feh'][w])
+        ax[1].set_xlim([cfeh - 3*sfeh, cfeh + 3*sfeh])
+        ax[1].set_xlabel('[Fe/H]')
+        ax[1].set_ylabel('N')
+
+      ax[2].plot(s['teff'][w],s['feh'][w],'.')
+      ax[2].set_xlim([np.max(s['teff'][w])+200.,np.min(s['teff'][w]) - 200.])
+      ax[2].set_ylim([cfeh - 3*sfeh, cfeh + 3*sfeh])
+      ax[2].set_xlabel('Teff')
+      ax[2].set_ylabel('[Fe/H]')
+      ax[2].set_title(name)
+
+      plt.savefig(tabfile+'-'+name+'.png')
       plt.show()
 
 
@@ -11142,9 +11166,9 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,noze
       m = yy['fit']
       sp, map, hdr = read_tab('sptab'+ root[5:])
       o = np.hstack( (sp['targetid'].reshape((sp['targetid'].size,1)), 
-        sp['param'], sp['param'] , sp['vrad'].reshape((sp['targetid'].size,1)),
-        sp['vrad'].reshape((sp['targetid'].size,1)), 
-        sp['vrad'].reshape((sp['targetid'].size,1)) ), dtype=str )
+        sp['param'], sp['param'] , sp[vrad_key].reshape((sp['targetid'].size,1)),
+        sp[vrad_key].reshape((sp['targetid'].size,1)), 
+        sp[vrad_key].reshape((sp['targetid'].size,1)) ), dtype=str )
        
 
     else:
