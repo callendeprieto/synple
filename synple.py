@@ -8831,6 +8831,9 @@ def gsynth_body(indices, ind, tipo, ndim, ntot, hlines, newcol, xin, xout,
     if freeze is not None:
        skip = True
        for entry in lfkeys:
+         print('entry=',entry)
+         print('labels=',labels)
+         print('par=',par)
          if (abs(freeze[entry] - par[labels.index(entry)]) < 1e-6): skip =       False
    
     x = xin.copy()
