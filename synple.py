@@ -8803,6 +8803,11 @@ def gsynth_body(indices, ind, tipo, ndim, ntot, hlines, newcol, xin, xout,
     while line[1] != "/":
       line = fin.readline()
 
+  for entry in labels:
+     if freeze is not None:
+       lfkeys = list(freeze.keys())
+
+
   #smooth and write data
   k = 0 #increases only when a line from the original file is used
   j = 0 #increases as we advance through the array ind
@@ -10384,7 +10389,7 @@ def identify_instrument(infile):
 	
     """Identify the instrument that produced infile
        LAMOST, DESI, NGSL(STIS)/CALSPEC, Gaia XP, MILES, INT/IDS-R900V, 
-       GTC/OSIRIS-R2500U
+       GTC/OSIRIS-R2500U, NOT/ALFOSC-Grism18
        
     Parameters
     ----------
@@ -10423,6 +10428,8 @@ def identify_instrument(infile):
                instr = 'OSIRIS-R2500U'
             if head['TELESCOP'][:8] == 'Mercator' and head['INSTRUME'][:6] == 'HERMES':
                instr = 'Mercator-HERMES'
+            if head['TELESCOP'][:3] == 'NOT' and head['INSTRUME'][:11] == 'ALFOSC_FASU' and head['ALGRNM'][:10] == 'Grism_#18':
+               instr = 'ALFOSC-Grism18'
         else:
             if 'MAPKEY' in head:
                 if head['MAPKEY'] == 'calspec':
@@ -10873,6 +10880,31 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
         
         xtr = (head)
         wav, frd, ivr =  single_target_prep(wav, flux, ivar, rv, ebv, wavelengths=wavelengths)
+
+      elif instr == "ALFOSC-Grism18":
+        fi = fits.open(infile)
+        head = fi[0].header
+        s = fi[0].data
+        flux = s
+        wav = np.arange(len(s))*head['CD1_1']+head['CRVAL1']
+        lenwav = len(wav)
+        print('Warning: ALFOSC files do not include uncertainties')
+        print('         assuming S/N = 20!')
+        err = flux * 0.05
+        ivar4 = np.divide(1., err**2,
+          where = (err**2 > 0.) , out = np.zeros_like(err), dtype = np.float128)
+        ivar = np.float64(ivar4)
+
+        if 'TCSTGT' in head:
+          ids = np.array([head['TCSTGT']])
+        else:
+          ids = np.array([infile])
+
+        assert(target is None),'target must be None for ALFOSC data (1 target per file)'
+
+        xtr = (head)
+        wav, frd, ivr =  single_target_prep(wav, flux, ivar, rv, ebv, wavelengths=wavelengths)
+
 
       elif instr == "Mercator-HERMES":
         fi = fits.open(infile)
