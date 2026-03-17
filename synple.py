@@ -8820,12 +8820,6 @@ def gsynth_body(indices, ind, tipo, ndim, ntot, hlines, newcol, xin, xout,
         line = fin.readline()
       else:
         line = linecache.getline(synthfile, indices[k]+1+hlines)
-      #print('reading line=',line)
-    if freeze is not None:
-      skip = True
-      for entry in lfkeys: 
-        if (abs(freeze[entry] - par[labels.index(entry)]) < 1e-6): skip = False
-      if skip: continue
     y = np.array(line.split(),dtype=float)
     if 'irregular' in tipo:
       par = y[:ndim]
@@ -8834,6 +8828,10 @@ def gsynth_body(indices, ind, tipo, ndim, ntot, hlines, newcol, xin, xout,
       #print(i,steps,llimits)
       par = i*steps+llimits
     #print('par=',par)
+    if freeze is not None:
+       skip = True
+       for entry in lfkeys:
+         if (abs(freeze[entry] - par[labels.index(entry)]) < 1e-6): skip =       False
    
     x = xin.copy()
     if wrange is not None:
