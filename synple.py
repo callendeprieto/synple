@@ -59,7 +59,7 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from math import ceil
 from scipy import interpolate
-from scipy.signal import savgol_filter
+from scipy.signal import savgol_filter, medfilt
 from scipy.optimize import curve_fit
 from itertools import product
 from astropy.io import fits
@@ -13621,6 +13621,147 @@ def mwsmask(mws_target):
 
 
   return(bits)
+
+
+def alf_extract(im,mu,width,offset=None):
+    """extracting an ALFOSC spectrum between mu-width and mu+width,
+       subtracting the background from the average of two identical 
+       windows shifted by + and - offset from mu
+    """
+
+    s = np.sum( im[:,int(mu-width):int(mu+width)], axis=1)
+    if offset is None:
+      s2 = s
+    else:
+      bu = np.sum( im[:,int(mu+offset-width):int(mu+offset+width)], axis=1)
+      bl = np.sum( im[:,int(mu-offset-width):int(mu-offset+width)], axis=1)
+      s2 = s - (bu+bl)/2.
+
+    return(s2)
+
+
+def alf_peak(im):
+    """finding the most prominent trace in a 2D ALFOSC spectrum
+    """
+
+    s = np.sum(im, axis=0) 
+    s2 = medfilt(s,5)
+    mu =  np.argmax(s2) 
+    sigma = 2.5 #pixels
+    width = int(4.0*np.abs(sigma))
+
+    return(mu,width)
+
+def alf_trim(im):
+    """tim the edges of a 2D ALFOSC spectrum
+    """
+
+    pad = 70
+    n,m = im.shape
+    imt = im[pad:n-pad,pad:m-pad]
+
+    return(imt)
+
+def alf_read(filename):
+    """reading a 2D ALFOSC spectrum
+    """
+
+    d = fits.open(filename)
+    s = d[1].data
+    h = d[0].header
+
+    return(h,s)
+
+def alf_cal(rawspec):
+    """reading and applying an approximate response correction to ALFOSC data
+    """
+
+    data = np.loadtxt("/Users/callende/synple/config/alfosc-g19-response.dat")
+    x = data[:,0]
+    r = data[:,1]
+
+    calspec = rawspec * r
+
+    return(calspec)
+
+def qalf(images,overwrite=False):
+  """quick look reduction of ALFOSC Grating#19 data
+  
+  Parameters
+  ==========
+  images: list
+    list of input files to reduce
+  """
+
+  n = len(images) - 1
+  for filename in images:
+    h, s = alf_read(filename)
+    if h['IMAGETYP'] == 'OBJECT' and h['ALGRNM']  == 'Grism_#18':
+      object = h['OBJECT']
+      s = alf_trim(s)
+      mu, width = alf_peak(s)
+      offset = 100 #background bands
+      y = alf_extract(s,mu,width,offset)
+      #c = 3441.08043956292  + np.arange(len(y))* 0.92789530913016
+      c = np.array([ 2.80410634e-05 ,-9.82042250e-01 , 5.28168423e+03])
+      x = np.polyval(c,np.arange(len(y)))
+
+      #linear resampling
+      x = np.flip(x)
+      y = np.flip(y)
+      print('x=',x)
+      print('y=',y)
+      step = np.mean(np.diff(x))
+      nsteps = (np.max(x) - np.min(x))/ step + 1
+      xx = np.arange(nsteps) * step + np.min(x)
+      yy = np.interp(xx, x, y)
+ 
+      plt.plot(x,y,xx,yy,'.')
+      plt.show()
+
+      x = 0
+      y = 0
+      x = xx
+      y = yy
+
+      h['CD1_1'] = step
+      h['CRVAL1'] = np.min(x)
+
+
+      w = (y < 0.)
+      if w.any():
+        if (len(np.where(w)[0]) < 0.5*len(y)):
+          w2 = (y >= 0.)
+          if w2.any():
+            y = np.interp(x,x[w2],y[w2])
+
+
+      y2 = medfilt(y,5)
+      s2 = mad_std(y-y2)
+      #plt.plot(x,y2)
+      #plt.plot(x,y2+5.*s2)
+      #plt.show()
+      print('mad_std(y-y2)=',s2)
+      w = (y > y2 + 5.*s2)
+      if w.any():
+        if (len(np.where(w)[0]) < 0.5*len(y)):
+          w2 = (y <= y2 + 3.*s2)
+          if (len(np.where(w2)[0]) > 0.5*len(y)):
+            plt.plot(x[w2],y[w2],'--')
+            y = np.interp(x,x[w2],y[w2])
+
+      y = alf_cal(y)
+
+      plt.plot(x,y)
+      plt.xlabel('wavelength')
+      plt.ylabel('relative flux')
+      plt.title(filename+' -- '+object)
+      plt.show()
+
+      fits.writeto('x'+filename, y, h, overwrite=overwrite)
+
+
+      bas('x'+filename, conti=-100)
 
 
 if __name__ == "__main__":

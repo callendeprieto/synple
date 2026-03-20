@@ -7,4 +7,4 @@ STIS-NICMOS:  n_sc2-STIS-NICMOSrbf.pickle
 XP: n_sc2-XPrbf.pickle
 CALSPEC: n_sc2-STISrbf.pickle 
 STIS: n_sc2-STISrbf.pickle
-ALFOSC-Grism18: n_ncrump2-ALFOSCrbf.pickle
+ALFOSC-Grism18: n_nsc123rbf-ALFOSC.pickle
