@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-#-*- coding: utf-8 -*-
 
 """Python wrapper for synspec 
 
@@ -11370,10 +11369,11 @@ def findjumps(x):
 
     return(brkpix)
 
-def showxmp(files,minfeh=-4.9,maxfeh=-4.0,maxchi=2.,minsnr=10.,interactive=True):
+def showxmp(files,minfeh=-4.9,maxfeh=-4.0,maxchi=3.,minsnr=4.,xrange=(380,440),interactive=True):
 
    files = glob.glob(files)
    files = np.sort(files)
+   fo = open("xmpoutput.txt",'w')
    i = 0
    for entry in files:
       i += 1
@@ -11390,6 +11390,9 @@ def showxmp(files,minfeh=-4.9,maxfeh=-4.0,maxchi=2.,minsnr=10.,interactive=True)
         snr = np.median( n[w] / er[w])
         chi = np.sum( (n[w] - m[w])**2 / er[w]**2) / lw
         feh = float(o[3])
+        targetid = o[0]
+        teff = float(o[1])
+        logg = float(o[2])
       else:
         snr = 0
         chi = 1e9
@@ -11398,13 +11401,19 @@ def showxmp(files,minfeh=-4.9,maxfeh=-4.0,maxchi=2.,minsnr=10.,interactive=True)
           snr1 = np.median( n[j,w] / er[j,w])
           chi1 = np.sum( (n[j,w] - m[j,w])**2 / er[j,w]**2) / lw
           feh1 = float(o[j,3])
-          if snr1 > snr: snr = snr1
-          if chi1 < chi: chi = chi1
-          if feh1 < feh: feh = feh1
+          if snr1 > snr: 
+            snr = snr1
+            chi = chi1
+            feh = feh1
+            targetid = o[j,0]
+            teff = float(o[j,3])
+            logg = float(o[j,1])
+            
 
       if snr > minsnr and chi < maxchi and np.max(feh) > minfeh and np.min(feh) < maxfeh:
-        print('feh,snr,chi=',feh,snr,chi)
-        plot_spec(entry, xrange=(360,440), res=True, interactive=interactive)
+        fo.write(targetid+' '+"{:04f}".format(teff)+' '+"{:5.2f}".format(logg)+' '+"{:5.2f}".format(feh)+' '+"{:4f}".format(snr)+' '+"{:5.2f}".format(chi)+'\n')
+        print(targetid+' '+str(teff)+' '+str(logg)+' '+str(feh)+' '+str(snr)+' '+str(chi)+'\n')
+        plot_spec(entry, xrange=xrange, res=True, interactive=interactive)
 
    return()
 
