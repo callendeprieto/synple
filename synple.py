@@ -11370,6 +11370,43 @@ def findjumps(x):
 
     return(brkpix)
 
+def showxmp(files,minfeh=-4.9,maxfeh=-4.0,maxchi=2.,minsnr=10.,interactive=True):
+
+   files = glob.glob(files)
+   files = np.sort(files)
+   i = 0
+   for entry in files:
+      i += 1
+      print('spec ',str(i),' of ',str(len(files)))
+      xx = np.loadtxt(entry+'.wav') / 10.
+      n = np.loadtxt(entry+'.nrd')
+      m = np.loadtxt(entry+'.mdl')
+      o = np.loadtxt(entry+'.opf',dtype=str)    
+      er = np.loadtxt(entry+'.err')
+      w = (xx > 380.) & (xx < 440.)
+      lw = len(np.where(w)[0])
+      if lw < 100: continue
+      if n.ndim == 1:
+        snr = np.median( n[w] / er[w])
+        chi = np.sum( (n[w] - m[w])**2 / er[w]**2) / lw
+        feh = float(o[3])
+      else:
+        snr = 0
+        chi = 1e9
+        feh = 0
+        for j in range(len(n[:,0])):
+          snr1 = np.median( n[j,w] / er[j,w])
+          chi1 = np.sum( (n[j,w] - m[j,w])**2 / er[j,w]**2) / lw
+          feh1 = float(o[j,3])
+          if snr1 > snr: snr = snr1
+          if chi1 < chi: chi = chi1
+          if feh1 < feh: feh = feh1
+
+      if snr > minsnr and chi < maxchi and np.max(feh) > minfeh and np.min(feh) < maxfeh:
+        print('feh,snr,chi=',feh,snr,chi)
+        plot_spec(entry, xrange=(360,440), res=True, interactive=interactive)
+
+   return()
 
 def vac2air(wavelength):
     """Conversion from vacuum to air for wavelengths based on Ciddor (1996)
