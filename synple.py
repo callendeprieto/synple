@@ -11406,8 +11406,8 @@ def showxmp(files,minfeh=-4.9,maxfeh=-4.0,maxchi=3.,minsnr=4.,xrange=(380,440),i
             chi = chi1
             feh = feh1
             targetid = o[j,0]
-            teff = float(o[j,3])
-            logg = float(o[j,1])
+            teff = float(o[j,1])
+            logg = float(o[j,2])
             
 
       if snr > minsnr and chi < maxchi and np.max(feh) > minfeh and np.min(feh) < maxfeh:
@@ -11415,6 +11415,7 @@ def showxmp(files,minfeh=-4.9,maxfeh=-4.0,maxchi=3.,minsnr=4.,xrange=(380,440),i
         print(targetid+' '+str(teff)+' '+str(logg)+' '+str(feh)+' '+str(snr)+' '+str(chi)+'\n')
         plot_spec(entry, xrange=xrange, res=True, interactive=interactive)
 
+   fo.close()
    return()
 
 def vac2air(wavelength):
