@@ -11284,7 +11284,7 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,noze
     plt.xlim(xrange)
     plt.ylim(yrange)
     if m is not None: plt.legend(labels)
-    plt.savefig('fig1.png')
+    plt.savefig(root+'.png')
     if interactive: plt.show()
   else:
     nspec = len(n[:,0])
@@ -11351,7 +11351,7 @@ def plot_spec(root=None,x=None,n=None,m=None,o=None,xrange=None,yrange=None,noze
         plt.text(xtext,ytext,o[j,0])
 
 
-      plt.savefig('fig'+str(j+1)+'.png')
+      plt.savefig(root+'-'+str(j+1)+'.png')
       if interactive: plt.show()
         
 
