@@ -11975,10 +11975,203 @@ def bas_test(synthfile,snr=1.e6):
         
 
 def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
+              kernel='linear', neighbors=100, edgemargin=0.02, otype='irregular'):
+
+    """Creates an FERRE grid from a pre-existing regular or 
+       irregular one
+ 
+    Parameters
+    ----------
+    synthfile: str
+      name of the input FERRE/BAS synthfile
+    
+    outsynthfile: str
+      name of the output FERRE/BAS synthfile
+    
+    n: int
+      number of spectra to create by RBF interpolation
+      if the output is a regular grid (otype='regular')
+      this can be replaced by a tuple with the number of
+      spectra for each dimension
+      (default is None, in which case it is taken to be the
+      same number of spectra in the input grid)
+    
+    rv: bool
+      if true, fold in a dimension with RV variations
+      only available for otype = 'regular'
+      
+    ebv: bool
+      if true, fold in a dimension with E(B-V) variations
+      only available for otype = 'regular'
+
+    kernel: string
+      Type of RBF function (linear, thin_plate_spline, cubic, gaussian ...)
+
+    neighbors: int
+      Number of nearest neighbors used to compute the interpolation coefficients
+      for each grid point
+
+    edgemargin: float
+      fraction from the min/max values of the input parameters to exclude
+      from the range to sample
+      (default 0.02 -- 2% on each end will be excluded) 
+
+    otype: str
+      type of the output grid ('regular' or 'irregular')
+      (default is 'irregular')
+       
+
+      
+    Returns
+    -------
+    Creates an output grid (outsynthfile)
+
+    """
+    
+    from extinction import apply,ccm89
+
+    if rv or ebv : 
+      assert(otype == 'irregular'),'rv or ebv can only be activatted for output irregular grids'
+      x = lambda_synth(synthfile)
+      if type(x) is list: x = np.hstack(x)
+    h,p,d = read_synth(synthfile)
+    
+    
+    ndim = len(p[0,:])
+    npix = len(d[0,:])
+    ntot = len(p[:,0])
+
+    if n is None: n = ntot
+
+    rng = np.random.default_rng(1)
+
+    if otype == 'regular':
+      n_p = []
+      llimits = []
+      steps = []
+    
+    for i in range(ndim):
+
+        amin = np.min(p[:,i])*(1.0+edgemargin)
+        amax = np.max(p[:,i])*(1.0-edgemargin)
+
+        if otype == 'irregular':
+          vals = rng.random(n)*(amax-amin) + amin
+          if i == 0: 
+              p2 = vals
+          else:	
+            p2 = np.vstack((p2,vals))
+        else:
+          if type(n) is tuple:
+            n1 = n[i]
+          else:
+            n1 = round(n**(1/ndim))
+          delta = (amax - amin) / (n1 - 1) 
+
+          n_p.append(n1)
+          llimits.append(amin)
+          steps.append(delta)
+
+    if otype == 'irregular':
+      p2 = np.transpose(p2)
+    else:
+      n = np.prod(n_p)
+      p2 = getaa(n_p, dtype=float)*steps + llimits
+      if type(h) is list:
+        for entry in range(len(h)):
+          h[entry]['N_P'] = '  '.join(map(str,n_p))
+          h[entry]['LLIMITS'] = '  '.join(map(str,llimits))
+          h[entry]['STEPS'] = '  '.join(map(str,steps))
+      else:
+        h['N_P'] = '  '.join(map(str,n_p))
+        h['LLIMITS'] = '  '.join(map(str,llimits))
+        h['STEPS'] = '  '.join(map(str,steps))
+
+    c, pmin, ptp = rbf_get(synthfile, kernel=kernel, neighbors=neighbors)
+    d2 = rbf_apply(c, pmin, ptp, p2)
+    h2 = h
+
+    ndim2 = 0
+    p3 = np.transpose(p2)
+    if rv:		
+        if type(h2) is list: 
+          h0 = h2[1]
+        else:
+          h0 = h2  
+        rvmax = 1000.
+        if 'RESOLUTION' in h0: rvmax = clight/float(h0['RESOLUTION'])
+        vals = rng.random(n)*2*rvmax - rvmax
+        p3 = np.vstack((p3,vals))
+        ndim2 += 1
+        if type(h2) is list:
+            for entry in range(len(h2)):
+                h2[entry]['LABEL('+str(ndim+ndim2)+')'] = "'RV'"
+        else:
+            h2['LABEL('+str(ndim+ndim2)+')'] = "'RV'"  
+    if ebv:	
+        ebvmax = 0.25 # mag
+        vals = rng.random(n)*ebvmax 
+        p3 = np.vstack((p3,vals))
+        ndim2 += 1
+        if type(h2) is list:
+           for entry in range(len(h2)):
+               h2[entry]['LABEL('+str(ndim+ndim2)+')'] = "'E(B-V)'"
+        else:
+            h2['LABEL('+str(ndim+ndim2)+')'] = "'E(B-V)'"
+    
+    if rv or ebv:
+      p2 = np.transpose(p3)   
+
+    ending = synthfile.rfind('.dat')
+    if ending < -1: 
+        ending = synthfile.rfind('.pickle')
+    if ending < -1:
+        ending = len(synthfile) + 1
+    root = synthfile[2:ending]
+    if outsynthfile is None: 
+      if otype == 'regular':
+        outsynthfile = 'n_'+root+'reg'
+      else:
+        outsynthfile = 'n_'+root+'rbf'
+        if rv: outsynthfile += '-RV'
+        if ebv: outsynthfile += '-EBV' 
+      outsynthfile += '.dat'
+    of = open(outsynthfile,'w')
+    print('writing grid ',outsynthfile,'...')
+    if type(h2) is not list:
+      h2 = [h2]
+    for block in h2:
+      block['TYPE'] = "'"+otype+"'"
+      block['N_OF_DIM'] = str(ndim+ndim2)
+      block['NTOT'] = str(n)
+    for block in h2:
+      of.write(' &SYNTH\n')
+      for entry in block: of.write(' '+entry + ' = ' + block[entry] + '\n')
+      of.write(' /\n')
+
+    for i in range(len(p2[:,0])):
+        flx = d2[i,:]
+        if rv:
+            #print(type(x),len(x),type(flx),len(flx))
+            flx = np.interp(x,x*(1.+p2[i,ndim]/clight),flx)
+        if ebv:
+            flx = apply(ccm89(x, p2[i,ndim+ndim2-1]* 3.1, 3.1), flx)
+        
+        #normalization
+        #flx = flx / np.mean(flx)
+        if otype == 'regular':
+          of.write(' '.join(map(str,flx))+'\n')
+        else:
+          of.write(' '.join(map(str,p2[i,:]))+' '+' '.join(map(str,flx))+'\n')	
+    of.close()
+    
+    return
+
+def synth_rbf_old(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
               kernel='linear', neighbors=100, edgemargin=0.0):
 
     """Creates an irregular FERRE grid from a pre-existing regular or 
-       irregular one
+       irregular one (old synth_rbf kept as a backup)
  
     Parameters
     ----------
@@ -12031,7 +12224,7 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
 
     if n is None: n = ntot
 
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(1)
     
     for i in range(ndim):
 
@@ -12114,6 +12307,7 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
     of.close()
     
     return
+
 
 def rbf_test(synthfile,n=None, kernel='linear', neighbors=100):
     """Creates an irregular FERRE grid using RBF interpolation on a 
