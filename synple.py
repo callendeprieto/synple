@@ -8390,6 +8390,242 @@ def rotconv(xinput,yinput,vsini, ppr=None):
 
   return(x,y)
 
+def elgconv(xinput, yinput, uinput, fwhm, ppr=None):
+
+  """convolution with a Gaussian in linear lambda scale
+  for a constant resolution, with uncertainties
+
+  Parameters
+  ----------
+  xinput: numpy float array
+      wavelengths 
+  yinput: numpy array of floats
+      fluxes
+  uinput: numpy array of floats
+      flux uncertainties
+  fwhm: float
+      FWHM of the Gaussian (same units as for xinput)
+  ppr: float, optional
+      Points per resolution element to downsample the convolved spectrum
+      (default None, to keep the original sampling)
+
+  Returns
+  -------
+  x: numpy float array
+      wavelengths after convolution, will be a subset of xinput when that is linear, 
+      otherwise a subset of the linearly resampled version
+  y: numpy array of floats
+      fluxes after convolution
+  u: numpy array of float
+      flux uncertainties after convolution
+
+  """
+
+  #resampling to a linear lambda wavelength scale if need be
+  xx = np.diff(xinput)
+  if np.max(xx) - np.min(xx) > 1.e-7: #input not linearly sampled
+    nel = len(xinput)
+    minx = np.min(xinput)
+    maxx = np.max(xinput)
+    x = np.linspace(minx,maxx,nel)
+    y = np.interp( x, xinput, yinput)
+    u = np.interp( x, xinput, uinput)
+    #y = interp_spl( x, xinput, yinput)
+    #y = interp_spl( x, xinput, uinput)
+  else:                       #input linearly sampled
+    x = xinput
+    y = yinput
+    u = uinput
+
+  step = x[1] - x[0]
+
+  assert (fwhm > 2*step), 'cannot convolve since fwhm is <= 2*step'
+
+  sigma=fwhm/2.0/np.sqrt(-2.0*np.log(0.5))
+  npoints = 2*int(3*fwhm/2./step)+1
+  half = npoints * step /2.
+  xx = np.linspace(-half,half,npoints)
+  kernel = np.exp(-(xx-np.mean(xx))**2/2./sigma**2)
+  kernel = kernel/np.sum(kernel)
+
+  y = np.convolve(y,kernel,'valid')
+  #y = ss.fftconvolve(y,kernel,'valid')
+  #print(npoints)
+  u = np.sqrt( np.convolve(u**2,kernel**2,'valid') )
+  edge = int(npoints/2)
+  x = x[edge:-edge]
+
+  #print(xinput.size,x.size,y.size,u.size)
+
+  if ppr != None:
+    fac = int(fwhm / step / ppr)
+    assert (fac != 0),'cannot resample since fac is = 0, increase fwhm or reduce ppr'
+    subset = np.arange(x.size / fac, dtype=int) * fac 
+    x = x[subset]
+    y = y[subset]
+    u = u[subset]
+
+  return(x,y,u)
+
+def evgconv(xinput,yinput,uinput, fwhm, ppr=None):
+
+
+  """convolution with a Gaussian in log lambda scale
+  for a constant resolving power, with uncertainties
+
+  Parameters
+  ----------
+  xinput: numpy float array
+      wavelengths 
+  yinput: numpy array of floats
+      fluxes
+  uinput: numpy array of floats
+      flux uncertainties
+  fwhm: float
+      FWHM of the Gaussian (km/s)
+  ppr: float, optional
+      Points per resolution element to downsample the convolved spectrum
+      (default None, to keep the original sampling)
+
+  Returns
+  -------
+  x: numpy float array
+      wavelengths after convolution, will be a subset of xinput when that is equidistant
+      in log lambda, otherwise a subset of the resampled version
+  y: numpy array of floats
+      fluxes after convolution
+  u: numpy array of float
+      flux uncertainties after convolution
+
+  """
+  #resampling to ln(lambda) if need be
+  xx = np.diff(np.log(xinput))
+  if np.max(xx) - np.min(xx) > 1.e-7:  #input not equidist in loglambda
+    nel = len(xinput)
+    minx = np.log(xinput[0])
+    maxx = np.log(xinput[-1])
+    x = np.linspace(minx,maxx,nel)
+    step = x[1] - x[0]
+    x = np.exp(x)
+    y = np.interp( x, xinput, yinput)
+    u = np.interp( x, xinput, uinput)
+    #y = interp_spl( x, xinput, yinput)
+    #u = interp_spl( x, xinput, uinput)
+  else:
+    x = xinput
+    y = yinput
+    u = uinput
+    step = np.log(xinput[1])-np.log(xinput[0])
+
+  fwhm = fwhm/clight # inverse of the resolving power
+
+  assert (fwhm > 2*step), 'cannot convolve since fwhm is <= 2*step'
+
+  sigma=fwhm/2.0/np.sqrt(-2.0*np.log(0.5))
+  npoints = 2*int(3*fwhm/2./step)+1
+  half = npoints * step /2.
+  xx = np.linspace(-half,half,npoints)
+  kernel = np.exp(-(xx-np.mean(xx))**2/2./sigma**2)
+  kernel = kernel/np.sum(kernel)
+
+  y = np.convolve(y,kernel,'valid')
+  u = np.sqrt( np.convolve(u**2, kernel**2, 'valid') )
+  edge = int(npoints/2)
+  x = x[edge:-edge]
+
+  #print(xinput.size,x.size,y.size,u.size)
+
+  if ppr != None:
+    fac = int(fwhm / step / ppr)
+    assert (fac != 0),'cannot resample since fac is = 0, increase fwhm or reduce ppr'
+    #print(fwhm,step,ppr,fac)
+    subset = np.arange(x.size / fac, dtype=int) * fac 
+    x = x[subset]
+    y = y[subset]
+    u = u[subset]
+
+
+  return(x,y,u)
+
+def erotconv(xinput,yinput,uinput, vsini, ppr=None):
+
+
+  """convolution with a Rotation profile with uncertainties
+
+  Parameters
+  ----------
+  xinput: numpy float array
+      wavelengths 
+  yinput: numpy array of floats
+      fluxes
+  uinput: numpy array of floats
+      flux uncertainties
+  vsini: float
+      projected rotational velocity (km/s)
+  ppr: float, optional
+      Points per resolution element to downsample the convolved spectrum
+      (default None, to keep the original sampling)
+
+  Returns
+  -------
+  x: numpy float array
+      wavelengths after convolution, will be a subset of xinput when that is equidistant
+      in log lambda, otherwise a subset of the resampled version
+  y: numpy array of floats
+      fluxes after convolution
+  u: numpy array of floats
+      flux uncertainties after convolution
+
+  """
+
+  #resampling to ln(lambda) if need be
+  xx = np.diff(np.log(xinput))
+  if np.max(xx) - np.min(xx) > 1.e-7:  #input not equidist in loglambda
+    nel = len(xinput)
+    minx = np.min(np.log(xinput))
+    maxx = np.max(np.log(xinput))
+    x = np.linspace(minx,maxx,nel)
+    step = x[1] - x[0]
+    x = np.exp(x)
+    y = np.interp( x, xinput, yinput)
+    u = np.interp( x, xinput, uinput)
+    #y = interp_spl( x, xinput, yinput)
+    #u = interp_spl( x, xinput, uinput)
+  else:
+    x = xinput
+    y = yinput
+    u = uinput
+
+  deltamax=vsini/clight
+
+  assert (deltamax > 2*step), 'cannot convolve since vsini is <= 2*step'
+
+  npoints = 2*int(deltamax/step)+1
+  xx = np.linspace(-deltamax,deltamax,npoints)
+  c1=2.0*(1.0-epsilon)/np.pi/(1.0-epsilon/3.0)/deltamax
+  c2=0.5*epsilon/(1.0-epsilon/3.0)/deltamax
+  r2=(xx/deltamax)**2
+  kernel = c1*np.sqrt(1.0-r2)+c2*(1.0-r2)
+  kernel = kernel/np.sum(kernel)
+
+
+  y = np.convolve(y,kernel,'valid')
+  u = np.sqrt( np.convolve(u**2, kernel**2, 'valid') )
+  print(xinput.size,x.size,y.size,u.size)
+  edge = int(npoints/2)
+  x = x[edge:-edge]
+
+  if ppr != None:
+    fac = int(deltamax / step / ppr)
+    assert (fac != 0),'cannot resample since fac is = 0, reduce fwhm or ppr'
+    subset = np.arange(x.size / fac, dtype=int) * fac 
+    x = x[subset]
+    y = y[subset]
+    u = u[subset]
+
+  return(x,y,u)
+
+
 def smooth(x,n):    
 
   """Smooth using a Svitzky-Golay cubic filter
