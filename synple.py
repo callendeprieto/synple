@@ -1476,6 +1476,43 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
 
   return None
 
+def mdelta(teff,logg,enhance=0.2):
+
+  """sets up a directory tree for evaluating the impact of changing abundances on a model -- taking into account the effects on the model atmosphere
+
+  Parameters
+  ----------
+  teff: float
+   effective temperature
+  logg: float
+   log10 of the surface gravity (cgs units)
+  enhance: float
+   increase in the abundance to test (dex)
+
+  Returns
+  -------
+  no output but creates a dir tree ready for performing the calculations
+  """
+
+  a, b, c = elements()
+  fh = open('script.py','w')
+  fh.write("from synple import create_regular_kurucz\n")
+  fh.write("import os\n")
+  fh.write("\n")
+  i = 0 
+  for entry in a:
+    i += 1
+    fh.write("os.mkdir('hyd'+'{:04d}'.format("+str(i)+"))\n")
+    fh.write("os.chdir('hyd'+'{:04d}'.format("+str(i)+"))\n")
+    fh.write('create_regular_kurucz(tteff=(1,5770.,0),tlogg=(1,4.44,0.0), \
+      tfeh=(1,0.0,0.0),'+entry+'=(1,0.5,0.0))\n')
+    fh.write("os.chdir('..')\n")
+
+  fh.close()
+  return()
+  
+   
+
 def mkflt(dltfile,wavelengths,blocks=[],fwhm=0.0,unit='km/s',outdir='.'):
 
   """produces FERRE filters from a dlt file (output from collectdelta)
