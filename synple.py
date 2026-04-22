@@ -1504,13 +1504,32 @@ def mdelta(teff,logg,enhance=0.2):
     i += 1
     fh.write("os.mkdir('hyd'+'{:04d}'.format("+str(i)+"))\n")
     fh.write("os.chdir('hyd'+'{:04d}'.format("+str(i)+"))\n")
-    fh.write('create_regular_kurucz(tteff=(1,5770.,0),tlogg=(1,4.44,0.0), \
-      tfeh=(1,0.0,0.0),'+entry+'=(1,0.5,0.0))\n')
+    if i == 1:
+      fh.write('create_regular_kurucz(tteff=(1,5770.,0),tlogg=(1,4.44,0.0), \
+        tfeh=(1,0.0,0.0),'+entry+'=(1,0.0,0.0))\n')
+    else:
+      fh.write('create_regular_kurucz(tteff=(1,5770.,0),tlogg=(1,4.44,0.0), \
+        tfeh=(1,0.0,0.0),'+entry+'=(1,0.5,0.0))\n')
     fh.write("os.chdir('..')\n")
 
   fh.close()
   return()
+
+def polymdelta(wrange)
+  """produces the spectra for the Kurucz models with perturbed abundances
+     computed from the output of mdelta
+  """
+
+  pwd=os.path.abspath(os.curdir)
+  models = np.sort(glob.glob(os.path.join(pwd,'hyd*/kur*/k*.7')))
+  polysyn(models,wrange)
   
+  return()
+
+#sequence could be:
+# mdelta(5770.,4.44,enhance=0.5)
+# polymdelta((3000.,10000.)
+# collectdelta('k5770._4.44.7',wrange=(3000.,10000.),elem=a[1:],enhance=0.5)
    
 
 def mkflt(dltfile,wavelengths,blocks=[],fwhm=0.0,unit='km/s',outdir='.'):
