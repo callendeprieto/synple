@@ -1515,7 +1515,8 @@ def mdelta(teff,logg,enhance=0.2):
   fh.close()
   return()
 
-def polymdelta(wrange)
+def polymdelta(wrange):
+
   """produces the spectra for the Kurucz models with perturbed abundances
      computed from the output of mdelta
   """
