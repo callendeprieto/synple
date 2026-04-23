@@ -1530,6 +1530,7 @@ def polymdelta(wrange):
 #sequence could be:
 # mdelta(5770.,4.44,enhance=0.5)
 # polymdelta((3000.,10000.)
+# a, b, c = elements()
 # collectdelta('k5770._4.44.7',wrange=(3000.,10000.),elem=a[1:],enhance=0.5)
    
 
@@ -10092,9 +10093,10 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
 
               
-      #ids, x2, obs, ivr, xtr = read_spec(file,wavelengths=x,target=target,rv=rv,
-      ids, x2, obs, ivr, xtr = read_spec(file,target=target,rv=rv,
+      #instr, ids, x2, obs, ivr, xtr = read_spec(file,wavelengths=x,target=target,rv=rv,
+      instr, ids, x2, obs, ivr, xtr = read_spec(file,target=target,rv=rv,
                                     ebv=ebv, star=star)
+
 
       print('x=',x)
       print('x2=',x2)
@@ -10136,11 +10138,12 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       opf = open(opffile,'w')
       mdl = open(mdlfile,'w')
       nrd = open(nrdfile,'w')
-      err = open(errfile,'w')
-      frd = open(frdfile,'w')
+      if instr != 'FERRE':
+        err = open(errfile,'w')
+        frd = open(frdfile,'w')
+        if ferre:
+          ipf = open(ipffile,'w')
       flx = open(flxfile,'w')
-      if ferre:
-        ipf = open(ipffile,'w')
       if len(filters) > 0:
         abf = open(abufile,'w')
          
@@ -10573,11 +10576,12 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         mdl.write(' '.join(map(str,bmod))+'\n')
         onesigma = np.divide(1.,np.sqrt(ivar), 
           where=(ivar > 0),  out= spec*10000.)
-        err.write(' '.join(map(str,onesigma))+'\n')
-        frd.write(' '.join(map(str,spec))+'\n')
-        flx.write(' '.join(map(str,abbmod))+'\n')
-        if ferre:
+        if instr != 'FERRE':
+          err.write(' '.join(map(str,onesigma))+'\n')
+          frd.write(' '.join(map(str,spec))+'\n')
+          if ferre:
             ipf.write(str(ids[j])+' '+' '.join(map(str,np.zeros(ndim)))+'\n')
+        flx.write(' '.join(map(str,abbmod))+'\n')
         if len(filters) > 0:
           abf.write(str(ids[j])+' '+' '.join(map(str,abuarr))+' '+
             ' '.join(map(str,eabuarr))+'\n')
@@ -10597,14 +10601,15 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       opf.close()
       mdl.close()
       nrd.close()
-      err.close()
-      wav = open(wavfile,'w')
-      wav.write(' '.join(map(str,xx))+'\n')
-      wav.close()
-      frd.close()
+      if instr != 'FERRE':
+        frd.close()
+        err.close()
+        if ferre:
+          ipf.close()
+        wav = open(wavfile,'w')
+        wav.write(' '.join(map(str,xx))+'\n')
+        wav.close()
       flx.close()
-      if ferre:
-        ipf.close()
       if len(filters) > 0:
         abf.close()
 
@@ -10849,6 +10854,8 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
       
     Returns
     -------
+    instr: str
+      instrument identifier ('FERRE' for input already in FERRE format)
     ids: numpy array of str
       strings identifying the target(s). In some cases it may simply 
       be a number 
@@ -11251,7 +11258,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
         ids = np.array(list(map(str,range(len(frd[:,0])))))
       xtr = (dict())
 
-    return(ids,wav,frd,ivr,xtr)
+    return(instr,ids,wav,frd,ivr,xtr)
 
 
 def single_target_prep(wav,flux,ivar,rv,ebv,wavelengths=None):
