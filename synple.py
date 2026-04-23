@@ -12441,7 +12441,30 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
     if type(h2) is not list:
       h2 = [h2]
     for block in h2:
-      block['TYPE'] = "'"+otype+"'"
+      if 'TYPE' in block:
+        if block['TYPE'][0] != "'" and block['TYPE'][0] != '"': 
+          block['TYPE'] = "'"+otype+"'"
+      if 'ID' in block:
+        if block['ID'][0] != "'" and block['ID'][0] != '"': 
+          block['ID'] = "'"+block['ID']+"'"
+      if 'DATE' in block:
+        if block['DATE'][0] != "'" and block['DATE'][0] != '"': 
+          block['DATE'] = "'"+block['DATE']+"'"
+      if 'SYNTHFILE_INTERNAL' in block:
+        if block['SYNTHFILE_INTERNAL'][0] != "'" and block['SYNTHFILE_INTERNAL'][0] != '"': 
+          block['SYNTHFILE_INTERNAL'] = "'"+otype+"'"
+      if 'FILE_DATA19' in block:
+        if block['FILE_DATA19'][0] != "'" and block['FILE_DATA19'][0] != '"':
+          block['FILE_DATA19'] = "'"+block['FILE_DATA19']+"'"
+      if 'FILE_DATA20' in block:
+        if block['FILE_DATA20'][0] != "'" and block['FILE_DATA20'][0] != '"':
+          block['FILE_DATA20'] = "'"+block['FILE_DATA20']+"'"
+
+      for entry in block.keys():
+        if entry[:5] == 'LABEL' or entry[:8] == 'COMMENTS':
+          if block[entry][0] != "'" and block[entry][0] != '"':
+            block[entry] = "'"+block[entry]+"'"
+        
       block['N_OF_DIM'] = str(ndim+ndim2)
       block['NTOT'] = str(n)
     for block in h2:
