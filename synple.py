@@ -10130,7 +10130,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       frdfile = outfile + '.frd'
       flxfile = outfile + '.flx'
       if ferre:
-        ipffile = outfile + '.spf'
+        ipffile = outfile + '.ipf'
       if len(filters) > 0:
         abufile = outfile + '.abu'
 
