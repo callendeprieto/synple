@@ -12460,10 +12460,15 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
         if block['FILE_DATA20'][0] != "'" and block['FILE_DATA20'][0] != '"':
           block['FILE_DATA20'] = "'"+block['FILE_DATA20']+"'"
 
+      kcomment = 1
       for entry in block.keys():
         if entry[:5] == 'LABEL' or entry[:8] == 'COMMENTS':
           if block[entry][0] != "'" and block[entry][0] != '"':
             block[entry] = "'"+block[entry]+"'"
+        if entry[:8] == 'COMMENTS':
+          kcomment = int(entry[8:]) + 1
+      block['COMMENTS'+str(kcomment)] = "'Data interpolated using synth_rbf from " + synthfile + "'"
+      
         
       block['N_OF_DIM'] = str(ndim+ndim2)
       block['NTOT'] = str(n)
