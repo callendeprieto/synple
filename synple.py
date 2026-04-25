@@ -10097,6 +10097,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       instr, ids, x2, obs, ivr, xtr = read_spec(file,target=target,rv=rv,
                                     ebv=ebv, star=star)
 
+      if x2 is None: x2 = x
 
       print('x=',x)
       print('x2=',x2)
@@ -10154,7 +10155,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       for j in range(nspec):
 
         print('spectrum ',j,' of ',nspec,' in ',file)
-        
+
         #resample
         if type(x) is list:
           assert (type(obs) is list),'when the wavelengths are in a list, the data returned by read_spec should be an array'
@@ -11246,10 +11247,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
         if os.path.isfile(infile + '.wav'):
           wav = np.loadtxt(infile + '.wav')
         else: 
-          if frd.ndim == 1:
-            wav = np.arange(len(frd))
-          else:
-            wav = np.arange(len(frd[0,:]))
+            wav = None
       else:
         wav = wavelengths
       if frd.ndim == 1:
