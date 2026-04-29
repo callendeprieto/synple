@@ -489,28 +489,33 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
     if save == True:
 
-      out = ['MODEL   = '+modelfile+'\n']
-      out.append('TEFF    = '+str(teff)+'\n')
-      out.append('LOGG    = '+str(logg)+'\n')
-      out.append('VMICRO  = '+str(vmicro)+'\n')
-      out.append('WRANGE  = '+' '.join(map(str,wrange))+'\n')
-      out.append('STRENGTH= '+str(strength)+'\n')
-      out.append('LINELIST= '+' '.join(linelist)+'\n')
-      out.append('ATOM    = '+atom+'\n')
-      out.append('VROT    = '+str(vrot)+'\n')
-      out.append('FWHM    = '+str(fwhm)+'\n')
-      out.append('VMACRO    = '+str(vmacro)+'\n')
-      out.append('STEPROT = '+str(steprot)+'\n')
-      out.append('STEPFWHM= '+str(stepfwhm)+'\n')
-      out.append('LTE     = '+str(lte)+'\n')
-      out.append('ABU     = '+' '.join(map(str,abu))+'\n')
+
+      out = ['#&SYN\n']
+      out.append("#TYPE    = 'synthesis'\n")
+      out.append('#MODEL   = '+modelfile+'\n')
+      out.append('#NTOT    = 2\n')
+      out.append('#TEFF    = '+str(teff)+'\n')
+      out.append('#LOGG    = '+str(logg)+'\n')
+      out.append('#VMICRO  = '+str(vmicro)+'\n')
+      out.append('#WRANGE  = '+' '.join(map(str,wrange))+'\n')
+      out.append('#STRENGTH= '+str(strength)+'\n')
+      out.append('#LINELIST= '+' '.join(linelist)+'\n')
+      out.append('#ATOM    = '+atom+'\n')
+      out.append('#VROT    = '+str(vrot)+'\n')
+      out.append('#FWHM    = '+str(fwhm)+'\n')
+      out.append('#VMACRO    = '+str(vmacro)+'\n')
+      out.append('#STEPROT = '+str(steprot)+'\n')
+      out.append('#STEPFWHM= '+str(stepfwhm)+'\n')
+      out.append('#LTE     = '+str(lte)+'\n')
+      out.append('#ABU     = '+' '.join(map(str,abu))+'\n')
+      out.append('#/')
 
       header = ''.join(out)
 
       if synfile == None: 
         tmpstr = os.path.split(modelfile)[-1]
         synfile = tmpstr[:tmpstr.rfind('.')]+'.syn'
-      np.savetxt(synfile,(wave,flux,cont),header=header)
+      np.savetxt(synfile,(wave,flux,cont),header=header,comments='')
 
   if lineid: 
     if intensity:
@@ -712,23 +717,28 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   if save == True:
 
-    out = ['MODEL   = '+modelfile+'\n']
-    out.append('TEFF    = '+str(teff)+'\n')
-    out.append('LOGG    = '+str(logg)+'\n')
-    out.append('VMICRO  = '+str(vmicro)+'\n')
-    out.append('WRANGE  = '+' '.join(map(str,wrange))+'\n')
-    out.append('STRENGTH= '+str(strength)+'\n')
-    out.append('LINELIST= '+' '.join(linelist)+'\n')
-    out.append('ATOM    = '+atom+'\n')
-    out.append('VROT    = '+str(vrot)+'\n')
-    out.append('FWHM    = '+str(fwhm)+'\n')
-    out.append('VMACRO  = '+str(vmacro)+'\n')
-    out.append('STEPROT = '+str(steprot)+'\n')
-    out.append('STEPFWHM= '+str(stepfwhm)+'\n')
-    out.append('LTE     = '+str(lte)+'\n')
-    out.append('ABU     = '+' '.join(map(str,abu))+'\n')
+    out = ['#&SYN\n'] 
+    out.append("#TYPE    = 'synthesis'\n")
+    out.append('#MODEL   = '+modelfile+'\n')
+    out.append('#NTOT    = 2\n')
+    out.append('#TEFF    = '+str(teff)+'\n')
+    out.append('#LOGG    = '+str(logg)+'\n')
+    out.append('#VMICRO  = '+str(vmicro)+'\n')
+    out.append('#WRANGE  = '+' '.join(map(str,wrange))+'\n')
+    out.append('#STRENGTH= '+str(strength)+'\n')
+    out.append('#LINELIST= '+' '.join(linelist)+'\n')
+    out.append('#ATOM    = '+atom+'\n')
+    out.append('#VROT    = '+str(vrot)+'\n')
+    out.append('#FWHM    = '+str(fwhm)+'\n')
+    out.append('#VMACRO    = '+str(vmacro)+'\n')
+    out.append('#STEPROT = '+str(steprot)+'\n')
+    out.append('#STEPFWHM= '+str(stepfwhm)+'\n')
+    out.append('#LTE     = '+str(lte)+'\n')
+    out.append('#ABU     = '+' '.join(map(str,abu))+'\n')
+    out.append('#/')
 
     header = ''.join(out)
+
 
     if synfile == None: 
       tmpstr = os.path.split(modelfile)[-1]
@@ -956,21 +966,25 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   if save == True:
 
-    out = ['MODEL   = '+modelfile+'\n']
-    out.append('TEFF    = '+str(teff)+'\n')
-    out.append('LOGG    = '+str(logg)+'\n')
-    out.append('VMICRO  = '+str(vmicro)+'\n')
-    out.append('WRANGE  = '+' '.join(map(str,wrange))+'\n')
-    out.append('STRENGTH= '+str(strength)+'\n')
-    out.append('LINELIST= '+' '.join(linelist)+'\n')
-    out.append('ATOM    = '+atom+'\n')
-    out.append('VROT    = '+str(vrot)+'\n')
-    out.append('FWHM    = '+str(fwhm)+'\n')
-    out.append('VMACRO  = '+str(vmacro)+'\n')
-    out.append('STEPROT = '+str(steprot)+'\n')
-    out.append('STEPFWHM= '+str(stepfwhm)+'\n')
-    out.append('LTE     = '+str(lte)+'\n')
-    out.append('ABU     = '+' '.join(map(str,abu))+'\n')
+    out = ['#&SYN\n'] 
+    out.append("#TYPE    = 'synthesis'\n")
+    out.append('#MODEL   = '+modelfile+'\n')
+    out.append('#NTOT    = 2\n')
+    out.append('#TEFF    = '+str(teff)+'\n')
+    out.append('#LOGG    = '+str(logg)+'\n')
+    out.append('#VMICRO  = '+str(vmicro)+'\n')
+    out.append('#WRANGE  = '+' '.join(map(str,wrange))+'\n')
+    out.append('#STRENGTH= '+str(strength)+'\n')
+    out.append('#LINELIST= '+' '.join(linelist)+'\n')
+    out.append('#ATOM    = '+atom+'\n')
+    out.append('#VROT    = '+str(vrot)+'\n')
+    out.append('#FWHM    = '+str(fwhm)+'\n')
+    out.append('#VMACRO    = '+str(vmacro)+'\n')
+    out.append('#STEPROT = '+str(steprot)+'\n')
+    out.append('#STEPFWHM= '+str(stepfwhm)+'\n')
+    out.append('#LTE     = '+str(lte)+'\n')
+    out.append('#ABU     = '+' '.join(map(str,abu))+'\n')
+    out.append('#/')
 
     header = ''.join(out)
 
@@ -1404,7 +1418,7 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
 
   Returns
   -------
-  No data are return, but a file (modelfile.dlt) is produced with a header, and then
+  No data are returned, but a file (modelfile.dlt) is produced with a header, and then
   the wavelength array, the flux for the input abundances, and the perturbed flux with
   enhanced abundance for each of the elements in elem.
   """
@@ -1423,23 +1437,27 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
 
   if save:
       out = open(modelfile+'.dlt','w')
-      out.write('MODEL   = '+modelfile+'\n')
-      out.write('TEFF    = '+str(teff)+'\n')
-      out.write('LOGG    = '+str(logg)+'\n')
-      out.write('VMICRO  = '+str(vmicro)+'\n')
-      out.write('WRANGE  = '+' '.join(map(str,wrange))+'\n')
-      out.write('ELEM    = '+' '.join(elem)+'\n')
-      out.write('ENHANCE = '+str(enhance)+'\n')
-      out.write('STRENGTH= '+str(strength)+'\n')
-      out.write('LINELIST= '+' '.join(linelist)+'\n')
-      out.write('ATOM    = '+atom+'\n')
-      out.write('VROT    = '+str(vrot)+'\n')
-      out.write('FWHM    = '+str(fwhm)+'\n')
-      out.write('VMACRO  = '+str(vmacro)+'\n')
-      out.write('STEPROT = '+str(steprot)+'\n')
-      out.write('STEPFWHM= '+str(stepfwhm)+'\n')
-      out.write('LTE     = '+str(lte)+'\n')
-      out.write('ABU     = '+' '.join(map(str,abu))+'\n')
+      out.write('#&DELTA\n')
+      out.write("#TYPE    = 'delta'\n")
+      out.write('#MODEL   = '+modelfile+'\n')
+      out.write('#NTOT    = '+str(len(elem)+1)+'\n')
+      out.write('#TEFF    = '+str(teff)+'\n')
+      out.write('#LOGG    = '+str(logg)+'\n')
+      out.write('#VMICRO  = '+str(vmicro)+'\n')
+      out.write('#WRANGE  = '+' '.join(map(str,wrange))+'\n')
+      out.write('#ELEM    = '+' '.join(elem)+'\n')
+      out.write('#ENHANCE = '+str(enhance)+'\n')
+      out.write('#STRENGTH= '+str(strength)+'\n')
+      out.write('#LINELIST= '+' '.join(linelist)+'\n')
+      out.write('#ATOM    = '+atom+'\n')
+      out.write('#VROT    = '+str(vrot)+'\n')
+      out.write('#FWHM    = '+str(fwhm)+'\n')
+      out.write('#VMACRO  = '+str(vmacro)+'\n')
+      out.write('#STEPROT = '+str(steprot)+'\n')
+      out.write('#STEPFWHM= '+str(stepfwhm)+'\n')
+      out.write('#LTE     = '+str(lte)+'\n')
+      out.write('#ABU     = '+' '.join(map(str,abu))+'\n')
+      out.write('#/\n')
 
   idir = 0
   for j in range(len(elem)+1):
@@ -8291,6 +8309,8 @@ def lgconv(xinput, yinput, fwhm, ppr=None):
   kernel = np.exp(-(xx-np.mean(xx))**2/2./sigma**2)
   kernel = kernel/np.sum(kernel)
 
+  assert (len(kernel) <= len(y)),'cannot convolve since kernel is larger than the array'
+
   y = np.convolve(y,kernel,'valid')
   #y = ss.fftconvolve(y,kernel,'valid')
   #print(npoints)
@@ -8361,6 +8381,8 @@ def vgconv(xinput,yinput,fwhm, ppr=None):
   xx = np.linspace(-half,half,npoints)
   kernel = np.exp(-(xx-np.mean(xx))**2/2./sigma**2)
   kernel = kernel/np.sum(kernel)
+
+  assert (len(kernel) <= len(y)),'cannot convolve since kernel is larger than the array'
 
   y = np.convolve(y,kernel,'valid')
   edge = int(npoints/2)
@@ -8433,6 +8455,7 @@ def rotconv(xinput,yinput,vsini, ppr=None):
   kernel = c1*np.sqrt(1.0-r2)+c2*(1.0-r2)
   kernel = kernel/np.sum(kernel)
 
+  assert (len(kernel) <= len(y)),'cannot convolve since kernel is larger than the array'
 
   y = np.convolve(y,kernel,'valid')
   print(xinput.size,x.size,y.size)
@@ -8505,6 +8528,8 @@ def elgconv(xinput, yinput, uinput, fwhm, ppr=None):
   xx = np.linspace(-half,half,npoints)
   kernel = np.exp(-(xx-np.mean(xx))**2/2./sigma**2)
   kernel = kernel/np.sum(kernel)
+
+  assert (len(kernel) <= len(y)),'cannot convolve since kernel is larger than the array'
 
   y = np.convolve(y,kernel,'valid')
   #y = ss.fftconvolve(y,kernel,'valid')
@@ -8586,6 +8611,8 @@ def evgconv(xinput,yinput,uinput, fwhm, ppr=None):
   kernel = np.exp(-(xx-np.mean(xx))**2/2./sigma**2)
   kernel = kernel/np.sum(kernel)
 
+  assert (len(kernel) <= len(y)),'cannot convolve since kernel is larger than the array'
+
   y = np.convolve(y,kernel,'valid')
   u = np.sqrt( np.convolve(u**2, kernel**2, 'valid') )
   edge = int(npoints/2)
@@ -8666,6 +8693,7 @@ def erotconv(xinput,yinput,uinput, vsini, ppr=None):
   kernel = c1*np.sqrt(1.0-r2)+c2*(1.0-r2)
   kernel = kernel/np.sum(kernel)
 
+  assert (len(kernel) <= len(y)),'cannot convolve since kernel is larger than the array'
 
   y = np.convolve(y,kernel,'valid')
   u = np.sqrt( np.convolve(u**2, kernel**2, 'valid') )
@@ -8811,15 +8839,23 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
       assert (len(r_v) < 2),'r_v cannot have more than one element for irregular grids'
     if type(rv) is list:
       assert (len(rv) < 2),'rv cannot have more than one element for irregular grids'
+  elif 'delta' in tipo or 'synthesis' in tipo:
+    pass
   else:
     assert (len(n_p) == len(steps) & len(n_p) == len(llimits) & len(n_p) == len(labels) & len(n_p) == ndim), 'The dimension of the parameters from the header are inconsistent'
 
   assert (units == 'km/s' or units == 'A'), 'units must be either km/s or A'
 
-  #update header parameters
-  x = np.arange(npix)*wave[1]+wave[0]
-  if logw == 1: x=10.**x
-  if logw == 2: x=np.exp(x)
+  if 'regular' in tipo:
+    #update header parameters
+    x = np.arange(npix)*wave[1]+wave[0]
+    if logw == 1: x=10.**x
+    if logw == 2: x=np.exp(x)
+  else:
+    line = fin.readline()
+    x = np.array(line.split(),dtype=float)
+    npix = len(x)
+    ndim = 1
   
   newcol = []
   try: 
@@ -8876,7 +8912,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
 
   
   #define indices for grid loops
-  if 'irregular' in tipo:
+  if 'irregular' in tipo or 'delta' in tipo or 'synthesis' in tipo:
     ind = np.array(range(ntot), dtype=int)
     ind_n_p =  list(range(ndim))
     labels2 = list(labels)
@@ -8886,7 +8922,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
     ll = []
     ind_n_p = []
     i = 0
-    print('labels=',labels)
+    #print('labels=',labels)
     labels2 = []
     for entry in labels:
       if freeze is not None:   
@@ -8911,7 +8947,6 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
   if np.min(fwhms) > 1.e-7:
     y = np.ones(npix)
     if units == 'km/s':
-      #print('min(fwhm)=',np.min(fwhms))
       xx,yy = vgconv(x,y,np.min(fwhms),ppr=ppr)
       logw = 1
     else:
@@ -8920,7 +8955,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
   else:
     print('Warning -- fwhm <= 1.e-7, no convolution will be performed, ppr will be ignored')
     xx = x
-  
+ 
   
   if wrange is not None: 
     section2 = np.where( (xx >= wrange[0]) & (xx <= wrange[1]) ) 
@@ -8966,6 +9001,9 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
             line = " RESOLUTION = "+str(np.mean(xx)/np.sqrt(np.mean(xx)**2/resolution**2 + np.min(fwhms)**2))+"\n"
         else:
             line = " RESOLUTION = "+str(resolution)+"\n"
+        if 'regular' not in tipo: 
+          newline = "#" + line[1:]
+          line = newline
     if line[1] != "/": fout.write(line)
 
   try: resolution
@@ -8974,12 +9012,19 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
              line = " RESOLUTION = "+str(clight/np.min(fwhms))+"\n"
         elif np.min(fwhms) > 1.e-7 and units == 'A':
              line = " RESOLUTION = "+str(np.mean(wrange)/np.min(fwhms))+"\n"
+        if 'regular' not in tipo: 
+          newline = "#" + line[1:]
+          line = newline
         fout.write(line)
 
-  fout.write(" /\n")
-
+  fout.write("#/\n")
 
   ntot = len(ind)
+
+  if 'regular' not in tipo:
+    xx.tofile(fout,sep=" ",format='%12.5e')
+    fout.write("\n")
+
 
 
   if nthreads == 1:
@@ -9095,6 +9140,10 @@ def gsynth_body(indices, ind, tipo, ndim, ntot, hlines, newcol, xin, xout,
     line = "  "
     while line[1] != "/":
       line = fin.readline()
+      if "TYPE" in line: tipo = str(line.split()[2])
+
+  if 'regular' not in tipo:
+    line = fin.readline() #row with wavelenghts for 'synthesis' or 'delta' types
 
   for entry in labels:
      if freeze is not None:
