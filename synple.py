@@ -1477,7 +1477,7 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
       if j == 0:
           xx = x
           if save: 
-              np.savetxt(out,[xx], fmt='%12.5e')
+              np.savetxt(out,[xx], fmt='%24.16e')
               np.savetxt(out,[y], fmt='%12.5e')
       else:
           yy2 = np.interp(xx, x, y)
@@ -9028,7 +9028,7 @@ def gsynth(synthfile,fwhm=0.0,units='km/s',ebv=0.0,r_v=3.1,rv=0.0,
   ntot = len(ind)
 
   if 'regular' not in tipo:
-    xx.tofile(fout,sep=" ",format='%12.5e')
+    xx.tofile(fout,sep=" ",format='%24.16e')
     fout.write("\n")
 
 
@@ -9544,7 +9544,7 @@ def vgsynth(synthfile,wavelength,fwhm,outsynthfile=None,ppr=5,wrange=None,origin
 
 
   write_synth(outsynthfile,p,d3,hdr=h3)
-  xff.tofile(outsynthfile+'.lambda',sep=" ",format="%s")
+  xff.tofile(outsynthfile+'.lambda',sep=" ",format="%24.16e")
 
   return()
   
