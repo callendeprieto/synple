@@ -4952,7 +4952,7 @@ def create_regular_kurucz(tteff=None, tlogg =None, \
 #collect the models computed using mkk-atlas9 and create_regular_kurucz
 def collect_regular_kurucz(tteff=None, tlogg =None, \
                           tfeh = (1,0.0,0.0), tafe = (1,0.0,0.0), 
-                          tmicro = (1, 1.0, 0.0), \
+                          tmicro = (1, 1.0, 0.0), ignore_missing_models=False, \
                           tie_afe=False, modeldir="./", **kargs):
 							  
     """Collects the model atmospheres meant to build a regular grid using Sbordone's version 
@@ -4978,6 +4978,8 @@ def collect_regular_kurucz(tteff=None, tlogg =None, \
       [a/Fe] triad
     tmicro: tuple
        microturbulence triad
+    ignore_missing_models: bool
+       if a model does not exist, keep its slot with the string 'missing'
     tie_afe: boolean
       if active, when there is no loop in [alpha/Fe] (n in tafe is 1),
       [alpha/Fe] is tied to [Fe/H]:
@@ -5027,7 +5029,11 @@ def collect_regular_kurucz(tteff=None, tlogg =None, \
        if len(ff) == 1 and os.path.isfile(ff[0]) and os.stat(ff[0]).st_size > 0:
          files.append(os.path.join(modeldir,ff[0]))
        else:
-         files.append("missing")
+         if ignore_missing_models:
+           files.append("missing")
+         else:
+           print('Error: a model is missing in dir',dir)
+           sysexit(1)
     
     return(files)
 
