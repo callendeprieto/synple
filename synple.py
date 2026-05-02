@@ -12243,6 +12243,8 @@ def bas_perfcheck(synthfile,n=100,snr=1.e6,
         print('Warning: interpol must be True in bas_perfcheck for regular grids')
         interpol = True
 
+    print('n,ntot=',n,ntot)
+
     if interpol:
       #interpolation to generate mock data for test
       trainsynthfile=synthfile
@@ -12251,7 +12253,6 @@ def bas_perfcheck(synthfile,n=100,snr=1.e6,
                 edgemargin=edgemargin)
 
     else:
-      print('n,ntot=',n,ntot)
       assert(n < ntot/2),'The number of experiments is larger than half of the total number of models in the grid, which will likely bias the evaluation (you may want to activate interpolation)'
       #straight test using part of the grid sample
       hd, p, d = read_synth(synthfile) 
@@ -12384,7 +12385,7 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
     from extinction import apply,ccm89
 
     if rv or ebv : 
-      assert(otype == 'irregular'),'rv or ebv can only be activatted for output irregular grids'
+      assert(otype == 'irregular'),'rv or ebv can only be activated for output irregular grids'
       x = lambda_synth(synthfile)
       if type(x) is list: x = np.hstack(x)
     h,p,d = read_synth(synthfile)
@@ -12497,6 +12498,9 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
       if 'TYPE' in block:
         if block['TYPE'][0] != "'" and block['TYPE'][0] != '"': 
           block['TYPE'] = "'"+otype+"'"
+      else:
+        if otype == 'irregular':
+          block['TYPE'] = 'irregular'
       if 'ID' in block:
         if block['ID'][0] != "'" and block['ID'][0] != '"': 
           block['ID'] = "'"+block['ID']+"'"
