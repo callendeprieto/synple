@@ -12500,7 +12500,7 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
           block['TYPE'] = "'"+otype+"'"
       else:
         if otype == 'irregular':
-          block['TYPE'] = 'irregular'
+          block['TYPE'] = "'irregular'"
       if 'ID' in block:
         if block['ID'][0] != "'" and block['ID'][0] != '"': 
           block['ID'] = "'"+block['ID']+"'"
