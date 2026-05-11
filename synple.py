@@ -10682,6 +10682,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         nml['OFFILE'] = mdlfile
         nml['SFFILE'] = nrdfile
         nml['ALGOR'] = 5
+        nml['GEN_NUM'] = 1000
         nml['COVPRINT'] = 1
         if abs(conti) > 1:
           nml['CONT'] = 3
