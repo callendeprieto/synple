@@ -12222,7 +12222,7 @@ def bas_perfcheck(synthfile,n=100,snr=1.e6,
       ntot = int(hd['NTOT'])
     else:
       if 'N_P' in hd:
-         n_p = map(int,hd['N_P']) 
+         n_p = list( map(int,hd['N_P'].split()) ) 
          ntot = np.prod(n_p)
       else:
         ntot = 0
