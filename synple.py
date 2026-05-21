@@ -168,7 +168,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       set to 0. for automatic adjustment (default 0.)
   intensity: bool
       set to True to return intensities  at
-      mu=0.0001,0.001,0.01,0.1,0.25,0.4,0.55,0.7,0.85,1.0
+      101 mu values
       -- no broadening due to macro, rotation or instrumental/fwhm effects are considered
       (default False)
   lineid: bool
@@ -216,8 +216,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   ---- if intensity is True
   inte: 2D numpy array of floats
-      intensity (I_lambda in ergs/s/cm2/A/strad) for
-      mu=0.0001,0.001,0.01,0.1,0.25,0.4,0.55,0.7,0.85,1.0
+      intensity (I_lambda in ergs/s/cm2/A/strad) for the various mus
   continte: 2D numpy array of float
       continuum intensity for the same angles
 
@@ -373,7 +372,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       wave2,win = np.unique(wave2,return_index=True)
       flux2 = flux2[win]
     if intensity:
-      nmu = 10
+      nmu = 101
       assert (os.path.isfile('fort.10')), 'Error: I cannot read the file *fort.10* in '+tmpdir
       iwave, inte = read10('fort.10')
       contiwave, continte1 = read10('fort.18')
@@ -425,7 +424,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       tck = interpolate.splrep(wave,flux)
       flux = interpolate.splev(wave3,tck)
       if intensity:
-        nmu = 10
+        nmu = 101
         inte2 = np.zeros((nsamples,nmu))
         continte2 = np.zeros((nsamples,nmu))
         for entry in range(nmu): 
@@ -636,8 +635,7 @@ def mpsyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   ---- if intensity is True
   inte: 2D numpy array of floats
-      intensity (I_lambda in ergs/s/cm2/A/strad) for
-      mu=0.0001,0.001,0.01,0.1,0.25,0.4,0.55,0.7,0.85,1.0
+      intensity (I_lambda in ergs/s/cm2/A/strad) for 101 mu values
   continte: 2D numpy array of float
       continuum intensity for the same angles
 
@@ -860,8 +858,7 @@ def raysyn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
 
   ---- if intensity is True
   inte: 2D numpy array of floats
-      intensity (I_lambda in ergs/s/cm2/A/strad) for
-      mu=0.0001,0.001,0.01,0.1,0.25,0.4,0.55,0.7,0.85,1.0
+      intensity (I_lambda in ergs/s/cm2/A/strad) for 101 mu values
   continte: 2D numpy array of float
       continuum intensity for the same angles
 
@@ -6365,8 +6362,10 @@ def write55(wrange,dw=1e-2,imode=0,iprin=0,inlte=0, \
   f.write("\n")
   f.write( ' %f  \n' % (vmicro) )
   if intensity: 
-    f.write( ' %i  %f %i \n' % (-10, 0.0001, 1) )
-    f.write( ' %f %f %f %f %f %f %f %f %f %f \n' % (0.0001,0.001,0.01,0.1,0.25,0.4,0.55,0.7,0.85,1.0) )
+    f.write( ' %i  %f %i \n' % (-101, 0.0001, 1) )
+    muarray = np.arange(101)/100.
+    muarray[0] = 0.0001
+    f.write( ' %f %f %f %f %f %f %f %f %f %f \n' % tuple(muarray) )
   f.close()
 
 def write5(teff,logg,abu, atom='ap18', ofile='fort.5', inlte=0, atommode=None, atominfo=None):
