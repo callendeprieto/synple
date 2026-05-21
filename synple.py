@@ -6365,7 +6365,8 @@ def write55(wrange,dw=1e-2,imode=0,iprin=0,inlte=0, \
     f.write( ' %i  %f %i \n' % (-101, 0.0001, 1) )
     muarray = np.arange(101)/100.
     muarray[0] = 0.0001
-    f.write( ' %f %f %f %f %f %f %f %f %f %f \n' % tuple(muarray) )
+    mustring = ' %f'*101 + ' \n'
+    f.write( mustring % tuple(muarray) )
   f.close()
 
 def write5(teff,logg,abu, atom='ap18', ofile='fort.5', inlte=0, atommode=None, atominfo=None):
