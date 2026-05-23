@@ -57,7 +57,7 @@ import matplotlib as mpl
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from math import ceil
-from scipy import interpolate
+from scipy import interpolate, integrate
 from scipy.signal import savgol_filter, medfilt
 from scipy.optimize import curve_fit
 from itertools import product
@@ -1191,6 +1191,30 @@ def multisyn(modelfiles, wrange, dw=None, strength=1e-4, abu=None, \
 
   return(wave, flux, cont)
 
+def teff_stefanboltzmann(x,y):
+
+   """Integrates H_lambda*dlambda to estimate Teff using the Stefan-Boltzmann equation
+      Teff = (4*pi/sigma * integral H_lambda dlambda) **0.25
+
+   Parameters
+   ----------
+   x: numpy float array
+     wavelenght array (A)
+
+   y: numpy float array
+     H_lambda flux (F_lambda = 4*pi*H_lambda) (erg/s/cm**2/A)
+
+   Returns
+   -------
+   teff: float
+     effective temperature from the Stefan-Botzmann law assuming the input flux
+     covers 100% of the emergent flux from a stellar surface
+   """
+
+   sigma = 5.670374419e-5 #Stefan-Boltzmann constant in erg/cm2/s/K**4
+   teff = ( integrate.simps(y,x=x) * 4. * np.pi / sigma )**0.25
+
+   return(teff)
 
 def polydelta(modelfile, wrange, elem, enhance=0.2, strength=1e-4, vmicro=None, abu=None, \
     linelist=linelist0, atom='ap18', vrot=0.0, fwhm=0.0, vmacro=0.0, \
