@@ -1212,7 +1212,7 @@ def teff_stefanboltzmann(x,y):
    """
 
    sigma = 5.670374419e-5 #Stefan-Boltzmann constant in erg/cm2/s/K**4
-   teff = ( integrate.simps(y,x=x) * 4. * np.pi / sigma )**0.25
+   teff = ( integrate.simps(y,x=x) * 4. * np.pi / sigma )**(1/4)
 
    return(teff)
 
