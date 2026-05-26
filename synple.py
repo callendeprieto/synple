@@ -6365,7 +6365,7 @@ def write55(wrange,dw=1e-2,imode=0,iprin=0,inlte=0, \
     f.write( ' %i  %f %i \n' % (-100, 0.0001, 1) )
     muarray = np.arange(101)/100.
     muarray[0] = 0.0001
-    np.delete(muarray,50)
+    muarray = np.delete(muarray,50)
     mustring = ' %f'*100 + ' \n'
     f.write( mustring % tuple(muarray) )
   f.close()
