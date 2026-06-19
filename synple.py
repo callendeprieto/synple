@@ -424,7 +424,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       tck = interpolate.splrep(wave,flux)
       flux = interpolate.splev(wave3,tck)
       if intensity:
-        nmu = 100
+        nmu = 101
         inte2 = np.zeros((nsamples,nmu))
         continte2 = np.zeros((nsamples,nmu))
         for entry in range(nmu): 
@@ -6362,11 +6362,11 @@ def write55(wrange,dw=1e-2,imode=0,iprin=0,inlte=0, \
   f.write("\n")
   f.write( ' %f  \n' % (vmicro) )
   if intensity: 
-    f.write( ' %i  %f %i \n' % (-100, 0.0001, 1) )
+    f.write( ' %i  %f %i \n' % (-101, 0.0001, 1) )
     muarray = np.arange(101)/100.
     muarray[0] = 0.0001
-    muarray = np.delete(muarray,50)
-    mustring = ' %f'*100 + ' \n'
+    #muarray = np.delete(muarray,50)
+    mustring = ' %f'*101 + ' \n'
     f.write( mustring % tuple(muarray) )
   f.close()
 
