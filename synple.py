@@ -11820,6 +11820,35 @@ def vac2air(wavelength):
     wavelength2[g] = wavelength2[g]/fact
 
     return(wavelength2)
+
+def nu2l(nu,fnu):
+    """Converts nu and f_nu to lambda and f_lambda
+
+    Parameters
+    ----------
+    nu float array
+      frequencies (Hz)
+    
+    fnu float array
+      flux (erg cm-2 s-1 Hz-1)
+
+    Returns
+    -------
+    l float array
+      wavelengths (A)
+
+    fl float array
+      flux (erg cm-2 s-1 A-1)
+    """
+   
+
+    c=clight*1e5      # cm/s
+    l=c/nu            # cm
+    l=l*1e8           # AA
+    fl=c/l**2*fnu/1e8  # erg cm-2 s-1 A-1
+
+    return(l,fl)
+
     
 def xc(y1,y2, npoints=None, gaus=False, plot=False):
     """Determines a pixel offset between two arrays by 
