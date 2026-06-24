@@ -372,7 +372,7 @@ def syn(modelfile, wrange, dw=None, strength=1e-4, vmicro=None, abu=None, \
       wave2,win = np.unique(wave2,return_index=True)
       flux2 = flux2[win]
     if intensity:
-      nmu = 100
+      nmu = 101
       assert (os.path.isfile('fort.10')), 'Error: I cannot read the file *fort.10* in '+tmpdir
       iwave, inte = read10('fort.10')
       contiwave, continte1 = read10('fort.18')
