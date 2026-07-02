@@ -1518,7 +1518,7 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
 
   return None
 
-def mdelta(teff,logg,enhance=0.2):
+def mdelta(teff=5772.,logg=4.44,feh=0.0,enhance=0.2):
 
   """sets up a directory tree for evaluating the impact of changing abundances on a model -- taking into account the effects on the model atmosphere
 
@@ -1528,6 +1528,8 @@ def mdelta(teff,logg,enhance=0.2):
    effective temperature
   logg: float
    log10 of the surface gravity (cgs units)
+  feh: float
+   metallicity, [Fe/H] = log10(N(Fe)/N(H)) - log10((N(Fe)/N(H))sun)
   enhance: float
    increase in the abundance to test (dex)
 
@@ -1547,11 +1549,11 @@ def mdelta(teff,logg,enhance=0.2):
     fh.write("os.mkdir('hyd'+'{:04d}'.format("+str(i)+"))\n")
     fh.write("os.chdir('hyd'+'{:04d}'.format("+str(i)+"))\n")
     if i == 1:
-      fh.write('create_regular_kurucz(tteff=(1,5770.,0),tlogg=(1,4.44,0.0), \
-        tfeh=(1,0.0,0.0),'+entry+'=(1,0.0,0.0))\n')
+      fh.write('create_regular_kurucz(tteff=(1,teff,0),tlogg=(1,logg,0.0), \
+        tfeh=(1,feh,0.0),'+entry+'=(1,0.0,0.0))\n')
     else:
-      fh.write('create_regular_kurucz(tteff=(1,5770.,0),tlogg=(1,4.44,0.0), \
-        tfeh=(1,0.0,0.0),'+entry+'=(1,0.5,0.0))\n')
+      fh.write('create_regular_kurucz(tteff=(1,teff,0),tlogg=(1,logg,0.0), \
+        tfeh=(1,feh,0.0),'+entry+'=(1,enhance,0.0))\n')
     fh.write("os.chdir('..')\n")
 
   fh.close()
