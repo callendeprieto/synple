@@ -1573,7 +1573,9 @@ def polymdelta(wrange):
 
 #sequence could be:
 # mdelta(5770.,4.44,enhance=0.5)
+# -- then run the scripts to compute the Kurucz models (hyd00??/kur*/k*job)
 # polymdelta((3000.,10000.)
+# -- then run the scripts to compute the spectra (hyd0000*/hyd*job)
 # a, b, c = elements()
 # collectdelta('k5770._4.44.7',wrange=(3000.,10000.),elem=a[1:],enhance=0.5)
    
