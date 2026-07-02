@@ -1549,11 +1549,11 @@ def mdelta(teff=5772.,logg=4.44,feh=0.0,enhance=0.2):
     fh.write("os.mkdir('hyd'+'{:04d}'.format("+str(i)+"))\n")
     fh.write("os.chdir('hyd'+'{:04d}'.format("+str(i)+"))\n")
     if i == 1:
-      fh.write('create_regular_kurucz(tteff=(1,teff,0),tlogg=(1,logg,0.0), \
-        tfeh=(1,feh,0.0),'+entry+'=(1,0.0,0.0))\n')
+      fh.write('create_regular_kurucz(tteff=(1,'+str(teff)+',0),tlogg=(1,'+str(logg)+',0.0), \
+        tfeh=(1,'+str(feh)+',0.0),'+entry+'=(1,0.0,0.0))\n')
     else:
-      fh.write('create_regular_kurucz(tteff=(1,teff,0),tlogg=(1,logg,0.0), \
-        tfeh=(1,feh,0.0),'+entry+'=(1,enhance,0.0))\n')
+      fh.write('create_regular_kurucz(tteff=(1,'+str(teff)+',0),tlogg=(1,'+str(logg)+',0.0), \
+        tfeh=(1,'+str(feh)+',0.0),'+entry+'=(1,'+str(enhance)+',0.0))\n')
     fh.write("os.chdir('..')\n")
 
   fh.close()
