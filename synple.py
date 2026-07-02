@@ -13828,7 +13828,7 @@ def fparams(root,synthfile=None,figure=None,condition=None):
 
 def desida(path_to_data='healpix',path_to_output='sp_output',
            synthfile=None, seconds_per_target=0.1,star=True,focus=False,
-           conti=1, doubleconti=False, gpu=False, gpu_share=1, 
+           conti=1, doubleconti=False, nthreads=4, gpu=False, gpu_share=1, 
            ferre=False, filters=[]):
 
   """Prepare a DESI data for parallel processing
@@ -13868,6 +13868,9 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
   doubleconti: bool
       when on, and abs(conti)> 1, both the spectrum normalized with conti=1
       and abs(conti) are fit simultaneously
+  nthreads: int
+      number of OMP/BLAS/MKL threads to set/limit in the individual calls to PYTHON/BAS
+      (default 4)
   gpu: bool
       sends the calculation of the likelihood to the GPU
   gpu_share: int
@@ -13936,7 +13939,6 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
       s.write("#SBATCH --time="+str(int(minutes)+1)+"\n") #minutes
       s.write("#SBATCH --ntasks=1" + "\n")
       s.write("#SBATCH --nodes=1" + "\n")
-      nthreads = 4
       s.write("#SBATCH --qos=regular" + "\n")
       s.write("#SBATCH --constraint=gpu" + "\n")
       s.write("#SBATCH --account=desi_g \n")
@@ -13982,13 +13984,11 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
       s.write("#SBATCH --nodes=1" + "\n")
 
       if (host == 'login1'): #lapalma
-        nthreads = 4
         s.write("#SBATCH  -J "+str(root)+" \n")
         s.write("#SBATCH  -o "+str(root)+"_%j.out"+" \n")
         s.write("#SBATCH  -e "+str(root)+"_%j.err"+" \n")
         s.write("#SBATCH --cpus-per-task="+str(16)+"\n")
       else: # perlmutter
-        nthreads = 4
         if gpu:
           s.write("#SBATCH --qos=regular" + "\n")
           s.write("#SBATCH --constraint=gpu" + "\n")
