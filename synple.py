@@ -13931,7 +13931,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
 
     if gpu and not np.mod(k,gpu_share): # perlmutter GPU
 
-      sfile = os.path.join(tpath,root+'.gpu') 
+      sfile = os.path.join(tpath,root+'.gpu.job') 
       outfile = os.path.join(tpath,root)
 
       print('infile=',entry)
@@ -13974,7 +13974,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
 
     else:
 
-      sfile = os.path.join(tpath,root+'.job')
+      sfile = os.path.join(tpath,root+'.cpu.job')
       outfile = os.path.join(tpath,root)
 
       print('infile=',entry)
