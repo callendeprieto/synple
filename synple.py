@@ -1489,7 +1489,7 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
       idir = idir + 1
       dir = ( "hyd%07d" % (idir) )
 
-      #print('j,idir=',j,idir)
+      print('j,idir=',j,idir)
 
       try:
         os.chdir(dir)
@@ -14362,7 +14362,7 @@ def alf_cal(rawspec):
     """reading and applying an approximate response correction to ALFOSC data
     """
 
-    data = np.loadtxt("/Users/callende/synple/config/alfosc-g19-response.dat")
+    data = np.loadtxt("/home/callende/synple/config/alfosc-g19-response.dat")
     x = data[:,0]
     r = data[:,1]
 
