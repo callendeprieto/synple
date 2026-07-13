@@ -1489,7 +1489,7 @@ def collectdelta(modelfile, wrange, elem, enhance=0.2,
       idir = idir + 1
       dir = ( "hyd%07d" % (idir) )
 
-      #print('j,idir=',j,idir)
+      print('j,idir=',j,idir)
 
       try:
         os.chdir(dir)
