@@ -1578,6 +1578,8 @@ def polymdelta(wrange):
 # -- then run the scripts to compute the spectra (hyd0000*/hyd*job)
 # a, b, c = elements()
 # collectdelta('k5770._4.44.7',wrange=(3000.,10000.),elem=a[1:],enhance=0.5)
+# x = np.hstack(lambda_synth('../n_mkab2-BRZ-DESIrbf.dat'))
+# mkflt('k5770._4.44.7.dlt', wavelengths=x, blocks=[[4300.,4450.]], fwhm=1.8)
    
 
 def mkflt(dltfile,wavelengths,blocks=[],fwhm=0.0,unit='km/s',outdir='.'):
@@ -1621,9 +1623,11 @@ def mkflt(dltfile,wavelengths,blocks=[],fwhm=0.0,unit='km/s',outdir='.'):
   hd = {}
   for line in f:
     #print('line=',line)
+    if line[1] == '&' or line[1] == '/':
+      continue
     if '=' in line:
       b = line.split('=')
-      hd[b[0].strip()] = b[1]
+      hd[b[0][1:].strip()] = b[1]
     else:
       if flux:
         y = np.array(line.split(), dtype=float)
@@ -1635,6 +1639,7 @@ def mkflt(dltfile,wavelengths,blocks=[],fwhm=0.0,unit='km/s',outdir='.'):
         else:
           xc = x[:]
           yc = y[:]
+
 
         y2 = np.interp(wavelengths, xc, yc)
         #y2 = interp_spl(wavelengths, xc, yc)
