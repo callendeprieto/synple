@@ -9974,6 +9974,9 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
     dasynthfile: str
       name of a the same grid in which each spectrum has been normalized by its mean
       (equivalent to conti=1). Useful when synthfile has already been normalized
+      Specifying dasynthfile is interpreted by the code as a signal that synthfile
+      has already been normalized, i.e., it will not be normalized as indicated by conti
+      while the data still will be
       (default None)
     wrange: 2-element iterable
       spectral range to use in the fittings
@@ -10095,18 +10098,17 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       
     #normalization
     print('normalizing grid...')
-    if abs(conti) > 0:
-      da = np.zeros_like(d) # da keeps a copy of conti=1 normalized grid
-      damian = np.zeros(ntot) # array with the mean fluxes for each model/row 
-      for entry in range(len(d[:,0])):
-        cc = np.mean(d[entry,:])
-        damian[entry] = cc
-        da[entry,:] = d[entry,:] / cc
-        cc = continuum(d[entry,:],window_length=abs(conti))
-        d[entry,:] = d[entry,:] / cc
-
     if dasynthfile is None:
       dasynthfile1 = 'None'
+      if abs(conti) > 0:
+        da = np.zeros_like(d) # da keeps a copy of conti=1 normalized grid
+        damian = np.zeros(ntot) # array with the mean fluxes for each model/row 
+        for entry in range(len(d[:,0])):
+          cc = np.mean(d[entry,:])
+          damian[entry] = cc
+          da[entry,:] = d[entry,:] / cc
+          cc = continuum(d[entry,:],window_length=abs(conti))
+          d[entry,:] = d[entry,:] / cc
     else:
       dasynthfile1 = str(dasynthfile)
       ha, ba, da = read_synth(dasynthfile1)
@@ -13871,6 +13873,9 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
   dasynthfile: str
       name of a the same grid in which each spectrum has been normalized by its mean
       (equivalent to conti=1). Useful when synthfile has already been normalized
+      Specifying dasynthfile is interpreted by the code as a signal that synthfile
+      has already been normalized, i.e., it will not be normalized as indicated by conti
+      while the data still will be
       (default None)
   seconds_per_target: float
       Seconds it will take to analyze a single target on a single core
