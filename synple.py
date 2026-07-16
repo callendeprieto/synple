@@ -13844,7 +13844,7 @@ def fparams(root,synthfile=None,figure=None,condition=None):
 def desida(path_to_data='healpix',path_to_output='sp_output',
            synthfile=None, dasynthfile='', seconds_per_target=8.,star=True,focus=False,
            conti=1, doubleconti=False, nthreads=4, gpu=False, gpu_share=1, 
-           ferre=False, filters=[]):
+           ferre=False, filters=[], target=None):
 
   """Prepare a DESI data for parallel processing
  
@@ -13905,6 +13905,13 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
       the synple distribution, within a subfolder with the name of the
       grid, and having an flt extension (e.g. n_sc2-STISrbf/Al.flt)
       (default is [])
+  target: iterable
+      input list of numerals or targetids to select objects
+      to process. If the list includes numbers < 10000, they are interpreted
+      as the order of the targets in the input file(s). Otherwise they are
+      interpreted as a list of target ids. Either way only the target list
+      will be analyzed and the others skipped.
+      (default is None meaning that all the targets in the input file(s) are analyzed)
 
   """
 
