@@ -5386,7 +5386,7 @@ def pickle_synth(synthfile,outsynthfile=None):
 	
     return()
     
-def write_synth(synthfile,p,d,hdr=None,irregular=False):
+def write_synth(synthfile,p,d,hdr=None,irregular=False,clean=False):
     """
     Writes a FERRE spectral grid to disk
 
@@ -5405,6 +5405,9 @@ def write_synth(synthfile,p,d,hdr=None,irregular=False):
       (made up with basic data if None)
     irregular: bool
       force the output grid to be irregular
+    clean:  bool
+      Remove models with zeros. Only applies to output irregular grids. 
+      Beware, it changes the input p and d arrays!
 
     Returns
     -------
@@ -5453,16 +5456,17 @@ def write_synth(synthfile,p,d,hdr=None,irregular=False):
             irregular = True
 
     if irregular:
-       #drop models with zeros and add the model parameteres to the data
-       ds = np.sum(d,1)
-       wi = np.where(ds + 1e-31 > 1e-30)[0]
-       d = d[wi,:]
-       p = p[wi,:]
-       d = np.hstack((p,d))
-       ntot = len(p[:,0])
-       for block in hdr:
-         block['TYPE'] = "'irregular'"
-         block['NTOT'] = str(ntot)
+       if clean:
+         #drop models with zeros and add the model parameteres to the data
+         ds = np.sum(d,1)
+         wi = np.where(ds + 1e-31 > 1e-30)[0]
+         d = d[wi,:]
+         p = p[wi,:]
+         d = np.hstack((p,d))
+         ntot = len(p[:,0])
+         for block in hdr:
+           block['TYPE'] = "'irregular'"
+           block['NTOT'] = str(ntot)
 
 
     fout = open(synthfile,'w')
