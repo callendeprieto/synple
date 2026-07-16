@@ -5347,6 +5347,7 @@ def read_synth(synthfile,nd=False):
         else:
             header0 = header
 
+
         #data
         data=np.loadtxt(synthfile, skiprows=nlines, dtype=float)
 
@@ -9915,7 +9916,7 @@ def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
 
 
 def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None, 
-        star=True, conti=1, wrange=None, doubleconti=False, 
+        star=True, conti=1, dasynthfile=None, wrange=None, doubleconti=False, 
         focus=False, nail=[], plot=False, gpu=False, ferre=False, filters=[]):
 
     """Bayesian Algorithm in Synple
@@ -9966,6 +9967,10 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       using conti=1 for the first optimization, which is used to measure radial 
       velocity. Conti=0 corresponds to no normalization at all.
       (default 1)
+    dasynthfile: str
+      name of a the same grid in which each spectrum has been normalized by its mean
+      (equivalent to conti=1). Useful when synthfile has already been normalized
+      (default None)
     wrange: 2-element iterable
       spectral range to use in the fittings
       (default None, and sets wrange to the values of the adopted grid)
@@ -10086,23 +10091,24 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       
     #normalization
     print('normalizing grid...')
-    da = np.zeros_like(d) # da keeps a copy of conti=1 normalized grid
-    damian = np.zeros(ntot) # array with the mean fluxes for each model/row 
-    for entry in range(len(d[:,0])):
+    if abs(conti) > 0:
+      da = np.zeros_like(d) # da keeps a copy of conti=1 normalized grid
+      damian = np.zeros(ntot) # array with the mean fluxes for each model/row 
+      for entry in range(len(d[:,0])):
         cc = np.mean(d[entry,:])
         damian[entry] = cc
         da[entry,:] = d[entry,:] / cc
-        if abs(conti) > 1:
-          cc = continuum(d[entry,:],window_length=abs(conti))
-        elif conti == 0:
-          cc = 1.0
+        cc = continuum(d[entry,:],window_length=abs(conti))
         d[entry,:] = d[entry,:] / cc
-    if doubleconti: 
+
+    if dasynthfile is not None:
+      ha, ba, da = read_synth(dasynthfile)
+
+    if doubleconti:
       d = np.hstack((d,da))
       lenx = 2 * lenx
 
     print('shape of d,da:',d.shape,da.shape)
-
 
     if focus:
       p2 = p.copy()
