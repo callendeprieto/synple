@@ -10104,7 +10104,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
     if dasynthfile is None:
       dasynthfile1 = 'None'
     else:
-      dasynthfile1 = "'"+str(dasynthfile)+"'"
+      dasynthfile1 = str(dasynthfile)
 
     if dasynthfile is not None:
       ha, ba, da = read_synth(dasynthfile1)
