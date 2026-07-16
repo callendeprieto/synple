@@ -13991,7 +13991,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
        " bas(\'" + entry + "\'," + \
        " outfile=\'" + outfile + "\'," + \
        " synthfile=" + str(synthfile1) + \
-       " dasynthfile=" + str(dasynthfile1) + \
+       ", dasynthfile=" + str(dasynthfile1) + \
        ", star= " + str(star) + \
        ", focus= " + str(focus) + ", conti= " + str(conti) + "," + \
        " doubleconti= " + str(doubleconti) + "," + \
