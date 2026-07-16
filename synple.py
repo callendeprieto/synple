@@ -5462,11 +5462,11 @@ def write_synth(synthfile,p,d,hdr=None,irregular=False,clean=False):
          wi = np.where(ds + 1e-31 > 1e-30)[0]
          d = d[wi,:]
          p = p[wi,:]
-         d = np.hstack((p,d))
-         ntot = len(p[:,0])
-         for block in hdr:
-           block['TYPE'] = "'irregular'"
-           block['NTOT'] = str(ntot)
+       d = np.hstack((p,d))
+       ntot = len(p[:,0])
+       for block in hdr:
+         block['TYPE'] = "'irregular'"
+         block['NTOT'] = str(ntot)
 
 
     fout = open(synthfile,'w')
