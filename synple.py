@@ -10101,6 +10101,11 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         cc = continuum(d[entry,:],window_length=abs(conti))
         d[entry,:] = d[entry,:] / cc
 
+    if dasynthfile is None:
+      dasynthfile1 = 'None'
+    else:
+      dasynthfile1 = "'"+str(dasynthfile)+"'"
+
     if dasynthfile is not None:
       ha, ba, da = read_synth(dasynthfile1)
 
