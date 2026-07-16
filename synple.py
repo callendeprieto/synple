@@ -9916,7 +9916,7 @@ def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
 
 
 def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None, 
-        star=True, conti=1, dasynthfile='', wrange=None, doubleconti=False, 
+        star=True, conti=1, dasynthfile=None, wrange=None, doubleconti=False, 
         focus=False, nail=[], plot=False, gpu=False, ferre=False, filters=[]):
 
     """Bayesian Algorithm in Synple
@@ -9970,7 +9970,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
     dasynthfile: str
       name of a the same grid in which each spectrum has been normalized by its mean
       (equivalent to conti=1). Useful when synthfile has already been normalized
-      (default '')
+      (default None)
     wrange: 2-element iterable
       spectral range to use in the fittings
       (default None, and sets wrange to the values of the adopted grid)
@@ -10101,8 +10101,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         cc = continuum(d[entry,:],window_length=abs(conti))
         d[entry,:] = d[entry,:] / cc
 
-    if dasynthfile != '':
-      ha, ba, da = read_synth(dasynthfile)
+    if dasynthfile is not None:
+      ha, ba, da = read_synth(dasynthfile1)
 
     if doubleconti:
       d = np.hstack((d,da))
@@ -13842,7 +13842,7 @@ def fparams(root,synthfile=None,figure=None,condition=None):
 
 
 def desida(path_to_data='healpix',path_to_output='sp_output',
-           synthfile=None, dasynthfile='', seconds_per_target=8.,star=True,focus=False,
+           synthfile=None, dasynthfile=None, seconds_per_target=8.,star=True,focus=False,
            conti=1, doubleconti=False, nthreads=4, gpu=False, gpu_share=1, 
            ferre=False, filters=[], target=None):
 
@@ -13863,7 +13863,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
   dasynthfile: str
       name of a the same grid in which each spectrum has been normalized by its mean
       (equivalent to conti=1). Useful when synthfile has already been normalized
-      (default '')
+      (default None)
   seconds_per_target: float
       Seconds it will take to analyze a single target on a single core
   star: bool
@@ -13929,6 +13929,11 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
     synthfile1 = 'None'
   else:
     synthfile1 = "'"+str(synthfile)+"'"
+
+  if dasynthfile is None:
+    dasynthfile1 = 'None'
+  else:
+    dasynthfile1 = "'"+str(dasynthfile)+"'"
 
  
   infiles = list(glob.iglob(os.path.join(path_to_data,'**',
