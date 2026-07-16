@@ -10105,9 +10105,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       dasynthfile1 = 'None'
     else:
       dasynthfile1 = str(dasynthfile)
-
-    if dasynthfile is not None:
       ha, ba, da = read_synth(dasynthfile1)
+      damian = np.ones(ntot)
 
     if doubleconti:
       d = np.hstack((d,da))
