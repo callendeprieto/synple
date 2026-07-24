@@ -10353,7 +10353,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
 
         #give up when cebas returns Nans
-        #if np.isnan(res).any() or np.isnan(eres).any():
+        if np.isnan(res).any() or np.isnan(eres).any():
           print('skipping spectrum since cebas returns a NaN')
           continue
 
@@ -10459,7 +10459,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           print('reduced lchi =',lchi)
 
         #give up when cebas returns Nans
-        #if np.isnan(res).any() or np.isnan(eres).any():
+        if np.isnan(res).any() or np.isnan(eres).any():
           print('skipping spectrum since cebas returns a NaN')
           continue
 
