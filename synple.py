@@ -10351,6 +10351,12 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           else:
             res, eres, cov, bmod, weights = cebas( p, da, spec, ivar )
 
+
+        #give up when cebas returns Nans
+        #if np.isnan(res).any() or np.isnan(eres).any():
+          print('skipping spectrum since cebas returns a NaN')
+          continue
+
         lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - ndim) )
         print('reduced lchi =',lchi)
                 
@@ -10451,6 +10457,11 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             res, eres, cov, bmod, weights = cebas( p, d, spec, ivar )
           lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - ndim))
           print('reduced lchi =',lchi)
+
+        #give up when cebas returns Nans
+        #if np.isnan(res).any() or np.isnan(eres).any():
+          print('skipping spectrum since cebas returns a NaN')
+          continue
 
         if focus:
           eres[eres < 1e-17] = 1e-17 # avoid division by zero
