@@ -5385,6 +5385,46 @@ def pickle_synth(synthfile,outsynthfile=None):
     file.close()
 	
     return()
+
+def norm_synth(synthfile, conti, outsynthfile=None, clean=False):
+
+    """prepare a pickled continuum-normalized version of a BAS grid
+       the output are two files, the actual normalized grid and the
+       dasynthfile, which is the original data in which each spectrum
+       is normalized by its mean value, to be used with conti<0"""
+
+    h, p, d, read_synth(synthfile)
+    ntot = len(p[:,0])
+
+    ending = synthfile.rfind('.dat')
+    if ending < -1: 
+      ending = synthfile.rfind('.pickle')
+    if ending < -1:
+      ending = len(synthfile) + 1 
+    root = synthfile[:ending]
+    if outsynthfile is None: outsynthfile = root+'C'+str(conti)+'.dat'
+    dasynthfile = root+'C1.dat'
+
+    #normalization
+    print('normalizing grid...')
+    dasynthfile1 = 'None'
+    if abs(conti) > 0:
+      da = np.zeros_like(d) # da keeps a copy of conti=1 normalized grid
+      damian = np.zeros(ntot) # array with the mean fluxes for each model/row
+      for entry in range(len(d[:,0])):
+        cc = np.mean(d[entry,:])
+        damian[entry] = cc
+        da[entry,:] = d[entry,:] / cc
+        cc = continuum(d[entry,:],window_length=abs(conti))
+        d[entry,:] = d[entry,:] / cc
+
+    write_synth(outsynthfile, p, d, hdr=h, irregular=True, clean=clean)
+    write_synth(dasynthfile, p, da, hdr=h, irregular=True, clean=clean)
+    pickle_synth(outsynthfile)
+    pickle_synth(dasynthfile)
+
+    return()
+
     
 def write_synth(synthfile,p,d,hdr=None,irregular=False,clean=False):
     """
