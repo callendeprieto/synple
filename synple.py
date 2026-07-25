@@ -5066,7 +5066,7 @@ def collect_regular_kurucz(tteff=None, tlogg =None, \
            files.append("missing")
          else:
            print('Error: a model is missing in dir',dir)
-           sysexit(1)
+           sys.exit(1)
     
     return(files)
 
@@ -5704,7 +5704,7 @@ def merge_synth(synthfile,outsynthfile=None):
             p2 = p
           else:
             print('Error: the grid with the largest number of parameters should be placed first in the input list to merge_synth')
-            sysexit(1)
+            sys.exit(1)
             
           
           pp = np.vstack((pp,p2))
