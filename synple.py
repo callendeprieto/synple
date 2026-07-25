@@ -2831,12 +2831,12 @@ def grid_builder(config,  modeldir=modeldir):
          if len(streldict) > 0:
            frun.write("files = collect_regular_kurucz(tteff=" + \
                 str(tteff)+", tlogg="+str(tlogg)+", tfeh=" + \
-                str(tfeh)+", tafe="+str(tafe)+", tcfe="+str(tcfe)+", tie_afe="+str(tie_afe)+ \
+                str(tfeh)+", tafe="+str(tafe)+", C="+str(tcfe)+", tie_afe="+str(tie_afe)+ \
                 ", "+streldict[:-1]+" )\n")
          else:
            frun.write("files = collect_regular_kurucz(tteff=" + \
                 str(tteff)+", tlogg="+str(tlogg)+", tfeh=" + \
-                str(tfeh)+", tafe="+str(tafe)+", tcfe="+str(tcfe)+", tie_afe="+str(tie_afe)+ \
+                str(tfeh)+", tafe="+str(tafe)+", C="+str(tcfe)+", tie_afe="+str(tie_afe)+ \
                 " )\n")
          frun.write( "polysyn(files,wrange = (%.2f,%.2f), vmicro = %.2f, keepingz = %s )\n" %  (wrange[0], wrange[1], vmicro, keepingz) )
          frun.write( "merge_slurm_parallel(ext='job', nmerge=%4i, ncpu=%4i)\n" % (nmerge,ncpu) )
