@@ -2806,10 +2806,10 @@ def grid_builder(config,  modeldir=modeldir):
                    ext = 'mod')
        elif conf[entry]['type'] == 'mkk-regular':
           create_regular_kurucz(tteff=tteff, tlogg=tlogg, 
-                   tfeh=tfeh, tafe=tafe, tcfe=tcfe, tie_afe = tie_afe, **eldict)
+                   tfeh=tfeh, tafe=tafe, C=tcfe, tie_afe = tie_afe, **eldict)
        elif conf[entry]['type'] == 'mkk-irregular':
           create_irregular_kurucz(nmodels, pteff=pteff, plogg=plogg, 
-                   pfeh=pfeh, pcfe=pcfe, tie_afe = tie_afe, **eldict)
+                   pfeh=pfeh, C=pcfe, tie_afe = tie_afe, **eldict)
        else:
           print('accepted models can be kurucz/marcs/mkk-regular/mkk-irregular')
           sys.exit(0)
