@@ -2806,10 +2806,10 @@ def grid_builder(config,  modeldir=modeldir):
                    ext = 'mod')
        elif conf[entry]['type'] == 'mkk-regular':
           create_regular_kurucz(tteff=tteff, tlogg=tlogg, 
-                   tfeh=tfeh, tafe=tafe, tie_afe = tie_afe, **eldict)
+                   tfeh=tfeh, tafe=tafe, tcfe=tcfe, tie_afe = tie_afe, **eldict)
        elif conf[entry]['type'] == 'mkk-irregular':
           create_irregular_kurucz(nmodels, pteff=pteff, plogg=plogg, 
-                   pfeh=pfeh, tie_afe = tie_afe, **eldict)
+                   pfeh=pfeh, pcfe=pcfe, tie_afe = tie_afe, **eldict)
        else:
           print('accepted models can be kurucz/marcs/mkk-regular/mkk-irregular')
           sys.exit(0)
@@ -2831,12 +2831,12 @@ def grid_builder(config,  modeldir=modeldir):
          if len(streldict) > 0:
            frun.write("files = collect_regular_kurucz(tteff=" + \
                 str(tteff)+", tlogg="+str(tlogg)+", tfeh=" + \
-                str(tfeh)+", tafe="+str(tafe)+", tie_afe="+str(tie_afe)+ \
+                str(tfeh)+", tafe="+str(tafe)+", tcfe="+str(tcfe)+", tie_afe="+str(tie_afe)+ \
                 ", "+streldict[:-1]+" )\n")
          else:
            frun.write("files = collect_regular_kurucz(tteff=" + \
                 str(tteff)+", tlogg="+str(tlogg)+", tfeh=" + \
-                str(tfeh)+", tafe="+str(tafe)+", tie_afe="+str(tie_afe)+ \
+                str(tfeh)+", tafe="+str(tafe)+", tcfe="+str(tcfe)+", tie_afe="+str(tie_afe)+ \
                 " )\n")
          frun.write( "polysyn(files,wrange = (%.2f,%.2f), vmicro = %.2f, keepingz = %s )\n" %  (wrange[0], wrange[1], vmicro, keepingz) )
          frun.write( "merge_slurm_parallel(ext='job', nmerge=%4i, ncpu=%4i)\n" % (nmerge,ncpu) )
