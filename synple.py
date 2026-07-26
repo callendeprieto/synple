@@ -12283,16 +12283,17 @@ def call(func,**kargs):
     return()
 
 
-def rewrite_synth(synthfile,outsynthfile=None):
+def rewrite_synth(synthfile,outsynthfile=None, clean=True):
 
     """Read a FERRE grid and write it back to disk as an irregular grid
+       removing, by default, spectra with all fluxes equal to 0
     """
 
     if outsynthfile is None:
         outsynthfile = 'i_'+synthfile[2:]
 
     h,p,d = read_synth(synthfile)
-    write_synth(outsynthfile, p, d, hdr=h, irregular=True)
+    write_synth(outsynthfile, p, d, hdr=h, irregular=True, clean=True)
 
 
     return()
