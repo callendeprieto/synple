@@ -2704,7 +2704,7 @@ def merge_slurm_parallel(path='./', ext='slurm', outext='slurm', nmerge=2, ncpu=
   
   
 
-def grid_builder(config,  modeldir='.'):
+def grid_builder(config,  modeldir=modeldir):
 
     conf = load_conf(config, confdir=confdir)
 
@@ -2785,7 +2785,7 @@ def grid_builder(config,  modeldir='.'):
        print('eldict=',eldict)
 
        if conf[entry]['type'] == 'marcs':
-          files = collect_marcs(modeldir=os.path.join(modeldir,'marcs'), 
+          files = collect_marcs(modeldir=modeldir), 
                    tteff = tteff,
                    tlogg = tlogg, 
                    tfeh  = tfeh,
@@ -2795,7 +2795,7 @@ def grid_builder(config,  modeldir='.'):
                    ignore_missing_models = True,
                    ext = 'mod.gz')                   
        elif conf[entry]['type'] == 'kurucz':
-          files = collect_kurucz(modeldir=os.path.join(modeldir,'kurucz'), 
+          files = collect_kurucz(modeldir=modeldir), 
                    tteff = tteff,
                    tlogg = tlogg, 
                    tfeh  = tfeh,
