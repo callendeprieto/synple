@@ -1,0 +1,21 @@
+wrange: 15000. 17000
+vmicro: -1
+grids: ['f_miniapoM','f_miniapoGK']
+f_miniapoM:
+       type: 'tlusty'
+       tteff: 16 2500.    100.
+       tlogg: 12   -0.50    0.5
+       tfeh:  15   -2.50    0.25
+       tafe:   8   -0.75    0.25
+       tcfe:  11   -1.50    0.25
+          N:   6   -0.50    0.50
+         Mg:   5   -1.00    0.50
+f_miniapoGK:
+       type: 'tlusty'
+       tteff:  9  4000.    250.
+       tlogg: 12   -0.50    0.5
+       tfeh:  15   -2.50    0.25
+       tafe:   8   -0.75    0.25
+       tcfe:  11   -1.50    0.25
+          N:   6   -0.50    0.50
+         Mg:   5   -1.00    0.50
