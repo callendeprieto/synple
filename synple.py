@@ -2785,6 +2785,7 @@ def grid_builder(config,  modeldir=modeldir):
        print('eldict=',eldict)
 
        if conf[entry]['type'] == 'marcs':
+          print('calling collect_marcs with modeldir=',os.path.join(modeldir,'marcs'))
           files = collect_marcs(modeldir=os.path.join(modeldir,'marcs'), 
                    tteff = tteff,
                    tlogg = tlogg, 
