@@ -2704,7 +2704,7 @@ def merge_slurm_parallel(path='./', ext='slurm', outext='slurm', nmerge=2, ncpu=
   
   
 
-def grid_builder(config,  modeldir=modeldir):
+def grid_builder(config,  modeldir='.'):
 
     conf = load_conf(config, confdir=confdir)
 
@@ -2785,7 +2785,6 @@ def grid_builder(config,  modeldir=modeldir):
        print('eldict=',eldict)
 
        if conf[entry]['type'] == 'marcs':
-          print('calling collect_marcs with modeldir=',os.path.join(modeldir,'marcs'))
           files = collect_marcs(modeldir=os.path.join(modeldir,'marcs'), 
                    tteff = tteff,
                    tlogg = tlogg, 
