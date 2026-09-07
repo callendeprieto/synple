@@ -2785,7 +2785,7 @@ def grid_builder(config,  modeldir=modeldir):
        print('eldict=',eldict)
 
        if conf[entry]['type'] == 'marcs':
-          files = collect_marcs(modeldir=modeldir), 
+          files = collect_marcs(modeldir=modeldir, 
                    tteff = tteff,
                    tlogg = tlogg, 
                    tfeh  = tfeh,
@@ -2795,7 +2795,7 @@ def grid_builder(config,  modeldir=modeldir):
                    ignore_missing_models = True,
                    ext = 'mod.gz')                   
        elif conf[entry]['type'] == 'kurucz':
-          files = collect_kurucz(modeldir=modeldir), 
+          files = collect_kurucz(modeldir=modeldir, 
                    tteff = tteff,
                    tlogg = tlogg, 
                    tfeh  = tfeh,
