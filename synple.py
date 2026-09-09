@@ -62,7 +62,7 @@ from scipy.signal import savgol_filter, medfilt
 from scipy.optimize import curve_fit
 from itertools import product
 from astropy.io import fits
-from astropy.stats import mad_std
+from astropy.stats import mad_std, sigma_clip
 import astropy.table as tbl
 import astropy.units as units
 import datetime
@@ -9735,6 +9735,80 @@ def fun(parvalues, *args ):
   
   return(chi)
 
+def measure_seu(wave,flux,ivar):
+    """
+    Measure significancy of Eu line features at 4129.7, 4205.05 and 6645.11 Angstrom.
+
+    Returns
+    -------
+    seu : numpy.ndarray
+        S_Eu = (average flux of nearby spectra - average flux of line center) / (standard deviation of nearby spectra)
+        Three values:
+        [S_Eu_4129, S_Eu_4205, S_Eu_6645]
+
+        Values <= 1 or invalid measurements are returned as np.nan.
+    """
+
+    centers = np.array([4129.70, 4205.05, 6645.11])
+    seu = np.full(3, np.nan, dtype=float)
+
+    wave = np.asarray(wave)
+    flux = np.asarray(flux)
+    ivar = np.asarray(ivar)
+
+    valid = (np.isfinite(wave) & np.isfinite(flux) & np.isfinite(ivar) & (ivar > 0.))
+
+    for i, center in enumerate(centers):
+
+        # Select the +/- 50 Angstrom region
+        continnum = ( valid & (wave >= center - 50.) & (wave <= center + 50.))
+
+        cont_flux = flux[continnum]
+
+        if len(cont_flux) < 3: continue
+
+        # Sigma clipping at 2 sigma
+        clipped = sigma_clip(cont_flux,sigma=2.0,maxiters=10,masked=True)
+
+        clipped_flux = clipped.compressed()
+
+        if len(clipped_flux) < 3: continue
+
+        # Mean and standard deviation after clipping
+        mu = np.mean(clipped_flux)
+        sigma = np.std(clipped_flux)
+
+        if not np.isfinite(mu): continue
+
+        if not np.isfinite(sigma) or sigma <= 0.: continue
+
+        # Measure the line flux
+        if i < 2:
+            # 4129.7 and 4205.05:
+            # average flux within +/- 1.5 Angstrom
+            line_region = (valid & (wave >= center - 1.5) & (wave <= center + 1.5))
+            line_flux = flux[line_region]
+            if len(line_flux) == 0: continue
+            mu_line = np.mean(line_flux)
+
+        else:
+            # 6645.11:
+            # flux at the nearest valid pixel
+            available = (valid & (wave >= center - 1.5) & (wave <= center + 1.5))
+            indices = np.where(available)[0]
+            if len(indices) == 0: continue
+            nearest = indices[np.argmin(np.abs(wave[indices] - center))]
+            mu_line = flux[nearest]
+
+        # Final Eu feature value
+        seui = (mu - mu_line) / sigma
+
+        # Keep only values greater than 1
+        if np.isfinite(seui) and seui > 1.:
+            seu[i] = np.round(seui, 3)
+
+    return seu
+
 
 def cebas(p,d,flx,iva,prior=None,filter=None):
 
@@ -9961,7 +10035,8 @@ def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
 
 def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None, 
         star=True, conti=1, dasynthfile=None, wrange=None, doubleconti=False, 
-        focus=False, nail=[], plot=False, gpu=False, ferre=False, filters=[]):
+        focus=False, nail=[], plot=False, gpu=False, ferre=False, filters=[],
+        caleu=False):
 
     """Bayesian Algorithm in Synple
     
@@ -10048,11 +10123,16 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       the synple distribution, within a subfolder with the name of the
       grid, and having an flt extension (e.g. n_sc2-STISrbf/Al.flt)
       (default is [])
-   
+    caleu: bool
+      measure the significancy of the Eu lines at 4129, 4205 and 6645 A,
+      default is False (not calculate)
+
     Returns
     -------
     Creates output FERRE-formatted files with the normalized data (.nrd),
     best-fitting parameters (.opf) and best-fitting models (.mdl).
+    If the caleu is True, it also creates a .euf file with the significancy
+    of the Eu lines.
     
     """
  
@@ -10280,6 +10360,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         ipffile = outfile + '.ipf'
       if len(filters) > 0:
         abufile = outfile + '.abu'
+      if caleu:
+        eufile = outfile + '.euf'
 
       #open output parameter, observed and model file
       opf = open(opffile,'w')
@@ -10293,6 +10375,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       flx = open(flxfile,'w')
       if len(filters) > 0:
         abf = open(abufile,'w')
+      if caleu:
+        euf = open(eufile,'w')
          
 
       #list that keeps track of the spectra which passed the analysis
@@ -10724,6 +10808,27 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
           plt.show()
 
+        # Measure the significancy of Eu features in the spectrum
+        if caleu:
+          if type(x) is list:
+            eu_wave = np.hstack(x)
+          else:
+            eu_wave = np.asarray(x)
+      
+          eu_flux = spec[:len(eu_wave)]
+          eu_ivar = ivar[:len(eu_wave)]
+        
+          seu = measure_seu(eu_wave, eu_flux, eu_ivar)
+           
+          euf.write(str(ids[j]) + ' ' +
+            ' '.join(
+              'nan' if not np.isfinite(value)
+              else f'{value:.3f}'
+              for value in seu
+              ) + '\n'
+            )
+
+
 
       
         opf.write(str(ids[j])+' '+' '.join(map(str,res))+' '+
@@ -10770,6 +10875,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       flx.close()
       if len(filters) > 0:
         abf.close()
+      if caleu:
+        euf.close()
 
       if ferre:
         nml = dict()
@@ -13216,7 +13323,7 @@ def wferrefits(root, path=None):
   
   return None
   
-def wtabmodfits(root, path=None, overwrite=True):
+def wtabmodfits(root, path=None, overwrite=True, caleu=False):
 	
  """Write out DESI MWS SP pipeline output
 
@@ -13230,6 +13337,13 @@ def wtabmodfits(root, path=None, overwrite=True):
      path to files
      (default is None, and the code looks for the FERRE/BAS files 
      in the current folder)
+ overwrite: bool
+     overwrite the output FITS files when true
+ caleu: bool
+      read and add to output the file with significancy of the Eu lines at 
+      4129, 4205 and 6645 A 
+      (default is False,i.e. not read/output)
+
  
  Returns
  -------  
@@ -13284,6 +13398,9 @@ def wtabmodfits(root, path=None, overwrite=True):
   if len(scr) > 0:
     fs=fits.open(scr[0])
     scores=fs[1]
+
+  if caleu:
+    eufile = glob.glob(proot+".euf")
  
   success=[]
   targetid=[]
@@ -13462,6 +13579,31 @@ def wtabmodfits(root, path=None, overwrite=True):
       target_dec=np.zeros(nspec)
       ref_id=np.zeros(nspec,dtype=int64)
       ref_cat=np.array(["" for x in range(nspec)])
+    
+    # read Eu features measurements
+    if caleu:
+      seu = np.full((nspec, 3), np.nan, dtype=np.float32)
+      if len(eufile) > 0:
+        try:
+          eu_rows = np.loadtxt(eufile[0], dtype=str, ndmin=2)
+          for i in range(len(eu_rows)):
+            eu_row = eu_rows[i]
+            eu_text = ' '.join(eu_row)
+              
+            try:
+              if len(eu_row) != 4: raise ValueError
+              eu_id = int(eu_row[0])
+              if i >= nspec: raise ValueError
+              if eu_id != int(targetid[i]):
+                raise ValueError
+              seu[i,:] = np.round(np.asarray(eu_row[1:4],dtype=np.float32),3)
+
+            except Exception:
+              print('wrong line format ' + eu_text, file=sys.stderr)
+
+        except Exception:
+          print('wrong file format ' + eufile[0], file=sys.stderr)
+
 
     #primary extension
     hdu0=fits.PrimaryHDU()
@@ -13531,6 +13673,8 @@ def wtabmodfits(root, path=None, overwrite=True):
     cols['SNR_MED'] = np.array(snr_med)
     cols['VRAD'] = np.array(vrad)*units.km/units.s
     cols['VRAD_ERR'] = np.array(vrad_err)*units.km/units.s
+    if caleu:
+      cols['S_EU'] = np.array(seu)
 
     colcomm = {
     'success': 'Bit indicating whether the code has likely produced useful results',
@@ -13564,6 +13708,9 @@ def wtabmodfits(root, path=None, overwrite=True):
     if a:
       colcomm['ELEM'] = 'Elemental abundance ratios to hydrogen [X/H], where X corresponds to C, Mg, Si, Ca and  Fe'
       colcomm['ELEM_ERR'] = 'Uncertainties in the elemental abundance ratios'
+
+    if caleu:
+      colcomm['S_EU'] = 'Significance of Eu lines at 4129, 4205, and 6645 A'
 
   
     table = tbl.Table(cols)
@@ -13733,13 +13880,15 @@ def wtabmodfits(root, path=None, overwrite=True):
 
  #cleanup
  exts=['opf','nrd','mdl','frd','flx','abu','err','wav','fmp.fits','scr.fits','job']
+ if caleu:
+   exts.append('euf')
  for extension in exts:
    if os.path.exists(root+'.'+extension):
      os.remove(root+'.'+extension)
 
-
   
  return None
+
 
 def desipurge(sptabfiles):
     """For all the input sptab files, all the tmp extensions ('opf','nrd','mdl','frd','flx','abu','err','wav','fmp.fits','scr.fits','job') will be deleted
@@ -13906,7 +14055,7 @@ def fparams(root,synthfile=None,figure=None,condition=None):
 def desida(path_to_data='healpix',path_to_output='sp_output',
            synthfile=None, dasynthfile=None, seconds_per_target=8.,star=True,focus=False,
            conti=1, doubleconti=False, nthreads=4, gpu=False, gpu_share=1, 
-           ferre=False, filters=[], target=None):
+           ferre=False, filters=[], caleu=True, target=None):
 
   """Prepare a DESI data for parallel processing
  
@@ -13970,6 +14119,9 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
       the synple distribution, within a subfolder with the name of the
       grid, and having an flt extension (e.g. n_sc2-STISrbf/Al.flt)
       (default is [])
+   caleu: bool
+      measure the significancy of the Eu lines at 4129, 4205 and 6645 A, 
+      default is True (calculate)
   target: iterable
       input list of numerals or targetids to select objects
       to process. If the list includes numbers < 10000, they are interpreted
@@ -14063,6 +14215,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
        " filters= " + str(filters) +", " + \
        " target= " + str(target) +", " + \
        " gpu= " + str(gpu) + "); " + \
+       " caleu= " + str(caleu) + "); " + \
        " wtabmodfits(\'" + root + "'" + ", path= '" + tpath + "\'" + \
        ")\"" + "\n"
 
@@ -14119,6 +14272,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
        " doubleconti= " + str(doubleconti) + "," + \
        " filters= " + str(filters) +", " + \
        " gpu= " + str(False) + "); " + \
+       " caleu= " + str(caleu) + "); " + \
        " wtabmodfits(\'" + root + "'" + ", path= '" + tpath + "\'" + \
        ")\"" + "\n"
 
