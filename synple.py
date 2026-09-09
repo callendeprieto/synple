@@ -14214,7 +14214,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
        " doubleconti= " + str(doubleconti) + "," + \
        " filters= " + str(filters) +", " + \
        " target= " + str(target) +", " + \
-       " gpu= " + str(gpu) + "); " + \
+       " gpu= " + str(gpu) + ", " + \
        " caleu= " + str(caleu) + "); " + \
        " wtabmodfits(\'" + root + "'" + ", path= '" + tpath + "\'" + \
        ")\"" + "\n"
@@ -14271,7 +14271,7 @@ def desida(path_to_data='healpix',path_to_output='sp_output',
        ", focus= " + str(focus) + ", conti= " + str(conti) + "," + \
        " doubleconti= " + str(doubleconti) + "," + \
        " filters= " + str(filters) +", " + \
-       " gpu= " + str(False) + "); " + \
+       " gpu= " + str(False) + ", " + \
        " caleu= " + str(caleu) + "); " + \
        " wtabmodfits(\'" + root + "'" + ", path= '" + tpath + "\'" + \
        ")\"" + "\n"
