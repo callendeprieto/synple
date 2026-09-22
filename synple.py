@@ -10182,7 +10182,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       print('Error: synthfile must be a file name, a tuple with the grid data (x,h,p,d) or None')
       sys.exit(1)
 
-    if type(x) is list: x = np.hstack(x) 
     lenx = len(x)
     ndim = len(p[0,:])
     ntot = len(p[:,0])
