@@ -10238,7 +10238,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       d = np.hstack((d,da))
       lenx = 2 * lenx
 
-    print('shape of d,da:',d.shape,da.shape)
+    #print('shape of d,da:',d.shape,da.shape)
 
     if focus:
       p2 = p.copy()
