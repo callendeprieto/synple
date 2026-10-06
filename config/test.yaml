@@ -1,10 +1,10 @@
-wrange: 3000. 10000.
+wrange: 3000. 20000.
 vmicro: -1
 ncpu: 1
 nmerge: 1
 grids: ['f_test']
 f_test:
-       type: 'mkk-regular'
-       tteff: 2  5500.    100.
-       tlogg: 2     0.0     0.5
-       tfeh:  2    -2.5     0.5
+       type: 'marcs'
+       tteff: 6  3000.    200.
+       tlogg: 3    1.0      2.0 
+       tfeh:  4   -2.0      1.0 
