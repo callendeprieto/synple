@@ -1,4 +1,4 @@
-wrange: 3000. 20000.
+wrange: 11000. 19000.
 vmicro: -1
 ncpu: 1
 nmerge: 1
