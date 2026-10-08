@@ -10218,11 +10218,13 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       
     #normalization
     print('normalizing grid...')
+    damian = np.ones(ntot)
+    da = d.copy()  # da keeps a copy of conti=1 normalized grid
     if dasynthfile is None:
       dasynthfile1 = 'None'
       if abs(conti) > 0:
-        da = np.zeros_like(d) # da keeps a copy of conti=1 normalized grid
-        damian = np.zeros(ntot) # array with the mean fluxes for each model/row 
+        #da = np.zeros_like(d) 
+        #damian = np.zeros(ntot) # array with the mean fluxes for each model/row 
         for entry in range(len(d[:,0])):
           cc = np.mean(d[entry,:])
           damian[entry] = cc
@@ -10232,7 +10234,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
     else:
       dasynthfile1 = str(dasynthfile)
       ha, ba, da = read_synth(dasynthfile1)
-      damian = np.ones(ntot)
 
     if doubleconti:
       d = np.hstack((d,da))
