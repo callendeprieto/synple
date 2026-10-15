@@ -9672,7 +9672,7 @@ def fit(xdata, ydata, modelfile, params, bounds,
              print(entry,elindex)
      
 
-  res = minimize(fun, np.array(parvalues), 
+  res = minimize(fun2, np.array(parvalues), 
                  ( xdata, ydata, parnames, others), method=method ,
                  bounds = bounds, tol = tol )                 
   
@@ -9680,7 +9680,7 @@ def fit(xdata, ydata, modelfile, params, bounds,
   return(res)
   		  
 
-def fun(parvalues, *args ):
+def fun2(parvalues, *args ):
   """
   Auxiliary to the routine fit
   """
