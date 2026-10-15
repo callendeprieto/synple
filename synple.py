@@ -12992,7 +12992,210 @@ def rbf_test(synthfile,n=None, kernel='linear', neighbors=100):
     fh.close()
         
     return( per[0], per[1], per[2] )
+
+def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
+              outsynthfile=None,n=None,rv=False,ebv=False,
+              kernel='linear', neighbors=100, edgemargin=0.02):
+
+    """Creates a FERRE grid from a pre-existing regular or 
+       irregular one, interpolating the fluxes for the models in MIST isochrones
+ 
+    Parameters
+    ----------
+    synthfile: str
+      name of the input FERRE/BAS synthfile
+      
+   mistdir: str
+      path of the folder where the MIST iso.cmd/iso files to use are stored
     
+    outsynthfile: str
+      name of the output FERRE/BAS synthfile
+    
+    n: int
+      number of spectra to create by RBF interpolation
+      if the output is a regular grid (otype='regular')
+      this can be replaced by a tuple with the number of
+      spectra for each dimension
+      (default is None, in which case it is taken to be the
+      same number of spectra in the input grid)
+    
+    rv: bool
+      if true, fold in a dimension with RV variations
+      
+    ebv: bool
+      if true, fold in a dimension with E(B-V) variations
+
+    kernel: string
+      Type of RBF function (linear, thin_plate_spline, cubic, gaussian ...)
+
+    neighbors: int
+      Number of nearest neighbors used to compute the interpolation coefficients
+      for each grid point
+
+    edgemargin: float
+      fraction from the min/max values of the input parameters to exclude
+      from the range to sample
+      (default 0.02 -- 2% on each end will be excluded) 
+       
+
+      
+    Returns
+    -------
+    Creates an output grid (outsynthfile)
+
+    """
+    import read_mist_models
+    from extinction import apply,ccm89
+
+    if rv or ebv : 
+      x = lambda_synth(synthfile)
+      if type(x) is list: x = np.hstack(x)
+    h,p,d = read_synth(synthfile)
+    
+    
+    ndim = len(p[0,:])
+    npix = len(d[0,:])
+    ntot = len(p[:,0])
+    
+    #MIST isochrones
+    mistfiles = glob.glob(os.path.join(mistdir,'*.iso.cmd'))
+    
+    first = True
+    for entry in mistfiles:
+      iso = read_mist_models.ISOCMD(entry)
+      for edad in iso.ages:
+        age_ind = iso.age_index(edad) #returns the index for the desired age
+        print('file:',entry,'edad:',edad)
+        teff = 10.**iso.isocmds[age_ind]['log_Teff']
+        logg = iso.isocmds[age_ind]['log_g']        
+        feh = iso.isocmds[age_ind]['[Fe/H]']
+        age = edad*np.ones(len(teff),dtype=float)
+        mass = iso.isocmds[age_ind]['star_mass']
+        Gmag = iso.isocmds[age_ind]['Gaia_G_EDR3']
+        Bpmag = iso.isocmds[age_ind]['Gaia_BP_EDR3']
+        Rpmag = iso.isocmds[age_ind]['Gaia_RP_EDR3']
+        arr = np.vstack ( (teff, logg, feh, age, mass, Gmag, Bpmag, Rpmag) )
+        print(arr.shape)
+        if first: 
+          arr0 = arr.copy()
+        else:
+          arr0 = np.hstack ( (arr0, arr) )
+          print(arr0.shape)
+        first = False
+        
+    if n is None or n > len(arr0[:,0]) : n = len(arr0[:,0])
+
+    rng = np.random.default_rng(1)
+
+    ndim = 8
+    arr0 = np.transpose(arr0)
+    print(arr0.shape)
+    
+    w = (arr0[:,0] > p[:,0].min()) & (arr0[:,0] < p[:,0].max()) & (arr0[:,1] > p[:,1].min()) & (arr0[:,1] < p[:,1].max()) & (arr0[:,2] > p[:,2].min()) & (arr0[:,2] < p[:,2].max())
+    
+#    w = (arr0[:,0] > 4000.) & (arr0[:,0] < 5000.) & (arr0[:,1] > 4.0) & (arr0[:,1] < 5.0) & (arr0[:,2] > -0.4) & (arr0[:,2] < 0.1)
+    
+    p2 = arr0[w,:3]
+
+    c, pmin, ptp = rbf_get(synthfile, kernel=kernel, neighbors=neighbors)
+    d2 = rbf_apply(c, pmin, ptp, p2)
+    h2 = h
+
+    ndim2 = 0
+    p3 = p2
+    if rv:		
+        if type(h2) is list: 
+          h0 = h2[1]
+        else:
+          h0 = h2  
+        rvmax = 1000.
+        if 'RESOLUTION' in h0: rvmax = clight/float(h0['RESOLUTION'])
+        vals = rng.random(n)*2*rvmax - rvmax
+        p3 = np.vstack((p3,vals))
+        ndim2 += 1
+        if type(h2) is list:
+            for entry in range(len(h2)):
+                h2[entry]['LABEL('+str(ndim+ndim2)+')'] = "'RV'"
+        else:
+            h2['LABEL('+str(ndim+ndim2)+')'] = "'RV'"  
+    if ebv:	
+        ebvmax = 0.25 # mag
+        vals = rng.random(n)*ebvmax 
+        p3 = np.vstack((p3,vals))
+        ndim2 += 1
+        if type(h2) is list:
+           for entry in range(len(h2)):
+               h2[entry]['LABEL('+str(ndim+ndim2)+')'] = "'E(B-V)'"
+        else:
+            h2['LABEL('+str(ndim+ndim2)+')'] = "'E(B-V)'"
+    
+    if rv or ebv:
+      p2 = np.transpose(p3)   
+
+    ending = synthfile.rfind('.dat')
+    if ending < -1: 
+        ending = synthfile.rfind('.pickle')
+    if ending < -1:
+        ending = len(synthfile) + 1
+    root = synthfile[2:ending]
+    if outsynthfile is None: 
+      outsynthfile = 'n_'+root+'rbf'
+      if rv: outsynthfile += '-RV'
+      if ebv: outsynthfile += '-EBV' 
+      outsynthfile += '.dat'
+    of = open(outsynthfile,'w')
+    print('writing grid ',outsynthfile,'...')
+    if type(h2) is not list:
+      h2 = [h2]
+    for block in h2:
+      block['TYPE'] = "'irregular'"
+      if 'ID' in block:
+        if block['ID'][0] != "'" and block['ID'][0] != '"': 
+          block['ID'] = "'"+block['ID']+"'"
+      if 'DATE' in block:
+        if block['DATE'][0] != "'" and block['DATE'][0] != '"': 
+          block['DATE'] = "'"+block['DATE']+"'"
+      if 'SYNTHFILE_INTERNAL' in block:
+        if block['SYNTHFILE_INTERNAL'][0] != "'" and block['SYNTHFILE_INTERNAL'][0] != '"': 
+          block['SYNTHFILE_INTERNAL'] = "'irregular'"
+      if 'FILE_DATA19' in block:
+        if block['FILE_DATA19'][0] != "'" and block['FILE_DATA19'][0] != '"':
+          block['FILE_DATA19'] = "'"+block['FILE_DATA19']+"'"
+      if 'FILE_DATA20' in block:
+        if block['FILE_DATA20'][0] != "'" and block['FILE_DATA20'][0] != '"':
+          block['FILE_DATA20'] = "'"+block['FILE_DATA20']+"'"
+
+      kcomment = 1
+      for entry in block.keys():
+        if entry[:5] == 'LABEL' or entry[:8] == 'COMMENTS':
+          if block[entry][0] != "'" and block[entry][0] != '"':
+            block[entry] = "'"+block[entry]+"'"
+        if entry[:8] == 'COMMENTS':
+          kcomment = int(entry[8:]) + 1
+      block['COMMENTS'+str(kcomment)] = "'Data interpolated using synth_rbf from " + synthfile + "'"
+      
+        
+      block['N_OF_DIM'] = str(ndim+ndim2)
+      block['NTOT'] = str(n)
+    for block in h2:
+      of.write(' &SYNTH\n')
+      for entry in block: of.write(' '+entry + ' = ' + block[entry] + '\n')
+      of.write(' /\n')
+
+    for i in range(len(p2[:,0])):
+        flx = d2[i,:]
+        if rv:
+            #print(type(x),len(x),type(flx),len(flx))
+            flx = np.interp(x,x*(1.+p2[i,ndim]/clight),flx)
+        if ebv:
+            flx = apply(ccm89(x, p2[i,ndim+ndim2-1]* 3.1, 3.1), flx)
+        
+        #normalization
+        #flx = flx / np.mean(flx)
+        of.write(' '.join(map(str,p2[i,:]))+' '+' '.join(map(str,flx))+'\n')	
+    of.close()
+    
+    return    
 
 def wferrefits(root, path=None):	
 	
