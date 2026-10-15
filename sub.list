@@ -1,0 +1,37 @@
+synth:
+syn, mpsyn, raysyn, fun, multisyn, teff_stefanboltzmann, polydelta, collectdelta
+, mdelta, polymdelta, mkflt, pltflt, polysyn, call_rotin, checksynspec, checklin
+elistpath, tags, checkinput, writetas, write3, write2, read55, write55, write5, 
+write8, read10, create_links, cleanup_fort, lgconv, vgconv, rotconv, elgconv, ev
+gconv, erotconv, smooth
+
+opac:
+build_exomol, polyopt, getlinelistrange, read_opt, read_copt, kurucz2tsuji, 
+
+model:
+read_model, identify_atmostype, write_innterpol_model, read_kurucz_model, read_m
+arcs_model, read_tlusty_model, read_madaf, read_tlusty_extras, rsnap, read_phoen
+ix_model, read_phoenix_text_model, read_multiline_fltarray, elements, xyzmass, k
+eepz, 
+
+grid:
+merge_slurm, merge_slurm_parallel, grid_builder, load_conf, collect_marcs, colle
+ct_kurucz, collect_k2odfnew, mkgrid, mkgrid_old, mkhdr, mkgrid_irregular, mkgrid
+_irregular_body, mkhdr_irregular, create_regular_kurucz, collect_regular_kurucz,
+ head_synth, lambda_synth, read_synth, pickle_synth, norm_synth, write_synth, pa
+ste_synth, merge_synth, fill_synth, getaa, rbf_get, rbf_apply, getallt, gsynth, 
+gsynth_body, gsynth_old, xplsf, vgsynth, rewrite_synth, synth_rbf, synth_rbf_old
+, rbf_test, synth_mist, wferrefits, 
+
+util: 
+interp_spl, interp_spl2, read_knoao2005, read_iag, read_arcturus, read_spec, fin
+djumps, showxmp, vac2air, nu2l, xc, xc_np, gauss, continuum, cmedian, xxc, wtabm
+odfits, desipurge, get_dep_versions, get_versions, desiget, download_file, alf_e
+xtract, alf_peak, alf_trim, alf_read, alf_cal, qalf,packfits, treepackspfits, de
+simask, mwsmask, measure_seu
+ 
+fit:
+cebas, cebas_gpu, bas, ebv_bas, identify_instrument, write_nml, ferrerun, bas_bu
+ild, call, bas_perfcheck, bas_test, fparams, desida, fit, fun
+
+
