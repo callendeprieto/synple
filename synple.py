@@ -10229,7 +10229,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           cc = np.mean(d[entry,:])
           damian[entry] = cc
           da[entry,:] = d[entry,:] / cc
-          cc = continuum(d[entry,:],window_length=abs(conti))
+          if abs(conti) > 1:
+            cc = continuum(d[entry,:],window_length=abs(conti))
           d[entry,:] = d[entry,:] / cc
     else:
       dasynthfile1 = str(dasynthfile)
