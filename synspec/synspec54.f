@@ -22933,7 +22933,7 @@ c
       write(53,653) (cmol(insm(i)),i=1,20)
       write(54,654) (cmol(insm(i)),i=1,20)
 c
-  625 format('    T      rho     w_mol    Ne/Ntot  N(Htot)    '
+  625 format('    T      rho     w_mol    Ne/Ntot  N(Htot)    ', 
      * 'n(H)   n(H2)',6x,
      * 'a(He)   a(C)    a(N)    a(O)   molfr(C) molfr(N) molfr(O)'/)
 c    * 'a(He)   a(C)    a(N)    a(O)     n(C)     n(CO)   n(CH4)',5x,
