@@ -13140,7 +13140,7 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
         ending = len(synthfile) + 1
     root = synthfile[2:ending]
     if outsynthfile is None: 
-      outsynthfile = 'n_'+root+'rbf'
+      outsynthfile = 'n_'+root+'rbf.mist'
       if rv: outsynthfile += '-RV'
       if ebv: outsynthfile += '-EBV' 
       outsynthfile += '.dat'
