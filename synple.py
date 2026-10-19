@@ -12995,7 +12995,7 @@ def rbf_test(synthfile,n=None, kernel='linear', neighbors=100):
     return( per[0], per[1], per[2] )
 
 def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
-              outsynthfile=None,n=None,rv=False,ebv=False,
+              outsynthfile=None,rv=False,ebv=False,
               kernel='linear', neighbors=100, edgemargin=0.02):
 
     """Creates a FERRE grid from a pre-existing regular or 
@@ -13011,14 +13011,6 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
     
     outsynthfile: str
       name of the output FERRE/BAS synthfile
-    
-    n: int
-      number of spectra to create by RBF interpolation
-      if the output is a regular grid (otype='regular')
-      this can be replaced by a tuple with the number of
-      spectra for each dimension
-      (default is None, in which case it is taken to be the
-      same number of spectra in the input grid)
     
     rv: bool
       if true, fold in a dimension with RV variations
@@ -13084,8 +13076,6 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
           print(arr0.shape)
         first = False
         
-    if n is None or n > len(arr0[:,0]) : n = len(arr0[:,0])
-
     rng = np.random.default_rng(1)
 
     ndim = 8
@@ -13097,6 +13087,7 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
 #    w = (arr0[:,0] > 4000.) & (arr0[:,0] < 5000.) & (arr0[:,1] > 4.0) & (arr0[:,1] < 5.0) & (arr0[:,2] > -0.4) & (arr0[:,2] < 0.1)
     
     p2 = arr0[w,:3]
+    n = len(arr0[:,0])
 
     c, pmin, ptp = rbf_get(synthfile, kernel=kernel, neighbors=neighbors)
     d2 = rbf_apply(c, pmin, ptp, p2)
