@@ -12995,7 +12995,7 @@ def rbf_test(synthfile,n=None, kernel='linear', neighbors=100):
     return( per[0], per[1], per[2] )
 
 def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
-              outsynthfile=None,rv=False,ebv=False,
+              outsynthfile=None,n=None,rv=False,ebv=False,
               kernel='linear', neighbors=100, edgemargin=0.02):
 
     """Creates a FERRE grid from a pre-existing regular or 
@@ -13011,6 +13011,10 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
     
     outsynthfile: str
       name of the output FERRE/BAS synthfile
+
+    n: int
+      number of models (if less than those in the input MIST collection)
+      default is None, meaning all within the range will be taken
     
     rv: bool
       if true, fold in a dimension with RV variations
@@ -13087,11 +13091,23 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
 #    w = (arr0[:,0] > 4000.) & (arr0[:,0] < 5000.) & (arr0[:,1] > 4.0) & (arr0[:,1] < 5.0) & (arr0[:,2] > -0.4) & (arr0[:,2] < 0.1)
     
     p2 = arr0[w,:]
-    n = len(arr0[w,0])
+
+    if n is None or n >= len(arr0[w,0]):
+      n = len(arr0[w,0])
+    else:
+      p2 = p2[np.random.choice(p2.shape[0], size=n, replace=False)]
 
     c, pmin, ptp = rbf_get(synthfile, kernel=kernel, neighbors=neighbors)
     d2 = rbf_apply(c, pmin, ptp, p2[:,:3])
     h2 = h
+
+    #add new labels
+    h2['LABEL(4)'] = 'age'
+    h2['LABEL(5)'] = 'mass'
+    h2['LABEL(6)'] = 'G'
+    h2['LABEL(7)'] = 'Bp'
+    h2['LABEL(8)'] = 'Rp'
+
 
     ndim2 = 0
     p3 = p2
