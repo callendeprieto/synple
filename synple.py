@@ -13086,11 +13086,11 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
     
 #    w = (arr0[:,0] > 4000.) & (arr0[:,0] < 5000.) & (arr0[:,1] > 4.0) & (arr0[:,1] < 5.0) & (arr0[:,2] > -0.4) & (arr0[:,2] < 0.1)
     
-    p2 = arr0[w,:3]
-    n = len(arr0[:,0])
+    p2 = arr0[w,:]
+    n = len(arr0[w,0])
 
     c, pmin, ptp = rbf_get(synthfile, kernel=kernel, neighbors=neighbors)
-    d2 = rbf_apply(c, pmin, ptp, p2)
+    d2 = rbf_apply(c, pmin, ptp, p2[:,:3])
     h2 = h
 
     ndim2 = 0
