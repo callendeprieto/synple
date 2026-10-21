@@ -2672,7 +2672,7 @@ def merge_slurm_parallel(path='./', ext='slurm', outext='slurm', nmerge=2, ncpu=
       if line[0] == "#":
         if j == 0: 
           if 'cpus-per-task=1' in line:
-            line.replace('task=1','task='+str(ncpu))
+            line.replace('cpus-per-task=1','cpus-per-task='+str(ncpu))
           if '-D' in line:
             line.replace('#SBATCH  -D','# ')
           header.append(line)
