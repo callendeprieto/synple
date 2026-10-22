@@ -13071,7 +13071,10 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
         Gmag = iso.isocmds[age_ind]['Gaia_G_EDR3']
         Bpmag = iso.isocmds[age_ind]['Gaia_BP_EDR3']
         Rpmag = iso.isocmds[age_ind]['Gaia_RP_EDR3']
-        arr = np.vstack ( (teff, logg, feh, age, mass, Gmag, Bpmag, Rpmag) )
+        Jmag =  iso.isocmds[age_ind]['2MASS_J']
+        Hmag =  iso.isocmds[age_ind]['2MASS_H']
+        Ksmag = iso.isocmds[age_ind]['2MASS_Ks']
+        arr = np.vstack ( (teff, logg, feh, age, mass, Gmag, Bpmag, Rpmag, Jmag, Hmag, Ksmag) )
         print(arr.shape)
         if first: 
           arr0 = arr.copy()
@@ -13082,7 +13085,8 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
         
     rng = np.random.default_rng(1)
 
-    ndim = 8
+    ndim0 = ndim
+    ndim = ndim + 8 
     arr0 = np.transpose(arr0)
     print(arr0.shape)
     
@@ -13102,11 +13106,12 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
     h2 = h
 
     #add new labels
-    h2['LABEL(4)'] = 'age'
-    h2['LABEL(5)'] = 'mass'
-    h2['LABEL(6)'] = 'G'
-    h2['LABEL(7)'] = 'Bp'
-    h2['LABEL(8)'] = 'Rp'
+    newlab = ['age', 'mass','MG','MBp','MRp','MJ','MH','MKs']
+    k = 0
+    for entry in newlab:
+      ltext = 'LABEL('+str(k+ndim0+1)+')'
+      h2[ltext] = entry
+      k = k + 1
 
 
     ndim2 = 0
