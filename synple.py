@@ -10036,7 +10036,7 @@ def cebas_gpu(p,d,flx,iva,prior=None,filter=None):
 def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None, 
         star=True, conti=1, dasynthfile=None, wrange=None, doubleconti=False, 
         focus=False, nail=[], plot=False, gpu=False, ferre=False, filters=[],
-        caleu=False):
+        gpriors=[], caleu=False):
 
     """Bayesian Algorithm in Synple
     
@@ -10241,6 +10241,16 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       lenx = 2 * lenx
 
     #print('shape of d,da:',d.shape,da.shape)
+    
+    #prep work to build gpriors
+    gpars = []
+    ipriors = []
+    for entry in hd:
+      if 'LABEL(' in entry and hd[entry] not in gpars:
+        gpars.append(hd[entry])
+    for entry in gpriors:
+      ipriors.append(gpars.index(entry))
+    
 
     if focus:
       p2 = p.copy()
@@ -10248,9 +10258,8 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       if gpu:
         p2_gpu = cp.asarray(p2)
         d2_gpu = cp.asarray(d2) 
-      nmod = len(p[:,0])
       rng = np.random.default_rng(107)
-      irnd = np.array(rng.random(int(nmod*0.1))*nmod,dtype=int)
+      irnd = np.array(rng.random(int(ntot*0.1))*ntot,dtype=int)
       p = p[irnd,:]
       d = d[irnd,:]
       da2 = da.copy()
@@ -10326,10 +10335,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
                                     ebv=ebv, star=star)
 
       if x2 is None: x2 = x
-
-      print('x=',x)
-      print('x2=',x2)
-
 
       if type(x2) is list:
         nspec = len(obs[0][:,0])
@@ -10457,15 +10462,53 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         spec = spec / mspec
         ivar = ivar * mspec**2
         
+        #build gpriors
+        prior = np.ones(ntot) / float(ntot)
+        #plt.plot(prior)
+        if len(gpriors) > 0:
+          if instr == 'FERRE': #only FERRE format for now
+            if nspec > 1:
+              ipfrow = xtr[0][j,:]
+            else:
+              ipfrow = xtr[0]
+            ipfpar = ipfrow[:ndim]
+            ipfstd = ipfrow[ndim:2*ndim]
+            if len(ipfrow) > 2*ndim + 3: #covariance matrix is present
+              ipfcov = ipfrow[2*ndim+3:].reshape((ndim,ndim))
+            else:
+              ipfcov = np.zeros((ndim,ndim))
+              for i in range(ndim):
+                ipfcov[i,i] = ipfrow[ndim+i]**2
+
+            #limit to the dimensions with gpriors            
+            ipfpar = ipfpar[ipriors]
+            ipfstd = ipfstd[ipriors]
+            ipfcov = ipfcov[np.ix_(ipriors,ipriors)]
+            thing = (p[:,ipriors]-ipfpar ) / ipfstd
+
+            wp = ( np.sum(thing**2,1) < 1000.)
+            print(len(np.where(wp)[0]))
+            offset =  np.transpose( p[np.ix_(wp,ipriors)]-ipfpar )
+            thing = np.matmul(np.linalg.inv(ipfcov) , offset ) # 2x2 x 2xn = 2xn
+            thing = np.sum ( offset * thing, 0)    #   2xn * 2xn = 2xn -> n
+            prior[:] = 0.0
+            prior[wp] = np.exp( -1./2.* thing )
+            prior = prior/np.sum(prior) #normalize
+
+        #plt.plot(prior)
+        #plt.ylim([1e-5,1e-2])
+        #plt.yscale('log')
+        #plt.show()
+         
         #analyze # 
-       
         if gpu:
           spec_gpu = cp.asarray(spec)
           ivar_gpu = cp.asarray(ivar)
+          prior_gpu = cp.asarray(prior)
           if conti > -1:
-            res_gpu, eres_gpu, cov_gpu, bmod_gpu, weights_gpu = cebas_gpu(p_gpu, d_gpu, spec_gpu, ivar_gpu)
+            res_gpu, eres_gpu, cov_gpu, bmod_gpu, weights_gpu = cebas_gpu(p_gpu, d_gpu, spec_gpu, ivar_gpu, prior = prior_gpu )
           else:
-            res_gpu, eres_gpu, cov_gpu, bmod_gpu, weights_gpu = cebas_gpu(p_gpu, da_gpu, spec_gpu, ivar_gpu)
+            res_gpu, eres_gpu, cov_gpu, bmod_gpu, weights_gpu = cebas_gpu(p_gpu, da_gpu, spec_gpu, ivar_gpu, prior = prior_gpu )
           res = cp.asnumpy(res_gpu)
           eres = cp.asnumpy(eres_gpu)
           cov = cp.asnumpy(cov_gpu)
@@ -10473,9 +10516,9 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           weights = cp.asnumpy(weights_gpu)
         else:
           if conti > -1:
-            res, eres, cov, bmod, weights = cebas( p, d, spec, ivar )
+            res, eres, cov, bmod, weights = cebas( p, d, spec, ivar, prior = prior )
           else:
-            res, eres, cov, bmod, weights = cebas( p, da, spec, ivar )
+            res, eres, cov, bmod, weights = cebas( p, da, spec, ivari, prior = prior )
 
 
         #give up when cebas returns Nans
@@ -10492,102 +10535,103 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           vrad, evrad = xxc(xx,spec,ivar,xx,bmod) 
           print('RV = ',vrad,' km/s')
 
-        #correct RV and resample
-        if type(x) is list:
-          assert (type(obs) is list),'when the wavelengths are in a list, the data returned by read_spec should be an array'
-          assert (len(obs) == len(x)),'the size of the spectra and the wavelength lists should be the same'
-          xx = np.hstack(x)
-          for i in range(len(x)):
-            spec0 = obs[i][j,:]
-            ivar0 = ivr[i][j,:]
+        if np.abs(vrad) > 1e-10:  #correct RV and resample
+          if type(x) is list:
+            assert (type(obs) is list),'when the wavelengths are in a list, the data returned by read_spec should be an array'
+            assert (len(obs) == len(x)),'the size of the spectra and the wavelength lists should be the same'
+            xx = np.hstack(x)
+            for i in range(len(x)):
+              spec0 = obs[i][j,:]
+              ivar0 = ivr[i][j,:]
+              #clean the data
+              www = np.where(np.isnan(spec0))[0]
+              if len(www) > 0:
+                www2 = np.where(~np.isnan(spec0))[0]
+                xax0 = np.arange(len(x2[i]))
+                spec0 = np.interp(xax0,xax0[www2],spec0[www2])
+              www = np.where(np.isnan(ivar0))[0]
+              if len(www) > 0:
+                www2 = np.where(~np.isnan(ivar0))[0]
+                xax0 = np.arange(len(x2[i]))
+                ivar0 = np.interp(xax0,xax0[www2],ivar0[www2])
+              #rv correction
+              spec0 = np.interp(x[i],x2[i] * (1. - vrad/clight), spec0)
+              ivar0 = np.interp(x[i],x2[i] * (1. - vrad/clight), ivar0)
+              if i == 0:
+                spec1 = spec0
+                ivar1 = ivar0
+              else:
+                spec1 = np.concatenate((spec1,spec0))
+                ivar1 = np.concatenate((ivar1, ivar0))
+            spec = spec1
+            ivar = ivar1
+          else:
+            xx = x
+            spec = obs[j,:]
+            ivar = ivr[j,:]
             #clean the data
-            www = np.where(np.isnan(spec0))[0]
+            www = np.where(np.isnan(spec))[0]
             if len(www) > 0:
-              www2 = np.where(~np.isnan(spec0))[0]
-              xax0 = np.arange(len(x2[i]))
-              spec0 = np.interp(xax0,xax0[www2],spec0[www2])
-            www = np.where(np.isnan(ivar0))[0]
+              www2 = np.where(~np.isnan(spec))[0]
+              xax = np.arange(len(x2))
+              spec = np.interp(xax,xax[www2],spec[www2])
+            www = np.where(np.isnan(ivar))[0]
             if len(www) > 0:
-              www2 = np.where(~np.isnan(ivar0))[0]
-              xax0 = np.arange(len(x2[i]))
-              ivar0 = np.interp(xax0,xax0[www2],ivar0[www2])
+              www2 = np.where(~np.isnan(ivar))[0]
+              xax = np.arange(len(x2))
+              ivar = np.interp(xax,xax[www2],ivar[www2])
             #rv correction
-            spec0 = np.interp(x[i],x2[i] * (1. - vrad/clight), spec0)
-            ivar0 = np.interp(x[i],x2[i] * (1. - vrad/clight), ivar0)
-            if i == 0:
-              spec1 = spec0
-              ivar1 = ivar0
+            spec = np.interp(x,x2 * (1. - vrad/clight), spec)
+            ivar = np.interp(x,x2 * (1. - vrad/clight), ivar)
+
+
+          if not ferre:
+            #normalize
+            if abs(conti) > 1:
+              mspec = continuum(spec, window_length=abs(conti))
+              www = (mspec == 0.0)
+              mspec[www] = 1. 
+              if doubleconti:
+                mspec2 = np.mean(spec)
+                if mspec2 == 0.0: mspec2 = np.median(spec)
+                if mspec2 == 0.0: mspec2 = 1.
+                spec2 = spec.copy() / mspec2
+                ivar2 = ivar.copy() * mspec2**2
+            elif abs(conti) == 1:
+              mspec = np.mean(spec)
+              if mspec == 0.0: mspec = np.median(spec)
+              if mspec == 0.0: mspec = 1.
             else:
-              spec1 = np.concatenate((spec1,spec0))
-              ivar1 = np.concatenate((ivar1, ivar0))
-          spec = spec1
-          ivar = ivar1
-        else:
-          xx = x
-          spec = obs[j,:]
-          ivar = ivr[j,:]
-          #clean the data
-          www = np.where(np.isnan(spec))[0]
-          if len(www) > 0:
-            www2 = np.where(~np.isnan(spec))[0]
-            xax = np.arange(len(x2))
-            spec = np.interp(xax,xax[www2],spec[www2])
-          www = np.where(np.isnan(ivar))[0]
-          if len(www) > 0:
-            www2 = np.where(~np.isnan(ivar))[0]
-            xax = np.arange(len(x2))
-            ivar = np.interp(xax,xax[www2],ivar[www2])
-          #rv correction
-          spec = np.interp(x,x2 * (1. - vrad/clight), spec)
-          ivar = np.interp(x,x2 * (1. - vrad/clight), ivar)
+              mspec = 1.
 
+            spec = spec / mspec
+            ivar = ivar * mspec**2
 
-        if not ferre:
-          #normalize
-          if abs(conti) > 1:
-            mspec = continuum(spec, window_length=abs(conti))
-            www = (mspec == 0.0)
-            mspec[www] = 1. 
             if doubleconti:
-              mspec2 = np.mean(spec)
-              if mspec2 == 0.0: mspec2 = np.median(spec)
-              if mspec2 == 0.0: mspec2 = 1.
-              spec2 = spec.copy() / mspec2
-              ivar2 = ivar.copy() * mspec2**2
-          elif abs(conti) == 1:
-            mspec = np.mean(spec)
-            if mspec == 0.0: mspec = np.median(spec)
-            if mspec == 0.0: mspec = 1.
-          else:
-            mspec = 1.
+              spec = np.hstack((spec, spec2))
+              ivar = np.hstack((ivar, ivar2))
+              xx = np.hstack((xx,xx))
 
-          spec = spec / mspec
-          ivar = ivar * mspec**2
+            if gpu:
+              spec_gpu = cp.asarray(spec)
+              ivar_gpu = cp.asarray(ivar)
+              #prior_gpu = cp.asarray(prior)
+              res_gpu, eres_gpu, cov_gpu, bmod_gpu, \
+              weights_gpu = cebas_gpu(p_gpu, d_gpu, spec_gpu, ivar_gpu, prior = prior_gpu )
+              res = cp.asnumpy(res_gpu)
+              eres = cp.asnumpy(eres_gpu)
+              cov = cp.asnumpy(cov_gpu)
+              bmod = cp.asnumpy(bmod_gpu)
+              weights = cp.asnumpy(weights_gpu)
+            else:
+              res, eres, cov, bmod, weights = cebas( p, d, spec, ivar, prior = prior )
+            lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - ndim))
+            print('reduced lchi =',lchi)
 
-          if doubleconti:
-            spec = np.hstack((spec, spec2))
-            ivar = np.hstack((ivar, ivar2))
-            xx = np.hstack((xx,xx))
-
-          if gpu:
-            spec_gpu = cp.asarray(spec)
-            ivar_gpu = cp.asarray(ivar)
-            res_gpu, eres_gpu, cov_gpu, bmod_gpu, \
-            weights_gpu = cebas_gpu(p_gpu, d_gpu, spec_gpu, ivar_gpu)
-            res = cp.asnumpy(res_gpu)
-            eres = cp.asnumpy(eres_gpu)
-            cov = cp.asnumpy(cov_gpu)
-            bmod = cp.asnumpy(bmod_gpu)
-            weights = cp.asnumpy(weights_gpu)
-          else:
-            res, eres, cov, bmod, weights = cebas( p, d, spec, ivar )
-          lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - ndim))
-          print('reduced lchi =',lchi)
-
-        #give up when cebas returns Nans
-        if np.isnan(res).any() or np.isnan(eres).any():
-          print('skipping spectrum since cebas returns a NaN')
-          continue
+          #give up when cebas returns Nans
+          if np.isnan(res).any() or np.isnan(eres).any():
+            print('skipping spectrum since cebas returns a NaN')
+            continue
 
         if focus:
           eres[eres < 1e-17] = 1e-17 # avoid division by zero
@@ -10595,17 +10639,18 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           if len(np.where(w)[0]) > 1:
 
             if gpu:
-              spec_gpu = cp.asarray(spec)
-              ivar_gpu = cp.asarray(ivar)
+              #spec_gpu = cp.asarray(spec) 
+              #ivar_gpu = cp.asarray(ivar)
+              #prior_gpu = cp.asarray(prior)
               res_gpu, eres_gpu, cov_gpu, bmod_gpu, 
-              weights_gpu = cebas_gpu(p2_gpu[w,:], d2_gpu[w,:], spec_gpu, ivar_gpu)
+              weights_gpu = cebas_gpu(p2_gpu[w,:], d2_gpu[w,:], spec_gpu, ivar_gpu, prior = prior_gpu[w] )
               res = cp.asnumpy(res_gpu)
               eres = cp.asnumpy(eres_gpu)
               cov = cp.asnumpy(cov_gpu)
               bmod = cp.asnumpy(bmod_gpu)
               weights = cp.asnumpy(weights_gpu)
             else:
-              res, eres, cov, bmod, weights = cebas(p2[w,:],d2[w,:],spec,ivar )
+              res, eres, cov, bmod, weights = cebas(p2[w,:],d2[w,:],spec,ivar, prior = prior[w] )
 
             lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / 
                                    (len(bmod) - ndim) )
@@ -10762,7 +10807,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               print(filters[i],':')
 
               ab, eab, covab, bmodab, weightsab = cebas( par[:,imet],
-                 specpar, spec, ivar, filter=dfilters[i,:])
+                 specpar, spec, ivar, filter=dfilters[i,:], prior = prior)
 
               abuarr.append(ab[0])
               eabuarr.append(eab[0])
@@ -11124,6 +11169,7 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
     -------
     instr: str
       instrument identifier ('FERRE' for input already in FERRE format)
+      Note: identify_instrument will not return 'FERRE' in this case, but None
     ids: numpy array of str
       strings identifying the target(s). In some cases it may simply 
       be a number 
@@ -11505,23 +11551,36 @@ def read_spec(infile,wavelengths=None,target=None,rv=None,ebv=None,star=True):
       if infile is None: infile = synthfile[2:synthfile.rfind('.dat')]
       frdfile = infile + '.frd'
       errfile = infile + '.err'
+      wavfile = infile + '.wav'
+      ipffile = infile + '.ipf'
               
-      #read frdfile and errfile
+      #read frdfile and errfile, possibly wavfile
       frd = np.loadtxt(frdfile,dtype=float)
       err = (np.loadtxt(errfile,dtype=float)**2)
       ivr = np.divide(1., err, where = (err > 0.), out = np.zeros_like(err) )
       if wavelengths is None:
-        if os.path.isfile(infile + '.wav'):
-          wav = np.loadtxt(infile + '.wav')
+        if os.path.isfile(wavfile):
+          wav = np.loadtxt(wavfile,dtype=float)
         else: 
             wav = None
       else:
         wav = wavelengths
-      if frd.ndim == 1:
-        ids = np.array([0])
+       
+      #if present, read ipf
+      if os.path.isfile(ipffile):
+        ipf = np.loadtxt(ipffile,dtype=str)
+        if frd.ndim == 1:
+          ids = ipf[0]
+          ipfarr = np.array(ipf[1:], dtype=float)
+        else:
+          ids = ipf[:,0]
+          ipfarr = np.array(ipf[:,1:], dtype=float)
       else:
-        ids = np.array(list(map(str,range(len(frd[:,0])))))
-      xtr = (dict())
+        if frd.ndim == 1:
+          ids = np.array([0])
+        else:
+          ids = np.array(list(map(str,range(len(frd[:,0])))))
+      xtr = (ipfarr,)
 
     return(instr,ids,wav,frd,ivr,xtr)
 
@@ -12573,8 +12632,7 @@ def bas_test(synthfile,snr=1.e6):
 def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
               kernel='linear', neighbors=100, edgemargin=0.02, otype='irregular'):
 
-    """Creates an FERRE grid from a pre-existing regular or 
-       irregular one
+    """Creates a FERRE/BAS grid from a pre-existing one
  
     Parameters
     ----------
