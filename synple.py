@@ -13181,7 +13181,7 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
     if gaiaphot_synthfile is not None:
       cg, pming, ptpg = rbf_get(gaiaphot_synthfile, kernel=kernel, 
                                 neighbors=neighbors)
-      d2g = rbf_apply(cg, pming, ptpg, p[:,3])
+      d2g = rbf_apply(cg, pming, ptpg, p[:,:3])
       p2[:,6:] = d2g[:,:6] -5.*np.log10(p2[:,5]) + 5.5
 
     h2 = h
