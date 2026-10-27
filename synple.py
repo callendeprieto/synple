@@ -13142,7 +13142,7 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
         age = edad*np.ones(len(teff),dtype=float)
         mass = iso.isocmds[age_ind]['star_mass']
         radius = 10.**( 0.5 * ( iso.isocmds[age_ind]['log_L'] - 
-                        4.* iso.isocmds[age_ind]['log_Teff'] ) )
+                        4.* np.log10(teff/5772.) ) )
         Gmag = iso.isocmds[age_ind]['Gaia_G_EDR3']
         Bpmag = iso.isocmds[age_ind]['Gaia_BP_EDR3']
         Rpmag = iso.isocmds[age_ind]['Gaia_RP_EDR3']
@@ -13184,7 +13184,7 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
       d2g = rbf_apply(cg, pming, ptpg, p2[:,:3])
       print(p2.shape,d2g.shape)
       for i in range(6):
-        p2[:,6+i] = d2g[:,i] -5.*np.log10(p2[:,5]) + 5.5
+        p2[:,6+i] = d2g[:,i] -5.*np.log10(p2[:,5])
 
     h2 = h
 
@@ -13230,12 +13230,13 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
       p2 = np.transpose(p3)   
 
 
-    ending = synthfile.rfind('.dat')
+    synthname = os.path.split(synthfile)[-1]
+    ending = synthname.rfind('.dat')
     if ending < -1: 
-        ending = synthfile.rfind('.pickle')
+        ending = synthname.rfind('.pickle')
     if ending < -1:
-        ending = len(synthfile) + 1
-    root = synthfile[2:ending]
+        ending = len(synthname) + 1
+    root = synthname[2:ending]
     if outsynthfile is None: 
       outsynthfile = 'n_'+root+'rbf.mist'
       if rv: outsynthfile += '-RV'
@@ -13270,7 +13271,7 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
             block[entry] = "'"+block[entry]+"'"
         if entry[:8] == 'COMMENTS':
           kcomment = int(entry[8:]) + 1
-      block['COMMENTS'+str(kcomment)] = "'Data interpolated using synth_rbf from " + synthfile + "'"
+      block['COMMENTS'+str(kcomment)] = "'Data interpolated using synth_rbf from " + synthname + "'"
       
         
       block['N_OF_DIM'] = str(ndim+ndim2)
