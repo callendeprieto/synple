@@ -1212,7 +1212,7 @@ def teff_stefanboltzmann(x,y):
    """
 
    sigma = 5.670374419e-5 #Stefan-Boltzmann constant in erg/cm2/s/K**4
-   teff = ( integrate.simps(y,x=x) * 4. * np.pi / sigma )**(1/4)
+   teff = ( integrate.simpson(y,x=x) * 4. * np.pi / sigma )**(1/4)
 
    return(teff)
 
@@ -13053,7 +13053,8 @@ def rbf_test(synthfile,n=None, kernel='linear', neighbors=100):
     return( per[0], per[1], per[2] )
 
 def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
-              outsynthfile=None,n=None,rv=False,ebv=False,
+              gaiaphot_synthfile=None, outsynthfile=None,n=None,
+              rv=False,ebv=False,
               kernel='linear', neighbors=100, edgemargin=0.02):
 
     """Creates a FERRE grid from a pre-existing regular or 
@@ -13064,8 +13065,18 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
     synthfile: str
       name of the input FERRE/BAS synthfile
       
-   mistdir: str
+    mistdir: str
       path of the folder where the MIST iso.cmd/iso files to use are stored
+
+    gaiaphot_synthfile: str
+      name of an optional input FERRE/BAS synthfile containing
+      G, Bp, Rp, J, H, K, A(G)/E(Bp-Rp), A(Bp)/E(Bp-Rp), A(Rp)/E(Bp-Rp),
+      A(J)/E(Bp-Rp), A(H)/E(Bp-Rp), A(K)/E(Bp-Rp), E(B-V)/E(Bp-Rp)
+      as measured in a grid of synthetic spectra with the same dimensions/pars 
+      as synthfile. The magnitudes given here are derived from absolute 
+      stellar surface fluxes (H = F/4/pi), and will be used to replace
+      the MIST absolute magnitudes, e.g. MG =  G - 5 * log10(R/Rsun) + 5.5
+      (default is None)
     
     outsynthfile: str
       name of the output FERRE/BAS synthfile
@@ -13105,12 +13116,16 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
     if rv or ebv : 
       x = lambda_synth(synthfile)
       if type(x) is list: x = np.hstack(x)
+
     h,p,d = read_synth(synthfile)
-    
     
     ndim = len(p[0,:])
     npix = len(d[0,:])
     ntot = len(p[:,0])
+
+    if gaiaphot_synthfile is not None:
+      hg, pg, dg = read_synth(gaiaphot_synthfile)
+      assert ((ndim == len(pg[0,:])) & (ntot == len(pg[:,0])) ),'gaiaphot_synthfile and synthfile do not have consistent dimensions!'
     
     #MIST isochrones
     mistfiles = glob.glob(os.path.join(mistdir,'*.iso.cmd'))
@@ -13126,13 +13141,15 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
         feh = iso.isocmds[age_ind]['[Fe/H]']
         age = edad*np.ones(len(teff),dtype=float)
         mass = iso.isocmds[age_ind]['star_mass']
+        radius = 10.**( 0.5 * ( iso.isocmds[age_ind]['log_L'] - 
+                        4.* iso.isocmds[age_ind]['log_Teff'] ) )
         Gmag = iso.isocmds[age_ind]['Gaia_G_EDR3']
         Bpmag = iso.isocmds[age_ind]['Gaia_BP_EDR3']
         Rpmag = iso.isocmds[age_ind]['Gaia_RP_EDR3']
         Jmag =  iso.isocmds[age_ind]['2MASS_J']
         Hmag =  iso.isocmds[age_ind]['2MASS_H']
         Ksmag = iso.isocmds[age_ind]['2MASS_Ks']
-        arr = np.vstack ( (teff, logg, feh, age, mass, Gmag, Bpmag, Rpmag, Jmag, Hmag, Ksmag) )
+        arr = np.vstack ( (teff, logg, feh, age, mass, radius, Gmag, Bpmag, Rpmag, Jmag, Hmag, Ksmag) )
         print(arr.shape)
         if first: 
           arr0 = arr.copy()
@@ -13144,8 +13161,8 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
     rng = np.random.default_rng(1)
 
     ndim0 = ndim
-    ndim = ndim + 8 
     arr0 = np.transpose(arr0)
+    ndim = len(arr0[0,:])
     print(arr0.shape)
     
     w = (arr0[:,0] > p[:,0].min()) & (arr0[:,0] < p[:,0].max()) & (arr0[:,1] > p[:,1].min()) & (arr0[:,1] < p[:,1].max()) & (arr0[:,2] > p[:,2].min()) & (arr0[:,2] < p[:,2].max())
@@ -13161,10 +13178,16 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
 
     c, pmin, ptp = rbf_get(synthfile, kernel=kernel, neighbors=neighbors)
     d2 = rbf_apply(c, pmin, ptp, p2[:,:3])
+    if gaiaphot_synthfile is not None:
+      cg, pming, ptpg = rbf_get(gaiaphot_synthfile, kernel=kernel, 
+                                neighbors=neighbors)
+      d2g = rbf_apply(cg, pming, ptpg, p[:,3])
+      d2[:,6:] = d2g[:,:6] -5.*np.log10(p[:,5]) + 5.5
+
     h2 = h
 
     #add new labels
-    newlab = ['age', 'mass','MG','MBp','MRp','MJ','MH','MKs']
+    newlab = ['age', 'mass','radius', 'MG', 'MBp', 'MRp', 'MJ', 'MH','MKs']
     k = 0
     for entry in newlab:
       ltext = 'LABEL('+str(k+ndim0+1)+')'
@@ -13189,6 +13212,7 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
                 h2[entry]['LABEL('+str(ndim+ndim2)+')'] = "'RV'"
         else:
             h2['LABEL('+str(ndim+ndim2)+')'] = "'RV'"  
+
     if ebv:	
         ebvmax = 0.25 # mag
         vals = rng.random(n)*ebvmax 
@@ -13202,6 +13226,7 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
     
     if rv or ebv:
       p2 = np.transpose(p3)   
+
 
     ending = synthfile.rfind('.dat')
     if ending < -1: 
@@ -13267,6 +13292,7 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
     of.close()
     
     return    
+
 
 def wferrefits(root, path=None):	
 	
