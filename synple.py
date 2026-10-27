@@ -13188,6 +13188,8 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
         p2[:,6+i] = d2g[:,i] -5.*np.log10(p2[:,5]) -  \
                 2.5*np.log10((6.957e10/3.086e18/10.)**2)
         #absolute mags (d=10pc) 
+        #Rsun = 6.957e10 cm
+        #1pc  = 3.086e18 cm
 
     h2 = h
 
