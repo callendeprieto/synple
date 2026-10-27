@@ -10426,6 +10426,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           xx = x
           spec = obs[j,:]
           ivar = ivr[j,:]
+          plt.plot(spec)
           #clean the data
           www = np.where(np.isnan(spec))[0]
           if len(www) > 0:
