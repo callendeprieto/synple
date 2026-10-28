@@ -10186,6 +10186,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
     ndim = len(p[0,:])
     ntot = len(p[:,0])
 
+
     #check that ferre is not activated with an irregular grid
     if 'TYPE' in hd:
       if hd['TYPE'] == 'irregular' and ferre:
@@ -10250,7 +10251,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         gpars.append(hd[entry])
     for entry in gpriors:
       ipriors.append(gpars.index(entry))
-    
+   
 
     if focus:
       p2 = p.copy()
@@ -10310,7 +10311,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       if doubleconti:
         dfilters = np.hstack((dfilters,np.zero_like(dfilters)))
     
-
         
     for file in infiles:
 
@@ -10347,6 +10347,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
         nspec = len(obs[:,0])
 
       print('nspec in bas:',nspec)
+
 
       if outfile is None or len(infiles) > 1:
         outfile = file
@@ -10392,6 +10393,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
       for j in range(nspec):
 
         print('spectrum ',j,' of ',nspec,' in ',file)
+
 
         #resample
         if type(x) is list:
@@ -10462,6 +10464,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
 
         spec = spec / mspec
         ivar = ivar * mspec**2
+
         
         #build gpriors
         prior = np.ones(ntot) / float(ntot)
@@ -10478,8 +10481,9 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               ipfcov = ipfrow[2*ndim+3:].reshape((ndim,ndim))
             else:
               ipfcov = np.zeros((ndim,ndim))
+              print('and finally here ndim is ',ndim)
               for i in range(ndim):
-                ipfcov[i,i] = ipfrow[ndim+i]**2
+                ipfcov[i,i] = (ipfrow[ndim+i])**2
 
             #limit to the dimensions with gpriors            
             ipfpar = ipfpar[ipriors]
