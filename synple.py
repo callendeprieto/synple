@@ -2857,9 +2857,7 @@ def grid_builder(config,  modeldir=modeldir):
        frun = open('run2.py','w')
        frun.write("from synple import mkgrid, bas_build\n\n")
        
-       if conf[entry]['type'] == 'marcs' or conf[entry]['type'] == 'kurucz':
-         frun.write( "mkgrid('%s',tteff = (%4i,%.2f,%.2f), tlogg = (%4i,%.2f,%.2f), tfeh = (%4i,%.2f,%.2f), tafe = (%4i,%.2f,%.2f), tcfe = (%4i,%.2f,%.2f), vmicro = %.2f, ignore_missing_models = True )\n" % (entry+'.dat',tteff[0],tteff[1],tteff[2],tlogg[0],tlogg[1],tlogg[2],tfeh[0],tfeh[1],tfeh[2],tafe[0],tafe[1],tafe[2],tcfe[0],tcfe[1],tcfe[2], vmicro) )
-       elif conf[entry]['type'] == 'mkk-regular':
+       if conf[entry]['type'] == 'marcs' or conf[entry]['type'] == 'kurucz' or conf[entry]['type'] == 'mkk-regular':
          streldict = ''
          for ky in eldict: streldict += '{}={}'.format(ky,eldict[ky])+','
          if len(streldict) > 0:
@@ -10481,7 +10479,6 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               ipfcov = ipfrow[2*ndim+3:].reshape((ndim,ndim))
             else:
               ipfcov = np.zeros((ndim,ndim))
-              print('and finally here ndim is ',ndim)
               for i in range(ndim):
                 ipfcov[i,i] = (ipfrow[ndim+i])**2
 
