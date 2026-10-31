@@ -5824,6 +5824,10 @@ def rbf_get(synthfile, kernel='linear', neighbors=100):
   #nfreq = int(h['NPIX'])
   #iarr = getaa(n_p)
 
+  #use only true independent variables for interpolation
+  if 'N_OF_NDIM0' in hd:  ndim  = int(hd['N_OF_DIM0'])
+  p = p[:,0:ndim]
+    
   pmin = p.min(0)
   ptp  = np.ptp(p,0) #p.ptp(0)
 
@@ -10183,6 +10187,10 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
     lenx = len(x)
     ndim = len(p[0,:])
     ntot = len(p[:,0])
+    ndim0 = ndim
+    if 'N_OF_NDIM0' in hd:  ndim0  = int(hd['N_OF_DIM0'])
+
+
 
 
     #check that ferre is not activated with an irregular grid
@@ -10528,7 +10536,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
           print('skipping spectrum since cebas returns a NaN')
           continue
 
-        lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - ndim) )
+        lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - ndim0) )
         print('reduced lchi =',lchi)
                 
         vrad = 0.0
@@ -10627,7 +10635,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               weights = cp.asnumpy(weights_gpu)
             else:
               res, eres, cov, bmod, weights = cebas( p, d, spec, ivar, prior = prior )
-            lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - ndim))
+            lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / (len(bmod) - ndim0))
             print('reduced lchi =',lchi)
 
           #give up when cebas returns Nans
@@ -10655,7 +10663,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
               res, eres, cov, bmod, weights = cebas(p2[w,:],d2[w,:],spec,ivar, prior = prior[w] )
 
             lchi = np.log10( np.sum((bmod-spec)**2 * ivar) / 
-                                   (len(bmod) - ndim) )
+                                   (len(bmod) - ndim0) )
           else:
             w = range(len(p[:,0]))
 
@@ -10784,12 +10792,12 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
             # -fehrange  < [Fe/H] < fehrange
             nnew = 1000
             fehrange = 2.0
-            pmin = p3[wf,:].min(0)
-            ptp = np.ptp(p3[wf,:],0)
-            pp = np.divide((p3[wf,:] - pmin),ptp, where=(ptp != 0))
+            pmin = p3[wf,:ndim0].min(0)
+            ptp = np.ptp(p3[wf,:ndim0],0)
+            pp = np.divide((p3[wf,:ndim0] - pmin),ptp, where=(ptp != 0))
             crbf= interpolate.RBFInterpolator(pp, 
                 d3[wf,:], kernel='linear', neighbors = 100)
-            par = np.tile(res,(nnew,1))
+            par = np.tile(res[:ndim0],(nnew,1))
             rng = np.random.default_rng(107)
             par[:,imet] = res[imet] + rng.random(nnew)*2.*fehrange -fehrange
  
@@ -12696,6 +12704,9 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
     ndim = len(p[0,:])
     npix = len(d[0,:])
     ntot = len(p[:,0])
+    
+    #limit the number of variables for interpolation if N_OF_DIM0 is present
+    if 'N_OF_NDIM0' in hd:  ndim  = int(hd['N_OF_DIM0'])
 
     if n is None: n = ntot
 
@@ -13032,6 +13043,7 @@ def rbf_test(synthfile,n=None, kernel='linear', neighbors=100):
     ndim = len(p[0,:])
     npix = len(d[0,:])
     ntot = len(p[:,0])
+    if 'N_OF_NDIM0' in hd:  ndim  = int(hd['N_OF_DIM0'])
 
     if n is None: n = ntot
     
@@ -13044,7 +13056,7 @@ def rbf_test(synthfile,n=None, kernel='linear', neighbors=100):
     #2nd interpolation    
     c, pmin, ptp = rbf_get(synthfile+'-tmp',
                            kernel=kernel, neighbors=neighbors)
-    d2 = rbf_apply(c, pmin, ptp, p)
+    d2 = rbf_apply(c, pmin, ptp, p[:,:ndim])
 
     per = np.percentile( (d2-d)/d,[15.85,50.,84.15])
 
@@ -13162,29 +13174,33 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
         
     rng = np.random.default_rng(1)
 
+    #set ndim0 (true independent variables) and update ndim (true + extended/non-independent variables)
     ndim0 = ndim
+    if 'N_OF_NDIM0' in hd:  ndim0  = int(hd['N_OF_DIM0'])
     arr0 = np.transpose(arr0)
     ndim = len(arr0[0,:])
     print(arr0.shape)
     
+    #select only models in the isochrones that are within the limits of the spectral grid
     w = (arr0[:,0] > p[:,0].min()) & (arr0[:,0] < p[:,0].max()) & (arr0[:,1] > p[:,1].min()) & (arr0[:,1] < p[:,1].max()) & (arr0[:,2] > p[:,2].min()) & (arr0[:,2] < p[:,2].max())
     
 #    w = (arr0[:,0] > 4000.) & (arr0[:,0] < 5000.) & (arr0[:,1] > 4.0) & (arr0[:,1] < 5.0) & (arr0[:,2] > -0.4) & (arr0[:,2] < 0.1)
     
     p2 = arr0[w,:]
 
+    #randomly sample a set of models if n< number of models in the isochones
     if n is None or n >= len(arr0[w,0]):
       n = len(arr0[w,0])
     else:
       p2 = p2[np.random.choice(p2.shape[0], size=n, replace=False)]
 
     c, pmin, ptp = rbf_get(synthfile, kernel=kernel, neighbors=neighbors)
-    d2 = rbf_apply(c, pmin, ptp, p2[:,:3])
+    d2 = rbf_apply(c, pmin, ptp, p2[:,:ndim0])
 
     if gaiaphot_synthfile is not None: #replace MIST abs. mags 
       cg, pming, ptpg = rbf_get(gaiaphot_synthfile, kernel=kernel, 
                                 neighbors=neighbors)
-      d2g = rbf_apply(cg, pming, ptpg, p2[:,:3])
+      d2g = rbf_apply(cg, pming, ptpg, p2[:,:ndim0])
       print(p2.shape,d2g.shape)
       for i in range(6):
         p2[:,6+i] = d2g[:,i] -5.*np.log10(p2[:,5]) -  \
@@ -13199,7 +13215,7 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
     newlab = ['age', 'mass','radius', 'MG', 'MBp', 'MRp', 'MJ', 'MH','MKs']
     k = 0
     for entry in newlab:
-      ltext = 'LABEL('+str(k+ndim0+1)+')'
+      ltext = 'LABEL('+str(k+ndim+1)+')'
       h2[ltext] = entry
       k = k + 1
 
@@ -13282,7 +13298,9 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
       
         
       block['N_OF_DIM'] = str(ndim+ndim2)
+      block['N_OF_DIM0'] = str(ndim0+ndim2)
       block['NTOT'] = str(n)
+      
     for block in h2:
       of.write(' &SYNTH\n')
       for entry in block: of.write(' '+entry + ' = ' + block[entry] + '\n')
