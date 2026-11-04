@@ -5825,6 +5825,7 @@ def rbf_get(synthfile, kernel='linear', neighbors=100):
   #iarr = getaa(n_p)
 
   #use only true independent variables for interpolation
+  ndim = len(p[0,:])
   if 'N_OF_DIM0' in h:  ndim  = int(h['N_OF_DIM0'])
   p = p[:,0:ndim]
     
