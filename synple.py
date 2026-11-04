@@ -13303,6 +13303,10 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
         if entry[:8] == 'COMMENTS':
           kcomment = int(entry[8:]) + 1
       block['COMMENTS'+str(kcomment)] = "'Data interpolated using synth_rbf from " + synthname + "'"
+      if gaiaphot_synthfile is not None:
+          kcomment += 1
+          gaiaphot_synthname = os.path.split(gaiaphot_synthfile)[-1]
+          block['COMMENTS'+str(kcomment)] = "'Gaia photometry from  " + gaiaphot_synthname + "'"
       
         
       block['N_OF_DIM'] = str(ndim+ndim2)
