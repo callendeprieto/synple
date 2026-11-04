@@ -13207,9 +13207,17 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
     d2 = rbf_apply(c, pmin, ptp, p2[:,:ndim0])
 
     if gaiaphot_synthfile is not None: #replace MIST abs. mags 
+
+      #sanity check
+      hx,px,dx = read_synth(gaiaphot_synthfile)
+      if np.isnan(px).any() or np.isnan(dx).any(): 
+        sys.exit('Error: nans in gaiaphot_synthfile')
+
       cg, pming, ptpg = rbf_get(gaiaphot_synthfile, kernel=kernel, 
                                 neighbors=neighbors)
       d2g = rbf_apply(cg, pming, ptpg, p2[:,:ndim0])
+      if np.isnan(d2g).any(): 
+        sys.exit('Error: nans in the interpolated Gaia photometry')
       print(p2.shape,d2g.shape)
       for i in range(6):
         p2[:,6+i] = d2g[:,i] -5.*np.log10(p2[:,5]) -  \
