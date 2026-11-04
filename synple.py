@@ -5365,9 +5365,9 @@ def read_synth(synthfile,nd=False):
 
     #check and warn about possible nans
     if np.isnan(pars).any(): 
-      print('Warning: the parameters of the grid contain NaNs!'
+      print('Warning: the parameters of the grid contain NaNs!')
     if np.isnan(data).any():
-      print('Warning: the data of the grid contain NaNs!'
+      print('Warning: the data of the grid contain NaNs!')
 
 
 
