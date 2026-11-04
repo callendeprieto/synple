@@ -10195,7 +10195,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
     ndim = len(p[0,:])
     ntot = len(p[:,0])
     ndim0 = ndim
-    if 'N_OF_DIM0' in h:  ndim0  = int(h['N_OF_DIM0'])
+    if 'N_OF_DIM0' in hd:  ndim0  = int(hd['N_OF_DIM0'])
     print('ndim,ndim0=',ndim,ndim0)
 
 
