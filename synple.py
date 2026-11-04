@@ -13183,7 +13183,8 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
     rng = np.random.default_rng(1)
 
     #set ndim0 (true independent variables) and update ndim (true + extended/non-independent variables)
-    ndim0 = ndim
+    ndim0 = ndim # true independent variables
+    ndim1 = ndim # total variables in the input grid
     if 'N_OF_DIM0' in h:  ndim0  = int(h['N_OF_DIM0'])
     arr0 = np.transpose(arr0)
     ndim = len(arr0[0,:])
@@ -13223,7 +13224,7 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
     newlab = ['age', 'mass','radius', 'MG', 'MBp', 'MRp', 'MJ', 'MH','MKs']
     k = 0
     for entry in newlab:
-      ltext = 'LABEL('+str(k+ndim+1)+')'
+      ltext = 'LABEL('+str(k+ndim1+1)+')'
       h2[ltext] = entry
       k = k + 1
 
