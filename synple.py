@@ -5363,6 +5363,12 @@ def read_synth(synthfile,nd=False):
             n_p = n_p[:-1]
             pars = getaa(n_p, dtype=float)*steps + llimits
 
+    #check and warn about possible nans
+    if np.isnan(pars).any(): 
+      print('Warning: the parameters of the grid contain NaNs!'
+    if np.isnan(data).any():
+      print('Warning: the data of the grid contain NaNs!'
+
 
 
     return header,pars,data
