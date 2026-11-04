@@ -5825,7 +5825,7 @@ def rbf_get(synthfile, kernel='linear', neighbors=100):
   #iarr = getaa(n_p)
 
   #use only true independent variables for interpolation
-  if 'N_OF_DIM0' in hd:  ndim  = int(hd['N_OF_DIM0'])
+  if 'N_OF_DIM0' in h:  ndim  = int(h['N_OF_DIM0'])
   p = p[:,0:ndim]
     
   pmin = p.min(0)
@@ -10188,7 +10188,7 @@ def bas(infile, synthfile=None, outfile=None, target=None, rv=None, ebv=None,
     ndim = len(p[0,:])
     ntot = len(p[:,0])
     ndim0 = ndim
-    if 'N_OF_DIM0' in hd:  ndim0  = int(hd['N_OF_DIM0'])
+    if 'N_OF_DIM0' in h:  ndim0  = int(h['N_OF_DIM0'])
     print('ndim,ndim0=',ndim,ndim0)
 
 
@@ -12707,7 +12707,7 @@ def synth_rbf(synthfile,outsynthfile=None,n=None,rv=False,ebv=False,
     ntot = len(p[:,0])
     
     #limit the number of variables for interpolation if N_OF_DIM0 is present
-    if 'N_OF_DIM0' in hd:  ndim  = int(hd['N_OF_DIM0'])
+    if 'N_OF_DIM0' in h:  ndim  = int(h['N_OF_DIM0'])
 
     if n is None: n = ntot
 
@@ -13044,7 +13044,7 @@ def rbf_test(synthfile,n=None, kernel='linear', neighbors=100):
     ndim = len(p[0,:])
     npix = len(d[0,:])
     ntot = len(p[:,0])
-    if 'N_OF_DIM0' in hd:  ndim  = int(hd['N_OF_DIM0'])
+    if 'N_OF_DIM0' in h:  ndim  = int(h['N_OF_DIM0'])
 
     if n is None: n = ntot
     
@@ -13177,7 +13177,7 @@ def synth_mist(synthfile,mistdir='MIST_v1.2_vvcrit0.4_UBVRIplus',
 
     #set ndim0 (true independent variables) and update ndim (true + extended/non-independent variables)
     ndim0 = ndim
-    if 'N_OF_DIM0' in hd:  ndim0  = int(hd['N_OF_DIM0'])
+    if 'N_OF_DIM0' in h:  ndim0  = int(h['N_OF_DIM0'])
     arr0 = np.transpose(arr0)
     ndim = len(arr0[0,:])
     print(arr0.shape)
