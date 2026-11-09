@@ -40,9 +40,9 @@ list2bin: list2bin.f
 install: ../bin ../bin/synspec54 ../bin/rotin ../bin/list2bin
 
 ../bin/synspec54 ../bin/rotin ../bin/list2bin: synspec54 rotin list2bin
-	cp synspec54   ../bin/
-	cp rotin ../bin/
-	cp list2bin ../bin/
+	mv synspec54   ../bin/
+	mv rotin ../bin/
+	mv list2bin ../bin/
 
 ../bin:
 	mkdir ../bin
