@@ -85,6 +85,7 @@ linelistdir = os.path.join(synpledir, "linelists")
 linelist0 = ['gfATOc.19','gfMOLsun.20','gfTiO.20','H2O-8.20']
 bindir = os.path.join(synpledir,"bin")
 synspec = os.path.join(bindir, "synspec54")
+#synspec = os.path.join("/work/callende/hubeny/synspec2.01/src","synspec2.01.exe")
 rotin = os.path.join(bindir, "rotin")
 
 #internal synspec data files
